@@ -150,6 +150,13 @@
 
 (def items-glyph (fn (_ g it) (data-glyph (game-set g) (item-class it) "?")))
 
+; The pack's items of CLASS, or all of them for nil, a line each:
+; "a) a short blade (in hand)".
+(def items-pack-lines
+  (fn (_ g class)
+    (List map (fn (_ it) (Str8 append (item-letter it) ") " (items-name g it) (items-worn g it)))
+      (List filter (fn (_ it) (if (null? class) #t (item-class? it class))) (game-pack g)))))
+
 ; --- the pack ----------------------------------------------------------------
 
 (def %it-letters "abcdefghijklmnopqrstuvwxyz")
@@ -399,5 +406,5 @@
 
 (provide roguelike/items
   items-new items-spawn! items-place-goal! items-goal-held? items-known? items-know! items-name items-worn
-  items-glyph items-by-letter items-pickup! items-drop! items-quaff! items-read! items-target items-zap!
+  items-glyph items-pack-lines items-by-letter items-pickup! items-drop! items-quaff! items-read! items-target items-zap!
   items-eat! items-wield! items-wear! items-take-off! items-put-on! items-remove!)

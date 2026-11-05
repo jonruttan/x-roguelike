@@ -71,6 +71,21 @@ drunk, read, zapped, eaten, worn and dropped.
 ---
     (("You are now wielding a short blade.") #t 2)
 
+### W lists the armour in the pack over the level, and nothing else
+
+```roguelike
+(def g (spec-calm 5 ()))
+(spec-drop-here! g "padded coat")
+(game-key! g ",")
+(spec-drop-here! g "short blade")
+(game-key! g ",")
+(game-key! g "W")
+(def rows (spec-screen g))
+(write (list (List ref 0 rows) (List ref 1 rows) (List any? (fn (_ r) (Str8 includes? "short blade" r)) rows)))
+```
+---
+    ("Wear what?" " a) padded coat [1]" #f)
+
 ## using
 
 ### q asks for a potion; drinking one names its kind, and a full player gains a hit point

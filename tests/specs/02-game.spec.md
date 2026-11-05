@@ -124,6 +124,25 @@ stairs, and what the screen shows.
 ---
     ("Your pack:  --any key--" #t 0 #t)
 
+### a list laid over the level is gone from the screen once a key is pressed
+
+The game draws every frame on one screen, so a row the level leaves
+blank must still be written over.
+
+```roguelike
+(def g (spec-game 11 ()))
+(def s (Screen make 24 80))
+(def shown? (fn (_) (List any? (fn (_ r) (Str8 includes? "rest a turn" (Screen row-text s r))) (List range 0 24))))
+(game-key! g "?")
+(game-draw! g s)
+(def during (shown?))
+(game-key! g (lit escape))
+(game-draw! g s)
+(write (list during (shown?)))
+```
+---
+    (#t #f)
+
 ### ? shows the keys
 
 ```roguelike
