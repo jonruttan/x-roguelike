@@ -7,11 +7,13 @@
 ; @license MIT No Attribution (MIT-0)
 ; lint-known: %lang-root
 ;
-;   x -l roguelike -- play [-set NAME] [-seed N] [-data DIR]   a game
-;   x -l roguelike -- scores                                   the best games
+;   x -l roguelike -- [-s NAME] [-S N] [-d DIR] [play]   a game
+;   x -l roguelike -- scores                            the best games
 ;
-; The set is a directory of .xon files under the bundle's data/, or any
-; directory given to -data.  Playing takes the terminal: raw, on the
+; The options are one declaration to the platform's Opts, which parses
+; them and prints the help.  The set is a directory of .xon files under
+; the bundle's data/, or any directory given to --data.  Playing takes
+; the terminal: raw, on the
 ; alternate screen, the cursor on the player, given back as it was on
 ; the way out.  A game is saved by S and taken up again by the next
 ; play; a finished game goes to the scores.
@@ -24,6 +26,7 @@
 (import x/sys/gc)
 (import x/repl/term)
 (import x/tui/screen)
+(import x/sys/opts)
 (import roguelike/data data-load data-get)
 (import roguelike/state game-over game-epitaph game-depth game-deepest game-messages game-ask game-player player-gold)
 (import roguelike/game game-make game-key! game-score game-help)
@@ -32,44 +35,29 @@
 
 (def roguelike-version "0.1.0")
 
-(def %cl-usage
-  (Str8 join "\n"
-    (list "usage: x -l roguelike -- play [-set NAME] [-seed N] [-data DIR]"
-          "       x -l roguelike -- scores"
-          ""
-          "A set is a directory of .xon files: classic is the one shipped."
-          "Playing, ? shows the keys."
-          "")))
+; The options and the help text, one declaration: what parse accepts is
+; what usage prints.
+(def roguelike-options
+  (Opts declare "x -l roguelike --" "[OPTIONS] [play | scores]"
+    "A roguelike: a dungeon crawl whose creatures, items and messages are a set of .xon files.\nWith no word, or play, a game; scores lists the best games.  Playing, ? lists the keys."
+    (list (Opts arg "-s" "--set" "NAME" "The set to play: classic, delve, or a directory under data/")
+          (Opts arg "-S" "--seed" "N" "The seed; the same seed is the same dungeon")
+          (Opts arg "-d" "--data" "DIR" "Where the sets are, in place of the bundle's data/")
+          (Opts flag "-V" "--version" "Print the version and exit")
+          (Opts flag "-h" "--help" "Print this help and exit"))
+    (pair (lit help) #f)))
 
 (def %cl-say (fn (_ fd text) (Sys fd-write fd text)))
 (def %cl-to-int
   (fn (_ s) (guard (e ()) ((prim-ref (lit convert) (lit to)) s (Type named INTEGER) 10))))
 
-; The options in ARGS, as an alist: (set . NAME), (seed . N), (data . DIR),
-; (help . #t), (version . #t), (words . LIST), or (error . TEXT).
-(def %cl-flag?
-  (fn (_ a names) (List any? (fn (_ n) (str=? a n)) names)))
-(def %cl-options
-  (fn (self args opts words)
-    (match
-      ((null? args) (pair (pair (lit words) (List reverse words)) opts))
-      ((%cl-flag? (first args) (list "-h" "-help" "--help")) (self (rest args) (pair (pair (lit help) #t) opts) words))
-      ((%cl-flag? (first args) (list "-version" "--version")) (self (rest args) (pair (pair (lit version) #t) opts) words))
-      ((%cl-flag? (first args) (list "-set" "-seed" "-data"))
-        (if (null? (rest args)) (list (pair (lit error) (Str8 append (first args) " takes a value")))
-          (self (List drop 2 args) (pair (pair (Str8 ->sym (Str8 sub 1 (- (Str8 length (first args)) 1) (first args))) (List ref 1 args)) opts) words)))
-      ((if (Str8 starts? "-" (first args)) (< 1 (Str8 length (first args))) #f)
-        (list (pair (lit error) (Str8 append "no such option: " (first args)))))
-      (#t (self (rest args) opts (pair (first args) words))))))
-(def %cl-opt (fn (_ opts k) ((fn (_ p) (if (null? p) () (rest p))) (Assoc find k opts))))
-
-; Where the sets are: -data, X_ROGUELIKE_DATA, the installed bundle's
+; Where the sets are: --data, X_ROGUELIKE_DATA, the installed bundle's
 ; data/, or data/ here.
 (def %cl-data-dir
   (fn (_ opts)
     (def env (Sys getenv "X_ROGUELIKE_DATA"))
     (def root (guard (e ()) %lang-root))
-    (match ((not (null? (%cl-opt opts (lit data)))) (%cl-opt opts (lit data)))
+    (match ((not (null? (Opts value opts "-d"))) (Opts value opts "-d"))
            ((if (null? env) #f (not (str=? env ""))) env)
            ((str? root) (Str8 append root "/data"))
            (#t "data"))))
@@ -125,7 +113,9 @@
                            " gold.  Score " (Str8 str (game-score g)) ".\n"))
               0)))))
 
-(def %cl-seed (fn (_ opts) (if (null? (%cl-opt opts (lit seed))) (+ 1 (rest (Sys time-of-day))) (%cl-to-int (%cl-opt opts (lit seed))))))
+(def %cl-seed
+  (fn (_ opts)
+    (if (null? (Opts value opts "-S")) (+ 1 (rest (Sys time-of-day))) (%cl-to-int (Opts value opts "-S")))))
 
 (def %cl-play
   (fn (_ opts)
@@ -138,7 +128,7 @@
       ((if (< (first size) 60) #t (< (rest size) 20)) (do (%cl-say 2 "x-roguelike: the terminal must be 60 by 20 at least\n") 1))
       (#t (do
         (def dir (%cl-data-dir opts))
-        (def name (if (null? (%cl-opt opts (lit set))) "classic" (%cl-opt opts (lit set))))
+        (def name (Opts value opts "-s" "classic"))
         (def set (data-load (Str8 append dir "/" name)))
         (def saved (save-read (save-path "save") set (rest size) (first size)))
         (def g (if (null? saved) (game-make set (%cl-seed opts) (rest size) (first size)) saved))
@@ -161,16 +151,18 @@
 ; ARGS, the command line after the launcher's options: the exit status.
 (def roguelike-main
   (fn (_ args)
-    (def opts (%cl-options args () ()))
-    (def words (%cl-opt opts (lit words)))
+    (def opts (Opts parse roguelike-options args))
+    (def words (Opts operands opts))
+    (def seed (Opts value opts "-S"))
     (match
-      ((not (null? (%cl-opt opts (lit error))))
-        (do (%cl-say 2 (Str8 append "x-roguelike: " (%cl-opt opts (lit error)) "\n" %cl-usage)) 2))
-      ((%cl-opt opts (lit help)) (do (%cl-say 1 %cl-usage) 0))
-      ((%cl-opt opts (lit version)) (do (%cl-say 1 (Str8 append "x-roguelike " roguelike-version "\n")) 0))
+      ((not (null? (Opts unknown opts)))
+        (do (%cl-say 2 (Str8 append "x-roguelike: no such option: " (Opts unknown opts) "\n" (Opts usage roguelike-options))) 2))
+      ((Opts on? opts "-h") (do (%cl-say 1 (Opts usage roguelike-options)) 0))
+      ((Opts on? opts "-V") (do (%cl-say 1 (Str8 append "x-roguelike " roguelike-version "\n")) 0))
+      ((if (null? seed) #f (null? (%cl-to-int seed))) (do (%cl-say 2 "x-roguelike: --seed takes a number\n") 2))
       ((null? words) (guard (e (do (%cl-say 2 (Str8 append "x-roguelike: " (%cl-err-text e) "\n")) 1)) (%cl-play opts)))
       ((str=? (first words) "play") (guard (e (do (%cl-say 2 (Str8 append "x-roguelike: " (%cl-err-text e) "\n")) 1)) (%cl-play opts)))
       ((str=? (first words) "scores") (%cl-scores))
-      (#t (do (%cl-say 2 (Str8 append "x-roguelike: no such command: " (first words) "\n" %cl-usage)) 2)))))
+      (#t (do (%cl-say 2 (Str8 append "x-roguelike: no such command: " (first words) "\n" (Opts usage roguelike-options))) 2)))))
 
-(provide roguelike/cli roguelike-main roguelike-version)
+(provide roguelike/cli roguelike-main roguelike-options roguelike-version)

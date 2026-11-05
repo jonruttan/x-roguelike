@@ -11,7 +11,7 @@
 ; Nothing is read at load: the harness is imaged, and the image is
 ; written from another directory.  x collects only when asked, so each
 ; level made or game started collects first.
-(import roguelike/base roguelike-version roguelike-main
+(import roguelike/base roguelike-version roguelike-main roguelike-options
   data-load data-all data-one data-get data-prop data-prop1 data-trait? data-glyph
   map-rows map-cols map-rooms map-down map-up map-tile map-seen? map-visible? map-walkable? room-lit?
   room-r0 room-c0 room-r1 room-c1 room-centre

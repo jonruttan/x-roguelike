@@ -6,7 +6,7 @@ find and work out, hunger, and one life.  Every creature, item, guise,
 message and tuning number is read from a set of `.xon` files, so a set
 is a game of its own on the same engine; `classic` is the one shipped.
 
-    x -l roguelike -- play [-set NAME] [-seed N] [-data DIR]
+    x -l roguelike -- [-s NAME] [-S N] [-d DIR] [play]
     x -l roguelike -- scores
 
 The goal lies on the deepest level.  Held, it opens the stairs up, and
@@ -42,11 +42,12 @@ file-name order.  `data/classic/` is the one shipped and documents each
 form: `game.xon` the tuning, `creatures.xon` what lives there and the
 traits it may have, `items.xon` what lies about and the effects an
 item may carry, `messages.xon` what the game says.  Another set is
-another directory: `-set NAME` under the bundle's `data/`, or `-data
-DIR` for any directory.  The engine reads a closed vocabulary of traits
+another directory: `-s NAME`, `--set NAME`, under the bundle's `data/`, or `-d
+DIR`, `--data DIR`, for any directory; `-S N`, `--seed N`, replays a dungeon.
+The engine reads a closed vocabulary of traits
 and effects; a set combines them as it likes.
 
-`delve` is the second set shipped, `-set delve`: a drowned mine of
+`delve` is the second set shipped, `--set delve`: a drowned mine of
 twelve levels carved as caves, lit by sight to a radius rather than by
 the room, with creatures that come in packs, shoot along a line and
 call for company, potions and scrolls known on sight, and no hunger.
