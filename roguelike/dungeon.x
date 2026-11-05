@@ -19,7 +19,7 @@
 
 (import x/type/vector)
 (import x/num/random)
-(import x/core/doors int/)
+(import x/core/doors int/ int+ int- int< int= int& int>> obj-ref obj-set!)
 (import roguelike/map
   tile-rock tile-floor tile-wall tile-door tile-passage tile-down tile-up
   map-make map-rows map-cols map-rooms map-rooms! map-down! map-up!
@@ -159,57 +159,77 @@
 
 (def %dg-inside?
   (fn (_ m r c)
-    (match ((< r 1) #f) ((< c 1) #f) ((< r (- (map-rows m) 1)) (< c (- (map-cols m) 1))) (#t #f))))
-(def %dg-steps (list (pair -1 0) (pair 1 0) (pair 0 -1) (pair 0 1)))
-; CELLS holds (COUNT . CARVED) in its one slot.
-(def %dg-carve-floor!
-  (fn (_ m r c cells)
-    (when (= (map-tile m r c) tile-rock)
-      (do (map-set! m r c tile-floor)
-          (Vector set! 0 (pair (+ 1 (first (Vector ref 0 cells))) (pair (pair r c) (rest (Vector ref 0 cells)))) cells)))))
-(def %dg-walk!
-  (fn (self rng m r c cells want)
-    (when (< (first (Vector ref 0 cells)) want)
-      (do (%dg-carve-floor! m r c cells)
-          (def from (if (< (rng int 100) 2) (rng choice (rest (Vector ref 0 cells))) (pair r c)))
-          (def d (rng choice %dg-steps))
-          (def nr (+ (first from) (first d)))
-          (def nc (+ (rest from) (rest d)))
-          (if (%dg-inside? m nr nc) (self rng m nr nc cells want) (self rng m (first from) (rest from) cells want))))))
+    (match ((int< r 1) #f) ((int< c 1) #f) ((int< r (int- (map-rows m) 1)) (int< c (int- (map-cols m) 1))) (#t #f))))
 
+; CELLS is a vector of the carved cells, (R . C), COUNT of them so far;
+; a pick from it is one draw, where a pick from a list walks it twice.
+(def %dg-cell (fn (_ cells i) (obj-ref cells (int+ i 1))))
+(def %dg-pick (fn (_ rng cells count) (%dg-cell cells (rng int count))))
+
+; A draw costs a fifth of a millisecond, so the walk spends one on
+; fifteen steps: BITS holds what is left of a 30-bit draw, two bits a
+; way, LEFT the ways still in it.  JUMP counts the steps to the next
+; jump, drawn from 0 to 99 after each, one step in fifty on average.
+; The walk stops once CELLS is full.
+(def %dg-draw-span 1073741824)
+(def %dg-walk!
+  (fn (self rng m r c cells count want bits left jump)
+    (match
+      ((not (int< count want)) ())
+      ((int= (map-tile m r c) tile-rock)
+        (do (map-set! m r c tile-floor)
+            (obj-set! cells (int+ count 1) (pair r c))
+            (self rng m r c cells (int+ count 1) want bits left jump)))
+      ((int= left 0) (self rng m r c cells count want (rng int %dg-draw-span) 15 jump))
+      ((int= jump 0)
+        (do (def at (%dg-pick rng cells count))
+            (self rng m (first at) (rest at) cells count want bits left (rng int 100))))
+      (#t
+        (do (def way (int& bits 3))
+            (def nr (match ((int= way 0) (int- r 1)) ((int= way 1) (int+ r 1)) (#t r)))
+            (def nc (match ((int= way 2) (int- c 1)) ((int= way 3) (int+ c 1)) (#t c)))
+            (if (%dg-inside? m nr nc)
+              (self rng m nr nc cells count want (int>> bits 2) (int- left 1) (int- jump 1))
+              (self rng m r c cells count want (int>> bits 2) (int- left 1) (int- jump 1))))))))
+
+; Every rock cell beside a carved one is wall.
 (def %dg-around
   (list (pair -1 -1) (pair -1 0) (pair -1 1) (pair 0 -1) (pair 0 1) (pair 1 -1) (pair 1 0) (pair 1 1)))
-(def %dg-beside-floor?
-  (fn (_ m r c)
-    (List any? (fn (_ d) (= (map-tile m (+ r (first d)) (+ c (rest d))) tile-floor)) %dg-around)))
+(def %dg-wall-around!
+  (fn (self m r c ds)
+    (unless (null? ds)
+      (do (def wr (int+ r (first (first ds))))
+          (def wc (int+ c (rest (first ds))))
+          (when (int= (map-tile m wr wc) tile-rock) (map-set! m wr wc tile-wall))
+          (self m r c (rest ds))))))
 (def %dg-wall-up!
-  (fn (_ m)
-    (map-each! 0 0 (- (map-rows m) 1) (- (map-cols m) 1)
-      (fn (_ r c)
-        (when (if (= (map-tile m r c) tile-rock) (%dg-beside-floor? m r c) #f) (map-set! m r c tile-wall))))))
+  (fn (self m cells i)
+    (when (int< 0 i)
+      (do (def at (%dg-cell cells (int- i 1)))
+          (%dg-wall-around! m (first at) (rest at) %dg-around)
+          (self m cells (int- i 1))))))
 
 (def %dg-abs (fn (_ n) (if (< n 0) (- 0 n) n)))
 (def %dg-max (fn (_ a b) (if (< a b) b a)))
 (def %dg-dist (fn (_ a b) (%dg-max (%dg-abs (- (first a) (first b))) (%dg-abs (- (rest a) (rest b))))))
-; The farthest from FROM of TRIES cells drawn from CARVED.
+; The farthest from FROM of TRIES cells drawn from the COUNT in CELLS.
 (def %dg-farthest
-  (fn (self rng carved from tries best bestd)
+  (fn (self rng cells count from tries best bestd)
     (if (= tries 0) best
       ((fn (_ at)
-         (if (< bestd (%dg-dist at from)) (self rng carved from (- tries 1) at (%dg-dist at from))
-           (self rng carved from (- tries 1) best bestd)))
-       (rng choice carved)))))
+         (if (< bestd (%dg-dist at from)) (self rng cells count from (- tries 1) at (%dg-dist at from))
+           (self rng cells count from (- tries 1) best bestd)))
+       (%dg-pick rng cells count)))))
 
 (def %dg-caves!
   (fn (_ rng m params)
-    (def cells (Vector of (pair 0 ())))
     (def want (int/ (* (* (map-rows m) (map-cols m)) (first (%dg-p params (lit cave-fill) (list 40)))) 100))
-    (%dg-walk! rng m (int/ (map-rows m) 2) (int/ (map-cols m) 2) cells want)
-    (%dg-wall-up! m)
-    (def carved (rest (Vector ref 0 cells)))
-    (def up (rng choice carved))
+    (def cells (Vector make want ()))
+    (%dg-walk! rng m (int/ (map-rows m) 2) (int/ (map-cols m) 2) cells 0 want 0 0 (rng int 100))
+    (%dg-wall-up! m cells want)
+    (def up (%dg-pick rng cells want))
     (map-rooms! m ())
-    (%dg-stairs! m up (%dg-farthest rng carved up 40 up 0))))
+    (%dg-stairs! m up (%dg-farthest rng cells want up 40 up 0))))
 
 ; A level of ROWS by COLS at DEPTH, by PARAMS: rooms, or caves with
 ; (level-style caves).
