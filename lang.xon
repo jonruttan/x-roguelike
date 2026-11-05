@@ -1,0 +1,14 @@
+; lang.xon -- what this bundle is.
+
+(lang "roguelike")
+
+; Self-contained: this bundle depends on nothing but the platform.
+;
+; Helium, plus exactly the libraries this bundle imports and nothing
+; ambient: the terminal, files, the random source and xon, none of the
+; tower.
+(dialect he)
+
+(requires-release "v0.45.0")
+
+(entry "run.x")

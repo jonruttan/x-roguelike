@@ -1,0 +1,56 @@
+; game.xon -- the classic set: how a game of it is tuned.
+;
+; A set is every .xon file in its directory, read in name order.  Each
+; form is (HEAD . ARGS); the engine asks for the heads it knows and
+; takes the first of each.
+
+(set "classic")
+(title "The Sunken Vault")
+
+; The goal: its name, its glyph, and the level it lies on.  Once held,
+; the stairs up open, and the surface is the win.
+(goal "the Sunstone" "*" 20)
+
+; The player at the start: hit points and strength; the dice of a blow
+; with bare hands.
+(player 12 16)
+(unarmed 1 2)
+
+; Food at the start; when hunger is felt; when it weakens.  At zero the
+; player faints now and then, and starves soon after.
+(hunger 1300 300 150)
+
+; A level: how many rooms, a room's floor (width low and high, height
+; low and high), the percent a room is lit at level 1 and what that
+; changes a level, how many creatures and items, the chance a thing is
+; gold and a pile's size (times the depth).
+(rooms 6 9)
+(room-size 4 12 3 6)
+(lit 95 -4)
+(creatures 3 6)
+(items 4 8)
+(gold 35 5 25)
+
+; Experience for level 2, doubling a level; turns a hit point comes back
+; in at level 1; the chance, one in N a turn, a creature wanders in.
+(exp 10)
+(regen 20)
+(wander 60)
+
+; What is drawn.
+(glyph floor ".")
+(glyph wall "#")
+(glyph door "+")
+(glyph passage "#")
+(glyph down ">")
+(glyph up "<")
+(glyph player "@")
+(glyph potion "!")
+(glyph scroll "?")
+(glyph wand "/")
+(glyph ring "=")
+(glyph weapon ")")
+(glyph armour "[")
+(glyph food ":")
+(glyph gold "$")
+(glyph goal "*")
