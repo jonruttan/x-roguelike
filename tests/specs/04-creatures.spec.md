@@ -1,0 +1,93 @@
+# Creatures
+# @weight 1
+
+roguelike/creatures and roguelike/combat: what wakes, what strikes,
+what runs, what dies, and the messages that outrun the row.
+
+
+## striking
+
+### an awake creature beside the player strikes each turn
+
+```roguelike
+(def g (spec-calm 5 ()))
+(def open (spec-open g))
+(def cr (spec-place! g "cave rat" (first (rest open)) (rest (rest open)) 100 'awake))
+(game-key! g ".")
+(def struck? (fn (_ m) (if (str=? m "The cave rat hits you.") #t (str=? m "The cave rat misses you."))))
+(write (list (List all? struck? (game-messages g)) (List length (game-messages g)) (= (creature-r cr) (first (rest open))) (= (creature-c cr) (rest (rest open)))))
+```
+---
+    (#t 1 #t #t)
+
+### a sleeping one beside the player wakes
+
+```roguelike
+(def g (spec-calm 5 ()))
+(def open (spec-open g))
+(def cr (spec-place! g "cave rat" (first (rest open)) (rest (rest open)) 100 'asleep))
+(def before (creature-state cr))
+(game-key! g ".")
+(write (list before (creature-state cr)))
+```
+---
+    ('asleep 'awake)
+
+### walking into a creature attacks it; slain, it is worth experience
+
+```roguelike
+(def g (spec-calm 5 ()))
+(def open (spec-open g))
+(spec-place! g "cave rat" (first (rest open)) (rest (rest open)) 1 'awake)
+(def presses (spec-press-until g (first open) (fn (_) (null? (game-creatures g))) 50))
+(write (list (< 0 presses) (= presses (game-turn g)) (player-exp (game-player g))
+             (List any? (fn (_ m) (str=? m "You have slain the cave rat.")) (game-messages g))))
+```
+---
+    (#t #t 2 #t)
+
+### a skittish creature badly hurt runs
+
+```roguelike
+(def g (spec-calm 5 ()))
+(def open (spec-open g))
+(def cr (spec-place! g "brute" (first (rest open)) (rest (rest open)) 1 'awake))
+(game-key! g ".")
+(write (creature-state cr))
+```
+---
+    'fleeing
+
+### the player can die
+
+```roguelike
+(def g (spec-calm 5 ()))
+(def open (spec-open g))
+(spec-place! g "brute" (first (rest open)) (rest (rest open)) 100 'awake)
+(player-hp! (game-player g) 1)
+(spec-press-until g "." (fn (_) (not (null? (game-over g)))) 100)
+(def over (game-over g))
+(def turn (game-turn g))
+(game-key! g ".")
+(write (list over (game-epitaph g) (player-hp (game-player g)) (= turn (game-turn g))
+             (Str8 ends? "--any key--" (spec-row g 0))))
+```
+---
+    ('dead "killed by a brute" 0 #t #t)
+
+## the row
+
+### messages that outrun the row wait on --More--
+
+```roguelike
+(def g (spec-calm 5 (list ".")))
+(state-say! g "Something happens over here.")
+(state-say! g "Something happens over there.")
+(state-say! g "Something happens again.")
+(game-more! g)
+(def row (spec-row g 0))
+(game-key! g " ")
+(write (list row (game-messages g) (null? (game-ask g)) (game-turn g)))
+```
+---
+    ("Something happens over here.  Something happens over there.  --More--" ("Something happens again.") #t 1)

@@ -1,0 +1,32 @@
+; creatures.xon -- the classic set: what lives in the vault.
+;
+; (creature NAME GLYPH . PROPS): (depth LO HI) the levels it is found
+; on, (level N) its skill at striking, (hp LO HI), (attack LO HI) the
+; dice of its blow, (defence N), (exp N) its worth, and (traits ...):
+;
+;   erratic     wanders half the time      wakeful    never found asleep
+;   fast        two moves a turn           slow       a move every other turn
+;   regen       heals as it goes           stationary never moves
+;   skittish    runs when badly hurt       invisible  unseen without clear sight
+;   venom       weakens                    sticky     holds you
+;   dazzle      confuses                   cold       slows you
+;   drain       takes vigour               thief      steals a thing and runs
+;   breath      spits (bolt LO HI) along a line; (breath "what")
+
+(creature "cave rat" "r" (depth 1 4) (level 1) (hp 2 6) (attack 1 3) (defence 2) (exp 2) (traits erratic))
+(creature "glow moth" "m" (depth 1 5) (level 1) (hp 1 4) (attack 1 2) (defence 4) (exp 2) (traits erratic dazzle wakeful))
+(creature "pale grub" "w" (depth 1 6) (level 1) (hp 4 10) (attack 1 4) (defence 1) (exp 3) (traits slow))
+(creature "scuttler" "s" (depth 2 7) (level 2) (hp 3 9) (attack 1 4) (defence 3) (exp 5) (traits venom))
+(creature "mire leech" "L" (depth 2 8) (level 2) (hp 5 12) (attack 1 3) (defence 2) (exp 6) (traits sticky slow))
+(creature "ash hound" "h" (depth 3 9) (level 3) (hp 6 14) (attack 1 6) (defence 4) (exp 9) (traits fast))
+(creature "magpie" "p" (depth 3 10) (level 2) (hp 4 10) (attack 1 2) (defence 5) (exp 8) (traits thief fast wakeful))
+(creature "hollow man" "H" (depth 4 11) (level 4) (hp 10 20) (attack 2 7) (defence 4) (exp 15) (traits regen))
+(creature "stone sentinel" "S" (depth 5 13) (level 5) (hp 18 30) (attack 3 10) (defence 7) (exp 25) (traits stationary))
+(creature "cold wisp" "W" (depth 5 12) (level 4) (hp 6 12) (attack 1 5) (defence 6) (exp 18) (traits cold erratic invisible))
+(creature "brute" "O" (depth 7 15) (level 6) (hp 20 36) (attack 4 12) (defence 4) (exp 40) (traits skittish))
+(creature "marsh hulk" "T" (depth 8 16) (level 7) (hp 24 40) (attack 3 10) (defence 5) (exp 55) (traits regen))
+(creature "tunnel worm" "~" (depth 9 18) (level 8) (hp 40 60) (attack 4 14) (defence 3) (exp 80) (traits slow))
+(creature "grave shade" "G" (depth 10 19) (level 8) (hp 16 28) (attack 2 8) (defence 7) (exp 70) (traits drain))
+(creature "night stalker" "N" (depth 12 20) (level 9) (hp 20 32) (attack 3 12) (defence 8) (exp 90) (traits invisible fast))
+(creature "ember drake" "D" (depth 14 20) (level 11) (hp 50 80) (attack 5 16) (defence 8) (exp 200) (traits breath) (bolt 6 18) (breath "a gout of flame"))
+(creature "vault warden" "V" (depth 18 20) (level 12) (hp 60 90) (attack 6 18) (defence 9) (exp 300) (traits regen wakeful))
