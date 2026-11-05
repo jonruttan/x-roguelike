@@ -27,9 +27,9 @@
 (import roguelike/game game-make game-key! game-more! game-score game-help)
 (import roguelike/draw game-draw!)
 (import roguelike/save save-write! save-read save-score! save-scores)
-(import roguelike/cli roguelike-main roguelike-version)
+(import roguelike/cli roguelike-main roguelike-options roguelike-version)
 
-(provide roguelike/base roguelike-version roguelike-main
+(provide roguelike/base roguelike-version roguelike-main roguelike-options
   data-load data-all data-one data-get data-prop data-prop1 data-trait? data-glyph
   map-rows map-cols map-rooms map-down map-up map-tile map-seen? map-visible? map-walkable? room-lit?
   room-r0 room-c0 room-r1 room-c1 room-centre
