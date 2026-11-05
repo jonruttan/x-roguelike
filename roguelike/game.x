@@ -31,12 +31,12 @@
   player-r player-c player-at! player-hp player-hp! player-hpmax player-level player-food player-food!
   player-condition player-tick! player-armour player-rings player-gold
   state-say! state-tell! state-text state-clear-messages! state-clear-log! state-roll state-chance? state-dir state-dirs
-  state-creature-at state-items-at state-ring? item-class? item-class item-name item-letter creature-name)
+  state-creature-at state-items-at state-ring? item-class? item-class item-name creature-name)
 (import roguelike/combat combat-player-attacks! combat-hurt-player!)
 (import roguelike/creatures
   creatures-spawn! creatures-wander! creatures-act! creatures-door-diagonal? creatures-shown?)
 (import roguelike/items
-  items-spawn! items-place-goal! items-goal-held? items-name items-worn items-by-letter items-pickup!
+  items-spawn! items-place-goal! items-goal-held? items-name items-worn items-pack-lines items-by-letter items-pickup!
   items-drop! items-quaff! items-read! items-zap! items-eat! items-wield! items-wear! items-take-off!
   items-put-on! items-remove!)
 
@@ -257,8 +257,7 @@
 
 (def %gm-pack-lines
   (fn (_ g)
-    (if (null? (game-pack g)) (list "Your pack is empty.")
-      (List map (fn (_ it) (Str8 append (item-letter it) ") " (items-name g it) (items-worn g it))) (game-pack g)))))
+    (if (null? (game-pack g)) (list "Your pack is empty.") (items-pack-lines g ()))))
 
 (def %gm-zap!
   (fn (_ g it)

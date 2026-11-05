@@ -10,7 +10,8 @@
 ; being asked; the level fills the rows between; the last row is the
 ; player's standing.  Cells seen are drawn dim, cells in view plain;
 ; items where they were seen, creatures only in view, the player last.
-; A list being looked at -- the pack, the keys -- lies over the level.
+; A list being looked at -- the pack, the keys -- lies over the level,
+; and so do the items a question for one can take.
 
 (module roguelike/draw)
 
@@ -30,7 +31,7 @@
   game-param state-defence)
 (import roguelike/combat combat-exp-for)
 (import roguelike/creatures creatures-shown?)
-(import roguelike/items items-glyph)
+(import roguelike/items items-glyph items-pack-lines)
 (import roguelike/game game-help game-score)
 
 (def %dr-plain 0)
@@ -54,18 +55,20 @@
     (List for-each (fn (_ p) (Vector set! (first p) (Char ->int (Str8 ref 0 (data-glyph set (rest p) "?"))) v)) %dr-tile-names)
     v))
 
-; Row R drawn: every seen cell's glyph as one dim text, each run of
-; cells in view put again plain.
+; Row R drawn: every seen cell's glyph as one dim text, a blank for the
+; rest, so the row is written whole even with nothing seen and nothing
+; laid over it last time stays; each run of cells in view put again
+; plain.
 (def %dr-row!
   (fn (_ s m r bytes buf)
     (def cols (map-cols m))
-    (when (map-row-glyphs! m r bytes buf)
-      (do (screen-put! s (+ r 1) 0 buf %dr-dim)
-          ((fn (self c)
-             (when (< c cols)
-               ((fn (_ e) (screen-put! s (+ r 1) c (Str8 sub c (- e c) buf) %dr-plain) (self (map-visible-next m r e)))
-                (map-visible-run m r c))))
-           (map-visible-next m r 0))))))
+    (map-row-glyphs! m r bytes buf)
+    (screen-put! s (+ r 1) 0 buf %dr-dim)
+    ((fn (self c)
+       (when (< c cols)
+         ((fn (_ e) (screen-put! s (+ r 1) c (Str8 sub c (- e c) buf) %dr-plain) (self (map-visible-next m r e)))
+          (map-visible-run m r c))))
+     (map-visible-next m r 0))))
 
 ; The tile bytes and the item glyphs of a set, made once and kept
 ; against the set they were made from.
@@ -157,11 +160,15 @@
       (do (Screen fill s r 0 (+ 2 (Str8 length (first lines))) %dr-plain)
           (screen-put! s r 1 (first lines) %dr-plain)
           (self s (+ r 1) (rest lines))))))
+; A list looked at, or the pack's items a question can take, over the
+; level.
 (def %dr-overlay!
   (fn (_ g s)
     (def q (game-ask g))
-    (when (if (null? q) #f (eq? (first q) (lit look)))
-      (%dr-lines! s 1 (List ref 3 q)))))
+    (match ((null? q) ())
+           ((eq? (first q) (lit look)) (%dr-lines! s 1 (List ref 3 q)))
+           ((eq? (first q) (lit item)) (%dr-lines! s 1 (items-pack-lines g (List ref 3 q))))
+           (#t ()))))
 
 ; G drawn on S: S.  The level's rows are written whole; the first and
 ; last rows are blanked before their text.
