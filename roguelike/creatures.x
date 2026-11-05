@@ -55,6 +55,26 @@
            ((state-chance? (game-rng g) 60) (lit asleep))
            (#t (lit awake)))))
 
+(def %cr-around
+  (list (pair -1 -1) (pair -1 0) (pair -1 1) (pair 0 -1) (pair 0 1) (pair 1 -1) (pair 1 0) (pair 1 1)))
+
+; A creature of KIND at R C in STATE: the one, or, for a kind with
+; (pack LO HI), that many at most, the rest on free cells around it.
+(def creatures-place!
+  (fn (_ g kind r c state)
+    (def pack (data-prop kind (lit pack) ()))
+    (def more (if (null? pack) 0 (- (state-roll (game-rng g) (first pack) (List ref 1 pack)) 1)))
+    (game-creatures! g (pair (creature-make kind r c (%cr-hp g kind) state) (game-creatures g)))
+    ((fn (self dirs n)
+       (unless (if (null? dirs) #t (< n 1))
+         (do (def rr (+ r (first (first dirs))))
+             (def cc (+ c (rest (first dirs))))
+             (if (state-free? g rr cc)
+               (do (game-creatures! g (pair (creature-make kind rr cc (%cr-hp g kind) state) (game-creatures g)))
+                   (self (rest dirs) (- n 1)))
+               (self (rest dirs) n)))))
+     ((game-rng g) shuffle %cr-around) more)))
+
 ; One creature of the depth, out of view, AWAKE? or as it comes.
 (def creatures-spawn-one!
   (fn (_ g awake?)
@@ -64,8 +84,7 @@
           (def at (dungeon-spot (game-rng g) (game-map g)
                     (fn (_ r c) (if (state-free? g r c) (not (map-visible? (game-map g) r c)) #f)) 100))
           (unless (null? at)
-            (game-creatures! g (pair (creature-make kind (first at) (rest at) (%cr-hp g kind) (%cr-start g kind awake?))
-                                     (game-creatures g))))))))
+            (creatures-place! g kind (first at) (rest at) (%cr-start g kind awake?)))))))
 
 (def creatures-spawn!
   (fn (self g n awake?) (unless (< n 1) (do (creatures-spawn-one! g awake?) (self g (- n 1) awake?)))))
@@ -130,18 +149,46 @@
     (def ar (if (< dr 0) (- 0 dr) dr))
     (def ac (if (< dc 0) (- 0 dc) dc))
     (match ((< 7 ar) #f) ((< 7 ac) #f) ((= ar 0) #t) ((= ac 0) #t) ((= ar ac) #t) (#t #f))))
+; A creature with breath, (bolt LO HI), or ranged, (ranged LO HI),
+; lets fly along a line to the player, three times in ten.
 (def %cr-breathes?
   (fn (_ g cr)
-    (match ((not (creature-trait? cr (lit breath))) #f)
+    (match ((not (if (creature-trait? cr (lit breath)) #t (creature-trait? cr (lit ranged)))) #f)
            ((not (%cr-in-line? cr (game-player g))) #f)
            (#t (state-chance? (game-rng g) 30)))))
 (def %cr-breathe!
   (fn (_ g cr)
-    (def bolt (creature-prop cr (lit bolt) (list 2 8)))
-    (state-tell! g (lit breath) "The {name} breathes {what} at you!"
-      (list (pair "name" (creature-name cr)) (pair "what" (creature-prop1 cr (lit breath) "fire"))))
-    (combat-hurt-player! g (state-roll (game-rng g) (first bolt) (List ref 1 bolt))
-      (Str8 append "burned by a " (creature-name cr)))))
+    (if (creature-trait? cr (lit breath))
+      (do (def bolt (creature-prop cr (lit bolt) (list 2 8)))
+          (state-tell! g (lit breath) "The {name} breathes {what} at you!"
+            (list (pair "name" (creature-name cr)) (pair "what" (creature-prop1 cr (lit breath) "fire"))))
+          (combat-hurt-player! g (state-roll (game-rng g) (first bolt) (List ref 1 bolt))
+            (Str8 append "burned by a " (creature-name cr))))
+      (do (def shot (creature-prop cr (lit ranged) (list 1 4)))
+          (state-tell! g (lit shot) "The {name} shoots {what} at you!"
+            (list (pair "name" (creature-name cr)) (pair "what" (creature-prop1 cr (lit shot) "something"))))
+          (combat-hurt-player! g (state-roll (game-rng g) (first shot) (List ref 1 shot))
+            (Str8 append "shot by a " (creature-name cr)))))))
+
+; A creature with (summon NAME) calls one of that kind to its side,
+; one turn in ten while the player is in view.
+(def %cr-summons?
+  (fn (_ g cr)
+    (match ((not (creature-trait? cr (lit summon))) #f)
+           ((not (map-visible? (game-map g) (creature-r cr) (creature-c cr))) #f)
+           (#t (state-chance? (game-rng g) 10)))))
+(def %cr-summon!
+  (fn (_ g cr)
+    (def name (creature-prop1 cr (lit summon) ""))
+    (def kind (List find (fn (_ k) (str=? (first k) name)) (data-all (game-set g) (lit creature))))
+    (def spot (List find (fn (_ d) (state-free? g (+ (creature-r cr) (first d)) (+ (creature-c cr) (rest d))))
+                ((game-rng g) shuffle %cr-around)))
+    (unless (if (null? kind) #t (null? spot))
+      (do (game-creatures! g (pair (creature-make kind (+ (creature-r cr) (first spot)) (+ (creature-c cr) (rest spot))
+                                                  (%cr-hp g kind) (lit awake))
+                                   (game-creatures g)))
+          (state-tell! g (lit summoned) "The {name} calls, and a {what} answers."
+            (list (pair "name" (creature-name cr)) (pair "what" name)))))))
 
 ; A skittish creature runs when down to a quarter of its hit points, and
 ; comes back once over half; one that stole something keeps running.
@@ -166,9 +213,10 @@
     (match
       ((< 0 (creature-condition cr (lit held))) ())
       ((eq? (creature-state cr) (lit asleep)) (%cr-maybe-wake! g cr))
+      ((%cr-breathes? g cr) (%cr-breathe! g cr))
+      ((%cr-summons? g cr) (%cr-summon! g cr))
       ((eq? (creature-state cr) (lit fleeing)) (%cr-away! g cr (player-r p) (player-c p)))
       ((state-adjacent? (creature-r cr) (creature-c cr) (player-r p) (player-c p)) (combat-creature-attacks! g cr))
-      ((%cr-breathes? g cr) (%cr-breathe! g cr))
       ((creature-trait? cr (lit stationary)) ())
       ((if (creature-trait? cr (lit erratic)) (state-chance? (game-rng g) 50) #f) (%cr-random-step! g cr))
       (#t (%cr-toward! g cr (player-r p) (player-c p))))))
@@ -218,5 +266,5 @@
       (game-creatures g))))
 
 (provide roguelike/creatures
-  creatures-kinds creatures-spawn-one! creatures-spawn! creatures-wander! creatures-door-diagonal?
+  creatures-kinds creatures-place! creatures-spawn-one! creatures-spawn! creatures-wander! creatures-door-diagonal?
   creatures-can-step? creatures-act! creatures-shown? creatures-wake-all! creatures-scare!)

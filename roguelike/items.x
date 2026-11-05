@@ -88,7 +88,11 @@
 ; --- naming ------------------------------------------------------------------
 
 (def %it-str=? (fn (_ a) (fn (_ b) (str=? a b))))
-(def items-known? (fn (_ g it) (List any? (%it-str=? (item-name it)) (game-known g))))
+; Known: used before, or of a class the set's (known CLASS ...) names.
+(def items-known?
+  (fn (_ g it)
+    (if (List includes? (item-class it) (game-param g (lit known) ())) #t
+      (List any? (%it-str=? (item-name it)) (game-known g)))))
 (def items-know!
   (fn (_ g it) (unless (items-known? g it) (game-known! g (pair (item-name it) (game-known g))))))
 

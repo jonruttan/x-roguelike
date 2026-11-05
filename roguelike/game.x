@@ -18,19 +18,23 @@
 (module roguelike/game)
 
 (import x/type/vector)
-(import roguelike/map map-tile map-up map-down map-walkable? map-light! tile-down tile-up)
+(import x/sys/gc)
+(import roguelike/map
+  map-rows map-cols map-in? map-tile map-up map-down map-walkable? map-seen? map-light! map-light-radius!
+  tile-rock tile-down tile-up)
 (import roguelike/dungeon dungeon-generate)
 (import roguelike/state
   game-rng game-set game-depth game-depth! game-map game-map! game-player game-creatures game-creatures!
   game-floor game-floor! game-pack game-turn game-turn! game-ask game-ask! game-over game-over!
   game-deepest game-deepest! game-rows game-cols game-param game-param1 game-new game-epitaph!
-  game-messages game-messages!
+  game-messages game-messages! game-log
   player-r player-c player-at! player-hp player-hp! player-hpmax player-level player-food player-food!
   player-condition player-tick! player-armour player-rings player-gold
-  state-say! state-tell! state-text state-clear-messages! state-roll state-chance? state-dir state-dirs
-  state-creature-at state-items-at state-ring? item-class? item-class item-name)
+  state-say! state-tell! state-text state-clear-messages! state-clear-log! state-roll state-chance? state-dir state-dirs
+  state-creature-at state-items-at state-ring? item-class? item-class item-name creature-name)
 (import roguelike/combat combat-player-attacks! combat-hurt-player!)
-(import roguelike/creatures creatures-spawn! creatures-wander! creatures-act! creatures-door-diagonal?)
+(import roguelike/creatures
+  creatures-spawn! creatures-wander! creatures-act! creatures-door-diagonal? creatures-shown?)
 (import roguelike/items
   items-spawn! items-place-goal! items-goal-held? items-name items-worn items-by-letter items-pickup!
   items-drop! items-quaff! items-read! items-zap! items-eat! items-wield! items-wear! items-take-off!
@@ -40,12 +44,15 @@
 
 ; --- levels ------------------------------------------------------------------
 
-; What is in view, from where the player stands; nothing, blind.
+; What is in view, from where the player stands: by the room, or by
+; sight within the set's (view N); nothing, blind.
 (def %gm-light!
   (fn (_ g)
     (def p (game-player g))
-    (if (< 0 (player-condition p (lit blind))) (map-light! (game-map g) -9 -9)
-      (map-light! (game-map g) (player-r p) (player-c p)))))
+    (def view (game-param1 g (lit view) 0))
+    (match ((< 0 (player-condition p (lit blind))) (map-light! (game-map g) -9 -9))
+           ((< 0 view) (map-light-radius! (game-map g) (player-r p) (player-c p) view))
+           (#t (map-light! (game-map g) (player-r p) (player-c p))))))
 
 ; A level made for the depth: HOSTILE? on the way up, with more
 ; creatures and all awake; the player ARRIVING at the stairs up or down.
@@ -85,6 +92,7 @@
     (def g (game-new set seed rows cols))
     (%gm-descend! g)
     (state-clear-messages! g)
+    (state-clear-log! g)
     (state-tell! g (lit welcome) "You enter the dungeon." ())
     g))
 
@@ -94,10 +102,11 @@
   (fn (_ g)
     (def p (game-player g))
     (def spec (game-param g (lit hunger) (list 1300 300 150)))
-    (unless (if (state-ring? g (lit sustenance)) (= 1 (% (game-turn g) 2)) #f)
+    (unless (if (state-ring? g (lit sustenance)) (= 1 (% (game-turn g) 2)) (< (List ref 0 spec) 1))
       (player-food! p (- (player-food p) 1)))
     (def f (player-food p))
     (match
+      ((< (List ref 0 spec) 1) ())
       ((= f (List ref 1 spec)) (state-tell! g (lit hungry) "You are getting hungry." ()))
       ((= f (List ref 2 spec)) (state-tell! g (lit weak) "You are weak with hunger." ()))
       ((< f -150) (combat-hurt-player! g 10000 (state-text g (lit starved) "starved to death" ())))
@@ -155,6 +164,68 @@
       ((not (map-walkable? (game-map g) r c)) #f)
       ((creatures-door-diagonal? (game-map g) (player-r p) (player-c p) (first d) (rest d)) #f)
       (#t (do (player-at! p r c) (%gm-light! g) (%gm-note-floor! g) #t)))))
+
+; --- exploring ---------------------------------------------------------------
+
+; Whether R C of M, seen and walkable, lies beside a cell not yet seen
+; that is not rock: a place worth walking to.
+(def %gm-frontier?
+  (fn (_ m r c)
+    (List any? (fn (_ d)
+                 (def rr (+ r (first d)))
+                 (def cc (+ c (rest d)))
+                 (match ((not (map-in? m rr cc)) #f) ((map-seen? m rr cc) #f) (#t (not (= (map-tile m rr cc) tile-rock)))))
+      (state-dirs))))
+
+; The first step, (DR . DC), of the shortest walk over seen cells from
+; the player to the nearest frontier, or nil with none: a breadth-first
+; search, each cell remembering the first step that reached it.
+(def %gm-explore-step
+  (fn (_ g)
+    (def m (game-map g))
+    (def p (game-player g))
+    (def cols (map-cols m))
+    (def came (Vector make (* (map-rows m) cols) ()))
+    (def at (fn (_ r c) (+ (* r cols) c)))
+    (def reach
+      (fn (_ r c step)
+        (List reject null?
+          (List map (fn (_ d)
+                      (def rr (+ r (first d)))
+                      (def cc (+ c (rest d)))
+                      (match ((not (map-in? m rr cc)) ())
+                             ((not (map-seen? m rr cc)) ())
+                             ((not (map-walkable? m rr cc)) ())
+                             ((creatures-door-diagonal? m r c (first d) (rest d)) ())
+                             ((not (null? (Vector ref (at rr cc) came))) ())
+                             (#t (do (Vector set! (at rr cc) (if (null? step) d step) came) (pair rr cc)))))
+                    (state-dirs)))))
+    (def search
+      (fn (self front back)
+        (match
+          ((null? front) (if (null? back) () (self (List reverse back) ())))
+          (#t (do (def r (first (first front)))
+                  (def c (rest (first front)))
+                  (def step (Vector ref (at r c) came))
+                  (if (if (eq? step #t) #f (%gm-frontier? m r c)) step
+                    (self (rest front) (List append (reach r c (if (eq? step #t) () step)) back))))))))
+    (Vector set! (at (player-r p) (player-c p)) #t came)
+    (search (list (pair (player-r p) (player-c p))) ())))
+
+; Walk toward what is not yet seen, a turn a step, until a creature is
+; in view, nothing is left to see, or a hundred steps are taken.
+(def %gm-explore!
+  (fn (self g n)
+    (def shown (List find (fn (_ cr) (creatures-shown? g cr)) (game-creatures g)))
+    (match
+      ((not (null? (game-over g))) #f)
+      ((not (null? shown))
+        (do (when (= n 0) (state-tell! g (lit creature-near) "You see a {name}." (list (pair "name" (creature-name shown))))) #f))
+      ((= n 100) #f)
+      (#t ((fn (_ d)
+             (if (null? d) (do (when (= n 0) (state-tell! g (lit explored) "Nothing left to explore." ())) #f)
+               (do (%gm-move! g (first d) (rest d)) (%gm-end-turn! g) (Heap collect) (self g (+ n 1)))))
+           (%gm-explore-step g))))))
 
 ; --- commands ----------------------------------------------------------------
 
@@ -218,6 +289,8 @@
     (pair "P" (fn (_ g) (%gm-ask-item! g "Put on what?" (lit ring) (fn (_ it) (%gm-use-ring! g it)))))
     (pair "R" (fn (_ g) (%gm-ask-item! g "Remove what?" (lit ring) (fn (_ it) (%gm-use-ring! g it)))))
     (pair "d" (fn (_ g) (%gm-ask-item! g "Drop what?" () (fn (_ it) (items-drop! g it) #t))))
+    (pair "o" (fn (_ g) (%gm-explore! g 0)))
+    (pair "L" (fn (_ g) (%gm-look! g "Lately:" (List reverse (List take 20 (game-log g))))))
     (pair "?" (fn (_ g) (%gm-look! g "The keys:" (game-help g))))
     (pair "Q" (fn (_ g) (do (game-ask! g (list (lit yn) "Really quit?" (fn (_) (game-over! g (lit quit)) (game-epitaph! g "quit") #f))) #f)))
     (pair "S" (fn (_ g) (do (game-over! g (lit saved)) #f)))))
@@ -297,6 +370,8 @@
   (fn (_ g)
     (list "h j k l y u b n  move; the arrows too.  Walk into a creature to attack it."
           ".  s   rest a turn          ,  g   pick up what is here"
+          "o      explore what is unseen until something comes into view"
+          "L      what has been said lately"
           ">      go down the stairs   <      go up, with the goal in hand"
           "i      your pack            d      drop a thing"
           "q      quaff a potion       r      read a scroll"

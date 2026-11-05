@@ -14,17 +14,18 @@
 (import roguelike/base roguelike-version roguelike-main
   data-load data-all data-one data-get data-prop data-prop1 data-trait? data-glyph
   map-rows map-cols map-rooms map-down map-up map-tile map-seen? map-visible? map-walkable? room-lit?
-  map-room-at tile-rock tile-floor tile-wall tile-door tile-passage tile-down tile-up
+  room-r0 room-c0 room-r1 room-c1 room-centre
+  map-room-at map-light-radius! tile-rock tile-floor tile-wall tile-door tile-passage tile-down tile-up
   dungeon-generate
   game-make game-key! game-more! game-score game-help game-draw!
-  game-depth game-map game-player game-creatures game-creatures! game-floor game-floor! game-pack game-pack!
+  game-set game-depth game-map game-player game-creatures game-creatures! game-floor game-floor! game-pack game-pack!
   game-messages game-turn game-ask game-over game-epitaph game-known game-deepest game-log
   player-r player-c player-at! player-hp player-hp! player-hpmax player-str player-level player-exp player-gold
   player-food player-food! player-condition player-weapon player-armour player-rings
   creature-make creature-r creature-c creature-at! creature-hp creature-hp! creature-state creature-state!
-  creature-name item-make item-name item-count item-charges item-enchant item-letter item-r item-c item-at!
-  item-class state-say!
-  items-name items-new items-known? creatures-kinds
+  creature-name creature-glyph creature-trait? item-make item-name item-count item-charges item-enchant item-letter item-r item-c item-at!
+  item-class state-say! state-dist state-adjacent?
+  items-name items-new items-known? creatures-kinds creatures-place!
   save-write! save-read save-score! save-scores)
 (import x/sys/gc)
 (import x/sys/file)
@@ -39,13 +40,26 @@
     (when (null? (Vector ref 0 %spec-set-cell)) (Vector set! 0 (data-load "data/classic") %spec-set-cell))
     (Vector ref 0 %spec-set-cell)))
 
-; A 24 by 80 game on the classic set from SEED, each of KEYS taken.
-(def spec-game
-  (fn (_ seed keys)
+; The set named NAME under data/, read once.
+(def %spec-sets (Vector of ()))
+(def spec-set-named
+  (fn (_ name)
+    (def hit (Assoc find name (Vector ref 0 %spec-sets)))
+    (if (null? hit)
+      ((fn (_ set) (Vector set! 0 (pair (pair name set) (Vector ref 0 %spec-sets)) %spec-sets) set)
+       (data-load (Str8 append "data/" name)))
+      (rest hit))))
+
+; A 24 by 80 game on SET from SEED, each of KEYS taken.
+(def spec-game-on
+  (fn (_ set seed keys)
     (Heap collect)
-    (def g (game-make (spec-set) seed 24 80))
+    (def g (game-make set seed 24 80))
     (List for-each (fn (_ k) (game-key! g k)) keys)
     g))
+
+; A 24 by 80 game on the classic set from SEED, each of KEYS taken.
+(def spec-game (fn (_ seed keys) (spec-game-on (spec-set) seed keys)))
 
 ; The same, with every creature of the level gone: a game to place
 ; things in.
@@ -63,11 +77,12 @@
     (List map (fn (_ r) (Str8 trim-right (Screen row-text s r))) (List range 0 24))))
 (def spec-row (fn (_ g r) (List ref r (spec-screen g))))
 
-; The seeded level, 22 by 80, at DEPTH.
-(def spec-level
-  (fn (_ seed depth)
+; The seeded level, 22 by 80, at DEPTH, of the classic set or of SET.
+(def spec-level-on
+  (fn (_ set seed depth)
     (Heap collect)
-    (dungeon-generate (Random sw seed) 22 80 depth (spec-set))))
+    (dungeon-generate (Random sw seed) 22 80 depth set)))
+(def spec-level (fn (_ seed depth) (spec-level-on (spec-set) seed depth)))
 
 ; F of the level from each of SEEDS at DEPTH, as a list, the heap
 ; collected between.
@@ -76,14 +91,14 @@
 
 ; --- placing things ----------------------------------------------------------
 
-; The set's item form named NAME; the creature kind named NAME.
-(def spec-item (fn (_ name) (List find (fn (_ f) (str=? (List ref 1 f) name)) (data-all (spec-set) 'item))))
-(def spec-creature (fn (_ name) (List find (fn (_ k) (str=? (first k) name)) (data-all (spec-set) 'creature))))
+; G's set's item form named NAME; its creature kind named NAME.
+(def spec-item (fn (_ g name) (List find (fn (_ f) (str=? (List ref 1 f) name)) (data-all (game-set g) 'item))))
+(def spec-creature (fn (_ g name) (List find (fn (_ k) (str=? (first k) name)) (data-all (game-set g) 'creature))))
 
 ; A new item of the set's NAME put on the floor under the player.
 (def spec-drop-here!
   (fn (_ g name)
-    (def it (items-new g (spec-item name)))
+    (def it (items-new g (spec-item g name)))
     (item-at! it (player-r (game-player g)) (player-c (game-player g)))
     (game-floor! g (pair it (game-floor g)))
     it))
@@ -104,14 +119,14 @@
 ; A creature of the set's NAME with HP, awake or not, put at R C.
 (def spec-place!
   (fn (_ g name r c hp state)
-    (def cr (creature-make (spec-creature name) r c hp state))
+    (def cr (creature-make (spec-creature g name) r c hp state))
     (game-creatures! g (pair cr (game-creatures g)))
     cr))
 
 ; KEY pressed until TEST answers true or N presses are spent: the presses.
 (def spec-press-until
   (fn (self g key test n)
-    (match ((test) 0) ((= n 0) 0) (#t (do (game-key! g key) (+ 1 (self g key test (- n 1))))))))
+    (match ((test) 0) ((= n 0) 0) (#t (do (game-key! g key) (when (= 0 (% n 10)) (Heap collect)) (+ 1 (self g key test (- n 1))))))))
 
 ; How many cells of M are not rock; how many have been seen.
 (def %spec-count
@@ -149,3 +164,102 @@
     (Vector set! (at (first (map-up m)) (rest (map-up m))) #t seen)
     (flood (list (map-up m)))
     (= 0 (%spec-count m (fn (_ r c) (if (map-walkable? m r c) (not (Vector ref (at r c) seen)) #f))))))
+
+; --- invariants --------------------------------------------------------------
+
+; What is wrong with G, drawn on S, as a list of complaints: nobody on
+; rock or a wall or on the player, no two creatures on one cell, no dead
+; creature left, hit points within the most, every pack item lettered
+; once, every floor item placed, and every creature beside the player
+; drawn at its cell -- unless it is invisible or the player is blind.
+(def spec-invariants
+  (fn (_ g s)
+    (def m (game-map g))
+    (def p (game-player g))
+    (def out (Vector of ()))
+    (def bad (fn (_ text) (Vector set! 0 (pair text (Vector ref 0 out)) out)))
+    (def cell (fn (_ r c) (Str8 sub c 1 (Screen row-text s (+ r 1)))))
+    (def looking? (if (null? (game-ask g)) #f (eq? (first (game-ask g)) 'look)))
+    (unless (map-walkable? m (player-r p) (player-c p)) (bad "the player stands on rock or a wall"))
+    (when (< (player-hpmax p) (player-hp p)) (bad "hit points above the most"))
+    (List for-each
+      (fn (_ cr)
+        (def r (creature-r cr))
+        (def c (creature-c cr))
+        (unless (map-walkable? m r c) (bad (Str8 append "a " (creature-name cr) " stands on rock or a wall")))
+        (when (if (= r (player-r p)) (= c (player-c p)) #f) (bad (Str8 append "a " (creature-name cr) " stands on the player")))
+        (when (< (creature-hp cr) 1) (bad (Str8 append "a dead " (creature-name cr) " lingers")))
+        (when (< 1 (List count-if (fn (_ x) (if (= (creature-r x) r) (= (creature-c x) c) #f)) (game-creatures g)))
+          (bad (Str8 append "two creatures share the " (creature-name cr) "'s cell")))
+        (when (if (state-adjacent? r c (player-r p) (player-c p))
+                (if (creature-trait? cr 'invisible) #f (if looking? #f (= 0 (player-condition p 'blind)))) #f)
+          (unless (str=? (cell r c) (creature-glyph cr))
+            (bad (Str8 append "a " (creature-name cr) " beside the player is drawn as '" (cell r c) "'")))))
+      (game-creatures g))
+    (List for-each
+      (fn (_ it)
+        (when (null? (item-letter it)) (bad (Str8 append (item-name it) " in the pack has no letter")))
+        (when (< 1 (List count-if (fn (_ x) (if (null? (item-letter x)) #f (str=? (item-letter x) (item-letter it)))) (game-pack g)))
+          (bad (Str8 append "two pack items are lettered " (item-letter it)))))
+      (game-pack g))
+    (List for-each (fn (_ it) (when (null? (item-r it)) (bad (Str8 append (item-name it) " on the floor has no cell")))) (game-floor g))
+    (List for-each
+      (fn (_ text)
+        (def struck (spec-striker text))
+        (unless (null? struck)
+          (unless (List any? (fn (_ cr) (if (str=? (creature-name cr) struck)
+                                          (state-adjacent? (creature-r cr) (creature-c cr) (player-r p) (player-c p)) #f))
+                             (game-creatures g))
+            (bad (Str8 append "a " struck " struck without standing beside the player")))))
+      (game-messages g))
+    (List reverse (Vector ref 0 out))))
+
+; The creature a blow's message names -- "The NAME hits you." or "The
+; NAME misses you." -- or nil for any other message.
+(def spec-striker
+  (fn (_ text)
+    (def tail (fn (_ end) (if (Str8 ends? end text) (Str8 sub 4 (- (Str8 length text) (+ 4 (Str8 length end))) text) ())))
+    (match ((not (Str8 starts? "The " text)) ())
+           ((not (null? (tail " hits you."))) (tail " hits you."))
+           ((not (null? (tail " misses you."))) (tail " misses you."))
+           (#t ()))))
+
+; SET played from SEED with N random keys: (SEED DEPTH TURNS OVER
+; PROBLEMS), PROBLEMS the first few errors and complaints, each with
+; the key and turn.  The screen is drawn and the invariants checked
+; every tenth key.
+(def spec-random-play
+  (fn (_ set seed n)
+    (def keys (list "h" "j" "k" "l" "y" "u" "b" "n" "." "." "." "," "i" "q" "r" "z" "e" "w" "W" "T" "P" "R" "d"
+                    ">" "<" "o" "?" "L" "a" "b" "c" "d" "e" "y" "n" " " 'escape 'enter))
+    (def err-text (fn (_ e) (match ((Err err? e) (e msg)) ((str? e) e) (#t (Err code-of e)))))
+    (def rng (Random sw (+ 1000 seed)))
+    (def g (spec-game-on set seed ()))
+    (def s (Screen make 24 80))
+    (def problems (Vector of ()))
+    (def note (fn (_ k what) (Vector set! 0 (pair (list (game-turn g) k what) (Vector ref 0 problems)) problems)))
+    ((fn (self i)
+       (when (if (< i n) (null? (game-over g)) #f)
+         (do (def k (rng choice keys))
+             (guard (e (note k (err-text e)))
+               (do (game-key! g k)
+                   (when (= 0 (% i 10))
+                     (do (game-draw! g s)
+                         (List for-each (fn (_ text) (note k text)) (spec-invariants g s))))))
+             (when (= 0 (% i 10)) (Heap collect))
+             (self (+ i 1)))))
+     0)
+    (list seed (game-depth g) (game-turn g) (game-over g) (List take 4 (List reverse (Vector ref 0 problems))))))
+
+; The first of h j k l along which the N cells from the player are
+; floor: (KEY . (R . C)) of the Nth, or nil.
+(def spec-open-line
+  (fn (_ g n)
+    (def p (game-player g))
+    (def m (game-map g))
+    (def floor? (fn (_ d k) (= (map-tile m (+ (player-r p) (* k (first d))) (+ (player-c p) (* k (rest d)))) tile-floor)))
+    (def clear? (fn (self d k) (if (< n k) #t (if (floor? d k) (self d (+ k 1)) #f))))
+    (def hit (List find (fn (_ x) (clear? (rest x) 1))
+               (list (pair "h" (pair 0 -1)) (pair "j" (pair 1 0)) (pair "k" (pair -1 0)) (pair "l" (pair 0 1)))))
+    (if (null? hit) ()
+      (pair (first hit) (pair (+ (player-r p) (* n (first (rest hit)))) (+ (player-c p) (* n (rest (rest hit)))))))))

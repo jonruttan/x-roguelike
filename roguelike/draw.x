@@ -18,9 +18,10 @@
 (import x/tui/style)
 (import x/tui/screen Screen screen-put!)
 (import roguelike/data data-glyph)
+(import x/core/doors str-make)
 (import roguelike/map
-  map-rows map-cols map-tile map-seen? map-visible? tile-rock tile-floor tile-wall tile-door tile-passage
-  tile-down tile-up)
+  map-rows map-cols map-tile map-seen? map-visible? map-down map-up map-row-glyphs! map-visible-next map-visible-run
+  tile-rock tile-floor tile-wall tile-door tile-passage tile-down tile-up)
 (import roguelike/state
   game-set game-depth game-map game-player game-creatures game-floor game-pack game-messages game-ask
   game-over game-epitaph game-turn
@@ -42,31 +43,57 @@
 (def %dr-stairs (Style make (list (lit bold)) 2 ()))
 (def %dr-ask (Style make (list (lit bold)) () ()))
 
-; The set's glyph for tile T.
+; The set's glyph of each tile code, as a byte, in a vector by code:
+; rock is a blank.
 (def %dr-tile-names
   (list (pair tile-floor (lit floor)) (pair tile-wall (lit wall)) (pair tile-door (lit door))
         (pair tile-passage (lit passage)) (pair tile-down (lit down)) (pair tile-up (lit up))))
-(def %dr-tile-glyph
-  (fn (_ set t)
-    (def name (Assoc get t %dr-tile-names))
-    (if (null? name) " " (data-glyph set name "?"))))
+(def %dr-tile-bytes
+  (fn (_ set)
+    (def v (Vector make 7 32))
+    (List for-each (fn (_ p) (Vector set! (first p) (Char ->int (Str8 ref 0 (data-glyph set (rest p) "?"))) v)) %dr-tile-names)
+    v))
 
-(def %dr-cell!
-  (fn (_ g s set m r c)
-    (def t (map-tile m r c))
-    (match
-      ((= t tile-rock) ())
-      ((map-visible? m r c)
-        (screen-put! s (+ r 1) c (%dr-tile-glyph set t)
-          (match ((= t tile-down) %dr-stairs) ((= t tile-up) %dr-stairs) (#t %dr-plain))))
-      ((map-seen? m r c) (screen-put! s (+ r 1) c (%dr-tile-glyph set t) %dr-dim))
-      (#t ()))))
+; Row R drawn: every seen cell's glyph as one dim text, each run of
+; cells in view put again plain.
 (def %dr-row!
-  (fn (self g s set m r c)
-    (when (< c (map-cols m)) (do (%dr-cell! g s set m r c) (self g s set m r (+ c 1))))))
+  (fn (_ s m r bytes buf)
+    (def cols (map-cols m))
+    (when (map-row-glyphs! m r bytes buf)
+      (do (screen-put! s (+ r 1) 0 buf %dr-dim)
+          ((fn (self c)
+             (when (< c cols)
+               ((fn (_ e) (screen-put! s (+ r 1) c (Str8 sub c (- e c) buf) %dr-plain) (self (map-visible-next m r e)))
+                (map-visible-run m r c))))
+           (map-visible-next m r 0))))))
+
+; The tile bytes and the item glyphs of a set, made once and kept
+; against the set they were made from.
+(def %dr-cache (Vector of () () ()))
+(def %dr-cached!
+  (fn (_ set)
+    (unless (same? set (Vector ref 0 %dr-cache))
+      (do (Vector set! 0 set %dr-cache)
+          (Vector set! 1 (%dr-tile-bytes set) %dr-cache)
+          (Vector set! 2 (List map (fn (_ c) (pair c (data-glyph set c "?")))
+                                   (list (lit potion) (lit scroll) (lit wand) (lit ring) (lit weapon) (lit armour)
+                                         (lit food) (lit gold) (lit goal)))
+                       %dr-cache)))))
+(def %dr-item-glyph
+  (fn (self it l)
+    (match ((null? l) "?") ((eq? (first (first l)) (item-class it)) (rest (first l))) (#t (self it (rest l))))))
+(def %dr-stairs!
+  (fn (_ s m at bytes t)
+    (when (map-visible? m (first at) (rest at))
+      (screen-put! s (+ (first at) 1) (rest at) (bytes->str (list (Vector ref t bytes))) %dr-stairs))))
 (def %dr-map!
-  (fn (self g s set m r)
-    (when (< r (map-rows m)) (do (%dr-row! g s set m r 0) (self g s set m (+ r 1))))))
+  (fn (_ g s set m)
+    (%dr-cached! set)
+    (def bytes (Vector ref 1 %dr-cache))
+    (def buf (str-make (map-cols m)))
+    ((fn (self r) (when (< r (map-rows m)) (do (%dr-row! s m r bytes buf) (self (+ r 1))))) 0)
+    (%dr-stairs! s m (map-down m) bytes tile-down)
+    (%dr-stairs! s m (map-up m) bytes tile-up)))
 
 (def %dr-item-style
   (fn (_ it) (match ((item-class? it (lit gold)) %dr-gold) ((item-class? it (lit goal)) %dr-goal) (#t %dr-item))))
@@ -75,7 +102,7 @@
     (def m (game-map g))
     (List for-each
       (fn (_ it) (when (map-seen? m (item-r it) (item-c it))
-                   (screen-put! s (+ (item-r it) 1) (item-c it) (items-glyph g it) (%dr-item-style it))))
+                   (screen-put! s (+ (item-r it) 1) (item-c it) (%dr-item-glyph it (Vector ref 2 %dr-cache)) (%dr-item-style it))))
       (game-floor g))))
 (def %dr-creatures!
   (fn (_ g s)
@@ -95,7 +122,7 @@
   (fn (_ g)
     (def f (player-food (game-player g)))
     (def spec (game-param g (lit hunger) (list 1300 300 150)))
-    (match ((< f 1) "Fainting") ((< f (+ (List ref 2 spec) 1)) "Weak") ((< f (+ (List ref 1 spec) 1)) "Hungry") (#t ""))))
+    (match ((< (List ref 0 spec) 1) "") ((< f 1) "Fainting") ((< f (+ (List ref 2 spec) 1)) "Weak") ((< f (+ (List ref 1 spec) 1)) "Hungry") (#t ""))))
 (def %dr-conditions
   (fn (_ g)
     (def p (game-player g))
@@ -136,11 +163,13 @@
     (when (if (null? q) #f (eq? (first q) (lit look)))
       (%dr-lines! s 1 (List ref 3 q)))))
 
-; G drawn on S: S.
+; G drawn on S: S.  The level's rows are written whole; the first and
+; last rows are blanked before their text.
 (def game-draw!
   (fn (_ g s)
-    (Screen clear s)
-    (%dr-map! g s (game-set g) (game-map g) 0)
+    (Screen fill s 0 0 (Screen cols s) %dr-plain)
+    (Screen fill s (- (Screen rows s) 1) 0 (Screen cols s) %dr-plain)
+    (%dr-map! g s (game-set g) (game-map g))
     (%dr-items! g s)
     (%dr-creatures! g s)
     (%dr-player! g s)
