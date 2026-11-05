@@ -16,7 +16,7 @@
 (module roguelike/map)
 
 (import x/type/vector)
-(import x/core/doors str-make ptr-set! ptr-ref str->ptr int* int+ int< int/)
+(import x/core/doors str-make ptr-set! ptr-ref str->ptr int* int+ int< int/ obj-make obj-ref obj-set!)
 
 (def tile-rock 0)
 (def tile-floor 1)
@@ -28,15 +28,18 @@
 
 ; A level is a vector: 0 rows, 1 columns, 2 the tiles, 3 the seen flags,
 ; 4 the visible flags, 5 the rooms, 6 the stairs down (R . C), 7 the
-; stairs up.
-(def map-rows (fn (_ m) (Vector ref 0 m)))
-(def map-cols (fn (_ m) (Vector ref 1 m)))
-(def map-rooms (fn (_ m) (Vector ref 5 m)))
-(def map-rooms! (fn (_ m rooms) (Vector set! 5 rooms m)))
-(def map-down (fn (_ m) (Vector ref 6 m)))
-(def map-down! (fn (_ m at) (Vector set! 6 at m)))
-(def map-up (fn (_ m) (Vector ref 7 m)))
-(def map-up! (fn (_ m at) (Vector set! 7 at m)))
+; stairs up.  Its slots are read through the object doors, not the
+; class: a cell's flag is asked for thousands of times a turn.
+(def %mp-get (fn (_ m k) (obj-ref m (int+ k 1))))
+(def %mp-put! (fn (_ m k x) (obj-set! m (int+ k 1) x)))
+(def map-rows (fn (_ m) (%mp-get m 0)))
+(def map-cols (fn (_ m) (%mp-get m 1)))
+(def map-rooms (fn (_ m) (%mp-get m 5)))
+(def map-rooms! (fn (_ m rooms) (%mp-put! m 5 rooms)))
+(def map-down (fn (_ m) (%mp-get m 6)))
+(def map-down! (fn (_ m at) (%mp-put! m 6 at)))
+(def map-up (fn (_ m) (%mp-get m 7)))
+(def map-up! (fn (_ m at) (%mp-put! m 7 at)))
 
 (def %mp-zero!
   (fn (self p i n) (when (int< i n) (do (ptr-set! p i 0 1) (self p (int+ i 1) n)))))
@@ -46,22 +49,22 @@
 (def map-make
   (fn (_ rows cols)
     (def m (Vector make 8 ()))
-    (Vector set! 0 rows m)
-    (Vector set! 1 cols m)
+    (%mp-put! m 0 rows)
+    (%mp-put! m 1 cols)
     (Vector set! 2 (%mp-buffer (int* rows cols)) m)
     (Vector set! 3 (%mp-buffer (int* rows cols)) m)
     (Vector set! 4 (%mp-buffer (int* rows cols)) m)
     m))
 
-(def %mp-off (fn (_ m r c) (int+ (int* r (Vector ref 1 m)) c)))
+(def %mp-off (fn (_ m r c) (int+ (int* r (%mp-get m 1)) c)))
 (def map-in?
   (fn (_ m r c)
     (match ((int< r 0) #f) ((int< c 0) #f) ((int< r (map-rows m)) (int< c (map-cols m))) (#t #f))))
 
 (def map-tile
-  (fn (_ m r c) (if (map-in? m r c) (ptr-ref (str->ptr (Vector ref 2 m)) (%mp-off m r c) 1) tile-rock)))
+  (fn (_ m r c) (if (map-in? m r c) (ptr-ref (str->ptr (%mp-get m 2)) (%mp-off m r c) 1) tile-rock)))
 (def map-set!
-  (fn (_ m r c t) (when (map-in? m r c) (ptr-set! (str->ptr (Vector ref 2 m)) (%mp-off m r c) t 1))))
+  (fn (_ m r c t) (when (map-in? m r c) (ptr-set! (str->ptr (%mp-get m 2)) (%mp-off m r c) t 1))))
 
 (def %mp-flag
   (fn (_ m k r c) (if (map-in? m r c) (= (ptr-ref (str->ptr (Vector ref k m)) (%mp-off m r c) 1) 1) #f)))
@@ -112,11 +115,76 @@
 ; room it is in.  Everything else leaves view.
 (def map-light!
   (fn (_ m r c)
-    (%mp-zero! (str->ptr (Vector ref 4 m)) 0 (int* (map-rows m) (map-cols m)))
+    (%mp-zero! (str->ptr (%mp-get m 4)) 0 (int* (map-rows m) (map-cols m)))
     (map-each! (- r 1) (- c 1) (+ r 1) (+ c 1) (fn (_ rr cc) (%mp-mark! m rr cc)))
     (def room (map-room-at m r c))
     (when (if (null? room) #f (room-lit? room))
       (map-each! (room-r0 room) (room-c0 room) (room-r1 room) (room-c1 room) (fn (_ rr cc) (%mp-mark! m rr cc))))))
+
+; Whether tile T stops sight.
+(def map-opaque? (fn (_ t) (match ((= t tile-rock) #t) ((= t tile-wall) #t) (#t #f))))
+
+(def %mp-abs (fn (_ n) (if (< n 0) (- 0 n) n)))
+(def %mp-max (fn (_ a b) (if (< a b) b a)))
+; NUM/DEN to the nearest integer, halves away from zero.
+(def %mp-round (fn (_ num den) (int/ (+ num (if (< num 0) (- 0 (int/ den 2)) (int/ den 2))) den)))
+; Whether the cells strictly between R0 C0 and R1 C1 are all clear: a
+; line stepped a cell at a time along its longer axis.
+(def %mp-clear?
+  (fn (_ m r0 c0 r1 c1)
+    (def dr (- r1 r0))
+    (def dc (- c1 c0))
+    (def n (%mp-max (%mp-abs dr) (%mp-abs dc)))
+    ((fn (self i)
+       (match ((not (< i n)) #t)
+              ((map-opaque? (map-tile m (+ r0 (%mp-round (* dr i) n)) (+ c0 (%mp-round (* dc i) n)))) #f)
+              (#t (self (+ i 1)))))
+     1)))
+
+; What is in view from R C within RADIUS: every cell a clear line
+; reaches, the walls at the edge of sight included.  Everything else
+; leaves view.
+(def map-light-radius!
+  (fn (_ m r c radius)
+    (%mp-zero! (str->ptr (%mp-get m 4)) 0 (int* (map-rows m) (map-cols m)))
+    (map-each! (- r radius) (- c radius) (+ r radius) (+ c radius)
+      (fn (_ rr cc) (when (if (map-in? m rr cc) (%mp-clear? m r c rr cc) #f) (%mp-mark! m rr cc))))))
+
+; --- drawing -----------------------------------------------------------------
+
+; Row R's cells as glyph bytes into BUF: BYTES the glyph of each tile
+; code, a blank for a cell not yet seen.  A walk of the buffers, no
+; call a cell.  Answers whether any cell of the row has been seen.
+(def map-row-glyphs!
+  (fn (_ m r bytes buf)
+    (def cols (map-cols m))
+    (def t (str->ptr (%mp-get m 2)))
+    (def seen (str->ptr (%mp-get m 3)))
+    (def out (str->ptr buf))
+    (def base (int* r cols))
+    ((fn (self c any?)
+       (if (int< c cols)
+         (if (= (ptr-ref seen (int+ base c) 1) 1)
+           (do (ptr-set! out c (obj-ref bytes (int+ (ptr-ref t (int+ base c) 1) 1)) 1) (self (int+ c 1) #t))
+           (do (ptr-set! out c 32 1) (self (int+ c 1) any?)))
+         any?))
+     0 #f)))
+
+; The first column from C on row R that is in view, or the column count.
+(def map-visible-next
+  (fn (_ m r c)
+    (def cols (map-cols m))
+    (def vis (str->ptr (%mp-get m 4)))
+    (def base (int* r cols))
+    ((fn (self c) (if (if (int< c cols) (not (= (ptr-ref vis (int+ base c) 1) 1)) #f) (self (int+ c 1)) c)) c)))
+
+; The column after the run of cells in view from C on row R.
+(def map-visible-run
+  (fn (_ m r c)
+    (def cols (map-cols m))
+    (def vis (str->ptr (%mp-get m 4)))
+    (def base (int* r cols))
+    ((fn (self c) (if (if (int< c cols) (= (ptr-ref vis (int+ base c) 1) 1) #f) (self (int+ c 1)) c)) c)))
 
 ; Every cell seen: a map scroll's doing.
 (def map-reveal!
@@ -129,4 +197,5 @@
   map-make map-rows map-cols map-rooms map-rooms! map-down map-down! map-up map-up!
   map-in? map-tile map-set! map-seen? map-seen! map-visible? map-passable? map-walkable?
   room-r0 room-c0 room-r1 room-c1 room-lit? room-covers? room-inside? room-centre map-room-at
-  map-each! map-light! map-reveal!)
+  map-each! map-opaque? map-light! map-light-radius! map-row-glyphs! map-visible-next map-visible-run
+  map-reveal!)

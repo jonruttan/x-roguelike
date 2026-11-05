@@ -17,7 +17,7 @@
 
 (import x/type/vector)
 (import roguelike/state
-  game-rng game-player game-pack game-over! game-epitaph! game-param game-param1
+  game-rng game-player game-pack game-over game-over! game-epitaph! game-param game-param1
   player-hp player-hp! player-hpmax player-hpmax! player-str player-str! player-strmax
   player-level player-level! player-exp player-exp! player-weapon player-condition!
   creature-hp creature-hp! creature-name creature-prop creature-prop1 creature-trait? creature-state!
@@ -96,8 +96,10 @@
     (player-hp! p (- (player-hp p) n))
     (when (< (player-hp p) 1)
       (do (player-hp! p 0)
-          (game-epitaph! g cause)
-          (game-over! g (lit dead))))))
+          (when (null? (game-over g))
+            (do (game-epitaph! g cause)
+                (game-over! g (lit dead))
+                (state-tell! g (lit died) "You die..." ())))))))
 
 (def %cb-weaken!
   (fn (_ g n)

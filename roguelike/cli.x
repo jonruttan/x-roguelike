@@ -25,7 +25,7 @@
 (import x/repl/term)
 (import x/tui/screen)
 (import roguelike/data data-load data-get)
-(import roguelike/state game-over game-epitaph game-depth game-deepest game-messages game-ask)
+(import roguelike/state game-over game-epitaph game-depth game-deepest game-messages game-ask game-player player-gold)
 (import roguelike/game game-make game-key! game-score game-help)
 (import roguelike/draw game-draw!)
 (import roguelike/save save-write! save-read save-path save-score! save-scores)
@@ -118,8 +118,11 @@
       (#t (do (when (File exists? (save-path "save")) (File unlink (save-path "save")))
               (save-score! (save-path "scores") (game-score g) (game-deepest g)
                 (match ((eq? how (lit won)) "won") ((eq? how (lit quit)) "quit") (#t (game-epitaph g))))
-              (%cl-say 1 (Str8 append (Str8 join "  " (game-messages g)) "\n"
-                           "Score " (Str8 str (game-score g)) ", level " (Str8 str (game-deepest g)) ".\n"))
+              (%cl-say 1 (Str8 append
+                           (match ((eq? how (lit won)) "You won") ((eq? how (lit quit)) "You quit")
+                                  (#t (Str8 append "You were " (game-epitaph g))))
+                           " on level " (Str8 str (game-depth g)) " with " (Str8 str (player-gold (game-player g)))
+                           " gold.  Score " (Str8 str (game-score g)) ".\n"))
               0)))))
 
 (def %cl-seed (fn (_ opts) (if (null? (%cl-opt opts (lit seed))) (+ 1 (rest (Sys time-of-day))) (%cl-to-int (%cl-opt opts (lit seed))))))

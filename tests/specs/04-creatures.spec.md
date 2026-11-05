@@ -20,6 +20,21 @@ what runs, what dies, and the messages that outrun the row.
 ---
     (#t 1 #t #t)
 
+### one three cells away on the same row does not strike; it closes in
+
+```roguelike
+(def g (spec-calm 5 ()))
+(def line (if (null? (spec-open-line g 3)) (spec-open-line g 2) (spec-open-line g 3)))
+(def cr (spec-place! g "cave rat" (first (rest line)) (rest (rest line)) 100 'awake))
+(def before (state-dist (creature-r cr) (creature-c cr) (player-r (game-player g)) (player-c (game-player g))))
+(game-key! g ".")
+(def after (state-dist (creature-r cr) (creature-c cr) (player-r (game-player g)) (player-c (game-player g))))
+(write (list (not (null? line)) (< 1 before) (null? (game-messages g)) (< after before)
+             (state-adjacent? 3 3 3 6) (state-adjacent? 3 3 4 4) (state-adjacent? 3 3 3 3)))
+```
+---
+    (#t #t #t #t #f #t #f)
+
 ### a sleeping one beside the player wakes
 
 ```roguelike

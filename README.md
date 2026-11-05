@@ -18,6 +18,8 @@ Scores keep in `~/.x-roguelike/scores`.
 
     h j k l y u b n   move; the arrows too.  Walk into a creature to attack it.
     .  s              rest a turn              ,  g      pick up what is here
+    o                 explore until something comes into view
+    L                 what has been said lately
     >                 go down the stairs       <         go up, with the goal
     i                 your pack                d         drop a thing
     q                 quaff a potion           r         read a scroll
@@ -43,6 +45,16 @@ item may carry, `messages.xon` what the game says.  Another set is
 another directory: `-set NAME` under the bundle's `data/`, or `-data
 DIR` for any directory.  The engine reads a closed vocabulary of traits
 and effects; a set combines them as it likes.
+
+`delve` is the second set shipped, `-set delve`: a drowned mine of
+twelve levels carved as caves, lit by sight to a radius rather than by
+the room, with creatures that come in packs, shoot along a line and
+call for company, potions and scrolls known on sight, and no hunger.
+What a set may turn on, each off unless named: `(view N)` sight to N
+cells, `(level-style caves)` with `(cave-fill PERCENT)`, `(known CLASS
+...)`, a first `(hunger ...)` value under one; and on a creature, `(pack
+LO HI)`, `ranged` with `(ranged LO HI)` and `(shot "what")`, `summon`
+with `(summon "name")`.
 
 ## Running the suite
 

@@ -37,9 +37,16 @@
     (if (null? names) (Err raise (lit io) "no .xon files in the set" dir)
       (List flat-map (fn (_ n) (%dt-forms (Str8 append dir "/" n))) names))))
 
+; These lookups run thousands of times a turn, so they are plain
+; walks: a class send costs some two hundred objects and an Assoc find
+; some twenty-five thousand.
+
 ; The ARGS of every form of SET headed HEAD, in order.
 (def data-all
-  (fn (_ set head) (List map rest (List filter (fn (_ f) (if (pair? f) (eq? (first f) head) #f)) set))))
+  (fn (self set head)
+    (match ((null? set) ())
+           ((if (pair? (first set)) (eq? (first (first set)) head) #f) (pair (rest (first set)) (self (rest set) head)))
+           (#t (self (rest set) head)))))
 
 ; The ARGS of the first form headed HEAD, or DEFAULT.
 (def data-one
@@ -53,11 +60,14 @@
     (def args (data-one set head ()))
     (if (null? args) default (first args))))
 
+; The VALUES of property KEY among PROPS, or DEFAULT.
+(def %dt-prop
+  (fn (self props key default)
+    (match ((null? props) default)
+           ((if (pair? (first props)) (eq? (first (first props)) key) #f) (rest (first props)))
+           (#t (self (rest props) key default)))))
 ; The VALUES of property KEY of record REC, or DEFAULT.
-(def data-prop
-  (fn (_ rec key default)
-    (def p (Assoc find key (rest (rest rec))))
-    (if (null? p) default (rest p))))
+(def data-prop (fn (_ rec key default) (%dt-prop (rest (rest rec)) key default)))
 
 ; The first value of property KEY of REC, or DEFAULT.
 (def data-prop1
@@ -66,12 +76,15 @@
     (if (null? vs) default (first vs))))
 
 ; Whether REC lists FLAG among its (traits ...) values.
-(def data-trait? (fn (_ rec flag) (List includes? flag (data-prop rec (lit traits) ()))))
+(def %dt-memq (fn (self x l) (match ((null? l) #f) ((eq? (first l) x) #t) (#t (self x (rest l))))))
+(def data-trait? (fn (_ rec flag) (%dt-memq flag (data-prop rec (lit traits) ()))))
 
 ; The glyph the set gives WHAT, as (glyph WHAT "g"), or DEFAULT.
 (def data-glyph
-  (fn (_ set what default)
-    (def hit (List find (fn (_ args) (eq? (first args) what)) (data-all set (lit glyph))))
-    (if (null? hit) default (List ref 1 hit))))
+  (fn (self set what default)
+    (match ((null? set) default)
+           ((if (pair? (first set)) (if (eq? (first (first set)) (lit glyph)) (eq? (first (rest (first set))) what) #f) #f)
+             (first (rest (rest (first set)))))
+           (#t (self (rest set) what default)))))
 
 (provide roguelike/data data-load data-all data-one data-get data-prop data-prop1 data-trait? data-glyph)

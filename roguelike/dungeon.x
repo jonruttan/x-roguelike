@@ -19,6 +19,7 @@
 
 (import x/type/vector)
 (import x/num/random)
+(import x/core/doors int/)
 (import roguelike/map
   tile-rock tile-floor tile-wall tile-door tile-passage tile-down tile-up
   map-make map-rows map-cols map-rooms map-rooms! map-down! map-up!
@@ -121,12 +122,13 @@
     (pair (%dg-roll rng (+ (room-r0 room) 1) (- (room-r1 room) 1))
           (%dg-roll rng (+ (room-c0 room) 1) (- (room-c1 room) 1)))))
 
-; A level of ROWS by COLS at DEPTH, by PARAMS: (rooms LO HI), (room-size
-; WLO WHI HLO HHI), (lit PERCENT STEP), the percent a room is lit at
-; depth 1 and what that gains a level.
-(def dungeon-generate
-  (fn (_ rng rows cols depth params)
-    (def m (map-make rows cols))
+; A level of rooms: (rooms LO HI), (room-size WLO WHI HLO HHI), (lit
+; PERCENT STEP), the percent a room is lit at depth 1 and what that gains
+; a level.
+(def %dg-rooms!
+  (fn (_ rng m depth params)
+    (def rows (map-rows m))
+    (def cols (map-cols m))
     (def want (%dg-roll rng (List ref 0 (%dg-p params (lit rooms) (list 6 9))) (List ref 1 (%dg-p params (lit rooms) (list 6 9)))))
     (def lit-pct (+ (List ref 0 (%dg-p params (lit lit) (list 95 -4)))
                     (* (- depth 1) (List ref 1 (%dg-p params (lit lit) (list 95 -4))))))
@@ -138,20 +140,95 @@
     (map-rooms! m rooms)
     (def up (%dg-spot rng (first rooms)))
     (def down (%dg-spot rng (if (null? (rest rooms)) (first rooms) (List ref (%dg-roll rng 1 (- (List length rooms) 1)) rooms))))
+    (%dg-stairs! m up down)))
+
+(def %dg-stairs!
+  (fn (_ m up down)
     (map-set! m (first up) (rest up) tile-up)
     (map-set! m (first down) (rest down) tile-down)
     (map-up! m up)
     (map-down! m down)
     m))
 
-; A random floor cell of a random room of M that FREE? allows, or nil
-; after a hundred tries.
+; --- caves -------------------------------------------------------------------
+
+; A cave: walkers carve floor from the middle, each step a random way,
+; now and then jumping to a cell already carved, until (cave-fill
+; PERCENT) of the level is floor; then every rock cell beside floor is
+; wall.  A cave has no rooms, so it is lit by sight, (view N).
+
+(def %dg-inside?
+  (fn (_ m r c)
+    (match ((< r 1) #f) ((< c 1) #f) ((< r (- (map-rows m) 1)) (< c (- (map-cols m) 1))) (#t #f))))
+(def %dg-steps (list (pair -1 0) (pair 1 0) (pair 0 -1) (pair 0 1)))
+; CELLS holds (COUNT . CARVED) in its one slot.
+(def %dg-carve-floor!
+  (fn (_ m r c cells)
+    (when (= (map-tile m r c) tile-rock)
+      (do (map-set! m r c tile-floor)
+          (Vector set! 0 (pair (+ 1 (first (Vector ref 0 cells))) (pair (pair r c) (rest (Vector ref 0 cells)))) cells)))))
+(def %dg-walk!
+  (fn (self rng m r c cells want)
+    (when (< (first (Vector ref 0 cells)) want)
+      (do (%dg-carve-floor! m r c cells)
+          (def from (if (< (rng int 100) 2) (rng choice (rest (Vector ref 0 cells))) (pair r c)))
+          (def d (rng choice %dg-steps))
+          (def nr (+ (first from) (first d)))
+          (def nc (+ (rest from) (rest d)))
+          (if (%dg-inside? m nr nc) (self rng m nr nc cells want) (self rng m (first from) (rest from) cells want))))))
+
+(def %dg-around
+  (list (pair -1 -1) (pair -1 0) (pair -1 1) (pair 0 -1) (pair 0 1) (pair 1 -1) (pair 1 0) (pair 1 1)))
+(def %dg-beside-floor?
+  (fn (_ m r c)
+    (List any? (fn (_ d) (= (map-tile m (+ r (first d)) (+ c (rest d))) tile-floor)) %dg-around)))
+(def %dg-wall-up!
+  (fn (_ m)
+    (map-each! 0 0 (- (map-rows m) 1) (- (map-cols m) 1)
+      (fn (_ r c)
+        (when (if (= (map-tile m r c) tile-rock) (%dg-beside-floor? m r c) #f) (map-set! m r c tile-wall))))))
+
+(def %dg-abs (fn (_ n) (if (< n 0) (- 0 n) n)))
+(def %dg-max (fn (_ a b) (if (< a b) b a)))
+(def %dg-dist (fn (_ a b) (%dg-max (%dg-abs (- (first a) (first b))) (%dg-abs (- (rest a) (rest b))))))
+; The farthest from FROM of TRIES cells drawn from CARVED.
+(def %dg-farthest
+  (fn (self rng carved from tries best bestd)
+    (if (= tries 0) best
+      ((fn (_ at)
+         (if (< bestd (%dg-dist at from)) (self rng carved from (- tries 1) at (%dg-dist at from))
+           (self rng carved from (- tries 1) best bestd)))
+       (rng choice carved)))))
+
+(def %dg-caves!
+  (fn (_ rng m params)
+    (def cells (Vector of (pair 0 ())))
+    (def want (int/ (* (* (map-rows m) (map-cols m)) (first (%dg-p params (lit cave-fill) (list 40)))) 100))
+    (%dg-walk! rng m (int/ (map-rows m) 2) (int/ (map-cols m) 2) cells want)
+    (%dg-wall-up! m)
+    (def carved (rest (Vector ref 0 cells)))
+    (def up (rng choice carved))
+    (map-rooms! m ())
+    (%dg-stairs! m up (%dg-farthest rng carved up 40 up 0))))
+
+; A level of ROWS by COLS at DEPTH, by PARAMS: rooms, or caves with
+; (level-style caves).
+(def dungeon-generate
+  (fn (_ rng rows cols depth params)
+    (def m (map-make rows cols))
+    (if (eq? (first (%dg-p params (lit level-style) (list (lit rooms)))) (lit caves))
+      (%dg-caves! rng m params)
+      (%dg-rooms! rng m depth params))))
+
+; A random floor cell of M that FREE? allows -- of a random room, or
+; anywhere on a level without rooms -- or nil after TRIES tries.
 (def dungeon-spot
   (fn (self rng m free? tries)
     (if (= tries 0) ()
       ((fn (_ at)
          (if (if (= (map-tile m (first at) (rest at)) tile-floor) (free? (first at) (rest at)) #f) at
            (self rng m free? (- tries 1))))
-       (%dg-spot rng (rng choice (map-rooms m)))))))
+       (if (null? (map-rooms m)) (pair (rng int (map-rows m)) (rng int (map-cols m)))
+         (%dg-spot rng (rng choice (map-rooms m))))))))
 
 (provide roguelike/dungeon dungeon-generate dungeon-spot)

@@ -15,6 +15,7 @@
 
 (import x/type/vector)
 (import x/num/random)
+(import x/core/doors obj-ref obj-set! int+)
 (import roguelike/data data-all data-one data-get data-prop data-prop1 data-trait?)
 (import roguelike/map map-walkable?)
 
@@ -27,8 +28,12 @@
 ; names known, 14 the deepest level reached, 15 the log (newest first),
 ; 16 rows, 17 columns, 18 the epitaph, 19 the seed, 20 whether the goal
 ; has been placed.
-(def %st-get (fn (_ g k) (Vector ref k g)))
-(def %st-put! (fn (_ g k x) (Vector set! k x g)))
+; Every slot here is read through the object doors, not the class: a
+; class send costs some two hundred objects, and a turn reads thousands.
+(def %st-ref (fn (_ v k) (obj-ref v (int+ k 1))))
+(def %st-set! (fn (_ v k x) (obj-set! v (int+ k 1) x)))
+(def %st-get (fn (_ g k) (%st-ref g k)))
+(def %st-put! (fn (_ g k x) (%st-set! g k x)))
 (def game-rng (fn (_ g) (%st-get g 0)))
 (def game-set (fn (_ g) (%st-get g 1)))
 (def game-depth (fn (_ g) (%st-get g 2)))
@@ -74,33 +79,33 @@
 ; strength, 5 the most, 6 level, 7 experience, 8 gold, 9 the armour
 ; worn, 10 the weapon wielded, 11 the rings worn, 12 food, 13 the
 ; conditions, (NAME . TURNS).
-(def player-r (fn (_ p) (Vector ref 0 p)))
-(def player-c (fn (_ p) (Vector ref 1 p)))
-(def player-at! (fn (_ p r c) (Vector set! 0 r p) (Vector set! 1 c p)))
-(def player-hp (fn (_ p) (Vector ref 2 p)))
-(def player-hp! (fn (_ p n) (Vector set! 2 n p)))
-(def player-hpmax (fn (_ p) (Vector ref 3 p)))
-(def player-hpmax! (fn (_ p n) (Vector set! 3 n p)))
-(def player-str (fn (_ p) (Vector ref 4 p)))
-(def player-str! (fn (_ p n) (Vector set! 4 n p)))
-(def player-strmax (fn (_ p) (Vector ref 5 p)))
-(def player-strmax! (fn (_ p n) (Vector set! 5 n p)))
-(def player-level (fn (_ p) (Vector ref 6 p)))
-(def player-level! (fn (_ p n) (Vector set! 6 n p)))
-(def player-exp (fn (_ p) (Vector ref 7 p)))
-(def player-exp! (fn (_ p n) (Vector set! 7 n p)))
-(def player-gold (fn (_ p) (Vector ref 8 p)))
-(def player-gold! (fn (_ p n) (Vector set! 8 n p)))
-(def player-armour (fn (_ p) (Vector ref 9 p)))
-(def player-armour! (fn (_ p it) (Vector set! 9 it p)))
-(def player-weapon (fn (_ p) (Vector ref 10 p)))
-(def player-weapon! (fn (_ p it) (Vector set! 10 it p)))
-(def player-rings (fn (_ p) (Vector ref 11 p)))
-(def player-rings! (fn (_ p l) (Vector set! 11 l p)))
-(def player-food (fn (_ p) (Vector ref 12 p)))
-(def player-food! (fn (_ p n) (Vector set! 12 n p)))
-(def player-conditions (fn (_ p) (Vector ref 13 p)))
-(def player-conditions! (fn (_ p l) (Vector set! 13 l p)))
+(def player-r (fn (_ p) (%st-ref p 0)))
+(def player-c (fn (_ p) (%st-ref p 1)))
+(def player-at! (fn (_ p r c) (%st-set! p 0 r) (%st-set! p 1 c)))
+(def player-hp (fn (_ p) (%st-ref p 2)))
+(def player-hp! (fn (_ p n) (%st-set! p 2 n)))
+(def player-hpmax (fn (_ p) (%st-ref p 3)))
+(def player-hpmax! (fn (_ p n) (%st-set! p 3 n)))
+(def player-str (fn (_ p) (%st-ref p 4)))
+(def player-str! (fn (_ p n) (%st-set! p 4 n)))
+(def player-strmax (fn (_ p) (%st-ref p 5)))
+(def player-strmax! (fn (_ p n) (%st-set! p 5 n)))
+(def player-level (fn (_ p) (%st-ref p 6)))
+(def player-level! (fn (_ p n) (%st-set! p 6 n)))
+(def player-exp (fn (_ p) (%st-ref p 7)))
+(def player-exp! (fn (_ p n) (%st-set! p 7 n)))
+(def player-gold (fn (_ p) (%st-ref p 8)))
+(def player-gold! (fn (_ p n) (%st-set! p 8 n)))
+(def player-armour (fn (_ p) (%st-ref p 9)))
+(def player-armour! (fn (_ p it) (%st-set! p 9 it)))
+(def player-weapon (fn (_ p) (%st-ref p 10)))
+(def player-weapon! (fn (_ p it) (%st-set! p 10 it)))
+(def player-rings (fn (_ p) (%st-ref p 11)))
+(def player-rings! (fn (_ p l) (%st-set! p 11 l)))
+(def player-food (fn (_ p) (%st-ref p 12)))
+(def player-food! (fn (_ p n) (%st-set! p 12 n)))
+(def player-conditions (fn (_ p) (%st-ref p 13)))
+(def player-conditions! (fn (_ p l) (%st-set! p 13 l)))
 
 (def %st-player-make
   (fn (_ set)
@@ -122,9 +127,10 @@
 ; A condition's turns left on WHO (a player or creature's conditions
 ; list, by its accessors), or 0.
 (def %st-cond-turns
-  (fn (_ conds name)
-    (def p (Assoc find name conds))
-    (if (null? p) 0 (rest p))))
+  (fn (self conds name)
+    (match ((null? conds) 0)
+           ((eq? (first (first conds)) name) (rest (first conds)))
+           (#t (self (rest conds) name)))))
 (def %st-cond-set
   (fn (_ conds name turns)
     (pair (pair name turns) (List reject (fn (_ p) (eq? (first p) name)) conds))))
@@ -144,31 +150,31 @@
 (def creature-make
   (fn (_ kind r c hp state)
     (def cr (Vector make 7 ()))
-    (Vector set! 0 kind cr)
-    (Vector set! 1 r cr)
-    (Vector set! 2 c cr)
-    (Vector set! 3 hp cr)
-    (Vector set! 4 state cr)
-    (Vector set! 5 () cr)
+    (%st-set! cr 0 kind)
+    (%st-set! cr 1 r)
+    (%st-set! cr 2 c)
+    (%st-set! cr 3 hp)
+    (%st-set! cr 4 state)
+    (%st-set! cr 5 ())
     cr))
-(def creature-kind (fn (_ cr) (Vector ref 0 cr)))
-(def creature-r (fn (_ cr) (Vector ref 1 cr)))
-(def creature-c (fn (_ cr) (Vector ref 2 cr)))
-(def creature-at! (fn (_ cr r c) (Vector set! 1 r cr) (Vector set! 2 c cr)))
-(def creature-hp (fn (_ cr) (Vector ref 3 cr)))
-(def creature-hp! (fn (_ cr n) (Vector set! 3 n cr)))
-(def creature-state (fn (_ cr) (Vector ref 4 cr)))
-(def creature-state! (fn (_ cr s) (Vector set! 4 s cr)))
-(def creature-carried (fn (_ cr) (Vector ref 6 cr)))
-(def creature-carried! (fn (_ cr it) (Vector set! 6 it cr)))
+(def creature-kind (fn (_ cr) (%st-ref cr 0)))
+(def creature-r (fn (_ cr) (%st-ref cr 1)))
+(def creature-c (fn (_ cr) (%st-ref cr 2)))
+(def creature-at! (fn (_ cr r c) (%st-set! cr 1 r) (%st-set! cr 2 c)))
+(def creature-hp (fn (_ cr) (%st-ref cr 3)))
+(def creature-hp! (fn (_ cr n) (%st-set! cr 3 n)))
+(def creature-state (fn (_ cr) (%st-ref cr 4)))
+(def creature-state! (fn (_ cr s) (%st-set! cr 4 s)))
+(def creature-carried (fn (_ cr) (%st-ref cr 6)))
+(def creature-carried! (fn (_ cr it) (%st-set! cr 6 it)))
 (def creature-name (fn (_ cr) (first (creature-kind cr))))
 (def creature-glyph (fn (_ cr) (List ref 1 (creature-kind cr))))
 (def creature-prop (fn (_ cr key default) (data-prop (creature-kind cr) key default)))
 (def creature-prop1 (fn (_ cr key default) (data-prop1 (creature-kind cr) key default)))
 (def creature-trait? (fn (_ cr flag) (data-trait? (creature-kind cr) flag)))
-(def creature-condition (fn (_ cr name) (%st-cond-turns (Vector ref 5 cr) name)))
-(def creature-condition! (fn (_ cr name turns) (Vector set! 5 (%st-cond-set (Vector ref 5 cr) name turns) cr)))
-(def creature-tick! (fn (_ cr) (Vector set! 5 (%st-cond-tick (Vector ref 5 cr)) cr)))
+(def creature-condition (fn (_ cr name) (%st-cond-turns (%st-ref cr 5) name)))
+(def creature-condition! (fn (_ cr name turns) (%st-set! cr 5 (%st-cond-set (%st-ref cr 5) name turns))))
+(def creature-tick! (fn (_ cr) (%st-set! cr 5 (%st-cond-tick (%st-ref cr 5)))))
 
 ; --- items -------------------------------------------------------------------
 
@@ -177,27 +183,27 @@
 (def item-make
   (fn (_ form count charges)
     (def it (Vector make 7 ()))
-    (Vector set! 0 form it)
-    (Vector set! 1 count it)
-    (Vector set! 2 charges it)
+    (%st-set! it 0 form)
+    (%st-set! it 1 count)
+    (%st-set! it 2 charges)
     (Vector set! 3 0 it)
     it))
-(def item-form (fn (_ it) (Vector ref 0 it)))
+(def item-form (fn (_ it) (%st-ref it 0)))
 (def item-class (fn (_ it) (first (item-form it))))
 (def item-name (fn (_ it) (List ref 1 (item-form it))))
 (def item-prop (fn (_ it key default) (data-prop (item-form it) key default)))
 (def item-prop1 (fn (_ it key default) (data-prop1 (item-form it) key default)))
-(def item-count (fn (_ it) (Vector ref 1 it)))
-(def item-count! (fn (_ it n) (Vector set! 1 n it)))
-(def item-charges (fn (_ it) (Vector ref 2 it)))
-(def item-charges! (fn (_ it n) (Vector set! 2 n it)))
-(def item-enchant (fn (_ it) (Vector ref 3 it)))
-(def item-enchant! (fn (_ it n) (Vector set! 3 n it)))
-(def item-letter (fn (_ it) (Vector ref 4 it)))
-(def item-letter! (fn (_ it l) (Vector set! 4 l it)))
-(def item-r (fn (_ it) (Vector ref 5 it)))
-(def item-c (fn (_ it) (Vector ref 6 it)))
-(def item-at! (fn (_ it r c) (Vector set! 5 r it) (Vector set! 6 c it)))
+(def item-count (fn (_ it) (%st-ref it 1)))
+(def item-count! (fn (_ it n) (%st-set! it 1 n)))
+(def item-charges (fn (_ it) (%st-ref it 2)))
+(def item-charges! (fn (_ it n) (%st-set! it 2 n)))
+(def item-enchant (fn (_ it) (%st-ref it 3)))
+(def item-enchant! (fn (_ it n) (%st-set! it 3 n)))
+(def item-letter (fn (_ it) (%st-ref it 4)))
+(def item-letter! (fn (_ it l) (%st-set! it 4 l)))
+(def item-r (fn (_ it) (%st-ref it 5)))
+(def item-c (fn (_ it) (%st-ref it 6)))
+(def item-at! (fn (_ it r c) (%st-set! it 5 r) (%st-set! it 6 c)))
 (def item-class? (fn (_ it class) (eq? (item-class it) class)))
 
 ; --- making a game -----------------------------------------------------------
@@ -234,6 +240,7 @@
     (%st-put! g 8 (pair text (%st-get g 8)))
     (%st-put! g 15 (List take 100 (pair text (%st-get g 15))))))
 (def state-clear-messages! (fn (_ g) (%st-put! g 8 ())))
+(def state-clear-log! (fn (_ g) (%st-put! g 15 ())))
 
 ; TEXT with each {KEY} of SUBS, ((KEY . VALUE) ...), put in.
 (def state-fill
@@ -270,7 +277,9 @@
 (def %st-max (fn (_ a b) (if (< a b) b a)))
 ; The moves from R1 C1 to R2 C2, a diagonal step counting one.
 (def state-dist (fn (_ r1 c1 r2 c2) (%st-max (%st-abs (- r1 r2)) (%st-abs (- c1 c2)))))
-(def state-adjacent? (fn (_ r1 c1 r2 c2) (if (= r1 r2) (if (= c1 c2) #f #t) (< (state-dist r1 c1 r2 c2) 2))))
+; Whether the two cells touch: a move apart, and not the same cell.
+(def state-adjacent?
+  (fn (_ r1 c1 r2 c2) (if (if (= r1 r2) (= c1 c2) #f) #f (< (state-dist r1 c1 r2 c2) 2))))
 (def state-sign (fn (_ n) (match ((< n 0) -1) ((< 0 n) 1) (#t 0))))
 
 ; --- lookups -----------------------------------------------------------------
@@ -329,7 +338,7 @@
   creature-trait? creature-condition creature-condition! creature-tick!
   item-make item-form item-class item-name item-prop item-prop1 item-count item-count! item-charges
   item-charges! item-enchant item-enchant! item-letter item-letter! item-r item-c item-at! item-class?
-  state-say! state-clear-messages! state-fill state-text state-tell!
+  state-say! state-clear-messages! state-clear-log! state-fill state-text state-tell!
   state-roll state-chance? state-dir state-dirs state-dist state-adjacent? state-sign
   state-creature-at state-items-at state-player-at? state-free?
   state-remove-creature! state-remove-floor! state-remove-pack!
