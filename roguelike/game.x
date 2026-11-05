@@ -31,7 +31,7 @@
   player-r player-c player-at! player-hp player-hp! player-hpmax player-level player-food player-food!
   player-condition player-tick! player-armour player-rings player-gold
   state-say! state-tell! state-text state-clear-messages! state-clear-log! state-roll state-chance? state-dir state-dirs
-  state-creature-at state-items-at state-ring? item-class? item-class item-name creature-name)
+  state-creature-at state-items-at state-ring? item-class? item-class item-name item-letter creature-name)
 (import roguelike/combat combat-player-attacks! combat-hurt-player!)
 (import roguelike/creatures
   creatures-spawn! creatures-wander! creatures-act! creatures-door-diagonal? creatures-shown?)
