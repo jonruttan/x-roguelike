@@ -1,8 +1,10 @@
-; game.xon -- the delve set: a drowned mine, twelve levels, no hunger.
+; game.xon -- the delve set: a drowned mine under Kettle, twelve levels
+; in four bands, no hunger.
 ;
 ; What this set turns on that classic leaves off: levels carved as
 ; caves, lit by sight to a radius, potions and scrolls known on sight,
-; and no food clock -- the pressure is what wanders in.
+; no food clock -- the pressure is what wanders in -- and bands, each
+; with its colour, its word on arrival and its guardian.
 
 (set "delve")
 (title "The Delve")
@@ -10,6 +12,23 @@
 ; The Lodestar, twelve levels down; held, it opens the flooded shafts
 ; back up, each level made again and roused.
 (goal "the Lodestar" "*" 12)
+
+; The bands, (band NAME TO . PROPS): each runs from the level after the
+; one before to TO.  (enter "TEXT") is said on its first level; the
+; (guardian "NAME") creature waits by the stairs down on its last, and
+; they stay shut while it lives; (colour N) is the level's colour, 0-255.
+(band "The Galleries" 3 (colour 94)
+  (enter "The Galleries: the worked mine, propped and railed, its lamps long out.")
+  (guardian "pit foreman"))
+(band "The Flood" 6 (colour 67)
+  (enter "The Flood: the water stands here, and runs one way.")
+  (guardian "undertow"))
+(band "The Old Works" 9 (colour 65)
+  (enter "The Old Works: dressed stone, set without mortar, older than the mine.")
+  (guardian "hollow mason"))
+(band "The Heart" 12 (colour 96)
+  (enter "The Heart: the stone moves here, and the water is quiet.")
+  (guardian "lodestar keeper"))
 
 (player 14 16)
 (unarmed 1 3)
@@ -50,3 +69,4 @@
 (glyph food ":")
 (glyph gold "$")
 (glyph goal "*")
+(glyph page "%")

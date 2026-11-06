@@ -3,21 +3,115 @@
 
 What the delve set turns on: caves, sight to a radius, packs, ranged
 and summoning creatures, auto-explore, the log, no hunger, potions and
-scrolls known on sight.  The classic set leaves every one of them off,
-and its specs stand.
+scrolls known on sight, bands with their guardians, and pages.  The
+classic set leaves every one of them off, and its specs stand.
 
 
 ## the set
 
-### the delve set loads: twelve levels, sight to seven, no hunger
+### the delve set loads: twelve levels in four bands, sight to seven, no hunger
 
 ```roguelike
 (def set (spec-set-named "delve"))
 (write (list (data-get set 'set "") (List ref 2 (data-one set 'goal ())) (data-get set 'view 0) (data-get set 'hunger 1)
-             (data-get set 'level-style 'rooms) (List length (data-all set 'creature))))
+             (data-get set 'level-style 'rooms) (List length (data-all set 'creature))
+             (List map (fn (_ b) (List ref 1 b)) (data-all set 'band)) (List length (data-all set 'page))))
 ```
 ---
-    ("delve" 12 7 0 'caves 14)
+    ("delve" 12 7 0 'caves 20 (3 6 9 12) 9)
+
+## bands
+
+### a new game says its band; the next band says its word on its first level, and no other
+
+```roguelike
+(def g (spec-game-on (spec-set-named "delve") 4 ()))
+(player-hp! (game-player g) 1000)
+(def first-said (game-messages g))
+(def down! (fn (_) (def m (game-map g)) (player-at! (game-player g) (first (map-down m)) (rest (map-down m))) (game-key! g ">")))
+(down!)
+(def second (game-messages g))
+(down!)
+(game-creatures! g ())
+(down!)
+(write (list first-said second (game-depth g) (List reverse (List take 2 (game-log g)))))
+```
+---
+    (("You enter the Delve.  The Lodestar lies twelve levels down; bring it back up." "The Galleries: the worked mine, propped and railed, its lamps long out.") ("You climb down to level 2.") 4 ("You climb down to level 4." "The Flood: the water stands here, and runs one way."))
+
+### the band's guardian waits by the shaft down on its last level, and bars it while it lives; barred takes no turn
+
+```roguelike
+(def g (spec-game-on (spec-set-named "delve") 4 ()))
+(player-hp! (game-player g) 1000)
+(def down! (fn (_) (def m (game-map g)) (player-at! (game-player g) (first (map-down m)) (rest (map-down m))) (game-key! g ">")))
+(down!)
+(def none (List any? (fn (_ cr) (str=? (creature-name cr) "pit foreman")) (game-creatures g)))
+(down!)
+(def guardian (List find (fn (_ cr) (str=? (creature-name cr) "pit foreman")) (game-creatures g)))
+(def m (game-map g))
+(def near? (< (state-dist (creature-r guardian) (creature-c guardian) (first (map-down m)) (rest (map-down m))) 2))
+(def turn (game-turn g))
+(down!)
+(def barred (game-messages g))
+(def still (list (game-depth g) (= turn (game-turn g))))
+(game-creatures! g (List reject (fn (_ cr) (same? cr guardian)) (game-creatures g)))
+(down!)
+(write (list none near? barred still (game-depth g)))
+```
+---
+    (#f #t ("The pit foreman stands over the shaft down.") (3 #t) 4)
+
+## pages
+
+### the first page lies on level 1, once
+
+```roguelike
+(def g (spec-game-on (spec-set-named "delve") 4 ()))
+(def pages (List filter (fn (_ it) (eq? (item-class it) 'page)) (game-floor g)))
+(write (list (List length pages) (item-name (first pages)) (game-pages-placed g)))
+```
+---
+    (1 "the foreman's log, first leaf" ("the foreman's log, first leaf"))
+
+### r reads a page: its lines lie over the level until a key, it takes a turn, and the page is kept
+
+```roguelike
+(def g (spec-game-on (spec-set-named "delve") 4 ()))
+(game-creatures! g ())
+(def p (game-player g))
+(def it (item-make (list 'page "a scrap" (list 'text "one line" "two line")) 1 0))
+(item-at! it (player-r p) (player-c p))
+(game-floor! g (pair it (game-floor g)))
+(game-key! g ",")
+(game-key! g "r")
+(game-key! g "a")
+(write (list (spec-row g 0) (Str8 starts? " one line" (spec-row g 1)) (Str8 starts? " two line" (spec-row g 2)) (game-turn g)
+             (List length (game-pack g)) (null? (game-ask (spec-game-on (spec-set-named "delve") 4 (list "r"))))))
+```
+---
+    ("a scrap  --any key--" #t #t 2 1 #t)
+
+### a page in the pack and the pages placed come back from a save
+
+```roguelike
+(def g (spec-game-on (spec-set-named "delve") 4 ()))
+(game-creatures! g ())
+(def p (game-player g))
+(def page (List find (fn (_ it) (eq? (item-class it) 'page)) (game-floor g)))
+(item-at! page (player-r p) (player-c p))
+(game-key! g ",")
+(def tmp (File temp "/tmp/x-roguelike-"))
+(File close (first tmp))
+(def path (rest tmp))
+(save-write! g path)
+(def h (save-read path (spec-set-named "delve") 24 80))
+(File unlink path)
+(def kept (first (game-pack h)))
+(write (list (item-class kept) (item-name kept) (item-letter kept) (game-pages-placed h)))
+```
+---
+    ('page "the foreman's log, first leaf" "a" ("the foreman's log, first leaf"))
 
 ## caves
 

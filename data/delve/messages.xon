@@ -6,6 +6,7 @@
 (message stairs-up "You climb to level {level}; the water follows.")
 (message no-way-up "The shaft above is flooded.  Only the Lodestar can open it.")
 (message no-stairs "There is no shaft here.")
+(message barred "The {name} stands over the shaft down.")
 (message found-goal "The Lodestar is yours!  Climb, before the water rises.")
 (message creature-near "You see a {name}.")
 (message explored "Nothing left to explore here.")

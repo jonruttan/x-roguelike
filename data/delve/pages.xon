@@ -1,0 +1,68 @@
+; pages.xon -- the delve set: what was written down there.
+;
+; A page, (page NAME DEPTH LINE ...), lies on its level once a game, is
+; read with r, and is kept.  Read in order, they say why the pumps
+; stopped and what the Lodestar is.
+
+(page "the foreman's log, first leaf" 1
+  "Kettle shaft, lower gallery, the ninth of the month."
+  "Broke through at the end of the east drift into dressed stone: a wall,"
+  "squared and set without mortar, older than anything the Guild has cut."
+  "Behind it a passage runs down.  Dry, which it should not be, this deep."
+  "Sent word up.  Posted two lamps at the hole and told the crew to leave it.")
+
+(page "a Pump Guild ledger page" 2
+  "Pump Guild of Kettle.  Lower workings, coal and wages."
+  "The lower drift to continue.  The breach to be widened for a cart."
+  "Coal to the pumps cut by a third until the new seam pays."
+  "Note from the engine house: water rising in the sump a hand a day."
+  "Answered: the pumps are old.  Run them harder.")
+
+(page "the foreman's log, second leaf" 3
+  "Water in the lower gallery to the knee, and no rain above for a month."
+  "The engine house swears the pumps are drawing.  They are.  It makes no odds."
+  "The stone the masons left is wet from the inside."
+  "Guild order: take six down past the breach and find where the water goes."
+  "I am going with them.  I will not send anyone where I will not walk.")
+
+(page "a surveyor's note" 5
+  "Levelled from the breach: the old works lie below the mine, not beside it."
+  "The water in the galleries is not rising from them.  It is going down into"
+  "them.  Every sump drains toward the breach.  The pumps lift it; it comes"
+  "back; it goes down.  Something below is drinking the mine.")
+
+(page "an unsent letter" 6
+  "Dear Ada, we are below the breach and the lamps burn blue down here."
+  "The foreman keeps us together and says little.  The water does not stand"
+  "anywhere; it runs, always one way, down and in, like it is wanted."
+  "If this reaches you before I do, keep the pump house door barred, and do"
+  "not let the Guild tell you there is a seam.")
+
+(page "a mason's mark, copied out" 7
+  "Cut in the lintel at the fourth stair, copied by the surveyor:"
+  "  We built the well-house around the stone that drinks."
+  "  It gathers the water of the hills to itself and holds it."
+  "  While it lies here the valley has wells.  Lift it and the water follows."
+  "The city that built this had no name I can read.  Its wells are Kettle's.")
+
+(page "a Pump Guild ledger, last page" 8
+  "Pump Guild of Kettle.  In council."
+  "The surveyor's report read and set aside.  A stone that gathers water is"
+  "worth more than a seam.  Sell it to the dry towns east and the Guild need"
+  "never cut coal again."
+  "Resolved: the foreman's crew to bring it up.  The wells of Kettle to be"
+  "the town's concern, not the Guild's.")
+
+(page "the foreman's log, last leaf" 9
+  "Nine days below the breach.  There are keepers here, stone that walks, and"
+  "they do not want us nearer the well-house.  Lost Tam at the fourth stair."
+  "I am sending the rest up.  Hollis will not go; says the pump can be made to"
+  "draw again if someone stays to work it.  So two of us stay."
+  "If you read this, you were sent down too.  Do not bring it up for them.")
+
+(page "a note in the pump-wright's hand" 11
+  "To whoever is fool enough to be this deep: the stone does what the masons"
+  "said.  Lift it and the water comes after it, up every stair you climb."
+  "The Delve will fill behind you and the breach will be under a lake."
+  "Kettle keeps its wells either way; it is the Guild that loses a mine."
+  "Don't stop on the stairs.                                        -- Hollis")

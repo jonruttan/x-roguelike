@@ -7,8 +7,10 @@
 ; @license MIT No Attribution (MIT-0)
 ;
 ; A level's items are drawn from the set's (item CLASS NAME . PROPS)
-; forms by their (rarity N), with gold by the set's (gold CHANCE LO HI)
-; and the goal on its level.  A potion, scroll, wand or ring is known by
+; forms by their (rarity N), with gold by the set's (gold CHANCE LO HI),
+; the goal on its level, and each (page NAME DEPTH LINE ...) on its,
+; once: a page is read like a scroll, shows its lines, and is kept.
+; A potion, scroll, wand or ring is known by
 ; a guise until one of its kind is used; the guises are shuffled each
 ; game.  Using a thing takes its (effect NAME ARGS...): each effect is
 ; a function in a table here, so a set may use any of them in any
@@ -24,12 +26,13 @@
 (import roguelike/state
   game-rng game-set game-depth game-map game-player game-floor game-floor! game-pack game-pack! game-ask!
   game-guises game-known game-known! game-param game-param1 game-goal-placed? game-goal-placed!
+  game-pages-placed game-page-placed!
   player-r player-c player-at! player-hp player-hp! player-hpmax player-hpmax! player-str player-str!
   player-strmax player-strmax! player-armour player-armour! player-weapon player-weapon! player-rings
   player-rings! player-food player-food! player-condition! player-gold player-gold!
   creature-hp creature-hp! creature-at! creature-condition! creature-name
   item-make item-form item-class item-name item-prop item-prop1 item-count item-count! item-charges
-  item-charges! item-enchant item-enchant! item-letter item-letter! item-r item-c item-at! item-class?
+  item-charges! item-enchant item-enchant! item-letter item-letter! item-r item-c item-at! item-class? item-class-in?
   state-say! state-tell! state-roll state-chance? state-creature-at state-items-at state-free?
   state-remove-floor! state-remove-pack! state-ring?)
 (import roguelike/combat combat-kill! combat-hurt-player!)
@@ -85,6 +88,25 @@
 
 (def items-goal-held? (fn (_ g) (List any? (fn (_ it) (item-class? it (lit goal))) (game-pack g))))
 
+; A page's item form from its (page NAME DEPTH LINE ...): (page NAME
+; (text LINE ...)).
+(def items-page-form (fn (_ args) (list (lit page) (first args) (pair (lit text) (rest (rest args))))))
+; The set's page named NAME, as an item form, or nil.
+(def items-page-named
+  (fn (_ g name)
+    (def hit (List find (fn (_ a) (str=? (first a) name)) (data-all (game-set g) (lit page))))
+    (if (null? hit) () (items-page-form hit))))
+
+; Each page of the depth not yet placed, on the level.
+(def items-place-pages!
+  (fn (_ g)
+    (List for-each
+      (fn (_ args)
+        (when (if (= (game-depth g) (List ref 1 args)) (not (List includes? (first args) (game-pages-placed g))) #f)
+          (do (%it-put! g (item-make (items-page-form args) 1 0))
+              (game-page-placed! g (first args)))))
+      (data-all (game-set g) (lit page)))))
+
 ; --- naming ------------------------------------------------------------------
 
 (def %it-str=? (fn (_ a) (fn (_ b) (str=? a b))))
@@ -133,7 +155,8 @@
                                       (Str8 str (+ (item-prop1 it (lit armour) 0) (item-enchant it))) "]")))
     (pair (lit food) (fn (_ g it) (%it-plural it (item-name it))))
     (pair (lit gold) (fn (_ g it) (Str8 append (Str8 str (item-count it)) " gold pieces")))
-    (pair (lit goal) (fn (_ g it) (item-name it)))))
+    (pair (lit goal) (fn (_ g it) (item-name it)))
+    (pair (lit page) (fn (_ g it) (item-name it)))))
 (def items-name
   (fn (_ g it)
     (def namer (Assoc get (item-class it) %it-namers))
@@ -150,12 +173,12 @@
 
 (def items-glyph (fn (_ g it) (data-glyph (game-set g) (item-class it) "?")))
 
-; The pack's items of CLASS, or all of them for nil, a line each:
-; "a) a short blade (in hand)".
+; The pack's items of CLASS, one or a list, or all of them for nil, a
+; line each: "a) a short blade (in hand)".
 (def items-pack-lines
   (fn (_ g class)
     (List map (fn (_ it) (Str8 append (item-letter it) ") " (items-name g it) (items-worn g it)))
-      (List filter (fn (_ it) (if (null? class) #t (item-class? it class))) (game-pack g)))))
+      (List filter (fn (_ it) (item-class-in? it class)) (game-pack g)))))
 
 ; --- the pack ----------------------------------------------------------------
 
@@ -319,7 +342,12 @@
     (items-know! g it)
     (%it-consume! g it)
     (%it-effect! g it)))
-(def items-read! (fn (_ g it) (items-quaff! g it)))
+; A scroll read; a page shown, its lines over the level, and kept.
+(def items-read!
+  (fn (_ g it)
+    (if (item-class? it (lit page))
+      (game-ask! g (list (lit look) (item-name it) () (item-prop it (lit text) ())))
+      (items-quaff! g it))))
 
 ; The first creature from the player along DR DC within RANGE, or nil.
 (def items-target
@@ -405,6 +433,7 @@
     (state-tell! g (lit removed) "You take off {name}." (list (pair "name" (items-name g it))))))
 
 (provide roguelike/items
-  items-new items-spawn! items-place-goal! items-goal-held? items-known? items-know! items-name items-worn
+  items-new items-spawn! items-place-goal! items-goal-held? items-page-named items-place-pages!
+  items-known? items-know! items-name items-worn
   items-glyph items-pack-lines items-by-letter items-pickup! items-drop! items-quaff! items-read! items-target items-zap!
   items-eat! items-wield! items-wear! items-take-off! items-put-on! items-remove!)

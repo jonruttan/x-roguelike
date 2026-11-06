@@ -21,7 +21,7 @@
 (import x/type/vector)
 (import x/core/doors int/)
 (import roguelike/data data-all data-prop data-prop1 data-trait?)
-(import roguelike/map map-visible? map-tile tile-door)
+(import roguelike/map map-visible? map-tile map-down tile-door)
 (import roguelike/dungeon dungeon-spot)
 (import roguelike/state
   game-rng game-set game-depth game-map game-player game-creatures game-creatures! game-turn game-param1
@@ -88,6 +88,23 @@
 
 (def creatures-spawn!
   (fn (self g n awake?) (unless (< n 1) (do (creatures-spawn-one! g awake?) (self g (- n 1) awake?)))))
+
+; The set's kind named NAME, or nil.
+(def creatures-kind
+  (fn (_ g name) (List find (fn (_ k) (str=? (first k) name)) (data-all (game-set g) (lit creature)))))
+
+; A guardian: the kind named NAME put on a free cell beside the stairs
+; down, or anywhere with none free, asleep unless wakeful.
+(def creatures-guardian!
+  (fn (_ g name)
+    (def kind (creatures-kind g name))
+    (def down (map-down (game-map g)))
+    (def beside (List find (fn (_ d) (state-free? g (+ (first down) (first d)) (+ (rest down) (rest d))))
+                  ((game-rng g) shuffle %cr-around)))
+    (def at (if (null? beside) (dungeon-spot (game-rng g) (game-map g) (fn (_ r c) (state-free? g r c)) 100)
+              (pair (+ (first down) (first beside)) (+ (rest down) (rest beside)))))
+    (unless (if (null? kind) #t (null? at))
+      (creatures-place! g kind (first at) (rest at) (if (data-trait? kind (lit wakeful)) (lit awake) (lit asleep))))))
 
 ; Now and then a creature arrives on the level, awake: one chance in the
 ; set's (wander N) a turn.
@@ -180,7 +197,7 @@
 (def %cr-summon!
   (fn (_ g cr)
     (def name (creature-prop1 cr (lit summon) ""))
-    (def kind (List find (fn (_ k) (str=? (first k) name)) (data-all (game-set g) (lit creature))))
+    (def kind (creatures-kind g name))
     (def spot (List find (fn (_ d) (state-free? g (+ (creature-r cr) (first d)) (+ (creature-c cr) (rest d))))
                 ((game-rng g) shuffle %cr-around)))
     (unless (if (null? kind) #t (null? spot))
@@ -266,5 +283,6 @@
       (game-creatures g))))
 
 (provide roguelike/creatures
-  creatures-kinds creatures-place! creatures-spawn-one! creatures-spawn! creatures-wander! creatures-door-diagonal?
+  creatures-kinds creatures-kind creatures-place! creatures-spawn-one! creatures-spawn! creatures-guardian!
+  creatures-wander! creatures-door-diagonal?
   creatures-can-step? creatures-act! creatures-shown? creatures-wake-all! creatures-scare!)

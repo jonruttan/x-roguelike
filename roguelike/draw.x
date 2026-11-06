@@ -8,8 +8,9 @@
 ;
 ; The first row says what happened this turn, or asks the question
 ; being asked; the level fills the rows between; the last row is the
-; player's standing.  Cells seen are drawn dim, cells in view plain;
-; items where they were seen, creatures only in view, the player last.
+; player's standing.  Cells seen are drawn dim, cells in view plain, in
+; the band's (colour N) where the set has bands; items where they were
+; seen, creatures only in view, the player last.
 ; A list being looked at -- the pack, the keys -- lies over the level,
 ; and so do the items a question for one can take.
 
@@ -28,7 +29,7 @@
   game-over game-epitaph game-turn
   player-r player-c player-hp player-hpmax player-str player-strmax player-level player-exp player-gold
   player-food player-condition item-r item-c item-class? item-class creature-r creature-c creature-glyph
-  game-param state-defence)
+  game-param game-band band-prop1 state-defence)
 (import roguelike/combat combat-exp-for)
 (import roguelike/creatures creatures-shown?)
 (import roguelike/items items-glyph items-pack-lines)
@@ -58,21 +59,31 @@
 ; Row R drawn: every seen cell's glyph as one dim text, a blank for the
 ; rest, so the row is written whole even with nothing seen and nothing
 ; laid over it last time stays; each run of cells in view put again
-; plain.
+; plain.  DIM and PLAIN are the level's styles.
 (def %dr-row!
-  (fn (_ s m r bytes buf)
+  (fn (_ s m r bytes buf dim plain)
     (def cols (map-cols m))
     (map-row-glyphs! m r bytes buf)
-    (screen-put! s (+ r 1) 0 buf %dr-dim)
+    (screen-put! s (+ r 1) 0 buf dim)
     ((fn (self c)
        (when (< c cols)
-         ((fn (_ e) (screen-put! s (+ r 1) c (Str8 sub c (- e c) buf) %dr-plain) (self (map-visible-next m r e)))
+         ((fn (_ e) (screen-put! s (+ r 1) c (Str8 sub c (- e c) buf) plain) (self (map-visible-next m r e)))
           (map-visible-run m r c))))
      (map-visible-next m r 0))))
 
 ; The tile bytes and the item glyphs of a set, made once and kept
-; against the set they were made from.
-(def %dr-cache (Vector of () () ()))
+; against the set they were made from; the band's styles, (COLOUR DIM
+; . PLAIN), kept against its colour.
+(def %dr-cache (Vector of () () () ()))
+(def %dr-band-styles
+  (fn (_ g)
+    (def b (game-band g))
+    (def colour (if (null? b) () (band-prop1 b (lit colour) ())))
+    (def kept (Vector ref 3 %dr-cache))
+    (match ((null? colour) (pair %dr-dim %dr-plain))
+           ((if (null? kept) #f (= (first kept) colour)) (rest kept))
+           (#t (do (Vector set! 3 (pair colour (pair (Style make (list (lit dim)) colour ()) (Style make () colour ()))) %dr-cache)
+                   (rest (Vector ref 3 %dr-cache)))))))
 (def %dr-cached!
   (fn (_ set)
     (unless (same? set (Vector ref 0 %dr-cache))
@@ -80,7 +91,7 @@
           (Vector set! 1 (%dr-tile-bytes set) %dr-cache)
           (Vector set! 2 (List map (fn (_ c) (pair c (data-glyph set c "?")))
                                    (list (lit potion) (lit scroll) (lit wand) (lit ring) (lit weapon) (lit armour)
-                                         (lit food) (lit gold) (lit goal)))
+                                         (lit food) (lit gold) (lit goal) (lit page)))
                        %dr-cache)))))
 (def %dr-item-glyph
   (fn (self it l)
@@ -94,7 +105,8 @@
     (%dr-cached! set)
     (def bytes (Vector ref 1 %dr-cache))
     (def buf (str-make (map-cols m)))
-    ((fn (self r) (when (< r (map-rows m)) (do (%dr-row! s m r bytes buf) (self (+ r 1))))) 0)
+    (def styles (%dr-band-styles g))
+    ((fn (self r) (when (< r (map-rows m)) (do (%dr-row! s m r bytes buf (first styles) (rest styles)) (self (+ r 1))))) 0)
     (%dr-stairs! s m (map-down m) bytes tile-down)
     (%dr-stairs! s m (map-up m) bytes tile-up)))
 
