@@ -8,9 +8,12 @@
 ;
 ; A level's items are drawn from the set's (item CLASS NAME . PROPS)
 ; forms whose (depth LO HI) covers the level, every level without one,
-; by their (rarity N); gold comes by the set's (gold CHANCE LO HI), the
-; goal on its level, and each (page NAME DEPTH LINE ...) on its, once:
-; a page is read like a scroll, shows its lines, and is kept.
+; by their (rarity N); gold comes by the set's (gold CHANCE LO HI);
+; then the band's caches, each (cache CLASS LO HI) of it that many
+; things of CLASS laid with a keeper beside each, a creature of the
+; depth; the goal on its level; and each (page NAME DEPTH LINE ...) on
+; its, once: a page is read like a scroll, shows its lines, and is
+; kept.
 ; A potion, scroll, wand or ring is known by
 ; a guise until one of its kind is used; the guises are shuffled each
 ; game.  Using a thing takes its (effect NAME ARGS...): each effect is
@@ -22,13 +25,14 @@
 (module roguelike/items)
 
 (import x/type/vector)
-(import roguelike/data data-all data-prop data-glyph)
+(import roguelike/data data-all data-prop data-glyph data-trait?)
 (import roguelike/map
-  map-walkable? map-reveal! map-rooms map-rooms! map-room-at room-r0 room-c0 room-r1 room-c1 map-tile tile-floor)
+  map-walkable? map-reveal! map-rooms map-rooms! map-room-at room-r0 room-c0 room-r1 room-c1 map-tile map-visible?
+  tile-floor)
 (import roguelike/dungeon dungeon-spot)
 (import roguelike/state
   game-rng game-set game-depth game-map game-player game-floor game-floor! game-pack game-pack! game-ask!
-  game-guises game-known game-known! game-param game-param1 game-goal-placed? game-goal-placed!
+  game-guises game-known game-known! game-param game-param1 game-goal-placed? game-goal-placed! game-band
   game-pages-placed game-page-placed!
   player-r player-c player-at! player-hp player-hp! player-hpmax player-hpmax! player-str player-str!
   player-strmax player-strmax! player-armour player-armour! player-weapon player-weapon! player-rings
@@ -39,7 +43,7 @@
   state-say! state-tell! state-roll state-chance? state-creature-at state-items-at state-free?
   state-remove-floor! state-remove-pack! state-ring? state-covers?)
 (import roguelike/combat combat-kill! combat-hurt-player!)
-(import roguelike/creatures creatures-wake-all! creatures-scare!)
+(import roguelike/creatures creatures-wake-all! creatures-scare! creatures-kinds creatures-place!)
 
 ; --- spawning ----------------------------------------------------------------
 
@@ -86,6 +90,48 @@
       (do (%it-put! g (if (state-chance? (game-rng g) (first (game-param g (lit gold) (list 35 5 25)))) (%it-gold g)
                         (items-new g (%it-random-form g))))
           (self g (- n 1))))))
+
+; A cache: a thing of CLASS whose depth covers the level, drawn by
+; rarity, laid out of view with a keeper beside it, a creature of the
+; depth, asleep unless wakeful.  Nothing is laid where no cell, no form
+; or no kind serves.
+(def %it-around
+  (list (pair -1 -1) (pair -1 0) (pair -1 1) (pair 0 -1) (pair 0 1) (pair 1 -1) (pair 1 0) (pair 1 1)))
+; One of FORMS drawn by rarity, or nil with none to draw.
+(def %it-draw
+  (fn (_ g forms)
+    (def total (List fold (fn (_ acc f) (+ acc (%it-weight f))) 0 forms))
+    (if (< total 1) () (%it-pick forms ((game-rng g) int total)))))
+(def %it-cache!
+  (fn (_ g class)
+    (def form (%it-draw g (List filter (fn (_ f) (if (eq? (first f) class) (state-covers? (data-prop f (lit depth) (list 1 99)) (game-depth g)) #f))
+                            (%it-forms g))))
+    (def kinds (creatures-kinds g (game-depth g)))
+    (def at (dungeon-spot (game-rng g) (game-map g)
+              (fn (_ r c) (match ((not (state-free? g r c)) #f) ((not (null? (state-items-at g r c))) #f)
+                                 (#t (not (map-visible? (game-map g) r c)))))
+              100))
+    (unless (match ((null? form) #t) ((null? kinds) #t) (#t (null? at)))
+      (do (def it (items-new g form))
+          (item-at! it (first at) (rest at))
+          (game-floor! g (pair it (game-floor g)))
+          (def kind ((game-rng g) choice kinds))
+          (def beside (List find (fn (_ d) (state-free? g (+ (first at) (first d)) (+ (rest at) (rest d))))
+                        ((game-rng g) shuffle %it-around)))
+          (unless (null? beside)
+            (creatures-place! g kind (+ (first at) (first beside)) (+ (rest at) (rest beside))
+              (if (data-trait? kind (lit wakeful)) (lit awake) (lit asleep))))))))
+
+; The band's caches, each (cache CLASS LO HI) of it that many times.
+(def items-place-caches!
+  (fn (_ g)
+    (def b (game-band g))
+    (unless (null? b)
+      (List for-each
+        (fn (_ c)
+          ((fn (self n) (when (< 0 n) (do (%it-cache! g (List ref 1 c)) (self (- n 1)))))
+           (state-roll (game-rng g) (List ref 2 c) (List ref 3 c))))
+        (List filter (fn (_ p) (if (pair? p) (eq? (first p) (lit cache)) #f)) (rest (rest b)))))))
 
 ; The goal, (goal NAME GLYPH DEPTH), on its level, once; one with no
 ; DEPTH lies nowhere, and is someone's to give.
@@ -463,7 +509,7 @@
     (state-tell! g (lit removed) "You take off {name}." (list (pair "name" (items-name g it))))))
 
 (provide roguelike/items
-  items-new items-spawn! items-place-goal! items-goal-held? items-page-named items-place-pages!
+  items-new items-spawn! items-place-caches! items-place-goal! items-goal-held? items-page-named items-place-pages!
   items-known? items-know! items-name items-worn
   items-glyph items-pack-lines items-by-letter items-pickup! items-drop! items-quaff! items-read! items-target items-zap!
   items-eat! items-wield! items-wear! items-take-off! items-put-on! items-remove! items-teleport!)

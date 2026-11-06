@@ -9,16 +9,17 @@ descents, and their specs stand.
 
 ## the set
 
-### the kettle set loads: seven by five screens, open ground, a goal with no level, no hunger
+### the kettle set loads: seven by five screens, open ground, a goal with no level, hunger as a store, three rings
 
 ```roguelike
 (def set (spec-set-named "kettle"))
 (def world (data-one set 'world ()))
 (write (list (data-get set 'set "") (first world) (List ref 1 world) (List ref 2 world) (data-get set 'level-style 'rooms)
-             (List length (data-one set 'goal ())) (data-get set 'hunger 1) (List length (data-all set 'creature))))
+             (List length (data-one set 'goal ())) (data-get set 'hunger 1) (List length (data-all set 'creature))
+             (List map (fn (_ b) (List ref 1 b)) (data-all set 'band))))
 ```
 ---
-    ("kettle" 'screens 7 5 'open 2 0 19)
+    ("kettle" 'screens 7 5 'open 2 1200 19 (1 3 5))
 
 ## open ground
 
@@ -74,9 +75,11 @@ descents, and their specs stand.
 (player-at! p 0 40)
 (game-key! g "k")
 (game-creatures! g ())
+(spec-settle! g)
 (player-at! p 0 40)
 (game-key! g "k")
 (game-creatures! g ())
+(spec-settle! g)
 (def at (list (first (game-screen g)) (rest (game-screen g)) (game-depth g)))
 (player-at! p 0 40)
 (def turns (game-turn g))
@@ -132,7 +135,7 @@ descents, and their specs stand.
 (def g (spec-game-on (spec-set-named "kettle") 4 ()))
 (def p (game-player g))
 (def goal? (fn (_) (List any? (fn (_ it) (eq? (item-class it) 'goal)) (game-floor g))))
-(def go! (fn (_ r c key) (game-creatures! g ()) (player-at! p r c) (game-key! g key)))
+(def go! (fn (_ r c key) (game-creatures! g ()) (player-at! p r c) (game-key! g key) (spec-settle! g)))
 (go! 11 79 "l")
 (go! 11 79 "l")
 (go! 11 79 "l")

@@ -283,3 +283,8 @@
                (list (pair "h" (pair 0 -1)) (pair "j" (pair 1 0)) (pair "k" (pair -1 0)) (pair "l" (pair 0 1)))))
     (if (null? hit) ()
       (pair (first hit) (pair (+ (player-r p) (* n (first (rest hit)))) (+ (player-c p) (* n (rest (rest hit)))))))))
+
+; Every question G is asking answered with Escape, a --More-- included,
+; so the next key is a move: a crossing's band word can overrun the row.
+(def spec-settle!
+  (fn (self g) (unless (null? (game-ask g)) (do (game-key! g (lit escape)) (self g)))))

@@ -112,6 +112,16 @@ gives; the goal laid in the square is the win.  A quest a set writes
 by hand may stand on a `(screen X Y)` in place of a level, its tokens
 on a `(lies X Y)`.
 
+What lies about is dispersed by two forms any set may use.  An item's
+`(depth LO HI)` is the levels, or the rings out from the hub, where it
+may lie; one without lies anywhere.  A band's `(cache CLASS LO HI)`,
+as many as it likes, lays that many things of CLASS a level, each
+drawn by rarity from what the depth allows and laid out of view with a
+keeper beside it, a creature of the depth, asleep unless wakeful: a
+thing worth having and what stands between you and it.  `kettle`'s
+three rings are its bands, each with its word, its colour and its
+caches, and few things lie loose.
+
 ## Running the suite
 
     make test            every spec, loudly
