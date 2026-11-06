@@ -181,3 +181,15 @@ of it and the win at the hub.
 ```
 ---
     (() #t)
+
+## what lies where
+
+### a link's want lies nowhere but where the chain says: no token in the square, over six seeds
+
+```roguelike
+(def set (spec-set-named "kettle"))
+(def tokens (fn (_ seed) (def g (spec-game-on set seed ())) (Heap collect) (List count-if (fn (_ it) (eq? (item-class it) 'token)) (game-floor g))))
+(write (List map tokens (List range 1 7)))
+```
+---
+    (0 0 0 0 0 0)

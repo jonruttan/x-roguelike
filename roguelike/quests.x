@@ -93,14 +93,15 @@
           (game-placed! g name)))))
 
 ; Of Q's N tokens, the Kth lies on level LEVEL - N + 1 + K.
-; Of Q's N tokens, the Kth lies on level LEVEL - N + 1 + K; with a
-; (lies X Y), every one on that screen.
+; Of Q's N tokens, the Kth lies on level LEVEL - N + 1 + K; a quest on
+; a (screen X Y) lays every one on its (lies X Y), and none without.
 (def %qs-place-tokens!
   (fn (_ g q)
     (def names (%qs-items q))
     (def k (- (game-depth g) (+ 1 (- (%qs-level q) (List length names)))))
     (def lay! (fn (_ name) (unless (game-placed? g name) (%qs-place-token! g q name))))
     (match ((not (null? (data-prop q (lit lies) ()))) (when (%qs-on-screen? g q (lit lies)) (List for-each lay! names)))
+           ((not (null? (data-prop q (lit screen) ()))) ())
            ((if (< k 0) #t (not (< k (List length names)))) ())
            (#t (lay! (List ref k names))))))
 
