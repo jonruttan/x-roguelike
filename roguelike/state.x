@@ -29,7 +29,7 @@
 ; 16 rows, 17 columns, 18 the epitaph, 19 the seed, 20 whether the goal
 ; has been placed, 21 the names of the pages placed, 22 the quests,
 ; (NAME . STATE) each, 23 the names of what the quests have placed, 24
-; the level's traps.
+; the level's traps, 25 the steps taken exploring, or nil when not.
 ; Every slot here is read through the object doors, not the class: a
 ; class send costs some two hundred objects, and a turn reads thousands.
 (def %st-ref (fn (_ v k) (obj-ref v (int+ k 1))))
@@ -86,6 +86,9 @@
 (def game-placed! (fn (_ g name) (%st-put! g 23 (pair name (%st-get g 23)))))
 (def game-traps (fn (_ g) (%st-get g 24)))
 (def game-traps! (fn (_ g l) (%st-put! g 24 l)))
+(def game-exploring (fn (_ g) (%st-get g 25)))
+(def game-exploring? (fn (_ g) (not (null? (%st-get g 25)))))
+(def game-exploring! (fn (_ g n) (%st-put! g 25 n)))
 
 ; The set's parameter HEAD, its values, or DEFAULT's.
 (def game-param (fn (_ g head default) (data-one (game-set g) head default)))
@@ -260,7 +263,7 @@
 
 (def game-new
   (fn (_ set seed rows cols)
-    (def g (Vector make 25 ()))
+    (def g (Vector make 26 ()))
     (def rng (Random sw seed))
     (%st-put! g 0 rng)
     (%st-put! g 1 set)
@@ -278,6 +281,7 @@
     (%st-put! g 22 ())
     (%st-put! g 23 ())
     (%st-put! g 24 ())
+    (%st-put! g 25 ())
     g))
 
 ; --- messages ----------------------------------------------------------------
@@ -390,8 +394,8 @@
   game-ask game-ask! game-over game-over! game-guises game-known game-known! game-deepest game-deepest!
   game-log game-rows game-cols game-epitaph game-epitaph! game-seed game-goal-placed? game-goal-placed!
   game-pages-placed game-page-placed! game-quests game-quest-state game-quest-state! game-placed game-placed?
-  game-placed! game-traps game-traps! game-param game-param1 game-band game-band-from band-name band-to
-  band-prop1 game-new
+  game-placed! game-traps game-traps! game-exploring game-exploring? game-exploring!
+  game-param game-param1 game-band game-band-from band-name band-to band-prop1 game-new
   player-r player-c player-at! player-hp player-hp! player-hpmax player-hpmax! player-str player-str!
   player-strmax player-strmax! player-level player-level! player-exp player-exp! player-gold player-gold!
   player-armour player-armour! player-weapon player-weapon! player-rings player-rings! player-food player-food!

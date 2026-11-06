@@ -210,7 +210,7 @@ blow on a sleeper -- is in 10-elements.
 
 ## exploring and the log
 
-### o walks toward what is unseen until something comes into view, or nothing is left
+### o takes a step toward what is unseen, and the walk goes on a step a call until nothing is left; a key stops it
 
 ```roguelike
 (def g (spec-game-on (spec-set-named "delve") 4 ()))
@@ -219,11 +219,16 @@ blow on a sleeper -- is in 10-elements.
 (def before (pair (player-r p) (player-c p)))
 (def seen (spec-count-seen (game-map g)))
 (game-key! g "o")
-(def moved (not (if (= (first before) (player-r p)) (= (rest before) (player-c p)) #f)))
-(write (list moved (< 0 (game-turn g)) (< seen (spec-count-seen (game-map g)))))
+(def first-step (list (not (if (= (first before) (player-r p)) (= (rest before) (player-c p)) #f)) (game-turn g) (game-exploring? g)))
+(def walk (fn (self n) (if (game-explore! g) (self (+ n 1)) n)))
+(def steps (walk 0))
+(def walked (list (< 0 steps) (game-exploring? g) (= (game-turn g) (+ 1 steps)) (< seen (spec-count-seen (game-map g)))))
+(game-key! g "o")
+(game-key! g ".")
+(write (list first-step walked (game-exploring? g)))
 ```
 ---
-    (#t #t #t)
+    ((#t 1 #t) (#t #f #t #t) #f)
 
 ### L shows what was said lately, and takes no turn
 
