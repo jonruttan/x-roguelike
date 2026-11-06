@@ -9,6 +9,6 @@
 ; tower.
 (dialect he)
 
-(requires-release "v0.45.0")
+(requires-release "v0.46.0")
 
 (entry "run.x")
