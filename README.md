@@ -136,8 +136,17 @@ the screen back; nothing in them touches a terminal.
 
 A plain bot plays a game a seed and reports where games end, what ends
 them in each band, its standing on arriving at each level, and what it
-used.  It plays below a person, so its numbers are a floor.  The
-header of tools/balance.x has the knobs.
+used.  It plays below a person, so its numbers are a floor.
+BALANCE_STYLE picks how it plays: plain, cautious, greedy, brawler or
+sneak.  The header of tools/balance.x has the knobs.
+
+    MODEL_SET=delve x -l roguelike -f tools/model.x
+
+The set's numbers worked out with no game played: for each level the
+player there, the creatures and how many come awake, how often a
+weapon lies there, and for each kind what a fight costs bare-handed
+and armed, and the most of them the player outlasts in the open and
+in a line.  The header of tools/model.x has the formulas.
 
 ## Installing
 
