@@ -19,7 +19,7 @@ Scores keep in `~/.x-roguelike/scores`.
     h j k l y u b n   move; the arrows too.  Walk into a creature to attack it, or to talk.
     .                 rest a turn              s         search beside you
     ,  g              pick up what is here
-    o                 explore until something comes into view
+    o                 explore until something comes into view; a key stops
     L                 what has been said lately
     >                 go down the stairs       <         go up, with the goal
     i                 your pack                d         drop a thing

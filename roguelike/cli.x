@@ -28,8 +28,9 @@
 (import x/tui/screen)
 (import x/sys/opts)
 (import roguelike/data data-load data-get)
-(import roguelike/state game-over game-epitaph game-depth game-deepest game-messages game-ask game-player player-gold)
-(import roguelike/game game-make game-key! game-score game-help)
+(import roguelike/state
+  game-over game-epitaph game-depth game-deepest game-messages game-ask game-player player-gold game-exploring? game-exploring!)
+(import roguelike/game game-make game-key! game-explore! game-score game-help)
 (import roguelike/draw game-draw!)
 (import roguelike/save save-write! save-read save-path save-score! save-scores)
 
@@ -70,30 +71,54 @@
 
 ; --- the terminal ------------------------------------------------------------
 
+; A byte reader for Term key: bytes read sixty-four at a time and handed
+; out one by one; asked anything, whether any are in hand.  After an
+; Escape with none in hand it waits thirty milliseconds for more, and
+; answers nil when none come, which the decoder takes as a bare Escape
+; rather than the start of a sequence.
 (def %cl-reader
   (fn (_)
-    (def box (Vector of ()))
+    (def box (Vector of () #f))
+    (def waiting? (fn (_) (not (null? (Sys poll (list (pair 0 (list (lit in)))) 30)))))
     (fn (self . ask)
-      (if (null? ask)
-        (do (when (null? (Vector ref 0 box)) (Vector set! 0 (Sys fd-read 0 64) box))
-            (if (null? (Vector ref 0 box)) ()
-              ((fn (_ b) (Vector set! 0 (rest (Vector ref 0 box)) box) b) (first (Vector ref 0 box)))))
-        (not (null? (Vector ref 0 box)))))))
+      (if (not (null? ask)) (not (null? (Vector ref 0 box)))
+        (do (when (if (null? (Vector ref 0 box)) (if (Vector ref 1 box) (waiting?) #t) #f)
+              (Vector set! 0 (Sys fd-read 0 64) box))
+            (def b (if (null? (Vector ref 0 box)) () (first (Vector ref 0 box))))
+            (unless (null? b) (Vector set! 0 (rest (Vector ref 0 box)) box))
+            (Vector set! 1 (if (null? b) #f (= b 27)) box)
+            b)))))
 
 (def %cl-show!
   (fn (_ g screen)
     (game-draw! g screen)
     (Term emit 1 (Screen render screen))))
 
+; Whether a key is waiting: in the reader's hand, or at the terminal
+; within MS milliseconds.
+(def %cl-key-waiting?
+  (fn (_ reader ms)
+    (if (reader (lit ask)) #t (not (null? (Sys poll (list (pair 0 (list (lit in)))) ms))))))
+
+; Exploring, the game walks a step a frame until the walk ends or a
+; key arrives, which only stops it.
+(def %cl-explore!
+  (fn (_ g screen reader)
+    (if (%cl-key-waiting? reader 30)
+      (do (Term key reader) (game-exploring! g ()))
+      (do (game-explore! g) (Heap collect)))))
+
 (def %cl-loop
   (fn (self g screen reader)
     (%cl-show! g screen)
-    (def key (Term key reader))
-    (match
-      ((null? key) ())
-      ((not (null? (game-over g))) ())
-      ((eq? key (lit clear)) (do (Screen repaint screen) (self g screen reader)))
-      (#t (do (game-key! g key) (Heap collect) (self g screen reader))))))
+    (if (game-exploring? g) (do (%cl-explore! g screen reader) (self g screen reader))
+      ((fn (_ key)
+         (match
+           ((null? key) ())
+           ((not (null? (game-over g))) ())
+           ((eq? key (lit clear)) (do (Screen repaint screen) (self g screen reader)))
+           (#t (do (game-key! g key) (Heap collect) (self g screen reader)))))
+       (Term key reader)))))
 
 (def %cl-esc (fn (_ text) (Str8 append "\x1b" text)))
 

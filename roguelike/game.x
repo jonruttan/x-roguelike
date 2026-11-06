@@ -12,7 +12,10 @@
 ; take theirs, hunger grows, hit points return, and the view is lit
 ; again.  With the set's (starve N), hunger past nothing costs a hit
 ; point every N turns and stops the hit points returning, in place of
-; the faint and the end.  The stairs down make a new level; the stairs up are sealed
+; the faint and the end.  Exploring, o, is a step a turn: the key takes
+; the first, and whoever drives the game takes the rest with
+; game-explore! until it answers that the walk is over, drawing each;
+; any key stops it.  The stairs down make a new level; the stairs up are sealed
 ; until the goal is held, and then each level climbed is made anew,
 ; roused and hostile.  A set's bands each say their (enter "TEXT") on
 ; their first level and put their (guardian "NAME") by the stairs down
@@ -31,6 +34,7 @@
 (import roguelike/state
   game-rng game-set game-depth game-depth! game-map game-map! game-player game-creatures game-creatures!
   game-floor game-floor! game-pack game-turn game-turn! game-ask game-ask! game-over game-over! game-traps!
+  game-exploring game-exploring!
   game-deepest game-deepest! game-rows game-cols game-param game-param1 game-new game-epitaph!
   game-messages game-messages! game-log game-band game-band-from band-to band-prop1
   player-r player-c player-at! player-hp player-hp! player-hpmax player-level player-food player-food!
@@ -260,19 +264,24 @@
     (Vector set! (at (player-r p) (player-c p)) #t came)
     (search (list (pair (player-r p) (player-c p))) ())))
 
-; Walk toward what is not yet seen, a turn a step, until a creature is
-; in view, nothing is left to see, or a hundred steps are taken.
-(def %gm-explore!
-  (fn (self g n)
-    (def shown (List find (fn (_ cr) (creatures-shown? g cr)) (game-creatures g)))
+; One step toward what is not yet seen, a turn: whether the walk goes
+; on.  It ends with a creature in view, a question asked, nothing left
+; to see, a hundred steps taken, or the game over.
+(def game-explore!
+  (fn (_ g)
+    (def n (game-exploring g))
+    (def stop (fn (_) (game-exploring! g ()) #f))
+    (def shown (if (null? n) () (List find (fn (_ cr) (creatures-shown? g cr)) (game-creatures g))))
     (match
-      ((not (null? (game-over g))) #f)
+      ((null? n) #f)
+      ((not (null? (game-over g))) (stop))
+      ((not (null? (game-ask g))) (stop))
       ((not (null? shown))
-        (do (when (= n 0) (state-tell! g (lit creature-near) "You see a {name}." (list (pair "name" (creature-name shown))))) #f))
-      ((= n 100) #f)
+        (do (when (= n 0) (state-tell! g (lit creature-near) "You see a {name}." (list (pair "name" (creature-name shown))))) (stop)))
+      ((= n 100) (stop))
       (#t ((fn (_ d)
-             (if (null? d) (do (when (= n 0) (state-tell! g (lit explored) "Nothing left to explore." ())) #f)
-               (do (%gm-move! g (first d) (rest d)) (%gm-end-turn! g) (Heap collect) (self g (+ n 1)))))
+             (if (null? d) (do (when (= n 0) (state-tell! g (lit explored) "Nothing left to explore." ())) (stop))
+               (do (%gm-move! g (first d) (rest d)) (%gm-end-turn! g) (Heap collect) (game-exploring! g (+ n 1)) #t)))
            (%gm-explore-step g))))))
 
 ; --- commands ----------------------------------------------------------------
@@ -342,7 +351,7 @@
     (pair "P" (fn (_ g) (%gm-ask-item! g "Put on what?" (lit ring) (fn (_ it) (%gm-use-ring! g it)))))
     (pair "R" (fn (_ g) (%gm-ask-item! g "Remove what?" (lit ring) (fn (_ it) (%gm-use-ring! g it)))))
     (pair "d" (fn (_ g) (%gm-ask-item! g "Drop what?" () (fn (_ it) (items-drop! g it) #t))))
-    (pair "o" (fn (_ g) (%gm-explore! g 0)))
+    (pair "o" (fn (_ g) (do (game-exploring! g 0) (game-explore! g) #f)))
     (pair "L" (fn (_ g) (%gm-look! g "Lately:" (List reverse (List take 20 (game-log g))))))
     (pair "?" (fn (_ g) (%gm-look! g "The keys:" (game-help g))))
     (pair "Q" (fn (_ g) (do (game-ask! g (list (lit yn) "Really quit?" (fn (_) (game-over! g (lit quit)) (game-epitaph! g "quit") #f))) #f)))
@@ -404,10 +413,12 @@
       (#t (do (state-tell! g (lit unknown-key) "Unknown key.  ? lists them." ()) #f)))))
 
 ; KEY taken, as (Term key) decodes keys: a move or a command, or the
-; answer to what was asked.  After a game is over, keys do nothing.
+; answer to what was asked.  A key ends a walk.  After a game is over,
+; keys do nothing.
 (def game-key!
   (fn (_ g key)
     (state-clear-messages! g)
+    (game-exploring! g ())
     (match
       ((not (null? (game-over g))) ())
       ((not (null? (game-ask g))) (when (%gm-answer! g key) (%gm-end-turn! g)))
@@ -425,7 +436,7 @@
     (list "h j k l y u b n  move; the arrows too.  Walk into a creature to attack it, or to talk."
           ".      rest a turn          s      search beside you"
           ",  g   pick up what is here"
-          "o      explore what is unseen until something comes into view"
+          "o      explore what is unseen until something comes into view; a key stops"
           "L      what has been said lately"
           ">      go down the stairs   <      go up, with the goal in hand"
           "i      your pack            d      drop a thing"
@@ -436,4 +447,4 @@
           "S      save and leave       Q      quit"
           "?      these keys           Esc    stop asking")))
 
-(provide roguelike/game game-make game-key! game-more! game-score game-help)
+(provide roguelike/game game-make game-key! game-explore! game-more! game-score game-help)
