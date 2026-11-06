@@ -24,7 +24,7 @@ Scores keep in `~/.x-roguelike/scores`.
     o                 explore until something comes into view; a key stops
     L                 what has been said lately
     m                 the map of the world, in a world of screens
-    >                 go down the stairs       <         go up, with the goal
+    >                 go down, or in a door    <         go up with the goal, or out
     i                 your pack                d         drop a thing
     q                 quaff a potion           r         read a scroll or a page
     z                 zap a wand               e         eat
@@ -111,6 +111,19 @@ outward, by what each person says, and paid inward, by what each
 gives; the goal laid in the square is the win.  A quest a set writes
 by hand may stand on a `(screen X Y)` in place of a level, its tokens
 on a `(lies X Y)`.
+
+Behind some doors is a place of its own.  `(interior NAME . PROPS)`
+is one: a screen made at a depth its `(depth LO HI)` covers lays a
+door to it when its `(chance PERCENT)` comes up, the first of the
+set's interiors to do so, one door a screen.  `>` on the door goes in
+and `<` comes out onto it; the interior is kept like a screen.  Its
+level is made by its own forms before the set's, so any knob it names
+-- `(level-style ...)`, `(rooms LO HI)`, `(room-size ...)`,
+`(cave-fill ...)`, `(creatures LO HI)`, `(items LO HI)` -- is its own;
+it has a way out and none on, and its `(enter "TEXT")` is said the
+first time in.  `(stairs up)` gives any level that shape.  `kettle`
+has a farmhouse cellar in the farms, a shepherd's bothy in the hills
+and an old city vault in the far valley.
 
 What lies about is dispersed by two forms any set may use.  An item's
 `(depth LO HI)` is the levels, or the rings out from the hub, where it

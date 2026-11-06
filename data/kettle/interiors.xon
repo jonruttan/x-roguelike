@@ -1,0 +1,22 @@
+; interiors.xon -- the kettle set: the places behind doors.
+;
+; (interior NAME . PROPS): on a screen its (depth LO HI) covers, a door
+; to it at its (chance PERCENT), the first of these to come up, one door
+; a screen.  Its level is made by its own forms before the set's, with
+; a way out and no way further down; (enter "TEXT") is said the first
+; time in.  The band's caches are laid inside as they are out of doors.
+
+(interior "farmhouse cellar" (depth 1 2) (chance 40)
+  (enter "Stone steps down into the dark, and something shifting among the barrels.")
+  (level-style rooms) (rooms 1 3) (room-size 4 10 3 5)
+  (creatures 1 2) (items 1 2))
+
+(interior "shepherd's bothy" (depth 3 3) (chance 35)
+  (enter "Peat smoke and a cold hearth; whoever lived here left in a hurry.")
+  (level-style rooms) (rooms 1 2) (room-size 5 12 3 6)
+  (creatures 1 2) (items 1 3))
+
+(interior "old city vault" (depth 4 5) (chance 50)
+  (enter "The Guild's lamps have been here before you, and the vault runs on past where they dug.")
+  (level-style caves) (cave-fill 35)
+  (creatures 2 4) (items 2 3))

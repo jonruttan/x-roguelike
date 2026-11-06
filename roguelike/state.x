@@ -33,7 +33,9 @@
 ; the screen stood on, (X . Y), or nil in a descent, 27 the levels
 ; kept, (KEY . LEVEL) each, a LEVEL being (MAP CREATURES FLOOR TRAPS),
 ; 28 the chain: the quests made for this game from the set's scenes,
-; each a (quest ...) form as a set would write it.
+; each a (quest ...) form as a set would write it, 29 the doors laid,
+; (KEY . NAME) each, the screen's key and the interior behind it, 30
+; the interior stood in, its name, or nil outside.
 ; Every slot here is read through the object doors, not the class: a
 ; class send costs some two hundred objects, and a turn reads thousands.
 (def %st-ref (fn (_ v k) (obj-ref v (int+ k 1))))
@@ -133,6 +135,18 @@
 (def game-screen-key (fn (_ x y) (Str8 append (Str8 str x) "," (Str8 str y))))
 (def game-chain (fn (_ g) (%st-get g 28)))
 (def game-chain! (fn (_ g forms) (%st-put! g 28 forms)))
+(def game-doors (fn (_ g) (%st-get g 29)))
+; The interior behind the door of the screen kept under KEY, or nil.
+(def game-door (fn (_ g key) (def d (List find (fn (_ p) (str=? (first p) key)) (%st-get g 29))) (if (null? d) () (rest d))))
+(def game-door! (fn (_ g key name) (%st-put! g 29 (pair (pair key name) (%st-get g 29)))))
+(def game-inside (fn (_ g) (%st-get g 30)))
+(def game-inside! (fn (_ g name) (%st-put! g 30 name)))
+; The key the level in hand is kept under: its screen's, or, inside,
+; that with a > after it.
+(def game-level-key
+  (fn (_ g)
+    (def key (game-screen-key (first (game-screen g)) (rest (game-screen g))))
+    (if (null? (game-inside g)) key (Str8 append key ">"))))
 
 ; The set's bands, (band NAME TO . PROPS) each, run one after another
 ; from level 1, each to its TO.  The band the depth is in, as (FROM .
@@ -303,7 +317,7 @@
 
 (def game-new
   (fn (_ set seed rows cols)
-    (def g (Vector make 29 ()))
+    (def g (Vector make 31 ()))
     (def rng (Random sw seed))
     (%st-put! g 0 rng)
     (%st-put! g 1 set)
@@ -325,6 +339,8 @@
     (%st-put! g 26 ())
     (%st-put! g 27 ())
     (%st-put! g 28 ())
+    (%st-put! g 29 ())
+    (%st-put! g 30 ())
     g))
 
 ; --- messages ----------------------------------------------------------------
@@ -440,6 +456,7 @@
   game-pages-placed game-page-placed! game-quests game-quest-state game-quest-state! game-placed game-placed?
   game-placed! game-traps game-traps! game-exploring game-exploring? game-exploring!
   game-screen game-screen! game-kept game-kept-level game-keep! game-chain game-chain!
+  game-doors game-door game-door! game-inside game-inside! game-level-key
   game-world game-screens? game-world-cols game-world-rows game-hub game-screen-distance game-screen-in?
   game-screen-key
   game-param game-param1 game-band game-band-from band-name band-to band-prop1 game-new
