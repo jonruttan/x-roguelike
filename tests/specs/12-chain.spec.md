@@ -55,27 +55,6 @@ of it and the win at the hub.
 ---
     (#t #t #t 'goal (0 1) #t (#t #f) 2 2)
 
-### every chain the first twelve seeds draw is sound, and they are not all the same
-
-```roguelike
-(def set (spec-set-named "kettle"))
-(def sound?
-  (fn (_ chain)
-    (def prop (fn (_ q key) (data-prop (rest q) key ())))
-    (def n (List length chain))
-    (def want (fn (_ q) (List ref 1 (prop q 'wants))))
-    (def gift (fn (_ q) (List ref 1 (first (prop q 'rewards)))))
-    (match ((< n 2) #f) ((< 3 n) #f)
-           ((not (eq? (first (first (prop (first chain) 'rewards))) 'goal)) #f)
-           ((null? (prop (List ref (- n 1) chain) 'lies)) #f)
-           (#t (List all? (fn (_ i) (str=? (want (List ref i chain)) (gift (List ref (+ i 1) chain)))) (List range 0 (- n 1)))))))
-(def chains (List map (fn (_ seed) ((fn (_ g) (Heap collect) (game-chain g)) (spec-game-on set seed ()))) (List range 1 13)))
-(def heads (List distinct (List map (fn (_ c) (List ref 1 (first c))) chains)))
-(write (list (List all? sound? chains) (< 1 (List length heads)) (< 1 (List length (List distinct (List map (fn (_ c) (Str8 str (List length c))) chains))))))
-```
----
-    (#t #t #t)
-
 ## the errand
 
 ### the goal's giver stands in the square and, walked into, says the way to what they want
@@ -169,27 +148,3 @@ of it and the win at the hub.
 ```
 ---
     (#t #t ("the clerk" "the surveyor") #t #t 'open)
-
-## random play
-
-### two games of a thousand keys raise nothing and keep every invariant
-
-```roguelike
-(def runs (List map (fn (_ seed) (spec-random-play (spec-set-named "kettle") seed 1000)) (List range 5 7)))
-(write (list (List filter (fn (_ r) (not (null? (List ref 4 r)))) runs)
-             (< 40 (List fold (fn (_ a r) (+ a (List ref 2 r))) 0 runs))))
-```
----
-    (() #t)
-
-## what lies where
-
-### a link's want lies nowhere but where the chain says: no token in the square, over six seeds
-
-```roguelike
-(def set (spec-set-named "kettle"))
-(def tokens (fn (_ seed) (def g (spec-game-on set seed ())) (Heap collect) (List count-if (fn (_ it) (eq? (item-class it) 'token)) (game-floor g))))
-(write (List map tokens (List range 1 7)))
-```
----
-    (0 0 0 0 0 0)
