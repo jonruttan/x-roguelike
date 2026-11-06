@@ -24,3 +24,16 @@
 
 (guise wand "ash" "hazel" "elm" "yew")
 (guise ring "tin" "horn" "bone" "silver")
+
+; What the people trade (see scenes.xon): never drawn for a screen.  A
+; token that no scene gives lies on the ground at the chain's end, or
+; with its (carrier "kind").
+(item token "the pump-house key" (rarity 0))
+(item token "a flask of spirits" (rarity 0))
+(item token "a sack of flour" (rarity 0))
+(item token "a letter of the council" (rarity 0))
+(item token "the sealed order" (rarity 0))
+(item token "the ferry pole" (rarity 0))
+(item token "the mill pin" (rarity 0))
+(item token "the lamp" (rarity 0) (carrier "road thief"))
+(item token "the surveyor's chain" (rarity 0) (carrier "crow"))

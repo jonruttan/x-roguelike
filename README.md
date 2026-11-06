@@ -97,6 +97,21 @@ before.  `(level-style open)` carves open ground: every cell floor,
 `(clumps LO HI)` thickets of wall, each a walk of `(clump-size LO HI)`
 cells, the outer ring always clear, no rooms and no stairs.
 
+Each game of `kettle` is an errand drawn from the set's scenes: `(scene
+NAME GIVER . PROPS)` is a link, the GIVER a creature that talks, who
+`(wants "thing")` and, given it, `(gives CLASS "name")` or `(gives
+goal)`, with its `(ask ...)`, `(again ...)` and `(done ...)` lines, in
+which `{want}` is the thing wanted and `{where}` the way to it in
+screens.  A scene giving the goal stands on the hub; what it wants,
+another scene gives, a screen farther out, and so on, `(chain LO HI)`
+links at most; the last want lies on the ground a screen beyond, or
+with the token's `(carrier "kind")`.  A `(goal NAME GLYPH)` with no
+level lies nowhere and is the chain's to give.  The chain is read
+outward, by what each person says, and paid inward, by what each
+gives; the goal laid in the square is the win.  A quest a set writes
+by hand may stand on a `(screen X Y)` in place of a level, its tokens
+on a `(lies X Y)`.
+
 ## Running the suite
 
     make test            every spec, loudly
