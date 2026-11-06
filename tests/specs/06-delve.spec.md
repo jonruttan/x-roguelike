@@ -230,6 +230,20 @@ blow on a sleeper -- is in 10-elements.
 ---
     ((#t 1 #t) (#t #f #t #t) #f)
 
+### one who talks, in view, does not stop the walk
+
+```roguelike
+(def g (spec-game-on (spec-set-named "delve") 4 ()))
+(game-creatures! g ())
+(def open (spec-open g))
+(def cr (spec-place! g "surveyor" (first (rest open)) (rest (rest open)) 1 'awake))
+(spec-beside! g cr)
+(game-key! g "o")
+(write (list (game-exploring? g) (game-explore! g)))
+```
+---
+    (#t #t)
+
 ### L shows what was said lately, and takes no turn
 
 ```roguelike
