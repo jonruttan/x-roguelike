@@ -22,7 +22,7 @@
 (import x/core/doors int/ int+ int- int< int= int& int>> obj-ref obj-set!)
 (import roguelike/map
   tile-rock tile-floor tile-wall tile-door tile-passage tile-down tile-up
-  map-make map-rows map-cols map-rooms map-rooms! map-down! map-up!
+  map-make map-rows map-cols map-rooms map-rooms! map-down map-down! map-up!
   map-tile map-set! map-in? map-passable? room-r0 room-c0 room-r1 room-c1 room-centre map-each!)
 
 ; The set's parameters, (KEY . VALUES) alist, or DEFAULT's values.
@@ -290,14 +290,20 @@
     m))
 
 ; A level of ROWS by COLS at DEPTH, by PARAMS: rooms, or caves with
-; (level-style caves), or open ground with (level-style open).
+; (level-style caves), or open ground with (level-style open).  With
+; (stairs up) the stairs down are floor: a level with a way back and
+; none on.
 (def dungeon-generate
   (fn (_ rng rows cols depth params)
     (def m (map-make rows cols))
     (def style (first (%dg-p params (lit level-style) (list (lit rooms)))))
     (match ((eq? style (lit caves)) (%dg-caves! rng m params))
            ((eq? style (lit open)) (%dg-open! rng m params))
-           (#t (%dg-rooms! rng m depth params)))))
+           (#t (%dg-rooms! rng m depth params)))
+    (def down (map-down m))
+    (when (if (null? down) #f (eq? (first (%dg-p params (lit stairs) (list (lit both)))) (lit up)))
+      (do (map-set! m (first down) (rest down) tile-floor) (map-down! m ())))
+    m))
 
 ; A random floor cell of M that FREE? allows -- of a random room, or
 ; anywhere on a level without rooms -- or nil after TRIES tries.

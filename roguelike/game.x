@@ -24,8 +24,10 @@
 ; screens, (world screens W H), there are no stairs: a step off the
 ; edge of the screen is a step onto the next, each screen's level kept
 ; and taken up again, m shows the screens visited, and the hub with
-; the goal in hand is the win.  Nothing here touches a terminal: a spec
-; gives keys and reads the state.
+; the goal in hand is the win; a door on a screen, > on it, goes into
+; the interior behind it (see interiors.x), kept the same way, and its
+; way out, <, comes back onto the door.  Nothing here touches a
+; terminal: a spec gives keys and reads the state.
 
 (module roguelike/game)
 
@@ -41,7 +43,7 @@
   game-floor game-floor! game-pack game-turn game-turn! game-ask game-ask! game-over game-over! game-traps game-traps!
   game-exploring game-exploring!
   game-screen game-screen! game-kept-level game-keep! game-screens? game-world-cols game-world-rows game-hub
-  game-screen-distance game-screen-in? game-screen-key
+  game-screen-distance game-screen-in? game-screen-key game-door game-inside game-inside! game-level-key
   game-deepest game-deepest! game-rows game-cols game-param game-param1 game-new game-epitaph!
   game-messages game-messages! game-log game-band game-band-from band-to band-prop1
   player-r player-c player-at! player-hp player-hp! player-hpmax player-level player-food player-food!
@@ -61,6 +63,8 @@
 (import roguelike/quests quests-place! quests-talk!)
 (import roguelike/chain chain-build!)
 (import roguelike/traps traps-found-at traps-place! traps-step! traps-search!)
+(import roguelike/interiors interiors-door! interiors-params interiors-prop1)
+(import roguelike/data data-one)
 
 (def %gm-roll2 (fn (_ g spec) (state-roll (game-rng g) (List ref 0 spec) (List ref 1 spec))))
 
@@ -104,29 +108,33 @@
        0))
     (if (null? found) (dungeon-spot (game-rng g) m (fn (_ r c) (state-free? g r c)) 100) found)))
 
-; A level made for the depth: HOSTILE? on the way up, with more
-; creatures and all awake; the player ARRIVING at the stairs up or
-; down, or at a cell, (R . C), or as near it as is free.  The band's
-; guardian waits on the way down only.
+; A level made for the depth by PARAMS, the set's forms or an
+; interior's before them: HOSTILE? on the way up, with more creatures
+; and all awake; the player ARRIVING at the stairs up or down, or at a
+; cell, (R . C), or as near it as is free.  The band's guardian waits
+; on the way down only.  A screen made may lay a door.  The making
+; leaves some 8 million objects behind, collected here.
 (def %gm-level!
-  (fn (_ g hostile? arriving)
-    (def m (dungeon-generate (game-rng g) (- (game-rows g) 2) (game-cols g) (game-depth g) (game-set g)))
+  (fn (_ g params hostile? arriving)
+    (def m (dungeon-generate (game-rng g) (- (game-rows g) 2) (game-cols g) (game-depth g) params))
     (game-map! g m)
     (game-creatures! g ())
     (game-floor! g ())
     (game-traps! g ())
     (def at (match ((eq? arriving (lit up)) (map-up m)) ((eq? arriving (lit down)) (map-down m)) (#t (%gm-landing g arriving))))
     (player-at! (game-player g) (first at) (rest at))
+    (when (if (game-screens? g) (null? (game-inside g)) #f) (interiors-door! g))
     (%gm-light! g)
-    (creatures-spawn! g (+ (%gm-roll2 g (game-param g (lit creatures) (list 3 6))) (if hostile? 3 0)) hostile?)
+    (creatures-spawn! g (+ (%gm-roll2 g (data-one params (lit creatures) (list 3 6))) (if hostile? 3 0)) hostile?)
     (unless (if hostile? #t (str=? (%gm-guardian-name g) "")) (creatures-guardian! g (%gm-guardian-name g)))
-    (items-spawn! g (%gm-roll2 g (game-param g (lit items) (list 4 8))))
+    (items-spawn! g (%gm-roll2 g (data-one params (lit items) (list 4 8))))
     (items-place-caches! g)
     (items-place-goal! g)
     (items-place-pages! g)
     (quests-place! g)
     (traps-place! g)
-    (%gm-light! g)))
+    (%gm-light! g)
+    (Heap collect)))
 
 ; The band's (enter "TEXT"), said on its first level.
 (def %gm-enter-band!
@@ -139,7 +147,7 @@
   (fn (_ g)
     (game-depth! g (+ (game-depth g) 1))
     (when (< (game-deepest g) (game-depth g)) (game-deepest! g (game-depth g)))
-    (%gm-level! g #f (lit up))
+    (%gm-level! g (game-set g) #f (lit up))
     (state-tell! g (lit stairs-down) "You descend to level {level}." (list (pair "level" (Str8 str (game-depth g)))))
     (%gm-enter-band! g)))
 
@@ -149,17 +157,16 @@
     (if (= (game-depth g) 0)
       (do (game-over! g (lit won))
           (state-tell! g (lit won) "You climb into daylight.  You have won." ()))
-      (do (%gm-level! g #t (lit down))
+      (do (%gm-level! g (game-set g) #t (lit down))
           (state-tell! g (lit stairs-up) "You climb to level {level}." (list (pair "level" (Str8 str (game-depth g)))))))))
 
 ; --- the world of screens ----------------------------------------------------
 
-; The level in hand kept under its screen's key; the level kept as
-; LEVEL taken up again.
+; The level in hand kept under its key, its screen's or its
+; interior's; the level kept as LEVEL taken up again.
 (def %gm-keep!
   (fn (_ g)
-    (game-keep! g (game-screen-key (first (game-screen g)) (rest (game-screen g)))
-      (list (game-map g) (game-creatures g) (game-floor g) (game-traps g)))))
+    (game-keep! g (game-level-key g) (list (game-map g) (game-creatures g) (game-floor g) (game-traps g)))))
 (def %gm-restore!
   (fn (_ g level)
     (game-map! g (List ref 0 level))
@@ -176,20 +183,52 @@
     (game-depth! g (game-screen-distance g x y))
     (when (< (game-deepest g) (game-depth g)) (game-deepest! g (game-depth g)))
     (if (null? kept)
-      (do (%gm-level! g #f at) (%gm-enter-band! g))
+      (do (%gm-level! g (game-set g) #f at) (%gm-enter-band! g))
       (do (%gm-restore! g kept)
           ((fn (_ land) (player-at! (game-player g) (first land) (rest land))) (%gm-landing g at))
           (%gm-light! g)
           (%gm-note-floor! g)))
     (%gm-keep! g)))
 
-; With the goal in hand on the hub screen, the win: by a step onto it,
-; or by the goal given there.
+; Through the door of the screen stood on into the interior NAME behind
+; it: its level taken up again, or made by its forms and its (enter
+; "TEXT") said, the player on its way out.
+(def %gm-go-in!
+  (fn (_ g name)
+    (def subs (list (pair "name" name)))
+    (%gm-keep! g)
+    (game-inside! g name)
+    (def kept (game-kept-level g (game-level-key g)))
+    (if (null? kept)
+      (do (%gm-level! g (interiors-params g name) #f (lit up))
+          (state-tell! g (lit go-in) "You go into the {name}." subs)
+          ((fn (_ text) (unless (str=? text "") (state-say! g text))) (interiors-prop1 g name (lit enter) "")))
+      (do (%gm-restore! g kept)
+          (player-at! (game-player g) (first (map-up (game-map g))) (rest (map-up (game-map g))))
+          (%gm-light! g)
+          (state-tell! g (lit go-in) "You go into the {name}." subs)))
+    (%gm-keep! g)))
+
+; Out of the interior by its way out, onto its screen on the door.
+(def %gm-go-out!
+  (fn (_ g)
+    (def subs (list (pair "name" (game-inside g))))
+    (%gm-keep! g)
+    (game-inside! g ())
+    (%gm-restore! g (game-kept-level g (game-level-key g)))
+    (player-at! (game-player g) (first (map-down (game-map g))) (rest (map-down (game-map g))))
+    (%gm-light! g)
+    (state-tell! g (lit go-out) "You come out of the {name}." subs)
+    (%gm-keep! g)))
+
+; With the goal in hand on the hub screen, out of doors, the win: by a
+; step onto it, or by the goal given there.
 (def %gm-home!
   (fn (_ g)
     (def here (game-screen g))
     (when (match ((not (null? (game-over g))) #f)
                  ((not (game-screens? g)) #f)
+                 ((not (null? (game-inside g))) #f)
                  ((not (items-goal-held? g)) #f)
                  (#t (if (= (first here) (first (game-hub g))) (= (rest here) (rest (game-hub g))) #f)))
       (do (game-over! g (lit won))
@@ -243,6 +282,7 @@
     (state-clear-log! g)
     (state-tell! g (lit welcome) "You enter the dungeon." ())
     (%gm-enter-band! g)
+    (Heap collect)
     g))
 
 ; --- the turn ----------------------------------------------------------------
@@ -308,6 +348,13 @@
   (fn (_ g)
     (def here (state-items-at g (player-r (game-player g)) (player-c (game-player g))))
     (unless (null? here) (items-pickup! g))))
+; A door stood on, out of doors in a world of screens, says where it goes.
+(def %gm-note-door!
+  (fn (_ g)
+    (def p (game-player g))
+    (def name (if (if (game-screens? g) (null? (game-inside g)) #f) (game-door g (game-level-key g)) ()))
+    (when (if (null? name) #f (= (map-tile (game-map g) (player-r p) (player-c p)) tile-down))
+      (state-tell! g (lit door) "There is a way into the {name} here." (list (pair "name" name))))))
 
 ; A step DR DC, a blow at what stands there, or a word with it when it
 ; talks: whether a turn passed.  Confused, the step goes any way; held,
@@ -322,10 +369,11 @@
     (match
       ((< 0 (player-condition p (lit held))) (do (state-tell! g (lit held-still) "You are held fast and cannot move." ()) #t))
       ((not (null? cr)) (if (creature-trait? cr (lit talks)) (quests-talk! g cr) (do (combat-player-attacks! g cr) #t)))
-      ((if (game-screens? g) (not (map-in? (game-map g) r c)) #f) (%gm-cross! g (first d) (rest d)))
+      ((not (map-in? (game-map g) r c))
+        (if (if (game-screens? g) (null? (game-inside g)) #f) (%gm-cross! g (first d) (rest d)) #f))
       ((not (map-walkable? (game-map g) r c)) #f)
       ((creatures-door-diagonal? (game-map g) (player-r p) (player-c p) (first d) (rest d)) #f)
-      (#t (do (player-at! p r c) (%gm-light! g) (traps-step! g) (%gm-note-floor! g) #t)))))
+      (#t (do (player-at! p r c) (%gm-light! g) (traps-step! g) (%gm-note-floor! g) (%gm-note-door! g) #t)))))
 
 ; --- exploring ---------------------------------------------------------------
 
@@ -403,8 +451,14 @@
     (def p (game-player g))
     (def guardian (%gm-guardian g))
     (match
+      ((not (null? (game-inside g)))
+        (do (state-tell! g (lit no-way-on) "There is no way further in." ()) #f))
       ((not (= (map-tile (game-map g) (player-r p) (player-c p)) tile-down))
         (do (state-tell! g (lit no-stairs) "There are no stairs here." ()) #f))
+      ((game-screens? g)
+        ((fn (_ name) (if (null? name) (do (state-tell! g (lit no-stairs) "There are no stairs here." ()) #f)
+                        (do (%gm-go-in! g name) #t)))
+         (game-door g (game-level-key g))))
       ((not (null? guardian))
         (do (state-tell! g (lit barred) "The {name} bars the way down." (list (pair "name" (creature-name guardian)))) #f))
       (#t (do (%gm-descend! g) #t)))))
@@ -414,6 +468,8 @@
     (match
       ((not (= (map-tile (game-map g) (player-r p) (player-c p)) tile-up))
         (do (state-tell! g (lit no-stairs) "There are no stairs here." ()) #f))
+      ((not (null? (game-inside g)))
+        (do (%gm-go-out! g) #t))
       ((not (items-goal-held? g))
         (do (state-tell! g (lit no-way-up) "The way up is sealed." ()) #f))
       (#t (do (%gm-ascend! g) #t)))))
@@ -528,7 +584,9 @@
 
 ; KEY taken, as (Term key) decodes keys: a move or a command, or the
 ; answer to what was asked.  A key ends a walk.  After a game is over,
-; keys do nothing.
+; keys do nothing.  What drives the game collects the heap at its own
+; pace, a turn making some 1.6 million objects; the game collects after
+; making a level, some 8 million (see %gm-level!).
 (def game-key!
   (fn (_ g key)
     (state-clear-messages! g)
@@ -552,7 +610,7 @@
           ",  g   pick up what is here"
           "o      explore what is unseen until something comes into view; a key stops"
           "L      what has been said lately   m      the map of the world"
-          ">      go down the stairs   <      go up, with the goal in hand"
+          ">      down, or in a door   <      up with the goal, or out of a door"
           "i      your pack            d      drop a thing"
           "q      quaff a potion       r      read a scroll or a page"
           "z      zap a wand           e      eat"

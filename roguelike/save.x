@@ -10,7 +10,8 @@
 ; item by its class and name, each creature by its name, the pages
 ; placed, the quests and what they placed, the chain, the level's traps by their
 ; kind's name, its tiles and seen flags as strings of digits, its
-; rooms and stairs; then, in a world of screens, each other level kept,
+; rooms and stairs; then, in a world of screens, the doors laid and the
+; interior stood in, and each other level kept, screen or interior,
 ; after a (screen KEY) line, the same way.
 ; Reading one builds the game again on the same set; a thing the set no
 ; longer has is left out.  A save is read once and then removed by the
@@ -35,6 +36,7 @@
   game-deepest! game-seed game-guises game-goal-placed? game-goal-placed! game-pages-placed game-page-placed!
   game-quests game-quest-state! game-placed game-placed! game-traps game-traps! game-new
   game-screen game-screen! game-kept game-keep! game-screens? game-screen-key game-chain game-chain!
+  game-doors game-door! game-inside game-inside! game-level-key
   player-r player-c player-at! player-hp player-hp! player-hpmax player-hpmax! player-str player-str!
   player-strmax player-strmax! player-level player-level! player-exp player-exp! player-gold player-gold!
   player-armour player-armour! player-weapon player-weapon! player-rings player-rings! player-food
@@ -113,7 +115,7 @@
 ; The levels kept other than the one in hand, each after its (screen KEY).
 (def %sv-kept-forms
   (fn (_ g)
-    (def here (if (game-screens? g) (game-screen-key (first (game-screen g)) (rest (game-screen g))) ""))
+    (def here (if (game-screens? g) (game-level-key g) ""))
     (List flat-map
       (fn (_ p) (if (str=? (first p) here) ()
                   (pair (list (lit screen) (first p))
@@ -133,7 +135,9 @@
             (pair (lit known) (game-known g))
             (pair (lit pages) (game-pages-placed g))
             (pair (lit quests) (List flat-map (fn (_ q) (list (first q) (symbol->str (rest q)))) (game-quests g)))
-            (pair (lit placed) (game-placed g)))
+            (pair (lit placed) (game-placed g))
+            (pair (lit doors) (List flat-map (fn (_ d) (list (first d) (rest d))) (List reverse (game-doors g))))
+            (pair (lit inside) (if (null? (game-inside g)) () (list (game-inside g)))))
       (%sv-chain-forms g)
       (List map (fn (_ args) (pair (lit guise) (pair (symbol->str (first args)) (rest args)))) (game-guises g))
       (List map (fn (_ it) (%sv-item (lit pack) it)) (game-pack g))
@@ -202,6 +206,10 @@
 
 (def %sv-conditions
   (fn (self l) (if (null? l) () (pair (pair (Str8 ->sym (first l)) (List ref 1 l)) (self (List drop 2 l))))))
+
+; The doors of a (doors KEY NAME ...) line laid again on G.
+(def %sv-doors!
+  (fn (self g l) (unless (null? l) (do (game-door! g (first l) (List ref 1 l)) (self g (List drop 2 l))))))
 
 ; The chain's quest forms from FORMS' link lines: each (link ...) with
 ; the link-ask, link-again and link-done lines that follow it.
@@ -288,6 +296,8 @@
             (%sv-quests! g (%sv-one forms (lit quests)))
             (List for-each (fn (_ name) (game-placed! g name)) (List reverse (%sv-one forms (lit placed))))
             (game-chain! g (%sv-chain forms))
+            (%sv-doors! g (%sv-one forms (lit doors)))
+            (List for-each (fn (_ name) (game-inside! g name)) (%sv-one forms (lit inside)))
             (game-map! g (%sv-level forms))
             (game-pack! g (%sv-items g set (%sv-all forms (lit pack))))
             (game-floor! g (%sv-items g set (%sv-all forms (lit floor))))
@@ -303,7 +313,7 @@
                               (%sv-items g set (%sv-all (rest part) (lit floor)))
                               (List reject null? (List map (fn (_ a) (%sv-trap set a)) (%sv-all (rest part) (lit trap)))))))
                     (rest parts))
-                  (game-keep! g (game-screen-key (List ref 5 head) (List ref 6 head))
+                  (game-keep! g (game-level-key g)
                     (list (game-map g) (game-creatures g) (game-floor g) (game-traps g)))))
             (%sv-player! g forms)
             (map-light! (game-map g) (player-r (game-player g)) (player-c (game-player g)))

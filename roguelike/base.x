@@ -19,6 +19,7 @@
   game-messages game-turn game-ask game-over game-epitaph game-known game-deepest game-log game-pages-placed
   game-quest-state game-placed game-traps game-traps! game-exploring?
   game-screen game-screens? game-kept game-kept-level game-hub game-screen-key game-screen-distance game-chain
+  game-door game-inside game-level-key
   player-r player-c player-at! player-hp player-hp! player-hpmax player-str player-level player-exp player-gold
   player-food player-food! player-condition player-weapon player-armour player-rings
   creature-make creature-r creature-c creature-at! creature-hp creature-hp! creature-state creature-state!
@@ -45,6 +46,7 @@
   game-messages game-turn game-ask game-over game-epitaph game-known game-deepest game-log game-pages-placed
   game-quest-state game-placed game-traps game-traps! game-exploring?
   game-screen game-screens? game-kept game-kept-level game-hub game-screen-key game-screen-distance game-chain
+  game-door game-inside game-level-key
   player-r player-c player-at! player-hp player-hp! player-hpmax player-str player-level player-exp player-gold
   player-food player-food! player-condition player-weapon player-armour player-rings
   creature-make creature-r creature-c creature-at! creature-hp creature-hp! creature-state creature-state!
