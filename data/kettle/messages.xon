@@ -1,0 +1,10 @@
+; messages.xon -- the kettle set: what the game says.
+
+(message welcome "Kettle's square, by the well-head.  The Guild's ledger is somewhere in the valley; bring it back here.")
+(message won "You lay the ledger on the well-head.  Kettle has its proof, and the Guild has lost its mine.")
+(message edge "The valley ends here.")
+(message world-map "The valley:")
+(message found-goal "The Guild ledger!  Bring it back to the square.")
+(message no-stairs "There are no stairs in the open air.")
+(message creature-near "You see a {name}.")
+(message explored "Nothing more to see on this screen.")

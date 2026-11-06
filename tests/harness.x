@@ -21,10 +21,11 @@
   game-set game-depth game-map game-player game-creatures game-creatures! game-floor game-floor! game-pack game-pack!
   game-messages game-turn game-ask game-over game-epitaph game-known game-deepest game-log game-pages-placed
   game-quest-state game-placed game-traps game-traps! game-exploring?
+  game-screen game-screens? game-kept game-kept-level game-hub game-screen-key game-screen-distance
   player-r player-c player-at! player-hp player-hp! player-hpmax player-str player-level player-exp player-gold
   player-food player-food! player-condition player-weapon player-armour player-rings
   creature-make creature-r creature-c creature-at! creature-hp creature-hp! creature-state creature-state!
-  creature-name creature-glyph creature-trait? creature-carried item-make item-name item-count item-charges item-enchant item-letter item-r item-c item-at!
+  creature-name creature-glyph creature-trait? creature-carried item-make item-name item-count item-charges item-enchant item-letter item-letter! item-r item-c item-at!
   item-class state-say! state-dist state-adjacent?
   items-name items-new items-known? creatures-kinds creatures-place! trap-make trap-found?
   save-write! save-read save-score! save-scores)
@@ -152,14 +153,20 @@
 (def spec-count-open (fn (_ m) (%spec-count m (fn (_ r c) (not (= (map-tile m r c) tile-rock))))))
 (def spec-count-seen (fn (_ m) (%spec-count m (fn (_ r c) (map-seen? m r c)))))
 
-; Whether every walkable cell of M can be walked to from the stairs up:
-; a flood, a cell a visit, the cells to visit kept as a stack.
+; Whether every walkable cell of M can be walked to from the stairs up,
+; or from the first walkable cell on a level without stairs: a flood, a
+; cell a visit, the cells to visit kept as a stack.
 (def spec-connected?
   (fn (_ m)
     (def rows (map-rows m))
     (def cols (map-cols m))
     (def seen (Vector make (* rows cols) #f))
     (def at (fn (_ r c) (+ (* r cols) c)))
+    (def start
+      (if (null? (map-up m))
+        (List find (fn (_ p) (map-walkable? m (first p) (rest p)))
+          (List flat-map (fn (_ r) (List map (fn (_ c) (pair r c)) (List range 0 cols))) (List range 0 rows)))
+        (map-up m)))
     (def step?
       (fn (_ rr cc)
         (match ((< rr 0) #f) ((< cc 0) #f) ((not (< rr rows)) #f) ((not (< cc cols)) #f)
@@ -174,8 +181,8 @@
               (def next (List filter (fn (_ p) (step? (first p) (rest p)))
                           (list (pair (- r 1) c) (pair (+ r 1) c) (pair r (- c 1)) (pair r (+ c 1)))))
               (self (List append next (rest stack)))))))
-    (Vector set! (at (first (map-up m)) (rest (map-up m))) #t seen)
-    (flood (list (map-up m)))
+    (Vector set! (at (first start) (rest start)) #t seen)
+    (flood (list start))
     (= 0 (%spec-count m (fn (_ r c) (if (map-walkable? m r c) (not (Vector ref (at r c) seen)) #f))))))
 
 ; --- invariants --------------------------------------------------------------

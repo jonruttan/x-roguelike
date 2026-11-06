@@ -10,7 +10,8 @@
 ; item by its class and name, each creature by its name, the pages
 ; placed, the quests and what they placed, the level's traps by their
 ; kind's name, its tiles and seen flags as strings of digits, its
-; rooms and stairs.
+; rooms and stairs; then, in a world of screens, each other level kept,
+; after a (screen KEY) line, the same way.
 ; Reading one builds the game again on the same set; a thing the set no
 ; longer has is left out.  A save is read once and then removed by the
 ; play that read it, so a game is played through once.  The scores are
@@ -33,6 +34,7 @@
   game-floor game-floor! game-pack game-pack! game-turn game-turn! game-known game-known! game-deepest
   game-deepest! game-seed game-guises game-goal-placed? game-goal-placed! game-pages-placed game-page-placed!
   game-quests game-quest-state! game-placed game-placed! game-traps game-traps! game-new
+  game-screen game-screen! game-kept game-keep! game-screens? game-screen-key
   player-r player-c player-at! player-hp player-hp! player-hpmax player-hpmax! player-str player-str!
   player-strmax player-strmax! player-level player-level! player-exp player-exp! player-gold player-gold!
   player-armour player-armour! player-weapon player-weapon! player-rings player-rings! player-food
@@ -72,31 +74,51 @@
           (if (null? (player-armour p)) "" (item-letter (player-armour p)))
           (Str8 join "" (List map item-letter (player-rings p))))))
 
+; A level's forms: its map M, the ITEMS on its floor, its TRAPS and
+; CREATURES.  Stairs it lacks are -1.
+(def %sv-at (fn (_ at) (if (null? at) (list -1 -1) (list (first at) (rest at)))))
+(def %sv-level-forms
+  (fn (_ m items traps creatures)
+    (List append
+      (list (list (lit level) (map-rows m) (map-cols m) (%sv-digits m #f) (%sv-digits m #t))
+            (pair (lit stairs) (List append (%sv-at (map-down m)) (%sv-at (map-up m)))))
+      (List map (fn (_ room) (list (lit room) (List ref 0 room) (List ref 1 room) (List ref 2 room) (List ref 3 room) (if (List ref 4 room) 1 0))) (map-rooms m))
+      (List map (fn (_ it) (%sv-item (lit floor) it)) items)
+      (List map (fn (_ t) (list (lit trap) (trap-r t) (trap-c t) (trap-name t) (if (trap-found? t) 1 0))) traps)
+      (List map (fn (_ cr) (list (lit creature) (creature-name cr) (creature-r cr) (creature-c cr) (creature-hp cr)
+                                 (symbol->str (creature-state cr))
+                                 (if (null? (creature-carried cr)) "" (Str8 append (symbol->str (item-class (creature-carried cr))) "/" (item-name (creature-carried cr))))))
+                creatures))))
+
+; The levels kept other than the one in hand, each after its (screen KEY).
+(def %sv-kept-forms
+  (fn (_ g)
+    (def here (if (game-screens? g) (game-screen-key (first (game-screen g)) (rest (game-screen g))) ""))
+    (List flat-map
+      (fn (_ p) (if (str=? (first p) here) ()
+                  (pair (list (lit screen) (first p))
+                        (%sv-level-forms (List ref 0 (rest p)) (List ref 2 (rest p)) (List ref 3 (rest p)) (List ref 1 (rest p))))))
+      (game-kept g))))
+
 (def %sv-forms
   (fn (_ g)
     (def p (game-player g))
     (def m (game-map g))
+    (def screen (if (game-screens? g) (list (first (game-screen g)) (rest (game-screen g))) (list -1 -1)))
     (List append
-      (list (list (lit saved) (game-seed g) (game-depth g) (game-turn g) (game-deepest g) (if (game-goal-placed? g) 1 0))
+      (list (pair (lit saved) (List append (list (game-seed g) (game-depth g) (game-turn g) (game-deepest g) (if (game-goal-placed? g) 1 0)) screen))
             (list (lit player) (player-r p) (player-c p) (player-hp p) (player-hpmax p) (player-str p) (player-strmax p)
                   (player-level p) (player-exp p) (player-gold p) (player-food p))
             (pair (lit conditions) (List flat-map (fn (_ c) (list (symbol->str (first c)) (rest c))) (player-conditions p)))
             (pair (lit known) (game-known g))
             (pair (lit pages) (game-pages-placed g))
             (pair (lit quests) (List flat-map (fn (_ q) (list (first q) (symbol->str (rest q)))) (game-quests g)))
-            (pair (lit placed) (game-placed g))
-            (list (lit level) (map-rows m) (map-cols m) (%sv-digits m #f) (%sv-digits m #t))
-            (list (lit stairs) (first (map-down m)) (rest (map-down m)) (first (map-up m)) (rest (map-up m))))
-      (List map (fn (_ room) (list (lit room) (List ref 0 room) (List ref 1 room) (List ref 2 room) (List ref 3 room) (if (List ref 4 room) 1 0))) (map-rooms m))
+            (pair (lit placed) (game-placed g)))
       (List map (fn (_ args) (pair (lit guise) (pair (symbol->str (first args)) (rest args)))) (game-guises g))
       (List map (fn (_ it) (%sv-item (lit pack) it)) (game-pack g))
       (list (%sv-worn p))
-      (List map (fn (_ it) (%sv-item (lit floor) it)) (game-floor g))
-      (List map (fn (_ t) (list (lit trap) (trap-r t) (trap-c t) (trap-name t) (if (trap-found? t) 1 0))) (game-traps g))
-      (List map (fn (_ cr) (list (lit creature) (creature-name cr) (creature-r cr) (creature-c cr) (creature-hp cr)
-                                 (symbol->str (creature-state cr))
-                                 (if (null? (creature-carried cr)) "" (Str8 append (symbol->str (item-class (creature-carried cr))) "/" (item-name (creature-carried cr))))))
-                (game-creatures g)))))
+      (%sv-level-forms m (game-floor g) (game-traps g) (game-creatures g))
+      (%sv-kept-forms g))))
 
 ; G written to PATH.
 (def save-write! (fn (_ g path) (File write-all path (Xon emit (%sv-forms g)))))
@@ -144,9 +166,18 @@
     (%sv-digits! m (List ref 3 args) #t)
     (map-rooms! m (List map (fn (_ r) (list (List ref 0 r) (List ref 1 r) (List ref 2 r) (List ref 3 r) (= 1 (List ref 4 r)))) (%sv-all forms (lit room))))
     (def st (%sv-one forms (lit stairs)))
-    (map-down! m (pair (List ref 0 st) (List ref 1 st)))
-    (map-up! m (pair (List ref 2 st) (List ref 3 st)))
+    (unless (< (List ref 0 st) 0) (map-down! m (pair (List ref 0 st) (List ref 1 st))))
+    (unless (< (List ref 2 st) 0) (map-up! m (pair (List ref 2 st) (List ref 3 st))))
     m))
+
+; FORMS cut at each (screen KEY): ((KEY . FORMS) ...) in order, the
+; first with no key, the forms before any screen.
+(def %sv-split
+  (fn (self forms key chunk out)
+    (match ((null? forms) (List reverse (pair (pair key (List reverse chunk)) out)))
+           ((eq? (first (first forms)) (lit screen))
+             (self (rest forms) (List ref 1 (first forms)) () (pair (pair key (List reverse chunk)) out)))
+           (#t (self (rest forms) key (pair (first forms) chunk) out)))))
 
 (def %sv-conditions
   (fn (self l) (if (null? l) () (pair (pair (Str8 ->sym (first l)) (List ref 1 l)) (self (List drop 2 l))))))
@@ -202,7 +233,8 @@
   (fn (_ path set rows cols)
     (if (not (File exists? path)) ()
       (guard (e ())
-        (do (def forms (Xon parse (File read-all path)))
+        (do (def parts (%sv-split (Xon parse (File read-all path)) () () ()))
+            (def forms (rest (first parts)))
             (def head (%sv-one forms (lit saved)))
             (def g (game-new set (List ref 0 head) rows cols))
             (Vector set! 12 (List map (fn (_ a) (pair (Str8 ->sym (first a)) (rest a))) (%sv-all forms (lit guise))) g)
@@ -219,6 +251,18 @@
             (game-floor! g (%sv-items g set (%sv-all forms (lit floor))))
             (game-traps! g (List reject null? (List map (fn (_ a) (%sv-trap set a)) (%sv-all forms (lit trap)))))
             (game-creatures! g (List reject null? (List map (fn (_ a) (%sv-creature g set a)) (%sv-all forms (lit creature)))))
+            (when (if (game-screens? g) (not (< (List ref 5 head) 0)) #f)
+              (do (game-screen! g (pair (List ref 5 head) (List ref 6 head)))
+                  (List for-each
+                    (fn (_ part)
+                      (game-keep! g (first part)
+                        (list (%sv-level (rest part))
+                              (List reject null? (List map (fn (_ a) (%sv-creature g set a)) (%sv-all (rest part) (lit creature))))
+                              (%sv-items g set (%sv-all (rest part) (lit floor)))
+                              (List reject null? (List map (fn (_ a) (%sv-trap set a)) (%sv-all (rest part) (lit trap)))))))
+                    (rest parts))
+                  (game-keep! g (game-screen-key (List ref 5 head) (List ref 6 head))
+                    (list (game-map g) (game-creatures g) (game-floor g) (game-traps g)))))
             (%sv-player! g forms)
             (map-light! (game-map g) (player-r (game-player g)) (player-c (game-player g)))
             (state-say! g "Welcome back.")

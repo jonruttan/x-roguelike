@@ -41,7 +41,7 @@
 (def roguelike-options
   (Opts declare "x -l roguelike --" "[OPTIONS] [play | scores]"
     "A roguelike: a dungeon crawl whose creatures, items and messages are a set of .xon files.\nWith no word, or play, a game; scores lists the best games.  Playing, ? lists the keys."
-    (list (Opts arg "-s" "--set" "NAME" "The set to play: classic, delve, or a directory under data/")
+    (list (Opts arg "-s" "--set" "NAME" "The set to play: classic, delve, kettle, or a directory under data/")
           (Opts arg "-S" "--seed" "N" "The seed; the same seed is the same dungeon")
           (Opts arg "-d" "--data" "DIR" "Where the sets are, in place of the bundle's data/")
           (Opts flag "-V" "--version" "Print the version and exit")

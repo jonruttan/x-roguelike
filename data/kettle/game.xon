@@ -1,0 +1,62 @@
+; game.xon -- the kettle set: the valley above the Delve, a world of
+; screens, and no descent.
+;
+; What this set turns on: a world of screens, (world screens W H),
+; joined at their edges and kept, with Kettle's square on the hub screen
+; in the middle; open ground, (level-style open), with (clumps LO HI)
+; thickets of (clump-size LO HI) cells; sight to eight; no hunger.
+; A screen's depth is its distance from the hub, so what lives on it,
+; and the gold on it, grow with the walk out.  The goal lies four
+; screens from the square, and bringing it back there is the win.
+
+(set "kettle")
+(title "Kettle")
+
+(world screens 7 5)
+
+; The goal: its name, its glyph, and how far from the hub it lies.
+(goal "the Guild ledger" "*" 4)
+
+(player 14 16)
+(unarmed 1 3)
+
+; No hunger: a walk in the valley is short.
+(hunger 0 0 0)
+
+; Sight to eight cells, through nothing solid.
+(view 8)
+
+; Open ground: thickets of wall, the outer ring always clear.
+(level-style open)
+(clumps 8 14)
+(clump-size 8 24)
+
+(creatures 2 5)
+(items 2 4)
+(gold 30 6 20)
+(exp 10)
+(regen 12)
+(wander 80)
+
+; Classes known without being tried.
+(known potion scroll)
+
+(glyph floor ".")
+(glyph wall "T")
+(glyph door "+")
+(glyph passage ".")
+(glyph down ">")
+(glyph up "<")
+(glyph player "@")
+(glyph potion "!")
+(glyph scroll "?")
+(glyph wand "/")
+(glyph ring "=")
+(glyph weapon ")")
+(glyph armour "[")
+(glyph food ":")
+(glyph gold "$")
+(glyph goal "*")
+(glyph page "%")
+(glyph token "'")
+(glyph trap "^")

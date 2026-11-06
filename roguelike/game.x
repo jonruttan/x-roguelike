@@ -20,8 +20,12 @@
 ; roused and hostile.  A set's bands each say their (enter "TEXT") on
 ; their first level and put their (guardian "NAME") by the stairs down
 ; on their last, which stay shut while it lives.  Walking into a
-; creature that talks is a word with it, not a blow.  Nothing here
-; touches a terminal: a spec gives keys and reads the state.
+; creature that talks is a word with it, not a blow.  In a world of
+; screens, (world screens W H), there are no stairs: a step off the
+; edge of the screen is a step onto the next, each screen's level kept
+; and taken up again, m shows the screens visited, and the hub with
+; the goal in hand is the win.  Nothing here touches a terminal: a spec
+; gives keys and reads the state.
 
 (module roguelike/game)
 
@@ -30,18 +34,21 @@
 (import roguelike/map
   map-rows map-cols map-in? map-tile map-up map-down map-walkable? map-seen? map-light! map-light-radius!
   tile-rock tile-down tile-up)
-(import roguelike/dungeon dungeon-generate)
+(import roguelike/dungeon dungeon-generate dungeon-spot)
+(import x/core/doors int/)
 (import roguelike/state
   game-rng game-set game-depth game-depth! game-map game-map! game-player game-creatures game-creatures!
-  game-floor game-floor! game-pack game-turn game-turn! game-ask game-ask! game-over game-over! game-traps!
+  game-floor game-floor! game-pack game-turn game-turn! game-ask game-ask! game-over game-over! game-traps game-traps!
   game-exploring game-exploring!
+  game-screen game-screen! game-kept-level game-keep! game-screens? game-world-cols game-world-rows game-hub
+  game-screen-distance game-screen-in? game-screen-key
   game-deepest game-deepest! game-rows game-cols game-param game-param1 game-new game-epitaph!
   game-messages game-messages! game-log game-band game-band-from band-to band-prop1
   player-r player-c player-at! player-hp player-hp! player-hpmax player-level player-food player-food!
   player-condition player-tick! player-armour player-rings player-gold
   state-say! state-tell! state-text state-clear-messages! state-clear-log! state-roll state-chance? state-dir state-dirs
-  state-creature-at state-creature-named state-items-at state-ring? item-class? item-class-in? item-class item-name
-  creature-name creature-trait?)
+  state-creature-at state-creature-named state-items-at state-free? state-ring? item-class? item-class-in? item-class
+  item-name creature-name creature-trait?)
 (import roguelike/combat combat-player-attacks! combat-hurt-player!)
 (import roguelike/creatures
   creatures-spawn! creatures-guardian! creatures-wander! creatures-act! creatures-door-diagonal? creatures-shown?)
@@ -78,9 +85,27 @@
     (def name (%gm-guardian-name g))
     (if (str=? name "") () (state-creature-named g name))))
 
+; Where the player lands, asked for cell AT: it, when free, else the
+; nearest free cell along the same edge, else anywhere free.
+(def %gm-landing
+  (fn (_ g at)
+    (def m (game-map g))
+    (def side? (if (= (rest at) 0) #t (= (rest at) (- (map-cols m) 1))))
+    (def span (if side? (map-rows m) (map-cols m)))
+    (def try (fn (_ k) (if side? (pair (+ (first at) k) (rest at)) (pair (first at) (+ (rest at) k)))))
+    (def found
+      ((fn (self k)
+         (match ((< span k) ())
+                ((state-free? g (first (try k)) (rest (try k))) (try k))
+                ((state-free? g (first (try (- 0 k))) (rest (try (- 0 k)))) (try (- 0 k)))
+                (#t (self (+ k 1)))))
+       0))
+    (if (null? found) (dungeon-spot (game-rng g) m (fn (_ r c) (state-free? g r c)) 100) found)))
+
 ; A level made for the depth: HOSTILE? on the way up, with more
-; creatures and all awake; the player ARRIVING at the stairs up or down.
-; The band's guardian waits on the way down only.
+; creatures and all awake; the player ARRIVING at the stairs up or
+; down, or at a cell, (R . C), or as near it as is free.  The band's
+; guardian waits on the way down only.
 (def %gm-level!
   (fn (_ g hostile? arriving)
     (def m (dungeon-generate (game-rng g) (- (game-rows g) 2) (game-cols g) (game-depth g) (game-set g)))
@@ -88,7 +113,7 @@
     (game-creatures! g ())
     (game-floor! g ())
     (game-traps! g ())
-    (def at (if (eq? arriving (lit up)) (map-up m) (map-down m)))
+    (def at (match ((eq? arriving (lit up)) (map-up m)) ((eq? arriving (lit down)) (map-down m)) (#t (%gm-landing g arriving))))
     (player-at! (game-player g) (first at) (rest at))
     (%gm-light! g)
     (creatures-spawn! g (+ (%gm-roll2 g (game-param g (lit creatures) (list 3 6))) (if hostile? 3 0)) hostile?)
@@ -124,11 +149,83 @@
       (do (%gm-level! g #t (lit down))
           (state-tell! g (lit stairs-up) "You climb to level {level}." (list (pair "level" (Str8 str (game-depth g)))))))))
 
-; A game on SET from SEED, ROWS by COLS, on level 1.
+; --- the world of screens ----------------------------------------------------
+
+; The level in hand kept under its screen's key; the level kept as
+; LEVEL taken up again.
+(def %gm-keep!
+  (fn (_ g)
+    (game-keep! g (game-screen-key (first (game-screen g)) (rest (game-screen g)))
+      (list (game-map g) (game-creatures g) (game-floor g) (game-traps g)))))
+(def %gm-restore!
+  (fn (_ g level)
+    (game-map! g (List ref 0 level))
+    (game-creatures! g (List ref 1 level))
+    (game-floor! g (List ref 2 level))
+    (game-traps! g (List ref 3 level))))
+
+; Screen X Y entered, the player landing at or near cell AT: its level
+; taken up again, or made and its band's word said.  With the goal in
+; hand, the hub is the win.
+(def %gm-enter-screen!
+  (fn (_ g x y at)
+    (def kept (game-kept-level g (game-screen-key x y)))
+    (game-screen! g (pair x y))
+    (game-depth! g (game-screen-distance g x y))
+    (when (< (game-deepest g) (game-depth g)) (game-deepest! g (game-depth g)))
+    (if (null? kept)
+      (do (%gm-level! g #f at) (%gm-enter-band! g))
+      (do (%gm-restore! g kept)
+          ((fn (_ land) (player-at! (game-player g) (first land) (rest land))) (%gm-landing g at))
+          (%gm-light! g)
+          (%gm-note-floor! g)))
+    (%gm-keep! g)
+    (when (if (items-goal-held? g) (if (= x (first (game-hub g))) (= y (rest (game-hub g))) #f) #f)
+      (do (game-over! g (lit won))
+          (state-tell! g (lit won) "You bring {goal} home.  You have won."
+            (list (pair "goal" (first (game-param g (lit goal) (list "the prize" "*" 20))))))))))
+
+; A step DR DC off the edge of the screen: onto the next screen, the
+; player landing on the facing edge, or, at the world's edge, nowhere
+; and no turn.
+(def %gm-cross!
+  (fn (_ g dr dc)
+    (def p (game-player g))
+    (def m (game-map g))
+    (def r (+ (player-r p) dr))
+    (def c (+ (player-c p) dc))
+    (def dx (match ((< c 0) -1) ((< (- (map-cols m) 1) c) 1) (#t 0)))
+    (def dy (match ((< r 0) -1) ((< (- (map-rows m) 1) r) 1) (#t 0)))
+    (def x (+ (first (game-screen g)) dx))
+    (def y (+ (rest (game-screen g)) dy))
+    (def clamp (fn (_ v n) (match ((< v 0) 0) ((< (- n 1) v) (- n 1)) (#t v))))
+    (def at (pair (if (= dy 0) (clamp r (map-rows m)) (if (< dy 0) (- (map-rows m) 1) 0))
+                  (if (= dx 0) (clamp c (map-cols m)) (if (< dx 0) (- (map-cols m) 1) 0))))
+    (if (game-screen-in? g x y)
+      (do (%gm-keep! g) (%gm-enter-screen! g x y at) #t)
+      (do (state-tell! g (lit edge) "The world ends here." ()) #f))))
+
+; The world as rows of screens: @ the one stood on, . one visited.
+(def %gm-world-lines
+  (fn (_ g)
+    (def here (game-screen g))
+    (List map
+      (fn (_ y)
+        (Str8 join " "
+          (List map (fn (_ x) (match ((if (= x (first here)) (= y (rest here)) #f) "@")
+                                     ((not (null? (game-kept-level g (game-screen-key x y)))) ".")
+                                     (#t " ")))
+                    (List range 0 (game-world-cols g)))))
+      (List range 0 (game-world-rows g)))))
+
+; A game on SET from SEED, ROWS by COLS: on level 1, or on the hub
+; screen of a world of screens, in its middle.
 (def game-make
   (fn (_ set seed rows cols)
     (def g (game-new set seed rows cols))
-    (%gm-descend! g)
+    (if (game-screens? g)
+      (%gm-enter-screen! g (first (game-hub g)) (rest (game-hub g)) (pair (int/ (- rows 2) 2) (int/ cols 2)))
+      (%gm-descend! g))
     (state-clear-messages! g)
     (state-clear-log! g)
     (state-tell! g (lit welcome) "You enter the dungeon." ())
@@ -211,6 +308,7 @@
     (match
       ((< 0 (player-condition p (lit held))) (do (state-tell! g (lit held-still) "You are held fast and cannot move." ()) #t))
       ((not (null? cr)) (if (creature-trait? cr (lit talks)) (quests-talk! g cr) (do (combat-player-attacks! g cr) #t)))
+      ((if (game-screens? g) (not (map-in? (game-map g) r c)) #f) (%gm-cross! g (first d) (rest d)))
       ((not (map-walkable? (game-map g) r c)) #f)
       ((creatures-door-diagonal? (game-map g) (player-r p) (player-c p) (first d) (rest d)) #f)
       (#t (do (player-at! p r c) (%gm-light! g) (traps-step! g) (%gm-note-floor! g) #t)))))
@@ -353,6 +451,8 @@
     (pair "d" (fn (_ g) (%gm-ask-item! g "Drop what?" () (fn (_ it) (items-drop! g it) #t))))
     (pair "o" (fn (_ g) (do (game-exploring! g 0) (game-explore! g) #f)))
     (pair "L" (fn (_ g) (%gm-look! g "Lately:" (List reverse (List take 20 (game-log g))))))
+    (pair "m" (fn (_ g) (if (game-screens? g) (%gm-look! g (state-text g (lit world-map) "The world:" ()) (%gm-world-lines g))
+                          (do (state-tell! g (lit no-world-map) "You know only the level you stand on." ()) #f))))
     (pair "?" (fn (_ g) (%gm-look! g "The keys:" (game-help g))))
     (pair "Q" (fn (_ g) (do (game-ask! g (list (lit yn) "Really quit?" (fn (_) (game-over! g (lit quit)) (game-epitaph! g "quit") #f))) #f)))
     (pair "S" (fn (_ g) (do (game-over! g (lit saved)) #f)))))
@@ -437,7 +537,7 @@
           ".      rest a turn          s      search beside you"
           ",  g   pick up what is here"
           "o      explore what is unseen until something comes into view; a key stops"
-          "L      what has been said lately"
+          "L      what has been said lately   m      the map of the world"
           ">      go down the stairs   <      go up, with the goal in hand"
           "i      your pack            d      drop a thing"
           "q      quaff a potion       r      read a scroll or a page"

@@ -4,7 +4,9 @@ A roguelike on x-lang, as a lang bundle: a dungeon of rooms and
 passages made anew each game, creatures that wake and hunt, things to
 find and work out, hunger, and one life.  Every creature, item, guise,
 message and tuning number is read from a set of `.xon` files, so a set
-is a game of its own on the same engine; `classic` is the one shipped.
+is a game of its own on the same engine; `classic`, `delve` and
+`kettle` are the three shipped, the last a world of screens rather
+than a descent.
 
     x -l roguelike -- [-s NAME] [-S N] [-d DIR] [play]
     x -l roguelike -- scores
@@ -21,6 +23,7 @@ Scores keep in `~/.x-roguelike/scores`.
     ,  g              pick up what is here
     o                 explore until something comes into view; a key stops
     L                 what has been said lately
+    m                 the map of the world, in a world of screens
     >                 go down the stairs       <         go up, with the goal
     i                 your pack                d         drop a thing
     q                 quaff a potion           r         read a scroll or a page
@@ -77,6 +80,22 @@ tokens laid on the levels up to its own, or carried by a `(carrier
 ...)` lines, and `(rewards (CLASS NAME) (CLASS NAME))` to choose from;
 and on a creature, `(pack LO HI)`, `ranged` with `(ranged LO HI)` and
 `(shot "what")`, `summon` with `(summon "name")`, `talks`.
+
+`kettle` is the third set shipped, `--set kettle`: the valley above the
+Delve, a world of screens rather than a descent.  `(world screens W
+H)` makes the world a grid of W by H screens joined at their edges: a
+step off the edge of one is a step onto the next, landing on the
+facing edge, and the world's own edge is said and takes no turn.  A
+screen's level is kept and taken up again as it was left, what was
+dropped there and who was on it; `m` lays the map of the screens
+visited over the level.  A game starts on the hub screen, the one in
+the middle, and a screen's depth is its distance from the hub, so what
+a set says by depth -- what lives where, the gold, the goal, pages,
+quests, bands -- counts from the hub outward.  With the goal in hand,
+the hub is the win.  A world without `(world ...)` is a descent, as
+before.  `(level-style open)` carves open ground: every cell floor,
+`(clumps LO HI)` thickets of wall, each a walk of `(clump-size LO HI)`
+cells, the outer ring always clear, no rooms and no stairs.
 
 ## Running the suite
 

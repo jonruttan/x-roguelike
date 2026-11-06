@@ -60,10 +60,11 @@
     (item-make form 1 (if (null? ch) 0 (state-roll (game-rng g) (List ref 1 ch) (List ref 2 ch))))))
 
 (def %it-gold-form (list (lit gold) "gold"))
+; A pile: the set's (gold CHANCE LO HI) roll times the depth, one at least.
 (def %it-gold
   (fn (_ g)
     (def spec (game-param g (lit gold) (list 35 5 25)))
-    (item-make %it-gold-form (* (game-depth g) (state-roll (game-rng g) (List ref 1 spec) (List ref 2 spec))) 0)))
+    (item-make %it-gold-form (* (if (< (game-depth g) 1) 1 (game-depth g)) (state-roll (game-rng g) (List ref 1 spec) (List ref 2 spec))) 0)))
 
 (def %it-free? (fn (_ g) (fn (_ r c) (null? (state-items-at g r c)))))
 (def %it-put!
