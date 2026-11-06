@@ -10,9 +10,9 @@
 ; it, each put out of view, most of them asleep.  Each turn a sleeping
 ; creature may wake when the player is close; an awake one strikes when
 ; adjacent and otherwise steps toward the player, a fleeing one away; a
-; stationary one waits; an erratic one wanders half the time.  Traits
-; read here: wakeful, fast, slow, regen, stationary, erratic, invisible,
-; breath, skittish.  A fast creature takes two turns in one; a slow one,
+; stationary one waits; an erratic one wanders half the time; one that
+; talks does nothing at all.  Traits read here: wakeful, fast, slow,
+; regen, stationary, erratic, invisible, breath, skittish, talks.  A fast creature takes two turns in one; a slow one,
 ; every other; so does one slowed by a wand.  A creature held by a
 ; scroll does nothing.
 
@@ -228,6 +228,7 @@
     (def p (game-player g))
     (%cr-mind! g cr)
     (match
+      ((creature-trait? cr (lit talks)) ())
       ((< 0 (creature-condition cr (lit held))) ())
       ((eq? (creature-state cr) (lit asleep)) (%cr-maybe-wake! g cr))
       ((%cr-breathes? g cr) (%cr-breathe! g cr))

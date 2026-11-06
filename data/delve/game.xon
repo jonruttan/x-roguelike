@@ -70,3 +70,4 @@
 (glyph gold "$")
 (glyph goal "*")
 (glyph page "%")
+(glyph token "'")

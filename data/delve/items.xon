@@ -40,5 +40,13 @@
 (item armour "scale coat" (rarity 8) (armour 4))
 (item armour "plated harness" (rarity 4) (armour 6))
 
+; What the people below ask for, and what they give: never drawn for a
+; level.
+(item token "the foreman's lamp" (rarity 0))
+(item token "pump valve" (rarity 0))
+(item token "pump crank" (rarity 0))
+(item token "pump seal" (rarity 0))
+(item weapon "foreman's pick" (rarity 0) (damage 3 9))
+
 (guise wand "oak" "bone" "brass" "glass" "iron" "willow" "jet" "copper")
 (guise ring "jade" "onyx" "amber" "opal" "iron" "coral" "garnet" "pearl")

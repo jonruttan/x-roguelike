@@ -27,7 +27,8 @@
 ; being asked, 11 how the game ended or nil, 12 the guises, 13 the item
 ; names known, 14 the deepest level reached, 15 the log (newest first),
 ; 16 rows, 17 columns, 18 the epitaph, 19 the seed, 20 whether the goal
-; has been placed, 21 the names of the pages placed.
+; has been placed, 21 the names of the pages placed, 22 the quests,
+; (NAME . STATE) each, 23 the names of what the quests have placed.
 ; Every slot here is read through the object doors, not the class: a
 ; class send costs some two hundred objects, and a turn reads thousands.
 (def %st-ref (fn (_ v k) (obj-ref v (int+ k 1))))
@@ -70,6 +71,18 @@
 (def game-goal-placed! (fn (_ g) (%st-put! g 20 #t)))
 (def game-pages-placed (fn (_ g) (%st-get g 21)))
 (def game-page-placed! (fn (_ g name) (%st-put! g 21 (pair name (%st-get g 21)))))
+(def game-quests (fn (_ g) (%st-get g 22)))
+; Quest NAME's state: nil before it is opened, else open, reward or done.
+(def game-quest-state
+  (fn (_ g name)
+    (def hit (List find (fn (_ p) (str=? (first p) name)) (%st-get g 22)))
+    (if (null? hit) () (rest hit))))
+(def game-quest-state!
+  (fn (_ g name state)
+    (%st-put! g 22 (pair (pair name state) (List reject (fn (_ p) (str=? (first p) name)) (%st-get g 22))))))
+(def game-placed (fn (_ g) (%st-get g 23)))
+(def game-placed? (fn (_ g name) (List includes? name (%st-get g 23))))
+(def game-placed! (fn (_ g name) (%st-put! g 23 (pair name (%st-get g 23)))))
 
 ; The set's parameter HEAD, its values, or DEFAULT's.
 (def game-param (fn (_ g head default) (data-one (game-set g) head default)))
@@ -244,7 +257,7 @@
 
 (def game-new
   (fn (_ set seed rows cols)
-    (def g (Vector make 22 ()))
+    (def g (Vector make 24 ()))
     (def rng (Random sw seed))
     (%st-put! g 0 rng)
     (%st-put! g 1 set)
@@ -259,6 +272,8 @@
     (%st-put! g 19 seed)
     (%st-put! g 20 #f)
     (%st-put! g 21 ())
+    (%st-put! g 22 ())
+    (%st-put! g 23 ())
     g))
 
 ; --- messages ----------------------------------------------------------------
@@ -360,7 +375,8 @@
   game-floor game-floor! game-pack game-pack! game-messages game-messages! game-turn game-turn!
   game-ask game-ask! game-over game-over! game-guises game-known game-known! game-deepest game-deepest!
   game-log game-rows game-cols game-epitaph game-epitaph! game-seed game-goal-placed? game-goal-placed!
-  game-pages-placed game-page-placed! game-param game-param1 game-band game-band-from band-name band-to band-prop1
+  game-pages-placed game-page-placed! game-quests game-quest-state game-quest-state! game-placed game-placed?
+  game-placed! game-param game-param1 game-band game-band-from band-name band-to band-prop1
   game-new
   player-r player-c player-at! player-hp player-hp! player-hpmax player-hpmax! player-str player-str!
   player-strmax player-strmax! player-level player-level! player-exp player-exp! player-gold player-gold!

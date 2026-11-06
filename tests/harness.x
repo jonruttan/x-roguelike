@@ -20,10 +20,11 @@
   game-make game-key! game-more! game-score game-help game-draw!
   game-set game-depth game-map game-player game-creatures game-creatures! game-floor game-floor! game-pack game-pack!
   game-messages game-turn game-ask game-over game-epitaph game-known game-deepest game-log game-pages-placed
+  game-quest-state game-placed
   player-r player-c player-at! player-hp player-hp! player-hpmax player-str player-level player-exp player-gold
   player-food player-food! player-condition player-weapon player-armour player-rings
   creature-make creature-r creature-c creature-at! creature-hp creature-hp! creature-state creature-state!
-  creature-name creature-glyph creature-trait? item-make item-name item-count item-charges item-enchant item-letter item-r item-c item-at!
+  creature-name creature-glyph creature-trait? creature-carried item-make item-name item-count item-charges item-enchant item-letter item-r item-c item-at!
   item-class state-say! state-dist state-adjacent?
   items-name items-new items-known? creatures-kinds creatures-place!
   save-write! save-read save-score! save-scores)
@@ -115,6 +116,16 @@
                                          #f)))
     (def d (List find ok? (list (pair "h" (pair 0 -1)) (pair "j" (pair 1 0)) (pair "k" (pair -1 0)) (pair "l" (pair 0 1)))))
     (pair (first d) (at d))))
+
+; The player put on a floor cell beside CR, straight across from it:
+; the key that walks into CR.
+(def spec-beside!
+  (fn (_ g cr)
+    (def m (game-map g))
+    (def d (List find (fn (_ d) (= (map-tile m (+ (creature-r cr) (first (rest d))) (+ (creature-c cr) (rest (rest d)))) tile-floor))
+              (list (pair "j" (pair -1 0)) (pair "k" (pair 1 0)) (pair "l" (pair 0 -1)) (pair "h" (pair 0 1)))))
+    (player-at! (game-player g) (+ (creature-r cr) (first (rest d))) (+ (creature-c cr) (rest (rest d))))
+    (first d)))
 
 ; A creature of the set's NAME with HP, awake or not, put at R C.
 (def spec-place!
