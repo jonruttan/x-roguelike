@@ -14,7 +14,9 @@
 ; a guise until one of its kind is used; the guises are shuffled each
 ; game.  Using a thing takes its (effect NAME ARGS...): each effect is
 ; a function in a table here, so a set may use any of them in any
-; item.  A ring's (bonus KEY N) is read by the state, not here.
+; item.  A ring's (bonus KEY N) is read by the state, not here, and so
+; is the (strength N) a weapon or armour asks, which its name shows
+; less its enchantment.
 
 (module roguelike/items)
 
@@ -135,6 +137,11 @@
 (def %it-an (fn (_ s) (Str8 append (if (%it-vowel? s) "an " "a ") s)))
 (def %it-signed (fn (_ n) (if (< n 0) (Str8 str n) (Str8 append "+" (Str8 str n)))))
 (def %it-plural (fn (_ it s) (if (< 1 (item-count it)) (Str8 append (Str8 str (item-count it)) " " s "s") (%it-an s))))
+; " (str N)" for a thing that asks strength, N less its enchantment.
+(def %it-need
+  (fn (_ it)
+    (def n (item-prop1 it (lit strength) 0))
+    (if (= n 0) "" (Str8 append " (str " (Str8 str (- n (item-enchant it))) ")"))))
 
 ; Each class's name: known or guised for the magical ones.
 (def %it-name-magic
@@ -150,9 +157,10 @@
                                     (if (items-known? g it) (Str8 append " (" (Str8 str (item-charges it)) ")") ""))))
     (pair (lit ring) (fn (_ g it) (%it-name-magic g it "ring" " ring")))
     (pair (lit weapon) (fn (_ g it) (Str8 append (%it-an (item-name it))
-                                      (if (= (item-enchant it) 0) "" (Str8 append " " (%it-signed (item-enchant it)))))))
+                                      (if (= (item-enchant it) 0) "" (Str8 append " " (%it-signed (item-enchant it))))
+                                      (%it-need it))))
     (pair (lit armour) (fn (_ g it) (Str8 append (item-name it) " ["
-                                      (Str8 str (+ (item-prop1 it (lit armour) 0) (item-enchant it))) "]")))
+                                      (Str8 str (+ (item-prop1 it (lit armour) 0) (item-enchant it))) "]" (%it-need it))))
     (pair (lit food) (fn (_ g it) (%it-plural it (item-name it))))
     (pair (lit gold) (fn (_ g it) (Str8 append (Str8 str (item-count it)) " gold pieces")))
     (pair (lit goal) (fn (_ g it) (item-name it)))
@@ -276,7 +284,7 @@
   (fn (_ g name turns key default)
     (player-condition! (game-player g) name turns)
     (state-tell! g key default ())))
-(def %it-teleport!
+(def items-teleport!
   (fn (_ g)
     (def at (dungeon-spot (game-rng g) (game-map g) (fn (_ r c) (state-free? g r c)) 100))
     (unless (null? at) (player-at! (game-player g) (first at) (rest at)))
@@ -309,6 +317,18 @@
                          (state-tell! g (lit named) "{name}" (list (pair "name" (items-name g it))))
                          #f)
                        ()))))
+; A weapon or armour of the pack, asked for, enchanted one more.
+(def %it-upgrade!
+  (fn (_ g)
+    (def classes (list (lit weapon) (lit armour)))
+    (if (null? (List filter (fn (_ it) (item-class-in? it classes)) (game-pack g)))
+      (state-tell! g (lit nothing-happens) "Your hands tingle." ())
+      (game-ask! g (list (lit item) "Upgrade what?"
+                         (fn (_ it)
+                           (item-enchant! it (+ (item-enchant it) 1))
+                           (state-tell! g (lit upgraded) "Your {name} glows for a moment." (list (pair "name" (item-name it))))
+                           #f)
+                         classes)))))
 
 ; (EFFECT . (fn (_ g args) ...)) for potions and scrolls.
 (def %it-effects
@@ -322,8 +342,9 @@
     (pair (lit blindness) (fn (_ g a) (%it-condition! g (lit blind) (List ref 0 a) (lit blinded) "A veil falls over your eyes.")))
     (pair (lit seeing) (fn (_ g a) (%it-condition! g (lit seeing) (List ref 0 a) (lit seeing) "You sense everything that moves.")))
     (pair (lit mapping) (fn (_ g a) (do (map-reveal! (game-map g)) (state-tell! g (lit mapped) "The level's shape comes to you." ()))))
-    (pair (lit teleport) (fn (_ g a) (%it-teleport! g)))
+    (pair (lit teleport) (fn (_ g a) (items-teleport! g)))
     (pair (lit identify) (fn (_ g a) (%it-identify! g)))
+    (pair (lit upgrade) (fn (_ g a) (%it-upgrade! g)))
     (pair (lit enchant-weapon) (fn (_ g a) (%it-enchant! g (player-weapon (game-player g)) (lit keener) "Your weapon glows for a moment." "Your hands tingle.")))
     (pair (lit enchant-armour) (fn (_ g a) (%it-enchant! g (player-armour (game-player g)) (lit harder) "Your armour glows for a moment." "Your skin tingles.")))
     (pair (lit fear) (fn (_ g a) (do (creatures-scare! g) (state-tell! g (lit feared) "You hear a terrible wail." ()))))
@@ -437,4 +458,4 @@
   items-new items-spawn! items-place-goal! items-goal-held? items-page-named items-place-pages!
   items-known? items-know! items-name items-worn
   items-glyph items-pack-lines items-by-letter items-pickup! items-drop! items-quaff! items-read! items-target items-zap!
-  items-eat! items-wield! items-wear! items-take-off! items-put-on! items-remove!)
+  items-eat! items-wield! items-wear! items-take-off! items-put-on! items-remove! items-teleport!)

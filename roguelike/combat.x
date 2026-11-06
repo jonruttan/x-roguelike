@@ -9,9 +9,12 @@
 ; A blow lands by a percentage: seventy, five more a level of the one
 ; striking, five less a point of the other's defence, never under five
 ; nor over ninety-five.  Damage is a roll of the weapon's dice, or the
-; creature's (attack LO HI).  A creature's traits act when its blow
-; lands: venom weakens, sticky holds, dazzle confuses, cold slows, drain
-; takes vigour, thief takes a thing from the pack and runs.
+; creature's (attack LO HI).  A weapon that asks more strength than the
+; player has lands five less a point short.  A blow on a sleeper always
+; lands, and does the set's (surprise N) times the damage.  A
+; creature's traits act when its blow lands: venom weakens, sticky
+; holds, dazzle confuses, cold slows, drain takes vigour, thief takes a
+; thing from the pack and runs.
 
 (module roguelike/combat)
 
@@ -20,10 +23,10 @@
   game-rng game-player game-pack game-over game-over! game-epitaph! game-param game-param1
   player-hp player-hp! player-hpmax player-hpmax! player-str player-str! player-strmax
   player-level player-level! player-exp player-exp! player-weapon player-condition!
-  creature-hp creature-hp! creature-name creature-prop creature-prop1 creature-trait? creature-state!
+  creature-hp creature-hp! creature-name creature-prop creature-prop1 creature-trait? creature-state creature-state!
   creature-carried! creature-carried item-prop item-enchant item-letter!
   state-say! state-tell! state-roll state-chance? state-remove-creature! state-remove-pack!
-  state-defence state-strength game-floor! game-floor item-at! creature-r creature-c)
+  state-defence state-strength state-shortfall game-floor! game-floor item-at! creature-r creature-c)
 
 (def %cb-clamp (fn (_ n lo hi) (match ((< n lo) lo) ((< hi n) hi) (#t n))))
 
@@ -82,10 +85,15 @@
 (def combat-player-attacks!
   (fn (_ g cr)
     (def subs (list (pair "name" (creature-name cr))))
-    (if (not (combat-hit? (game-rng g) (player-level (game-player g)) (creature-prop1 cr (lit defence) 3)))
+    (def p (game-player g))
+    (def w (player-weapon p))
+    (def short (if (null? w) 0 (state-shortfall g w)))
+    (def surprise (if (eq? (creature-state cr) (lit asleep)) (game-param1 g (lit surprise) 1) 1))
+    (if (if (< 1 surprise) #f (not (combat-hit? (game-rng g) (- (player-level p) short) (creature-prop1 cr (lit defence) 3))))
       (state-tell! g (lit miss) "You miss the {name}." subs)
-      (do (creature-hp! cr (- (creature-hp cr) (%cb-player-damage g)))
+      (do (creature-hp! cr (- (creature-hp cr) (* surprise (%cb-player-damage g))))
           (creature-state! cr (lit awake))
+          (when (< 1 surprise) (state-tell! g (lit surprised) "You strike the {name} unawares." subs))
           (if (< (creature-hp cr) 1) (combat-kill! g cr)
             (state-tell! g (lit hit) "You hit the {name}." subs))))))
 

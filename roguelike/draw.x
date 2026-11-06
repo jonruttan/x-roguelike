@@ -9,8 +9,8 @@
 ; The first row says what happened this turn, or asks the question
 ; being asked; the level fills the rows between; the last row is the
 ; player's standing.  Cells seen are drawn dim, cells in view plain, in
-; the band's (colour N) where the set has bands; items where they were
-; seen, creatures only in view, the player last.
+; the band's (colour N) where the set has bands; found traps and items
+; where they were seen, creatures only in view, the player last.
 ; A list being looked at -- the pack, the keys, what someone says --
 ; lies over the level, and so do the items a question for one can take
 ; and the choice a question offers.
@@ -27,13 +27,14 @@
   tile-rock tile-floor tile-wall tile-door tile-passage tile-down tile-up)
 (import roguelike/state
   game-set game-depth game-map game-player game-creatures game-floor game-pack game-messages game-ask
-  game-over game-epitaph game-turn
+  game-over game-epitaph game-turn game-traps game-param1
   player-r player-c player-hp player-hpmax player-str player-strmax player-level player-exp player-gold
   player-food player-condition item-r item-c item-class? item-class creature-r creature-c creature-glyph
   creature-trait? game-param game-band band-prop1 state-defence)
 (import roguelike/combat combat-exp-for)
 (import roguelike/creatures creatures-shown?)
 (import roguelike/items items-glyph items-pack-lines)
+(import roguelike/traps trap-r trap-c trap-found?)
 (import roguelike/game game-help game-score)
 
 (def %dr-plain 0)
@@ -45,6 +46,7 @@
 (def %dr-gold (Style make (list (lit bold)) 3 ()))
 (def %dr-goal (Style make (list (lit bold)) 5 ()))
 (def %dr-stairs (Style make (list (lit bold)) 2 ()))
+(def %dr-trap (Style make (list (lit bold)) 1 ()))
 (def %dr-ask (Style make (list (lit bold)) () ()))
 
 ; The set's glyph of each tile code, as a byte, in a vector by code:
@@ -112,6 +114,14 @@
     (%dr-stairs! s m (map-down m) bytes tile-down)
     (%dr-stairs! s m (map-up m) bytes tile-up)))
 
+(def %dr-traps!
+  (fn (_ g s)
+    (def m (game-map g))
+    (def glyph (data-glyph (game-set g) (lit trap) "^"))
+    (List for-each
+      (fn (_ t) (when (if (trap-found? t) (map-seen? m (trap-r t) (trap-c t)) #f)
+                  (screen-put! s (+ (trap-r t) 1) (trap-c t) glyph %dr-trap)))
+      (game-traps g))))
 (def %dr-item-style
   (fn (_ it) (match ((item-class? it (lit gold)) %dr-gold) ((item-class? it (lit goal)) %dr-goal) (#t %dr-item))))
 (def %dr-items!
@@ -140,7 +150,11 @@
   (fn (_ g)
     (def f (player-food (game-player g)))
     (def spec (game-param g (lit hunger) (list 1300 300 150)))
-    (match ((< (List ref 0 spec) 1) "") ((< f 1) "Fainting") ((< f (+ (List ref 2 spec) 1)) "Weak") ((< f (+ (List ref 1 spec) 1)) "Hungry") (#t ""))))
+    (match ((< (List ref 0 spec) 1) "")
+           ((< f 1) (if (< 0 (game-param1 g (lit starve) 0)) "Starving" "Fainting"))
+           ((< f (+ (List ref 2 spec) 1)) "Weak")
+           ((< f (+ (List ref 1 spec) 1)) "Hungry")
+           (#t ""))))
 (def %dr-conditions
   (fn (_ g)
     (def p (game-player g))
@@ -193,6 +207,7 @@
     (Screen fill s 0 0 (Screen cols s) %dr-plain)
     (Screen fill s (- (Screen rows s) 1) 0 (Screen cols s) %dr-plain)
     (%dr-map! g s (game-set g) (game-map g))
+    (%dr-traps! g s)
     (%dr-items! g s)
     (%dr-creatures! g s)
     (%dr-player! g s)

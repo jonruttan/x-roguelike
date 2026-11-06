@@ -1,0 +1,11 @@
+; traps.xon -- the delve set: what lies hidden in the floor.
+;
+; (trap NAME MESSAGE . PROPS): the message is said when one is stepped
+; on; the effect is (effect hurt LO HI), (effect hold N), (effect
+; aggravate) or (effect teleport).  A level has the set's (traps LO HI)
+; of these, drawn at random.
+
+(trap "pit" "You fall into a pit." (effect hurt 2 6))
+(trap "snare" "A snare closes on your leg." (effect hold 3))
+(trap "alarm" "A bell rings through the dark." (effect aggravate))
+(trap "drop shaft" "The floor gives way, and you land somewhere else." (effect teleport))

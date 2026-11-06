@@ -17,7 +17,8 @@ Scores keep in `~/.x-roguelike/scores`.
 ## Keys
 
     h j k l y u b n   move; the arrows too.  Walk into a creature to attack it, or to talk.
-    .  s              rest a turn              ,  g      pick up what is here
+    .                 rest a turn              s         search beside you
+    ,  g              pick up what is here
     o                 explore until something comes into view
     L                 what has been said lately
     >                 go down the stairs       <         go up, with the goal
@@ -51,12 +52,20 @@ and effects; a set combines them as it likes.
 town of Kettle, twelve levels carved as caves in four bands, lit by
 sight to a radius rather than by the room, with creatures that come in
 packs, shoot along a line and call for company, potions and scrolls
-known on sight, no hunger, a guardian at the foot of each band, pages
-on the floor that tell, read in order, why the pumps stopped, and
-three people down there who ask for something and pay for it.
+known on sight, hunger as a store of food that costs hit points when
+it runs out, gear that asks for strength and grows by a scroll of
+upgrade, traps found by searching, a blow on a sleeper that always
+lands, a guardian at the foot of each band, pages on the floor that
+tell, read in order, why the pumps stopped, and three people down
+there who ask for something and pay for it.
 What a set may turn on, each off unless named: `(view N)` sight to N
 cells, `(level-style caves)` with `(cave-fill PERCENT)`, `(known CLASS
-...)`, a first `(hunger ...)` value under one; `(band NAME TO . PROPS)`,
+...)`, a first `(hunger ...)` value under one, or `(starve N)` for a hit
+point every N turns past nothing in place of the faint; `(traps LO HI)`
+a level, of its `(trap NAME MESSAGE (effect ...))` kinds, hurt, hold,
+aggravate or teleport; `(surprise N)` times the damage on a sleeper;
+`(strength N)` on a weapon or armour, and `(effect upgrade)` on a
+scroll; `(band NAME TO . PROPS)`,
 one after another from level 1, with `(enter "TEXT")` said on its first
 level, `(guardian "NAME")` a creature put by the stairs down on its
 last, which stay shut while it lives, and `(colour N)` for its levels;

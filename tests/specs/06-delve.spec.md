@@ -2,14 +2,16 @@
 # @weight 1
 
 What the delve set turns on: caves, sight to a radius, packs, ranged
-and summoning creatures, auto-explore, the log, no hunger, potions and
-scrolls known on sight, bands with their guardians, and pages.  The
-classic set leaves every one of them off, and its specs stand.
+and summoning creatures, auto-explore, the log, potions and scrolls
+known on sight, bands with their guardians, and pages.  The classic
+set leaves every one of them off, and its specs stand.  What it turns
+on in play -- hunger as a store, gear that asks strength, traps, the
+blow on a sleeper -- is in 10-elements.
 
 
 ## the set
 
-### the delve set loads: twelve levels in four bands, sight to seven, no hunger
+### the delve set loads: twelve levels in four bands, sight to seven, a store of food
 
 ```roguelike
 (def set (spec-set-named "delve"))
@@ -18,7 +20,7 @@ classic set leaves every one of them off, and its specs stand.
              (List map (fn (_ b) (List ref 1 b)) (data-all set 'band)) (List length (data-all set 'page))))
 ```
 ---
-    ("delve" 12 7 0 'caves 23 (3 6 9 12) 9)
+    ("delve" 12 7 1600 'caves 23 (3 6 9 12) 9)
 
 ## bands
 
@@ -199,7 +201,7 @@ classic set leaves every one of them off, and its specs stand.
 (def open (spec-open g))
 (spec-place! g "ossuary priest" (first (rest open)) (rest (rest open)) 1000 'awake)
 (player-hp! (game-player g) 1000)
-(spec-press-until g "." (fn (_) (< 1 (List length (game-creatures g)))) 100)
+(spec-press-until g "." (fn (_) (List any? (fn (_ cr) (str=? (creature-name cr) "bone husk")) (game-creatures g))) 100)
 (write (list (< 1 (List length (game-creatures g))) (List any? (fn (_ cr) (str=? (creature-name cr) "bone husk")) (game-creatures g))
              (List any? (fn (_ m) (Str8 starts? "The ossuary priest calls" m)) (game-log g))))
 ```
@@ -232,18 +234,7 @@ classic set leaves every one of them off, and its specs stand.
 ---
     ("Lately:  --any key--" #t 1)
 
-## no hunger, known on sight
-
-### food never counts down and the standing never says so
-
-```roguelike
-(def g (spec-game-on (spec-set-named "delve") 4 ()))
-(game-creatures! g ())
-(List for-each (fn (_ k) (game-key! g k)) (List map (fn (_ n) ".") (List range 0 30)))
-(write (list (player-food (game-player g)) (game-turn g) (Str8 includes? "Fainting" (spec-row g 23))))
-```
----
-    (0 30 #f)
+## known on sight
 
 ### a potion is named before it is tried; a wand is not
 

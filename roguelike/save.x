@@ -8,8 +8,9 @@
 ;
 ; A save is xon, a form a line: the game's numbers, the player, each
 ; item by its class and name, each creature by its name, the pages
-; placed, the quests and what they placed, the level's tiles and seen
-; flags as strings of digits, its rooms and stairs.
+; placed, the quests and what they placed, the level's traps by their
+; kind's name, its tiles and seen flags as strings of digits, its
+; rooms and stairs.
 ; Reading one builds the game again on the same set; a thing the set no
 ; longer has is left out.  A save is read once and then removed by the
 ; play that read it, so a game is played through once.  The scores are
@@ -23,6 +24,7 @@
 (import x/codec/xon)
 (import roguelike/data data-all)
 (import roguelike/items items-page-named)
+(import roguelike/traps trap-make trap-r trap-c trap-name trap-found?)
 (import roguelike/map
   map-make map-rows map-cols map-tile map-set! map-seen? map-seen! map-rooms map-rooms! map-down map-down!
   map-up map-up! map-each! map-light!)
@@ -30,7 +32,7 @@
   game-set game-depth game-depth! game-map game-map! game-player game-creatures game-creatures!
   game-floor game-floor! game-pack game-pack! game-turn game-turn! game-known game-known! game-deepest
   game-deepest! game-seed game-guises game-goal-placed? game-goal-placed! game-pages-placed game-page-placed!
-  game-quests game-quest-state! game-placed game-placed! game-new
+  game-quests game-quest-state! game-placed game-placed! game-traps game-traps! game-new
   player-r player-c player-at! player-hp player-hp! player-hpmax player-hpmax! player-str player-str!
   player-strmax player-strmax! player-level player-level! player-exp player-exp! player-gold player-gold!
   player-armour player-armour! player-weapon player-weapon! player-rings player-rings! player-food
@@ -90,6 +92,7 @@
       (List map (fn (_ it) (%sv-item (lit pack) it)) (game-pack g))
       (list (%sv-worn p))
       (List map (fn (_ it) (%sv-item (lit floor) it)) (game-floor g))
+      (List map (fn (_ t) (list (lit trap) (trap-r t) (trap-c t) (trap-name t) (if (trap-found? t) 1 0))) (game-traps g))
       (List map (fn (_ cr) (list (lit creature) (creature-name cr) (creature-r cr) (creature-c cr) (creature-hp cr)
                                  (symbol->str (creature-state cr))
                                  (if (null? (creature-carried cr)) "" (Str8 append (symbol->str (item-class (creature-carried cr))) "/" (item-name (creature-carried cr))))))
@@ -147,6 +150,12 @@
 
 (def %sv-conditions
   (fn (self l) (if (null? l) () (pair (pair (Str8 ->sym (first l)) (List ref 1 l)) (self (List drop 2 l))))))
+; The trap saved as ARGS, (R C NAME FOUND), or nil for a kind the set lacks.
+(def %sv-trap
+  (fn (_ set args)
+    (def kind (List find (fn (_ k) (str=? (first k) (List ref 2 args))) (data-all set (lit trap))))
+    (if (null? kind) () (trap-make (List ref 0 args) (List ref 1 args) kind (= 1 (List ref 3 args))))))
+
 (def %sv-quests!
   (fn (self g l)
     (unless (null? l) (do (game-quest-state! g (first l) (Str8 ->sym (List ref 1 l))) (self g (List drop 2 l))))))
@@ -208,6 +217,7 @@
             (game-map! g (%sv-level forms))
             (game-pack! g (%sv-items g set (%sv-all forms (lit pack))))
             (game-floor! g (%sv-items g set (%sv-all forms (lit floor))))
+            (game-traps! g (List reject null? (List map (fn (_ a) (%sv-trap set a)) (%sv-all forms (lit trap)))))
             (game-creatures! g (List reject null? (List map (fn (_ a) (%sv-creature g set a)) (%sv-all forms (lit creature)))))
             (%sv-player! g forms)
             (map-light! (game-map g) (player-r (game-player g)) (player-c (game-player g)))
