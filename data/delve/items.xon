@@ -6,43 +6,49 @@
 ; the player, less one an upgrade: short of it, a weapon lands less and
 ; armour protects less.  Food is scarce, and the store of it is what
 ; hunger is.  The pages are in pages.xon.
+;
+; The player comes in bare-handed and has to find a weapon before the
+; packs find them: the Galleries hold the miners' tools and mending,
+; and the rest lies deeper, by its (depth LO HI).
 
 (item potion "mending" (rarity 30) (effect heal 10 20))
-(item potion "deep mending" (rarity 10) (effect heal 25 45))
-(item potion "vigour" (rarity 10) (effect strength 1))
-(item potion "quickness" (rarity 10) (effect haste 12))
-(item potion "clear sight" (rarity 10) (effect seeing 60))
-(item potion "restoration" (rarity 8) (effect restore))
-(item potion "miasma" (rarity 10) (effect poison 1 2))
+(item potion "deep mending" (rarity 10) (depth 4 12) (effect heal 25 45))
+(item potion "vigour" (rarity 10) (depth 3 12) (effect strength 1))
+(item potion "quickness" (rarity 10) (depth 2 12) (effect haste 12))
+(item potion "clear sight" (rarity 10) (depth 2 12) (effect seeing 60))
+(item potion "restoration" (rarity 8) (depth 4 12) (effect restore))
+(item potion "miasma" (rarity 10) (depth 2 12) (effect poison 1 2))
 
 (item scroll "survey" (rarity 18) (effect mapping))
-(item scroll "blink" (rarity 14) (effect teleport))
-(item scroll "upgrade" (rarity 24) (effect upgrade))
-(item scroll "panic" (rarity 8) (effect fear))
-(item scroll "stillness" (rarity 8) (effect hold 6))
+(item scroll "blink" (rarity 14) (depth 2 12) (effect teleport))
+(item scroll "upgrade" (rarity 24) (depth 2 12) (effect upgrade))
+(item scroll "panic" (rarity 8) (depth 3 12) (effect fear))
+(item scroll "stillness" (rarity 8) (depth 3 12) (effect hold 6))
 
-(item wand "sparks" (rarity 14) (charges 3 7) (effect bolt 5 14))
-(item wand "lethargy" (rarity 10) (charges 3 7) (effect slow 10))
-(item wand "banishing" (rarity 10) (charges 2 5) (effect teleport-other))
-(item wand "leeching" (rarity 8) (charges 2 6) (effect drain 4 10))
+(item wand "sparks" (rarity 14) (depth 3 12) (charges 3 7) (effect bolt 5 14))
+(item wand "lethargy" (rarity 10) (depth 4 12) (charges 3 7) (effect slow 10))
+(item wand "banishing" (rarity 10) (depth 5 12) (charges 2 5) (effect teleport-other))
+(item wand "leeching" (rarity 8) (depth 6 12) (charges 2 6) (effect drain 4 10))
 
-(item ring "warding" (rarity 12) (bonus protection 1))
-(item ring "vigour" (rarity 10) (bonus strength 1))
-(item ring "mending" (rarity 10) (bonus regeneration 1))
-(item ring "silence" (rarity 8) (bonus stealth 1))
+(item ring "warding" (rarity 12) (depth 4 12) (bonus protection 1))
+(item ring "vigour" (rarity 10) (depth 5 12) (bonus strength 1))
+(item ring "mending" (rarity 10) (depth 5 12) (bonus regeneration 1))
+(item ring "silence" (rarity 8) (depth 6 12) (bonus stealth 1))
 
-(item weapon "lantern pole" (rarity 10) (damage 1 4) (strength 10))
+(item weapon "lantern pole" (rarity 10) (depth 1 6) (damage 1 4) (strength 10))
 (item weapon "pick" (rarity 14) (damage 1 6) (strength 12))
-(item weapon "miner's blade" (rarity 12) (damage 2 7) (strength 14))
-(item weapon "sledge" (rarity 8) (damage 3 10) (strength 17))
+(item weapon "miner's blade" (rarity 12) (depth 2 12) (damage 2 7) (strength 14))
+(item weapon "sledge" (rarity 8) (depth 5 12) (damage 3 10) (strength 17))
 
-(item armour "oilskin" (rarity 12) (armour 1) (strength 10))
+(item armour "oilskin" (rarity 12) (depth 1 6) (armour 1) (strength 10))
 (item armour "boiled leather" (rarity 12) (armour 2) (strength 12))
-(item armour "scale coat" (rarity 8) (armour 4) (strength 15))
-(item armour "plated harness" (rarity 4) (armour 6) (strength 18))
+(item armour "scale coat" (rarity 8) (depth 4 12) (armour 4) (strength 15))
+(item armour "plated harness" (rarity 4) (depth 7 12) (armour 6) (strength 18))
 
-(item food "miner's tin" (rarity 20) (nutrition 900))
-(item food "dried fish" (rarity 12) (nutrition 500))
+; The player comes in with a full store, so food lies from the second
+; level down.
+(item food "miner's tin" (rarity 20) (depth 2 12) (nutrition 900))
+(item food "dried fish" (rarity 12) (depth 2 12) (nutrition 500))
 
 ; What the people below ask for, and what they give: never drawn for a
 ; level.

@@ -374,6 +374,8 @@
 ; Whether the two cells touch: a move apart, and not the same cell.
 (def state-adjacent?
   (fn (_ r1 c1 r2 c2) (if (if (= r1 r2) (= c1 c2) #f) #f (< (state-dist r1 c1 r2 c2) 2))))
+; Whether D, a (LO HI) of levels, covers DEPTH.
+(def state-covers? (fn (_ d depth) (if (< depth (first d)) #f (not (< (List ref 1 d) depth)))))
 (def state-sign (fn (_ n) (match ((< n 0) -1) ((< 0 n) 1) (#t 0))))
 
 ; --- lookups -----------------------------------------------------------------
@@ -451,7 +453,7 @@
   item-make item-form item-class item-name item-prop item-prop1 item-count item-count! item-charges
   item-charges! item-enchant item-enchant! item-letter item-letter! item-r item-c item-at! item-class? item-class-in?
   state-say! state-clear-messages! state-clear-log! state-fill state-text state-tell!
-  state-roll state-chance? state-dir state-dirs state-dist state-adjacent? state-sign
+  state-roll state-chance? state-dir state-dirs state-dist state-adjacent? state-covers? state-sign
   state-creature-at state-creature-named state-items-at state-player-at? state-free?
   state-remove-creature! state-remove-floor! state-remove-pack!
   state-ring-bonus state-ring? state-defence state-strength state-shortfall)
