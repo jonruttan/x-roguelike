@@ -265,13 +265,13 @@
     (search (list (pair (player-r p) (player-c p))) ())))
 
 ; One step toward what is not yet seen, a turn: whether the walk goes
-; on.  It ends with a creature in view, a question asked, nothing left
-; to see, a hundred steps taken, or the game over.
+; on.  It ends with a creature in view that does not talk, a question
+; asked, nothing left to see, a hundred steps taken, or the game over.
 (def game-explore!
   (fn (_ g)
     (def n (game-exploring g))
     (def stop (fn (_) (game-exploring! g ()) #f))
-    (def shown (if (null? n) () (List find (fn (_ cr) (creatures-shown? g cr)) (game-creatures g))))
+    (def shown (if (null? n) () (List find (fn (_ cr) (if (creature-trait? cr (lit talks)) #f (creatures-shown? g cr))) (game-creatures g))))
     (match
       ((null? n) #f)
       ((not (null? (game-over g))) (stop))

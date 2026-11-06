@@ -86,6 +86,15 @@ and on a creature, `(pack LO HI)`, `ranged` with `(ranged LO HI)` and
 The specs drive a game from a seed with keys and read the state and
 the screen back; nothing in them touches a terminal.
 
+## Balance
+
+    BALANCE_SEEDS=50 BALANCE_SET=delve x -l roguelike -f tools/balance.x
+
+A plain bot plays a game a seed and reports where games end, what ends
+them in each band, its standing on arriving at each level, and what it
+used.  It plays below a person, so its numbers are a floor.  The
+header of tools/balance.x has the knobs.
+
 ## Installing
 
     make install         into <share>/langs/roguelike, where `x -l` looks
