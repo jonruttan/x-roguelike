@@ -156,7 +156,8 @@
     (pair (lit food) (fn (_ g it) (%it-plural it (item-name it))))
     (pair (lit gold) (fn (_ g it) (Str8 append (Str8 str (item-count it)) " gold pieces")))
     (pair (lit goal) (fn (_ g it) (item-name it)))
-    (pair (lit page) (fn (_ g it) (item-name it)))))
+    (pair (lit page) (fn (_ g it) (item-name it)))
+    (pair (lit token) (fn (_ g it) (if (Str8 starts? "the " (item-name it)) (item-name it) (%it-an (item-name it)))))))
 (def items-name
   (fn (_ g it)
     (def namer (Assoc get (item-class it) %it-namers))

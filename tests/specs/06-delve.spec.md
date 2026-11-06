@@ -18,7 +18,7 @@ classic set leaves every one of them off, and its specs stand.
              (List map (fn (_ b) (List ref 1 b)) (data-all set 'band)) (List length (data-all set 'page))))
 ```
 ---
-    ("delve" 12 7 0 'caves 20 (3 6 9 12) 9)
+    ("delve" 12 7 0 'caves 23 (3 6 9 12) 9)
 
 ## bands
 

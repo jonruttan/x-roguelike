@@ -8,8 +8,8 @@
 ;
 ; A save is xon, a form a line: the game's numbers, the player, each
 ; item by its class and name, each creature by its name, the pages
-; placed, the level's tiles and seen flags as strings of digits, its
-; rooms and stairs.
+; placed, the quests and what they placed, the level's tiles and seen
+; flags as strings of digits, its rooms and stairs.
 ; Reading one builds the game again on the same set; a thing the set no
 ; longer has is left out.  A save is read once and then removed by the
 ; play that read it, so a game is played through once.  The scores are
@@ -30,7 +30,7 @@
   game-set game-depth game-depth! game-map game-map! game-player game-creatures game-creatures!
   game-floor game-floor! game-pack game-pack! game-turn game-turn! game-known game-known! game-deepest
   game-deepest! game-seed game-guises game-goal-placed? game-goal-placed! game-pages-placed game-page-placed!
-  game-new
+  game-quests game-quest-state! game-placed game-placed! game-new
   player-r player-c player-at! player-hp player-hp! player-hpmax player-hpmax! player-str player-str!
   player-strmax player-strmax! player-level player-level! player-exp player-exp! player-gold player-gold!
   player-armour player-armour! player-weapon player-weapon! player-rings player-rings! player-food
@@ -81,6 +81,8 @@
             (pair (lit conditions) (List flat-map (fn (_ c) (list (symbol->str (first c)) (rest c))) (player-conditions p)))
             (pair (lit known) (game-known g))
             (pair (lit pages) (game-pages-placed g))
+            (pair (lit quests) (List flat-map (fn (_ q) (list (first q) (symbol->str (rest q)))) (game-quests g)))
+            (pair (lit placed) (game-placed g))
             (list (lit level) (map-rows m) (map-cols m) (%sv-digits m #f) (%sv-digits m #t))
             (list (lit stairs) (first (map-down m)) (rest (map-down m)) (first (map-up m)) (rest (map-up m))))
       (List map (fn (_ room) (list (lit room) (List ref 0 room) (List ref 1 room) (List ref 2 room) (List ref 3 room) (if (List ref 4 room) 1 0))) (map-rooms m))
@@ -145,6 +147,9 @@
 
 (def %sv-conditions
   (fn (self l) (if (null? l) () (pair (pair (Str8 ->sym (first l)) (List ref 1 l)) (self (List drop 2 l))))))
+(def %sv-quests!
+  (fn (self g l)
+    (unless (null? l) (do (game-quest-state! g (first l) (Str8 ->sym (List ref 1 l))) (self g (List drop 2 l))))))
 
 (def %sv-by-letter (fn (_ pack l) (if (str=? l "") () (List find (fn (_ it) (str=? (item-letter it) l)) pack))))
 (def %sv-rings
@@ -198,6 +203,8 @@
             (when (= 1 (List ref 4 head)) (game-goal-placed! g))
             (game-known! g (%sv-one forms (lit known)))
             (List for-each (fn (_ name) (game-page-placed! g name)) (List reverse (%sv-one forms (lit pages))))
+            (%sv-quests! g (%sv-one forms (lit quests)))
+            (List for-each (fn (_ name) (game-placed! g name)) (List reverse (%sv-one forms (lit placed))))
             (game-map! g (%sv-level forms))
             (game-pack! g (%sv-items g set (%sv-all forms (lit pack))))
             (game-floor! g (%sv-items g set (%sv-all forms (lit floor))))

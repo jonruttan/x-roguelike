@@ -1,0 +1,41 @@
+; quests.xon -- the delve set: the people met below, and what they ask.
+;
+; (quest NAME GIVER . PROPS): the GIVER creature, one that talks, stands
+; on (level N) and is spoken to by walking into it.  (wants bring ITEM
+; ...) lays each token on a level, the last on the giver's and the rest
+; on those above it, or in a (carrier "kind") creature's keeping there;
+; (wants explore) wants every cell of the giver's level seen.  (ask ...)
+; is said at the first meeting, (again ...) until the want is met,
+; (done ...) with it, and then one of (rewards (CLASS NAME) (CLASS
+; NAME)) is the player's to choose.
+
+(quest "the lamp" "lamp-keeper" (level 2)
+  (wants bring "the foreman's lamp") (carrier "cave crawler")
+  (ask "I kept the lamps at the breach.  When the crew went down I went too,"
+       "and I did not come back up.  I do not mind that.  I mind the dark."
+       "A crawler took my lamp when I fell.  Bring it back, and you may have"
+       "something from the store I kept.")
+  (again "No lamp yet.  It will be where the crawlers are.")
+  (done "That is mine.  Set it there, where I can see it.  Now take your pick:")
+  (rewards (weapon "miner's blade") (armour "boiled leather")))
+
+(quest "the survey" "surveyor" (level 5)
+  (wants explore)
+  (ask "I came down to level the works, and the water took my chain and my"
+       "glass.  I cannot see past my own lamp now.  Walk this level for me,"
+       "every passage of it, and tell me its shape.  I will pay.")
+  (again "Not the whole of it yet.  There are passages you have not walked.")
+  (done "That is the shape of it.  Good.  The Guild will never see this map,"
+        "but you will have something for it:")
+  (rewards (wand "sparks") (ring "warding")))
+
+(quest "the pump" "pump-wright" (level 9)
+  (wants bring "pump valve" "pump crank" "pump seal")
+  (ask "Hollis.  I worked the engine house, and I will work this one, if it"
+       "can be made to draw.  It wants a valve, a crank and a seal, and the"
+       "keepers have scattered them through the Old Works.  Bring them, and"
+       "whatever is left in the store is yours.")
+  (again "Valve, crank, seal.  Not all three yet.")
+  (done "That will do.  Go on down, then; I will have it drawing by the time"
+        "you come back up, for all the good it will do either of us.  Take one:")
+  (rewards (weapon "foreman's pick") (armour "plated harness")))

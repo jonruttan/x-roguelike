@@ -14,8 +14,9 @@
 ; until the goal is held, and then each level climbed is made anew,
 ; roused and hostile.  A set's bands each say their (enter "TEXT") on
 ; their first level and put their (guardian "NAME") by the stairs down
-; on their last, which stay shut while it lives.  Nothing here touches
-; a terminal: a spec gives keys and reads the state.
+; on their last, which stay shut while it lives.  Walking into a
+; creature that talks is a word with it, not a blow.  Nothing here
+; touches a terminal: a spec gives keys and reads the state.
 
 (module roguelike/game)
 
@@ -34,7 +35,7 @@
   player-condition player-tick! player-armour player-rings player-gold
   state-say! state-tell! state-text state-clear-messages! state-clear-log! state-roll state-chance? state-dir state-dirs
   state-creature-at state-creature-named state-items-at state-ring? item-class? item-class-in? item-class item-name
-  creature-name)
+  creature-name creature-trait?)
 (import roguelike/combat combat-player-attacks! combat-hurt-player!)
 (import roguelike/creatures
   creatures-spawn! creatures-guardian! creatures-wander! creatures-act! creatures-door-diagonal? creatures-shown?)
@@ -43,6 +44,7 @@
   items-by-letter items-pickup!
   items-drop! items-quaff! items-read! items-zap! items-eat! items-wield! items-wear! items-take-off!
   items-put-on! items-remove!)
+(import roguelike/quests quests-place! quests-talk!)
 
 (def %gm-roll2 (fn (_ g spec) (state-roll (game-rng g) (List ref 0 spec) (List ref 1 spec))))
 
@@ -86,6 +88,7 @@
     (items-spawn! g (%gm-roll2 g (game-param g (lit items) (list 4 8))))
     (items-place-goal! g)
     (items-place-pages! g)
+    (quests-place! g)
     (%gm-light! g)))
 
 ; The band's (enter "TEXT"), said on its first level.
@@ -176,8 +179,9 @@
     (def here (state-items-at g (player-r (game-player g)) (player-c (game-player g))))
     (unless (null? here) (items-pickup! g))))
 
-; A step DR DC, or a blow at what stands there: whether a turn passed.
-; Confused, the step goes any way; held, nowhere.  A wall takes no turn.
+; A step DR DC, a blow at what stands there, or a word with it when it
+; talks: whether a turn passed.  Confused, the step goes any way; held,
+; nowhere.  A wall takes no turn.
 (def %gm-move!
   (fn (_ g dr dc)
     (def p (game-player g))
@@ -187,7 +191,7 @@
     (def cr (state-creature-at g r c))
     (match
       ((< 0 (player-condition p (lit held))) (do (state-tell! g (lit held-still) "You are held fast and cannot move." ()) #t))
-      ((not (null? cr)) (do (combat-player-attacks! g cr) #t))
+      ((not (null? cr)) (if (creature-trait? cr (lit talks)) (quests-talk! g cr) (do (combat-player-attacks! g cr) #t)))
       ((not (map-walkable? (game-map g) r c)) #f)
       ((creatures-door-diagonal? (game-map g) (player-r p) (player-c p) (first d) (rest d)) #f)
       (#t (do (player-at! p r c) (%gm-light! g) (%gm-note-floor! g) #t)))))
@@ -279,7 +283,7 @@
 ; A question: (KIND PROMPT HANDLER . CLASS).  item: a letter, HANDLER
 ; given the pack item, of CLASS, one or a list, when named; dir:
 ; HANDLER given (DR . DC); yn: HANDLER on y; look: any key, LINES shown
-; till then.
+; till then; choose: HANDLER given the key, LINES shown till then.
 (def %gm-ask-item!
   (fn (_ g prompt class handler)
     (if (null? (List filter (fn (_ it) (item-class-in? it class)) (game-pack g)))
@@ -360,6 +364,7 @@
       ((eq? key (lit escape)) #f)
       ((eq? (first q) (lit look)) #f)
       ((eq? (first q) (lit yn)) (if (%gm-key=? key "y") ((List ref 2 q)) #f))
+      ((eq? (first q) (lit choose)) ((List ref 2 q) key))
       ((eq? (first q) (lit dir)) ((fn (_ d) (if (null? d) #f ((List ref 2 q) d))) (state-dir key)))
       (#t (%gm-answer-item! g q key)))))
 (def %gm-answer-item!
@@ -400,7 +405,7 @@
 ; The keys, for the help screen.
 (def game-help
   (fn (_ g)
-    (list "h j k l y u b n  move; the arrows too.  Walk into a creature to attack it."
+    (list "h j k l y u b n  move; the arrows too.  Walk into a creature to attack it, or to talk."
           ".  s   rest a turn          ,  g   pick up what is here"
           "o      explore what is unseen until something comes into view"
           "L      what has been said lately"

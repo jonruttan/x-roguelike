@@ -11,8 +11,9 @@
 ; player's standing.  Cells seen are drawn dim, cells in view plain, in
 ; the band's (colour N) where the set has bands; items where they were
 ; seen, creatures only in view, the player last.
-; A list being looked at -- the pack, the keys -- lies over the level,
-; and so do the items a question for one can take.
+; A list being looked at -- the pack, the keys, what someone says --
+; lies over the level, and so do the items a question for one can take
+; and the choice a question offers.
 
 (module roguelike/draw)
 
@@ -29,7 +30,7 @@
   game-over game-epitaph game-turn
   player-r player-c player-hp player-hpmax player-str player-strmax player-level player-exp player-gold
   player-food player-condition item-r item-c item-class? item-class creature-r creature-c creature-glyph
-  game-param game-band band-prop1 state-defence)
+  creature-trait? game-param game-band band-prop1 state-defence)
 (import roguelike/combat combat-exp-for)
 (import roguelike/creatures creatures-shown?)
 (import roguelike/items items-glyph items-pack-lines)
@@ -39,6 +40,7 @@
 (def %dr-dim (Style make (list (lit dim)) () ()))
 (def %dr-bold (Style make (list (lit bold)) () ()))
 (def %dr-creature (Style make (list (lit bold)) 3 ()))
+(def %dr-talker (Style make (list (lit bold)) 7 ()))
 (def %dr-item (Style make () 6 ()))
 (def %dr-gold (Style make (list (lit bold)) 3 ()))
 (def %dr-goal (Style make (list (lit bold)) 5 ()))
@@ -91,7 +93,7 @@
           (Vector set! 1 (%dr-tile-bytes set) %dr-cache)
           (Vector set! 2 (List map (fn (_ c) (pair c (data-glyph set c "?")))
                                    (list (lit potion) (lit scroll) (lit wand) (lit ring) (lit weapon) (lit armour)
-                                         (lit food) (lit gold) (lit goal) (lit page)))
+                                         (lit food) (lit gold) (lit goal) (lit page) (lit token)))
                        %dr-cache)))))
 (def %dr-item-glyph
   (fn (self it l)
@@ -123,7 +125,8 @@
   (fn (_ g s)
     (List for-each
       (fn (_ cr) (when (creatures-shown? g cr)
-                   (screen-put! s (+ (creature-r cr) 1) (creature-c cr) (creature-glyph cr) %dr-creature)))
+                   (screen-put! s (+ (creature-r cr) 1) (creature-c cr) (creature-glyph cr)
+                     (if (creature-trait? cr (lit talks)) %dr-talker %dr-creature))))
       (game-creatures g))))
 (def %dr-player!
   (fn (_ g s)
@@ -179,6 +182,7 @@
     (def q (game-ask g))
     (match ((null? q) ())
            ((eq? (first q) (lit look)) (%dr-lines! s 1 (List ref 3 q)))
+           ((eq? (first q) (lit choose)) (%dr-lines! s 1 (List ref 3 q)))
            ((eq? (first q) (lit item)) (%dr-lines! s 1 (items-pack-lines g (List ref 3 q))))
            (#t ()))))
 

@@ -29,6 +29,12 @@
 (creature "rust golem" "G" (depth 7 11) (level 7) (hp 30 45) (attack 5 12) (defence 8) (exp 70) (traits slow regen))
 (creature "hollow mason" "M" (depth 0 0) (level 9) (hp 38 52) (attack 5 12) (defence 9) (exp 130) (summon "bone husk") (traits summon slow regen))
 
+; The people: each talks when walked into, and asks for something (see
+; quests.xon); never drawn for a level.
+(creature "lamp-keeper" "&" (depth 0 0) (level 1) (hp 1 1) (attack 0 0) (defence 0) (exp 0) (traits talks))
+(creature "surveyor" "&" (depth 0 0) (level 1) (hp 1 1) (attack 0 0) (defence 0) (exp 0) (traits talks))
+(creature "pump-wright" "&" (depth 0 0) (level 1) (hp 1 1) (attack 0 0) (defence 0) (exp 0) (traits talks))
+
 ; The Heart, 10 to 12: what keeps the stone company.
 (creature "deep warden" "D" (depth 9 12) (level 9) (hp 40 60) (attack 6 14) (defence 8) (exp 150) (ranged 4 10) (shot "a shard of light") (traits ranged regen wakeful))
 (creature "lode spark" "v" (depth 10 12) (level 8) (hp 6 10) (attack 2 6) (defence 8) (exp 22) (pack 2 4) (traits fast erratic dazzle wakeful))
