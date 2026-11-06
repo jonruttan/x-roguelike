@@ -10,8 +10,9 @@
 ;
 ; A bot plays a game a seed: it fights what is beside it, drinks mending
 ; under a third of its hit points, eats when hungry, rests by searching
-; under two thirds with nothing in view, wields and wears the
-; best it can lift, talks to whoever it meets, explores the level, takes
+; under two thirds with nothing in view, wields and wears the best it
+; can lift, picks up what it sees with nothing hostile in view, talks
+; to whoever it meets, explores the level, takes
 ; the stairs down, and with the goal in hand climbs.  It is not clever,
 ; so what it reaches is a floor under a player's reach.  The report:
 ; where games end, what ends them by band, the standing on arrival at
@@ -33,7 +34,7 @@
   game-ask game-exploring? game-messages game-band band-name game-param
   player-r player-c player-hp player-hpmax player-str player-food player-weapon player-armour
   item-class item-name item-prop item-prop1 item-enchant item-letter
-  creature-r creature-c creature-trait? state-adjacent? state-shortfall state-creature-at
+  creature-r creature-c creature-trait? state-adjacent? state-shortfall state-creature-at state-items-at
   game-quest-state)
 (import roguelike/creatures creatures-shown? creatures-door-diagonal?)
 (import roguelike/items items-goal-held?)
@@ -131,7 +132,9 @@
 
 ; S, the bot's own state for a game: 0 whether the level is explored, 1
 ; the depth that was for, 2 potions drunk, 3 foods eaten, 4 whether the
-; giver here has been talked to since the level was explored.
+; giver here has been talked to since the level was explored, 5 the
+; hostile creatures met, 6 the turn a weapon was first held, 7 the count
+; met by then, 8 the items left lying because they would not come up.
 (def %bl-explored? (fn (_ g s) (if (= (Vector ref 1 s) (game-depth g)) (Vector ref 0 s) #f)))
 (def %bl-explored! (fn (_ g s) (Vector set! 0 #t s) (Vector set! 1 (game-depth g) s) (Vector set! 4 #f s)))
 (def %bl-new-level! (fn (_ g s) (Vector set! 0 #f s) (Vector set! 1 (game-depth g) s) (Vector set! 4 #f s)))
@@ -148,7 +151,19 @@
   (fn (_ g s cr)
     (if (not (Vector ref 4 s)) #t (not (null? (%bl-in-pack g (%bl-of-class (lit token))))))))
 
-(def %bl-at-stairs? (fn (_ g t) (= (map-tile (game-map g) (player-r (game-player g)) (player-c (game-player g))) t)))
+; The items at R C the bot has not given up on.
+(def %bl-wanted-at
+  (fn (_ g s r c) (List reject (fn (_ it) (List any? (fn (_ x) (same? x it)) (Vector ref 8 s))) (state-items-at g r c))))
+
+; Picks up what lies here; what stays put is left for good.
+(def %bl-pick-up!
+  (fn (_ g s)
+    (def p (game-player g))
+    (game-key! g ",")
+    (List for-each (fn (_ it) (Vector set! 8 (pair it (Vector ref 8 s)) s))
+      (%bl-wanted-at g s (player-r p) (player-c p)))))
+
+(def %bl-at-stairs?(fn (_ g t) (= (map-tile (game-map g) (player-r (game-player g)) (player-c (game-player g))) t)))
 (def %bl-stairs-goal (fn (_ g t) (fn (_ r c) (= (map-tile (game-map g) r c) t))))
 
 (def %bl-explore!
@@ -180,6 +195,8 @@
     (def weapon (%bl-best g (lit weapon) %bl-weapon-worth))
     (def armour (%bl-best g (lit armour) %bl-armour-worth))
     (def shown (%bl-shown-hostile g))
+    (def here (%bl-wanted-at g s (player-r p) (player-c p)))
+    (def to-item (if (null? shown) (%bl-step-toward g (fn (_ r c) (not (null? (%bl-wanted-at g s r c))))) ()))
     (unless (= (Vector ref 1 s) (game-depth g)) (%bl-new-level! g s))
     (match
       ((not (null? q)) (%bl-answer! g q))
@@ -193,6 +210,8 @@
         (%bl-use! g "w" weapon))
       ((if (null? armour) #f (if (null? (player-armour p)) #t (< (%bl-armour-worth g (player-armour p)) (%bl-armour-worth g armour))))
         (if (null? (player-armour p)) (%bl-use! g "W" armour) (game-key! g "T")))
+      ((not (null? here)) (%bl-pick-up! g s))
+      ((not (null? to-item)) (game-key! g (%bl-key-for (first to-item) (rest to-item))))
       ((if (null? giver) #f (%bl-talk? g s giver))
         (do (%bl-toward-creature! g giver) (Vector set! 4 #t s)))
       ((game-exploring? g) (game-explore! g))
@@ -241,7 +260,7 @@
     (def trace? (not (str=? (%bl-env "BALANCE_TRACE" "") "")))
     (Heap collect)
     (def g (game-make set seed 24 80))
-    (def s (Vector of #f 0 0 0 #f () () 0))
+    (def s (Vector of #f 0 0 0 #f () () 0 ()))
     (def arrivals (Vector of (list (%bl-arrival g))))
     (def loop
       (fn (self n turn stalled)
