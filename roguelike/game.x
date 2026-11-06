@@ -44,7 +44,7 @@
   game-exploring game-exploring!
   game-screen game-screen! game-kept-level game-keep! game-screens? game-world-cols game-world-rows game-hub
   game-screen-distance game-screen-in? game-screen-key game-door game-inside game-inside! game-level-key
-  game-deepest game-deepest! game-rows game-cols game-param game-param1 game-new game-epitaph!
+  game-deepest game-deepest! game-rows game-cols game-param game-param1 game-new game-epitaph! game-kept game-quests
   game-messages game-messages! game-log game-band game-band-from band-to band-prop1
   player-r player-c player-at! player-hp player-hp! player-hpmax player-level player-food player-food!
   player-condition player-tick! player-armour player-rings player-gold
@@ -597,10 +597,67 @@
       (#t (when (%gm-command! g key) (%gm-end-turn! g))))
     (game-more! g)))
 
-; Gold, fifty a level reached, a thousand for the win.
-(def game-score
+; --- the score -----------------------------------------------------------------
+
+; A set's (score (NAME POINTS) ...) is what a game is worth: POINTS for
+; each of NAME, among gold, deepest (the level, or the screens out from
+; the hub), won, quests (done), screens (visited) and places (gone
+; into); and (par TURNS POINTS), POINTS a turn under TURNS on a win.
+; What it does not name counts nothing.  A set without one scores
+; gold, fifty a level and a thousand for the win.
+(def %gm-score-default (list (list (lit gold) 1) (list (lit deepest) 50) (list (lit won) 1000)))
+
+; The count of what game G did by NAME.
+(def %gm-count
+  (fn (_ g name)
+    (def keys (List map first (game-kept g)))
+    (def place? (fn (_ k) (Str8 ends? ">" k)))
+    (match ((eq? name (lit gold)) (player-gold (game-player g)))
+           ((eq? name (lit deepest)) (game-deepest g))
+           ((eq? name (lit won)) (if (eq? (game-over g) (lit won)) 1 0))
+           ((eq? name (lit quests)) (List count-if (fn (_ p) (eq? (rest p) (lit done))) (game-quests g)))
+           ((eq? name (lit screens)) (List count-if (fn (_ k) (not (place? k))) keys))
+           ((eq? name (lit places)) (List count-if place? keys))
+           (#t 0))))
+
+; Each line of the score that counts, in the set's order: (NAME COUNT
+; POINTS).  The par's count is the turns under it.
+(def game-score-lines
   (fn (_ g)
-    (+ (player-gold (game-player g)) (+ (* 50 (game-deepest g)) (if (eq? (game-over g) (lit won)) 1000 0)))))
+    (def line
+      (fn (_ w)
+        (def name (first w))
+        (def under (- (List ref 1 w) (game-turn g)))
+        (def count
+          (if (eq? name (lit par))
+            (if (if (eq? (game-over g) (lit won)) (< 0 under) #f) under 0)
+            (%gm-count g name)))
+        (list name count (* count (List ref (if (eq? name (lit par)) 2 1) w)))))
+    (List filter (fn (_ l) (not (= 0 (List ref 2 l)))) (List map line (game-param g (lit score) %gm-score-default)))))
+
+; What game G is worth.
+(def game-score (fn (_ g) (List fold (fn (_ a l) (+ a (List ref 2 l))) 0 (game-score-lines g))))
+
+; Each line's message: (NAME KEY DEFAULT).
+(def %gm-score-words
+  (list (list (lit gold) (lit score-gold) "{points} for {count} gold")
+        (list (lit deepest) (lit score-deepest) "{points} for reaching depth {count}")
+        (list (lit won) (lit score-won) "{points} for the win")
+        (list (lit quests) (lit score-quests) "{points} for quests done: {count}")
+        (list (lit screens) (lit score-screens) "{points} for screens visited: {count}")
+        (list (lit places) (lit score-places) "{points} for places gone into: {count}")
+        (list (lit par) (lit score-par) "{points} for turns under par: {count}")))
+
+; The score's lines in words, the set's (message score-NAME "TEXT")
+; with {points} and {count}.
+(def game-score-text
+  (fn (_ g)
+    (List map
+      (fn (_ l)
+        (def w (List find (fn (_ w) (eq? (first w) (first l))) %gm-score-words))
+        (state-text g (List ref 1 w) (List ref 2 w)
+          (list (pair "points" (Str8 str (List ref 2 l))) (pair "count" (Str8 str (List ref 1 l))))))
+      (game-score-lines g))))
 
 ; The keys, for the help screen.
 (def game-help
@@ -619,4 +676,4 @@
           "S      save and leave       Q      quit"
           "?      these keys           Esc    stop asking")))
 
-(provide roguelike/game game-make game-key! game-explore! game-more! game-score game-help)
+(provide roguelike/game game-make game-key! game-explore! game-more! game-score game-score-lines game-score-text game-help)

@@ -30,7 +30,7 @@
 (import roguelike/data data-load data-get)
 (import roguelike/state
   game-over game-epitaph game-depth game-deepest game-messages game-ask game-player player-gold game-exploring? game-exploring!)
-(import roguelike/game game-make game-key! game-explore! game-score game-help)
+(import roguelike/game game-make game-key! game-explore! game-score game-score-text game-help)
 (import roguelike/draw game-draw!)
 (import roguelike/save save-write! save-read save-path save-score! save-scores)
 
@@ -136,6 +136,7 @@
                                   (#t (Str8 append "You were " (game-epitaph g))))
                            " on level " (Str8 str (game-depth g)) " with " (Str8 str (player-gold (game-player g)))
                            " gold.  Score " (Str8 str (game-score g)) ".\n"))
+              (List for-each (fn (_ text) (%cl-say 1 (Str8 append "  " text "\n"))) (game-score-text g))
               0)))))
 
 (def %cl-seed

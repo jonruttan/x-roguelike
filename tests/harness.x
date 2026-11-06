@@ -17,13 +17,13 @@
   room-r0 room-c0 room-r1 room-c1 room-centre
   map-room-at map-light-radius! tile-rock tile-floor tile-wall tile-door tile-passage tile-down tile-up
   dungeon-generate
-  game-make game-key! game-explore! game-more! game-score game-help game-draw!
+  game-make game-key! game-explore! game-more! game-score game-score-lines game-score-text game-help game-draw!
   game-set game-depth game-map game-player game-creatures game-creatures! game-floor game-floor! game-pack game-pack!
   game-messages game-turn game-ask game-over game-epitaph game-known game-deepest game-log game-pages-placed
   game-quest-state game-placed game-traps game-traps! game-exploring?
   game-screen game-screens? game-kept game-kept-level game-hub game-screen-key game-screen-distance game-chain
-  game-door game-inside game-level-key
-  player-r player-c player-at! player-hp player-hp! player-hpmax player-str player-level player-exp player-gold
+  game-door game-inside game-level-key game-turn! game-over! game-deepest! game-quest-state!
+  player-r player-c player-at! player-hp player-hp! player-hpmax player-str player-level player-exp player-gold player-gold!
   player-food player-food! player-condition player-weapon player-armour player-rings
   creature-make creature-r creature-c creature-at! creature-hp creature-hp! creature-state creature-state!
   creature-name creature-glyph creature-trait? creature-carried item-make item-name item-count item-charges item-enchant item-letter item-letter! item-r item-c item-at!

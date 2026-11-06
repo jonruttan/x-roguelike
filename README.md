@@ -125,6 +125,16 @@ first time in.  `(stairs up)` gives any level that shape.  `kettle`
 has a farmhouse cellar in the farms, a shepherd's bothy in the hills
 and an old city vault in the far valley.
 
+What a game is worth is the set's `(score (NAME POINTS) ...)`: POINTS
+for each of `gold`, `deepest` (the level reached, or the screens out
+from the hub), `won`, `quests` done, `screens` visited and `places`
+gone into, and `(par TURNS POINTS)`, POINTS a turn under TURNS on a
+win; what it does not name counts nothing.  A set without one scores
+gold, fifty a level and a thousand for the win.  The end of a game
+says a line for each, in the set's `(message score-NAME "TEXT")` where
+it has one.  `kettle` counts its errands, the screens walked and the
+doors gone through.
+
 What lies about is dispersed by two forms any set may use.  An item's
 `(depth LO HI)` is the levels, or the rings out from the hub, where it
 may lie; one without lies anywhere.  A band's `(cache CLASS LO HI)`,
