@@ -27,7 +27,7 @@
 ; being asked, 11 how the game ended or nil, 12 the guises, 13 the item
 ; names known, 14 the deepest level reached, 15 the log (newest first),
 ; 16 rows, 17 columns, 18 the epitaph, 19 the seed, 20 whether the goal
-; has been placed.
+; has been placed, 21 the names of the pages placed.
 ; Every slot here is read through the object doors, not the class: a
 ; class send costs some two hundred objects, and a turn reads thousands.
 (def %st-ref (fn (_ v k) (obj-ref v (int+ k 1))))
@@ -68,10 +68,32 @@
 (def game-seed (fn (_ g) (%st-get g 19)))
 (def game-goal-placed? (fn (_ g) (%st-get g 20)))
 (def game-goal-placed! (fn (_ g) (%st-put! g 20 #t)))
+(def game-pages-placed (fn (_ g) (%st-get g 21)))
+(def game-page-placed! (fn (_ g name) (%st-put! g 21 (pair name (%st-get g 21)))))
 
 ; The set's parameter HEAD, its values, or DEFAULT's.
 (def game-param (fn (_ g head default) (data-one (game-set g) head default)))
 (def game-param1 (fn (_ g head default) (data-get (game-set g) head default)))
+
+; The set's bands, (band NAME TO . PROPS) each, run one after another
+; from level 1, each to its TO.  The band the depth is in, as (FROM .
+; BAND), or nil past the last.
+(def %st-band-at
+  (fn (self bands depth from)
+    (match ((null? bands) ())
+           ((not (< (List ref 1 (first bands)) depth)) (pair from (first bands)))
+           (#t (self (rest bands) depth (+ 1 (List ref 1 (first bands))))))))
+(def game-band
+  (fn (_ g)
+    (def hit (%st-band-at (data-all (game-set g) (lit band)) (game-depth g) 1))
+    (if (null? hit) () (rest hit))))
+(def game-band-from
+  (fn (_ g)
+    (def hit (%st-band-at (data-all (game-set g) (lit band)) (game-depth g) 1))
+    (if (null? hit) 0 (first hit))))
+(def band-name (fn (_ b) (first b)))
+(def band-to (fn (_ b) (List ref 1 b)))
+(def band-prop1 (fn (_ b key default) (data-prop1 b key default)))
 
 ; --- the player --------------------------------------------------------------
 
@@ -205,6 +227,12 @@
 (def item-c (fn (_ it) (%st-ref it 6)))
 (def item-at! (fn (_ it r c) (%st-set! it 5 r) (%st-set! it 6 c)))
 (def item-class? (fn (_ it class) (eq? (item-class it) class)))
+; Whether IT is of CLASS: one, any of a list, or anything for nil.
+(def item-class-in?
+  (fn (_ it class)
+    (match ((null? class) #t)
+           ((pair? class) (List any? (fn (_ c) (eq? (item-class it) c)) class))
+           (#t (eq? (item-class it) class)))))
 
 ; --- making a game -----------------------------------------------------------
 
@@ -216,7 +244,7 @@
 
 (def game-new
   (fn (_ set seed rows cols)
-    (def g (Vector make 21 ()))
+    (def g (Vector make 22 ()))
     (def rng (Random sw seed))
     (%st-put! g 0 rng)
     (%st-put! g 1 set)
@@ -230,6 +258,7 @@
     (%st-put! g 18 "")
     (%st-put! g 19 seed)
     (%st-put! g 20 #f)
+    (%st-put! g 21 ())
     g))
 
 ; --- messages ----------------------------------------------------------------
@@ -291,6 +320,9 @@
   (fn (_ g r c)
     (List filter (fn (_ it) (if (= (item-r it) r) (= (item-c it) c) #f)) (game-floor g))))
 (def state-player-at? (fn (_ g r c) (if (= (player-r (game-player g)) r) (= (player-c (game-player g)) c) #f)))
+; The living creature named NAME, or nil.
+(def state-creature-named
+  (fn (_ g name) (List find (fn (_ cr) (str=? (creature-name cr) name)) (game-creatures g))))
 ; Whether a creature could step onto R C: walkable, and nobody there.
 (def state-free?
   (fn (_ g r c)
@@ -328,7 +360,8 @@
   game-floor game-floor! game-pack game-pack! game-messages game-messages! game-turn game-turn!
   game-ask game-ask! game-over game-over! game-guises game-known game-known! game-deepest game-deepest!
   game-log game-rows game-cols game-epitaph game-epitaph! game-seed game-goal-placed? game-goal-placed!
-  game-param game-param1 game-new
+  game-pages-placed game-page-placed! game-param game-param1 game-band game-band-from band-name band-to band-prop1
+  game-new
   player-r player-c player-at! player-hp player-hp! player-hpmax player-hpmax! player-str player-str!
   player-strmax player-strmax! player-level player-level! player-exp player-exp! player-gold player-gold!
   player-armour player-armour! player-weapon player-weapon! player-rings player-rings! player-food player-food!
@@ -337,9 +370,9 @@
   creature-state! creature-carried creature-carried! creature-name creature-glyph creature-prop creature-prop1
   creature-trait? creature-condition creature-condition! creature-tick!
   item-make item-form item-class item-name item-prop item-prop1 item-count item-count! item-charges
-  item-charges! item-enchant item-enchant! item-letter item-letter! item-r item-c item-at! item-class?
+  item-charges! item-enchant item-enchant! item-letter item-letter! item-r item-c item-at! item-class? item-class-in?
   state-say! state-clear-messages! state-clear-log! state-fill state-text state-tell!
   state-roll state-chance? state-dir state-dirs state-dist state-adjacent? state-sign
-  state-creature-at state-items-at state-player-at? state-free?
+  state-creature-at state-creature-named state-items-at state-player-at? state-free?
   state-remove-creature! state-remove-floor! state-remove-pack!
   state-ring-bonus state-ring? state-defence state-strength)

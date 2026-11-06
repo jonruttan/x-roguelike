@@ -12,8 +12,10 @@
 ; take theirs, hunger grows, hit points return, and the view is lit
 ; again.  The stairs down make a new level; the stairs up are sealed
 ; until the goal is held, and then each level climbed is made anew,
-; roused and hostile.  Nothing here touches a terminal: a spec gives
-; keys and reads the state.
+; roused and hostile.  A set's bands each say their (enter "TEXT") on
+; their first level and put their (guardian "NAME") by the stairs down
+; on their last, which stay shut while it lives.  Nothing here touches
+; a terminal: a spec gives keys and reads the state.
 
 (module roguelike/game)
 
@@ -27,16 +29,18 @@
   game-rng game-set game-depth game-depth! game-map game-map! game-player game-creatures game-creatures!
   game-floor game-floor! game-pack game-turn game-turn! game-ask game-ask! game-over game-over!
   game-deepest game-deepest! game-rows game-cols game-param game-param1 game-new game-epitaph!
-  game-messages game-messages! game-log
+  game-messages game-messages! game-log game-band game-band-from band-to band-prop1
   player-r player-c player-at! player-hp player-hp! player-hpmax player-level player-food player-food!
   player-condition player-tick! player-armour player-rings player-gold
   state-say! state-tell! state-text state-clear-messages! state-clear-log! state-roll state-chance? state-dir state-dirs
-  state-creature-at state-items-at state-ring? item-class? item-class item-name creature-name)
+  state-creature-at state-creature-named state-items-at state-ring? item-class? item-class-in? item-class item-name
+  creature-name)
 (import roguelike/combat combat-player-attacks! combat-hurt-player!)
 (import roguelike/creatures
-  creatures-spawn! creatures-wander! creatures-act! creatures-door-diagonal? creatures-shown?)
+  creatures-spawn! creatures-guardian! creatures-wander! creatures-act! creatures-door-diagonal? creatures-shown?)
 (import roguelike/items
-  items-spawn! items-place-goal! items-goal-held? items-name items-worn items-pack-lines items-by-letter items-pickup!
+  items-spawn! items-place-goal! items-place-pages! items-goal-held? items-name items-worn items-pack-lines
+  items-by-letter items-pickup!
   items-drop! items-quaff! items-read! items-zap! items-eat! items-wield! items-wear! items-take-off!
   items-put-on! items-remove!)
 
@@ -54,8 +58,20 @@
            ((< 0 view) (map-light-radius! (game-map g) (player-r p) (player-c p) view))
            (#t (map-light! (game-map g) (player-r p) (player-c p))))))
 
+; The band's guardian's name, on the band's last level, else "".
+(def %gm-guardian-name
+  (fn (_ g)
+    (def b (game-band g))
+    (if (if (null? b) #t (not (= (game-depth g) (band-to b)))) "" (band-prop1 b (lit guardian) ""))))
+; The band's guardian, alive on this level, or nil.
+(def %gm-guardian
+  (fn (_ g)
+    (def name (%gm-guardian-name g))
+    (if (str=? name "") () (state-creature-named g name))))
+
 ; A level made for the depth: HOSTILE? on the way up, with more
 ; creatures and all awake; the player ARRIVING at the stairs up or down.
+; The band's guardian waits on the way down only.
 (def %gm-level!
   (fn (_ g hostile? arriving)
     (def m (dungeon-generate (game-rng g) (- (game-rows g) 2) (game-cols g) (game-depth g) (game-set g)))
@@ -66,16 +82,26 @@
     (player-at! (game-player g) (first at) (rest at))
     (%gm-light! g)
     (creatures-spawn! g (+ (%gm-roll2 g (game-param g (lit creatures) (list 3 6))) (if hostile? 3 0)) hostile?)
+    (unless (if hostile? #t (str=? (%gm-guardian-name g) "")) (creatures-guardian! g (%gm-guardian-name g)))
     (items-spawn! g (%gm-roll2 g (game-param g (lit items) (list 4 8))))
     (items-place-goal! g)
+    (items-place-pages! g)
     (%gm-light! g)))
+
+; The band's (enter "TEXT"), said on its first level.
+(def %gm-enter-band!
+  (fn (_ g)
+    (def b (game-band g))
+    (def text (if (null? b) "" (band-prop1 b (lit enter) "")))
+    (unless (if (str=? text "") #t (not (= (game-depth g) (game-band-from g)))) (state-say! g text))))
 
 (def %gm-descend!
   (fn (_ g)
     (game-depth! g (+ (game-depth g) 1))
     (when (< (game-deepest g) (game-depth g)) (game-deepest! g (game-depth g)))
     (%gm-level! g #f (lit up))
-    (state-tell! g (lit stairs-down) "You descend to level {level}." (list (pair "level" (Str8 str (game-depth g)))))))
+    (state-tell! g (lit stairs-down) "You descend to level {level}." (list (pair "level" (Str8 str (game-depth g)))))
+    (%gm-enter-band! g)))
 
 (def %gm-ascend!
   (fn (_ g)
@@ -94,6 +120,7 @@
     (state-clear-messages! g)
     (state-clear-log! g)
     (state-tell! g (lit welcome) "You enter the dungeon." ())
+    (%gm-enter-band! g)
     g))
 
 ; --- the turn ----------------------------------------------------------------
@@ -232,8 +259,13 @@
 (def %gm-stairs-down!
   (fn (_ g)
     (def p (game-player g))
-    (if (= (map-tile (game-map g) (player-r p) (player-c p)) tile-down) (do (%gm-descend! g) #t)
-      (do (state-tell! g (lit no-stairs) "There are no stairs here." ()) #f))))
+    (def guardian (%gm-guardian g))
+    (match
+      ((not (= (map-tile (game-map g) (player-r p) (player-c p)) tile-down))
+        (do (state-tell! g (lit no-stairs) "There are no stairs here." ()) #f))
+      ((not (null? guardian))
+        (do (state-tell! g (lit barred) "The {name} bars the way down." (list (pair "name" (creature-name guardian)))) #f))
+      (#t (do (%gm-descend! g) #t)))))
 (def %gm-stairs-up!
   (fn (_ g)
     (def p (game-player g))
@@ -245,11 +277,12 @@
       (#t (do (%gm-ascend! g) #t)))))
 
 ; A question: (KIND PROMPT HANDLER . CLASS).  item: a letter, HANDLER
-; given the pack item, of CLASS when one is named; dir: HANDLER given
-; (DR . DC); yn: HANDLER on y; look: any key, LINES shown till then.
+; given the pack item, of CLASS, one or a list, when named; dir:
+; HANDLER given (DR . DC); yn: HANDLER on y; look: any key, LINES shown
+; till then.
 (def %gm-ask-item!
   (fn (_ g prompt class handler)
-    (if (null? (List filter (fn (_ it) (if (null? class) #t (item-class? it class))) (game-pack g)))
+    (if (null? (List filter (fn (_ it) (item-class-in? it class)) (game-pack g)))
       (do (state-tell! g (lit none-such) "You have nothing like that." ()) #f)
       (do (game-ask! g (list (lit item) prompt handler class)) #f))))
 (def %gm-ask-dir! (fn (_ g prompt handler) (game-ask! g (list (lit dir) prompt handler)) #f))
@@ -279,7 +312,7 @@
     (pair "g" (fn (_ g) (items-pickup! g)))
     (pair "i" (fn (_ g) (%gm-look! g "Your pack:" (%gm-pack-lines g))))
     (pair "q" (fn (_ g) (%gm-ask-item! g "Quaff what?" (lit potion) (fn (_ it) (items-quaff! g it) #t))))
-    (pair "r" (fn (_ g) (%gm-ask-item! g "Read what?" (lit scroll) (fn (_ it) (items-read! g it) #t))))
+    (pair "r" (fn (_ g) (%gm-ask-item! g "Read what?" (list (lit scroll) (lit page)) (fn (_ it) (items-read! g it) #t))))
     (pair "z" (fn (_ g) (%gm-ask-item! g "Zap what?" (lit wand) (fn (_ it) (%gm-zap! g it)))))
     (pair "e" (fn (_ g) (%gm-ask-item! g "Eat what?" (lit food) (fn (_ it) (items-eat! g it) #t))))
     (pair "w" (fn (_ g) (%gm-ask-item! g "Wield what?" (lit weapon) (fn (_ it) (items-wield! g it) #t))))
@@ -334,7 +367,7 @@
     (def it (if (str? key) (items-by-letter g key) ()))
     (match
       ((null? it) (do (state-tell! g (lit no-such-item) "You have no such thing." ()) #f))
-      ((if (null? (List ref 3 q)) #f (not (item-class? it (List ref 3 q))))
+      ((not (item-class-in? it (List ref 3 q)))
         (do (state-tell! g (lit wrong-kind) "You can't do that with {name}." (list (pair "name" (items-name g it)))) #f))
       (#t ((List ref 2 q) it)))))
 
@@ -373,7 +406,7 @@
           "L      what has been said lately"
           ">      go down the stairs   <      go up, with the goal in hand"
           "i      your pack            d      drop a thing"
-          "q      quaff a potion       r      read a scroll"
+          "q      quaff a potion       r      read a scroll or a page"
           "z      zap a wand           e      eat"
           "w      wield a weapon       W  T   wear armour, take it off"
           "P  R   put on a ring, take it off"

@@ -2,7 +2,8 @@
 ;
 ; The classes and effects are the engine's (see data/classic/items.xon);
 ; potions and scrolls are known on sight here, so only wands and rings
-; wear guises.  No food: there is no hunger in the Delve.
+; wear guises.  No food: there is no hunger in the Delve.  The pages
+; are in pages.xon.
 
 (item potion "mending" (rarity 30) (effect heal 10 20))
 (item potion "deep mending" (rarity 10) (effect heal 25 45))

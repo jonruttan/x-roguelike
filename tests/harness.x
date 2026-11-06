@@ -19,7 +19,7 @@
   dungeon-generate
   game-make game-key! game-more! game-score game-help game-draw!
   game-set game-depth game-map game-player game-creatures game-creatures! game-floor game-floor! game-pack game-pack!
-  game-messages game-turn game-ask game-over game-epitaph game-known game-deepest game-log
+  game-messages game-turn game-ask game-over game-epitaph game-known game-deepest game-log game-pages-placed
   player-r player-c player-at! player-hp player-hp! player-hpmax player-str player-level player-exp player-gold
   player-food player-food! player-condition player-weapon player-armour player-rings
   creature-make creature-r creature-c creature-at! creature-hp creature-hp! creature-state creature-state!

@@ -22,7 +22,7 @@ Scores keep in `~/.x-roguelike/scores`.
     L                 what has been said lately
     >                 go down the stairs       <         go up, with the goal
     i                 your pack                d         drop a thing
-    q                 quaff a potion           r         read a scroll
+    q                 quaff a potion           r         read a scroll or a page
     z                 zap a wand               e         eat
     w                 wield a weapon           W  T      wear armour, take it off
     P  R              put on a ring, take it off
@@ -47,15 +47,21 @@ DIR`, `--data DIR`, for any directory; `-S N`, `--seed N`, replays a dungeon.
 The engine reads a closed vocabulary of traits
 and effects; a set combines them as it likes.
 
-`delve` is the second set shipped, `--set delve`: a drowned mine of
-twelve levels carved as caves, lit by sight to a radius rather than by
-the room, with creatures that come in packs, shoot along a line and
-call for company, potions and scrolls known on sight, and no hunger.
+`delve` is the second set shipped, `--set delve`: the mine under the
+town of Kettle, twelve levels carved as caves in four bands, lit by
+sight to a radius rather than by the room, with creatures that come in
+packs, shoot along a line and call for company, potions and scrolls
+known on sight, no hunger, a guardian at the foot of each band, and
+pages on the floor that tell, read in order, why the pumps stopped.
 What a set may turn on, each off unless named: `(view N)` sight to N
 cells, `(level-style caves)` with `(cave-fill PERCENT)`, `(known CLASS
-...)`, a first `(hunger ...)` value under one; and on a creature, `(pack
-LO HI)`, `ranged` with `(ranged LO HI)` and `(shot "what")`, `summon`
-with `(summon "name")`.
+...)`, a first `(hunger ...)` value under one; `(band NAME TO . PROPS)`,
+one after another from level 1, with `(enter "TEXT")` said on its first
+level, `(guardian "NAME")` a creature put by the stairs down on its
+last, which stay shut while it lives, and `(colour N)` for its levels;
+`(page NAME DEPTH LINE ...)` lying on its level once; and on a creature,
+`(pack LO HI)`, `ranged` with `(ranged LO HI)` and `(shot "what")`,
+`summon` with `(summon "name")`.
 
 ## Running the suite
 
