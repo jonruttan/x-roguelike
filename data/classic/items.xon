@@ -1,7 +1,8 @@
 ; items.xon -- the classic set: what lies about the vault.
 ;
 ; (item CLASS NAME . PROPS): (rarity N) its weight in the draw against
-; every other item; then by class:
+; every other item of the level; (depth LO HI) the levels it is found
+; on, every level without it; then by class:
 ;
 ;   potion, scroll  (effect NAME ARGS...), one of: heal LO HI, strength N,
 ;                   restore, poison LO HI, haste TURNS, confusion TURNS,
@@ -19,54 +20,59 @@
 ; A potion, scroll, wand or ring is known by a (guise CLASS NAME ...)
 ; until one is used; the guises are dealt out afresh each game.
 
+; The player comes in bare-handed and has to find a blade: the first
+; levels hold weapons and armour, healing and the plain scrolls, and
+; the rest comes in as the vault deepens.
+
 (item potion "healing" (rarity 30) (effect heal 8 16))
-(item potion "mending" (rarity 10) (effect heal 20 40))
-(item potion "strength" (rarity 10) (effect strength 1))
-(item potion "venom" (rarity 12) (effect poison 1 3))
-(item potion "quickness" (rarity 8) (effect haste 12))
-(item potion "muddle" (rarity 12) (effect confusion 10))
-(item potion "darkness" (rarity 8) (effect blindness 30))
-(item potion "clear sight" (rarity 10) (effect seeing 80))
-(item potion "restoration" (rarity 10) (effect restore))
+(item potion "mending" (rarity 10) (depth 5 20) (effect heal 20 40))
+(item potion "strength" (rarity 10) (depth 4 20) (effect strength 1))
+(item potion "venom" (rarity 12) (depth 2 20) (effect poison 1 3))
+(item potion "quickness" (rarity 8) (depth 3 20) (effect haste 12))
+(item potion "muddle" (rarity 12) (depth 2 20) (effect confusion 10))
+(item potion "darkness" (rarity 8) (depth 3 20) (effect blindness 30))
+(item potion "clear sight" (rarity 10) (depth 2 20) (effect seeing 80))
+(item potion "restoration" (rarity 10) (depth 5 20) (effect restore))
 
 (item scroll "mapping" (rarity 16) (effect mapping))
-(item scroll "vanishing" (rarity 14) (effect teleport))
+(item scroll "vanishing" (rarity 14) (depth 2 20) (effect teleport))
 (item scroll "naming" (rarity 18) (effect identify))
-(item scroll "keen edge" (rarity 12) (effect enchant-weapon))
-(item scroll "hard shell" (rarity 12) (effect enchant-armour))
-(item scroll "dread" (rarity 8) (effect fear))
-(item scroll "clamour" (rarity 8) (effect aggravate))
+(item scroll "keen edge" (rarity 12) (depth 2 20) (effect enchant-weapon))
+(item scroll "hard shell" (rarity 12) (depth 2 20) (effect enchant-armour))
+(item scroll "dread" (rarity 8) (depth 3 20) (effect fear))
+(item scroll "clamour" (rarity 8) (depth 3 20) (effect aggravate))
 (item scroll "daylight" (rarity 10) (effect light))
-(item scroll "binding" (rarity 8) (effect hold 6))
+(item scroll "binding" (rarity 8) (depth 4 20) (effect hold 6))
 
-(item wand "sparks" (rarity 14) (charges 3 7) (effect bolt 4 12))
-(item wand "lethargy" (rarity 10) (charges 3 7) (effect slow 10))
-(item wand "banishing" (rarity 10) (charges 2 5) (effect teleport-other))
-(item wand "leeching" (rarity 8) (charges 2 6) (effect drain 3 9))
+(item wand "sparks" (rarity 14) (depth 4 20) (charges 3 7) (effect bolt 4 12))
+(item wand "lethargy" (rarity 10) (depth 5 20) (charges 3 7) (effect slow 10))
+(item wand "banishing" (rarity 10) (depth 6 20) (charges 2 5) (effect teleport-other))
+(item wand "leeching" (rarity 8) (depth 7 20) (charges 2 6) (effect drain 3 9))
 
-(item ring "warding" (rarity 12) (bonus protection 1))
-(item ring "vigour" (rarity 10) (bonus strength 1))
-(item ring "mending" (rarity 10) (bonus regeneration 1))
-(item ring "fasting" (rarity 10) (bonus sustenance 1))
-(item ring "silence" (rarity 8) (bonus stealth 1))
+(item ring "warding" (rarity 12) (depth 5 20) (bonus protection 1))
+(item ring "vigour" (rarity 10) (depth 6 20) (bonus strength 1))
+(item ring "mending" (rarity 10) (depth 6 20) (bonus regeneration 1))
+(item ring "fasting" (rarity 10) (depth 5 20) (bonus sustenance 1))
+(item ring "silence" (rarity 8) (depth 7 20) (bonus stealth 1))
 
-(item weapon "knife" (rarity 14) (damage 1 4))
+(item weapon "knife" (rarity 14) (depth 1 8) (damage 1 4))
 (item weapon "short blade" (rarity 14) (damage 1 6))
-(item weapon "hand axe" (rarity 10) (damage 1 8))
-(item weapon "mace" (rarity 10) (damage 2 7))
-(item weapon "long blade" (rarity 8) (damage 2 10))
-(item weapon "war hammer" (rarity 4) (damage 3 11))
+(item weapon "hand axe" (rarity 10) (depth 2 20) (damage 1 8))
+(item weapon "mace" (rarity 10) (depth 3 20) (damage 2 7))
+(item weapon "long blade" (rarity 8) (depth 5 20) (damage 2 10))
+(item weapon "war hammer" (rarity 4) (depth 8 20) (damage 3 11))
 
-(item armour "padded coat" (rarity 12) (armour 1))
+(item armour "padded coat" (rarity 12) (depth 1 8) (armour 1))
 (item armour "leather armour" (rarity 12) (armour 2))
-(item armour "studded leather" (rarity 10) (armour 3))
-(item armour "ring mail" (rarity 8) (armour 4))
-(item armour "scale mail" (rarity 6) (armour 5))
-(item armour "chain mail" (rarity 5) (armour 6))
-(item armour "plate armour" (rarity 2) (armour 7))
+(item armour "studded leather" (rarity 10) (depth 3 20) (armour 3))
+(item armour "ring mail" (rarity 8) (depth 5 20) (armour 4))
+(item armour "scale mail" (rarity 6) (depth 7 20) (armour 5))
+(item armour "chain mail" (rarity 5) (depth 9 20) (armour 6))
+(item armour "plate armour" (rarity 2) (depth 12 20) (armour 7))
 
-(item food "ration" (rarity 45) (nutrition 850))
-(item food "dried fruit" (rarity 10) (nutrition 350))
+; The player starts fed, so food lies from the second level down.
+(item food "ration" (rarity 45) (depth 2 20) (nutrition 850))
+(item food "dried fruit" (rarity 10) (depth 2 20) (nutrition 350))
 
 (guise potion "murky" "amber" "fizzing" "inky" "pearly" "smoky" "crimson" "violet" "oily" "clear" "glowing" "brackish")
 (guise scroll "ASHKA TORUM" "VEL NIRAM" "QUOSH" "TEMBRIN OLU" "KAZAK MIRE" "FENDRA" "ULUM SOTH" "BREVIS ARC" "NOCT HALE" "SIRRA VON" "OMMEL" "DRASK YEN")

@@ -26,7 +26,7 @@
   item-enchant item-letter item-letter! item-r item-c item-at!
   item-class state-say! state-dist state-adjacent?)
 (import roguelike/creatures creatures-kinds creatures-place!)
-(import roguelike/items items-name items-new items-known?)
+(import roguelike/items items-name items-new items-known? items-spawn!)
 (import roguelike/traps trap-make trap-found?)
 (import roguelike/game game-make game-key! game-explore! game-more! game-score game-help)
 (import roguelike/draw game-draw!)
@@ -50,5 +50,5 @@
   creature-name creature-glyph creature-trait? creature-carried item-make item-name item-count item-charges
   item-enchant item-letter item-letter! item-r item-c item-at!
   item-class state-say! state-dist state-adjacent?
-  items-name items-new items-known? creatures-kinds creatures-place! trap-make trap-found?
+  items-name items-new items-known? items-spawn! creatures-kinds creatures-place! trap-make trap-found?
   save-write! save-read save-score! save-scores)

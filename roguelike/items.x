@@ -7,9 +7,10 @@
 ; @license MIT No Attribution (MIT-0)
 ;
 ; A level's items are drawn from the set's (item CLASS NAME . PROPS)
-; forms by their (rarity N), with gold by the set's (gold CHANCE LO HI),
-; the goal on its level, and each (page NAME DEPTH LINE ...) on its,
-; once: a page is read like a scroll, shows its lines, and is kept.
+; forms whose (depth LO HI) covers the level, every level without one,
+; by their (rarity N); gold comes by the set's (gold CHANCE LO HI), the
+; goal on its level, and each (page NAME DEPTH LINE ...) on its, once:
+; a page is read like a scroll, shows its lines, and is kept.
 ; A potion, scroll, wand or ring is known by
 ; a guise until one of its kind is used; the guises are shuffled each
 ; game.  Using a thing takes its (effect NAME ARGS...): each effect is
@@ -21,7 +22,7 @@
 (module roguelike/items)
 
 (import x/type/vector)
-(import roguelike/data data-all data-glyph)
+(import roguelike/data data-all data-prop data-glyph)
 (import roguelike/map
   map-walkable? map-reveal! map-rooms map-rooms! map-room-at room-r0 room-c0 room-r1 room-c1 map-tile tile-floor)
 (import roguelike/dungeon dungeon-spot)
@@ -36,7 +37,7 @@
   item-make item-form item-class item-name item-prop item-prop1 item-count item-count! item-charges
   item-charges! item-enchant item-enchant! item-letter item-letter! item-r item-c item-at! item-class? item-class-in?
   state-say! state-tell! state-roll state-chance? state-creature-at state-items-at state-free?
-  state-remove-floor! state-remove-pack! state-ring?)
+  state-remove-floor! state-remove-pack! state-ring? state-covers?)
 (import roguelike/combat combat-kill! combat-hurt-player!)
 (import roguelike/creatures creatures-wake-all! creatures-scare!)
 
@@ -47,10 +48,15 @@
 (def %it-pick
   (fn (self forms n)
     (if (< n (%it-weight (first forms))) (first forms) (self (rest forms) (- n (%it-weight (first forms)))))))
-; A random item form, by rarity.
+; The forms whose depth covers the level; all of them when none does.
+(def %it-forms-here
+  (fn (_ g)
+    (def here (List filter (fn (_ f) (state-covers? (data-prop f (lit depth) (list 1 99)) (game-depth g))) (%it-forms g)))
+    (if (null? here) (%it-forms g) here)))
+; A random item form of the level, by rarity.
 (def %it-random-form
   (fn (_ g)
-    (def forms (%it-forms g))
+    (def forms (%it-forms-here g))
     (%it-pick forms ((game-rng g) int (List fold (fn (_ acc f) (+ acc (%it-weight f))) 0 forms)))))
 
 ; A new item of FORM: a wand's charges rolled from its (charges LO HI).

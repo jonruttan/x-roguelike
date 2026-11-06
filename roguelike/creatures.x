@@ -25,7 +25,7 @@
 (import roguelike/dungeon dungeon-spot)
 (import roguelike/state
   game-rng game-set game-depth game-map game-player game-creatures game-creatures! game-turn game-param1
-  player-r player-c player-condition
+  player-r player-c player-condition state-covers?
   creature-make creature-r creature-c creature-at! creature-hp creature-hp! creature-state creature-state!
   creature-carried creature-name creature-prop creature-prop1 creature-trait? creature-condition creature-tick!
   state-say! state-tell! state-roll state-chance? state-dirs state-dist state-adjacent? state-sign state-free?
@@ -34,11 +34,10 @@
 
 ; --- spawning ----------------------------------------------------------------
 
-(def %cr-covers? (fn (_ d depth) (if (< depth (first d)) #f (not (< (List ref 1 d) depth)))))
 ; The set's kinds for DEPTH.
 (def creatures-kinds
   (fn (_ g depth)
-    (List filter (fn (_ k) (%cr-covers? (data-prop k (lit depth) (list 1 99)) depth)) (data-all (game-set g) (lit creature)))))
+    (List filter (fn (_ k) (state-covers? (data-prop k (lit depth) (list 1 99)) depth)) (data-all (game-set g) (lit creature)))))
 
 (def %cr-hp
   (fn (_ g kind)

@@ -27,7 +27,7 @@
   creature-make creature-r creature-c creature-at! creature-hp creature-hp! creature-state creature-state!
   creature-name creature-glyph creature-trait? creature-carried item-make item-name item-count item-charges item-enchant item-letter item-letter! item-r item-c item-at!
   item-class state-say! state-dist state-adjacent?
-  items-name items-new items-known? creatures-kinds creatures-place! trap-make trap-found?
+  items-name items-new items-known? items-spawn! creatures-kinds creatures-place! trap-make trap-found?
   save-write! save-read save-score! save-scores)
 (import x/sys/gc)
 (import x/sys/file)

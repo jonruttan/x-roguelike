@@ -5,6 +5,23 @@ roguelike/items: things picked up, named by a guise until one is used,
 drunk, read, zapped, eaten, worn and dropped.
 
 
+## what lies where
+
+### an item is drawn on the levels its depth covers, and on every level without one
+
+```roguelike
+(def set (List append (List reject (fn (_ f) (eq? (first f) 'item)) (spec-set-named "classic"))
+                      (list (list 'item 'weapon "shallow" (list 'rarity 1) (list 'depth 1 1))
+                            (list 'item 'weapon "deep" (list 'rarity 1) (list 'depth 2 9))
+                            (list 'item 'weapon "any" (list 'rarity 1)))))
+(def g (spec-game-on set 5 ()))
+(items-spawn! g 60)
+(def names (List map item-name (game-floor g)))
+(write (list (List includes? "shallow" names) (List includes? "deep" names) (List includes? "any" names)))
+```
+---
+    (#t #f #t)
+
 ## the pack
 
 ### what lies under the player is picked up by , and lettered; a potion wears a guise
