@@ -18,11 +18,12 @@
   game-set game-depth game-map game-player game-creatures game-creatures! game-floor game-floor! game-pack game-pack!
   game-messages game-turn game-ask game-over game-epitaph game-known game-deepest game-log game-pages-placed
   game-quest-state game-placed game-traps game-traps! game-exploring?
+  game-screen game-screens? game-kept game-kept-level game-hub game-screen-key game-screen-distance
   player-r player-c player-at! player-hp player-hp! player-hpmax player-str player-level player-exp player-gold
   player-food player-food! player-condition player-weapon player-armour player-rings
   creature-make creature-r creature-c creature-at! creature-hp creature-hp! creature-state creature-state!
   creature-name creature-glyph creature-trait? creature-carried item-make item-name item-count item-charges
-  item-enchant item-letter item-r item-c item-at!
+  item-enchant item-letter item-letter! item-r item-c item-at!
   item-class state-say! state-dist state-adjacent?)
 (import roguelike/creatures creatures-kinds creatures-place!)
 (import roguelike/items items-name items-new items-known?)
@@ -42,11 +43,12 @@
   game-set game-depth game-map game-player game-creatures game-creatures! game-floor game-floor! game-pack game-pack!
   game-messages game-turn game-ask game-over game-epitaph game-known game-deepest game-log game-pages-placed
   game-quest-state game-placed game-traps game-traps! game-exploring?
+  game-screen game-screens? game-kept game-kept-level game-hub game-screen-key game-screen-distance
   player-r player-c player-at! player-hp player-hp! player-hpmax player-str player-level player-exp player-gold
   player-food player-food! player-condition player-weapon player-armour player-rings
   creature-make creature-r creature-c creature-at! creature-hp creature-hp! creature-state creature-state!
   creature-name creature-glyph creature-trait? creature-carried item-make item-name item-count item-charges
-  item-enchant item-letter item-r item-c item-at!
+  item-enchant item-letter item-letter! item-r item-c item-at!
   item-class state-say! state-dist state-adjacent?
   items-name items-new items-known? creatures-kinds creatures-place! trap-make trap-found?
   save-write! save-read save-score! save-scores)

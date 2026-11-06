@@ -1,0 +1,26 @@
+; items.xon -- the kettle set: what is found in the valley.
+;
+; The classes and effects are the engine's (see data/classic/items.xon);
+; potions and scrolls are known on sight here, so only wands and rings
+; wear guises.
+
+(item potion "mending" (rarity 30) (effect heal 8 16))
+(item potion "vigour" (rarity 8) (effect strength 1))
+(item potion "clear sight" (rarity 10) (effect seeing 60))
+
+(item scroll "survey" (rarity 20) (effect mapping))
+(item scroll "blink" (rarity 10) (effect teleport))
+
+(item wand "sparks" (rarity 8) (charges 3 6) (effect bolt 4 10))
+
+(item ring "warding" (rarity 6) (bonus protection 1))
+
+(item weapon "walking staff" (rarity 14) (damage 1 4))
+(item weapon "hatchet" (rarity 12) (damage 1 6))
+(item weapon "billhook" (rarity 8) (damage 2 7))
+
+(item armour "waxed coat" (rarity 12) (armour 1))
+(item armour "leather jerkin" (rarity 8) (armour 2))
+
+(guise wand "ash" "hazel" "elm" "yew")
+(guise ring "tin" "horn" "bone" "silver")

@@ -13,7 +13,7 @@
 ; a few have two ways in.  A passage carved through a room's wall leaves
 ; a door.  The stairs down are in a room other than the one the stairs
 ; up are in, when there is one.  A room is lit by a chance that falls
-; with depth.
+; with depth.  A set may ask for caves or open ground instead, below.
 
 (module roguelike/dungeon)
 
@@ -23,7 +23,7 @@
 (import roguelike/map
   tile-rock tile-floor tile-wall tile-door tile-passage tile-down tile-up
   map-make map-rows map-cols map-rooms map-rooms! map-down! map-up!
-  map-tile map-set! room-r0 room-c0 room-r1 room-c1 room-centre map-each!)
+  map-tile map-set! map-in? map-passable? room-r0 room-c0 room-r1 room-c1 room-centre map-each!)
 
 ; The set's parameters, (KEY . VALUES) alist, or DEFAULT's values.
 (def %dg-p
@@ -231,14 +231,73 @@
     (map-rooms! m ())
     (%dg-stairs! m up (%dg-farthest rng cells want up 40 up 0))))
 
+; --- open ground -------------------------------------------------------------
+
+; Open ground: every cell floor, then (clumps LO HI) clumps of wall,
+; each a walk of (clump-size LO HI) steps from a cell within the
+; border, so the outermost ring stays floor and every edge can be
+; walked to from every other; a pocket of floor a clump closes is
+; filled in.  No rooms and no stairs: a screen is left by its edges.
+
+(def %dg-four (list (pair -1 0) (pair 1 0) (pair 0 -1) (pair 0 1)))
+(def %dg-clump!
+  (fn (self rng m r c k)
+    (when (< 0 k)
+      (do (when (%dg-inside? m r c) (map-set! m r c tile-wall))
+          (def d (rng choice %dg-four))
+          (self rng m (+ r (first d)) (+ c (rest d)) (- k 1))))))
+
+; Every floor cell that cannot be walked to from the corner made wall.
+(def %dg-pockets!
+  (fn (_ m)
+    (def rows (map-rows m))
+    (def cols (map-cols m))
+    (def seen (Vector make (* rows cols) #f))
+    (def at (fn (_ r c) (+ (* r cols) c)))
+    (def step?
+      (fn (_ r c)
+        (match ((not (map-in? m r c)) #f)
+               ((Vector ref (at r c) seen) #f)
+               ((not (map-passable? (map-tile m r c))) #f)
+               (#t (do (Vector set! (at r c) #t seen) #t)))))
+    (def flood
+      (fn (self stack)
+        (unless (null? stack)
+          (do (def r (first (first stack)))
+              (def c (rest (first stack)))
+              (def next (List filter (fn (_ p) (step? (first p) (rest p)))
+                          (list (pair (- r 1) c) (pair (+ r 1) c) (pair r (- c 1)) (pair r (+ c 1)))))
+              (self (List append next (rest stack)))))))
+    (Vector set! (at 0 0) #t seen)
+    (flood (list (pair 0 0)))
+    (map-each! 0 0 (- rows 1) (- cols 1)
+      (fn (_ r c) (when (if (= (map-tile m r c) tile-floor) (not (Vector ref (at r c) seen)) #f) (map-set! m r c tile-wall))))))
+
+(def %dg-open!
+  (fn (_ rng m params)
+    (def rows (map-rows m))
+    (def cols (map-cols m))
+    (map-each! 0 0 (- rows 1) (- cols 1) (fn (_ r c) (map-set! m r c tile-floor)))
+    (def clumps (%dg-p params (lit clumps) (list 6 12)))
+    (def size (%dg-p params (lit clump-size) (list 8 24)))
+    ((fn (self n)
+       (when (< 0 n)
+         (do (%dg-clump! rng m (%dg-roll rng 1 (- rows 2)) (%dg-roll rng 1 (- cols 2)) (%dg-roll rng (first size) (List ref 1 size)))
+             (self (- n 1)))))
+     (%dg-roll rng (first clumps) (List ref 1 clumps)))
+    (%dg-pockets! m)
+    (map-rooms! m ())
+    m))
+
 ; A level of ROWS by COLS at DEPTH, by PARAMS: rooms, or caves with
-; (level-style caves).
+; (level-style caves), or open ground with (level-style open).
 (def dungeon-generate
   (fn (_ rng rows cols depth params)
     (def m (map-make rows cols))
-    (if (eq? (first (%dg-p params (lit level-style) (list (lit rooms)))) (lit caves))
-      (%dg-caves! rng m params)
-      (%dg-rooms! rng m depth params))))
+    (def style (first (%dg-p params (lit level-style) (list (lit rooms)))))
+    (match ((eq? style (lit caves)) (%dg-caves! rng m params))
+           ((eq? style (lit open)) (%dg-open! rng m params))
+           (#t (%dg-rooms! rng m depth params)))))
 
 ; A random floor cell of M that FREE? allows -- of a random room, or
 ; anywhere on a level without rooms -- or nil after TRIES tries.

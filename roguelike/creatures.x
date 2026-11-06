@@ -94,13 +94,14 @@
   (fn (_ g name) (List find (fn (_ k) (str=? (first k) name)) (data-all (game-set g) (lit creature)))))
 
 ; A guardian: the kind named NAME put on a free cell beside the stairs
-; down, or anywhere with none free, asleep unless wakeful.
+; down, or anywhere with none free or no stairs, asleep unless wakeful.
 (def creatures-guardian!
   (fn (_ g name)
     (def kind (creatures-kind g name))
     (def down (map-down (game-map g)))
-    (def beside (List find (fn (_ d) (state-free? g (+ (first down) (first d)) (+ (rest down) (rest d))))
-                  ((game-rng g) shuffle %cr-around)))
+    (def beside (if (null? down) ()
+                  (List find (fn (_ d) (state-free? g (+ (first down) (first d)) (+ (rest down) (rest d))))
+                    ((game-rng g) shuffle %cr-around))))
     (def at (if (null? beside) (dungeon-spot (game-rng g) (game-map g) (fn (_ r c) (state-free? g r c)) 100)
               (pair (+ (first down) (first beside)) (+ (rest down) (rest beside)))))
     (unless (if (null? kind) #t (null? at))

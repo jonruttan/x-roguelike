@@ -8,7 +8,8 @@
 ;
 ; The first row says what happened this turn, or asks the question
 ; being asked; the level fills the rows between; the last row is the
-; player's standing.  Cells seen are drawn dim, cells in view plain, in
+; player's standing, headed by the level, or the screen in a world of
+; screens.  Cells seen are drawn dim, cells in view plain, in
 ; the band's (colour N) where the set has bands; found traps and items
 ; where they were seen, creatures only in view, the player last.
 ; A list being looked at -- the pack, the keys, what someone says --
@@ -27,7 +28,7 @@
   tile-rock tile-floor tile-wall tile-door tile-passage tile-down tile-up)
 (import roguelike/state
   game-set game-depth game-map game-player game-creatures game-floor game-pack game-messages game-ask
-  game-over game-epitaph game-turn game-traps game-param1
+  game-over game-epitaph game-turn game-traps game-param1 game-screens? game-screen
   player-r player-c player-hp player-hpmax player-str player-strmax player-level player-exp player-gold
   player-food player-condition item-r item-c item-class? item-class creature-r creature-c creature-glyph
   creature-trait? game-param game-band band-prop1 state-defence)
@@ -102,7 +103,7 @@
     (match ((null? l) "?") ((eq? (first (first l)) (item-class it)) (rest (first l))) (#t (self it (rest l))))))
 (def %dr-stairs!
   (fn (_ s m at bytes t)
-    (when (map-visible? m (first at) (rest at))
+    (when (if (null? at) #f (map-visible? m (first at) (rest at)))
       (screen-put! s (+ (first at) 1) (rest at) (bytes->str (list (Vector ref t bytes))) %dr-stairs))))
 (def %dr-map!
   (fn (_ g s set m)
@@ -166,7 +167,10 @@
   (fn (_ g)
     (def p (game-player g))
     (Str8 append
-      "Level:" (Str8 str (game-depth g)) "  Gold:" (Str8 str (player-gold p))
+      (if (game-screens? g)
+        (Str8 append "Screen:" (Str8 str (first (game-screen g))) "," (Str8 str (rest (game-screen g))))
+        (Str8 append "Level:" (Str8 str (game-depth g))))
+      "  Gold:" (Str8 str (player-gold p))
       "  Hp:" (Str8 str (player-hp p)) "(" (Str8 str (player-hpmax p)) ")"
       "  Str:" (Str8 str (player-str p)) "(" (Str8 str (player-strmax p)) ")"
       "  Arm:" (Str8 str (state-defence g))

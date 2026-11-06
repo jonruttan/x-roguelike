@@ -15,7 +15,7 @@
 
 (import x/type/vector)
 (import x/num/random)
-(import x/core/doors obj-ref obj-set! int+)
+(import x/core/doors obj-ref obj-set! int+ int/)
 (import roguelike/data data-all data-one data-get data-prop data-prop1 data-trait?)
 (import roguelike/map map-walkable?)
 
@@ -29,7 +29,9 @@
 ; 16 rows, 17 columns, 18 the epitaph, 19 the seed, 20 whether the goal
 ; has been placed, 21 the names of the pages placed, 22 the quests,
 ; (NAME . STATE) each, 23 the names of what the quests have placed, 24
-; the level's traps, 25 the steps taken exploring, or nil when not.
+; the level's traps, 25 the steps taken exploring, or nil when not, 26
+; the screen stood on, (X . Y), or nil in a descent, 27 the levels
+; kept, (KEY . LEVEL) each, a LEVEL being (MAP CREATURES FLOOR TRAPS).
 ; Every slot here is read through the object doors, not the class: a
 ; class send costs some two hundred objects, and a turn reads thousands.
 (def %st-ref (fn (_ v k) (obj-ref v (int+ k 1))))
@@ -89,10 +91,44 @@
 (def game-exploring (fn (_ g) (%st-get g 25)))
 (def game-exploring? (fn (_ g) (not (null? (%st-get g 25)))))
 (def game-exploring! (fn (_ g n) (%st-put! g 25 n)))
+(def game-screen (fn (_ g) (%st-get g 26)))
+(def game-screen! (fn (_ g at) (%st-put! g 26 at)))
+(def game-kept (fn (_ g) (%st-get g 27)))
+; The level kept under KEY, or nil.
+(def game-kept-level
+  (fn (_ g key)
+    (def hit (List find (fn (_ p) (str=? (first p) key)) (%st-get g 27)))
+    (if (null? hit) () (rest hit))))
+; LEVEL kept under KEY, in place of any kept there before.
+(def game-keep!
+  (fn (_ g key level)
+    (%st-put! g 27 (pair (pair key level) (List reject (fn (_ p) (str=? (first p) key)) (%st-get g 27))))))
 
 ; The set's parameter HEAD, its values, or DEFAULT's.
 (def game-param (fn (_ g head default) (data-one (game-set g) head default)))
 (def game-param1 (fn (_ g head default) (data-get (game-set g) head default)))
+
+; The set's (world SHAPE ...): descent, a line of levels joined by
+; stairs, each made anew, which is the default; or (screens W H), a
+; grid of W by H screens joined at their edges and kept.  The hub is
+; the middle screen, where a game starts; a screen's depth is its
+; distance from the hub, a step along either axis counting one.
+(def game-world (fn (_ g) (game-param g (lit world) (list (lit descent)))))
+(def game-screens? (fn (_ g) (eq? (first (game-world g)) (lit screens))))
+(def game-world-cols (fn (_ g) (List ref 1 (game-world g))))
+(def game-world-rows (fn (_ g) (List ref 2 (game-world g))))
+(def game-hub (fn (_ g) (pair (int/ (game-world-cols g) 2) (int/ (game-world-rows g) 2))))
+(def %st-abs (fn (_ n) (if (< n 0) (- 0 n) n)))
+(def game-screen-distance
+  (fn (_ g x y)
+    (def hub (game-hub g))
+    (+ (%st-abs (- x (first hub))) (%st-abs (- y (rest hub))))))
+; Whether screen X Y lies within the world.
+(def game-screen-in?
+  (fn (_ g x y)
+    (match ((< x 0) #f) ((< y 0) #f) ((< x (game-world-cols g)) (< y (game-world-rows g))) (#t #f))))
+; The key a screen's level is kept under.
+(def game-screen-key (fn (_ x y) (Str8 append (Str8 str x) "," (Str8 str y))))
 
 ; The set's bands, (band NAME TO . PROPS) each, run one after another
 ; from level 1, each to its TO.  The band the depth is in, as (FROM .
@@ -263,7 +299,7 @@
 
 (def game-new
   (fn (_ set seed rows cols)
-    (def g (Vector make 26 ()))
+    (def g (Vector make 28 ()))
     (def rng (Random sw seed))
     (%st-put! g 0 rng)
     (%st-put! g 1 set)
@@ -282,6 +318,8 @@
     (%st-put! g 23 ())
     (%st-put! g 24 ())
     (%st-put! g 25 ())
+    (%st-put! g 26 ())
+    (%st-put! g 27 ())
     g))
 
 ; --- messages ----------------------------------------------------------------
@@ -325,7 +363,6 @@
     (if (null? hit) () (rest hit))))
 (def state-dirs (fn (_) (List map rest (List take 8 %st-compass))))
 
-(def %st-abs (fn (_ n) (if (< n 0) (- 0 n) n)))
 (def %st-max (fn (_ a b) (if (< a b) b a)))
 ; The moves from R1 C1 to R2 C2, a diagonal step counting one.
 (def state-dist (fn (_ r1 c1 r2 c2) (%st-max (%st-abs (- r1 r2)) (%st-abs (- c1 c2)))))
@@ -395,6 +432,9 @@
   game-log game-rows game-cols game-epitaph game-epitaph! game-seed game-goal-placed? game-goal-placed!
   game-pages-placed game-page-placed! game-quests game-quest-state game-quest-state! game-placed game-placed?
   game-placed! game-traps game-traps! game-exploring game-exploring? game-exploring!
+  game-screen game-screen! game-kept game-kept-level game-keep!
+  game-world game-screens? game-world-cols game-world-rows game-hub game-screen-distance game-screen-in?
+  game-screen-key
   game-param game-param1 game-band game-band-from band-name band-to band-prop1 game-new
   player-r player-c player-at! player-hp player-hp! player-hpmax player-hpmax! player-str player-str!
   player-strmax player-strmax! player-level player-level! player-exp player-exp! player-gold player-gold!
