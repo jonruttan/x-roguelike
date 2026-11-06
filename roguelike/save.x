@@ -8,7 +8,7 @@
 ;
 ; A save is xon, a form a line: the game's numbers, the player, each
 ; item by its class and name, each creature by its name, the pages
-; placed, the quests and what they placed, the level's traps by their
+; placed, the quests and what they placed, the chain, the level's traps by their
 ; kind's name, its tiles and seen flags as strings of digits, its
 ; rooms and stairs; then, in a world of screens, each other level kept,
 ; after a (screen KEY) line, the same way.
@@ -23,7 +23,7 @@
 (import x/sys/posix)
 (import x/sys/file)
 (import x/codec/xon)
-(import roguelike/data data-all)
+(import roguelike/data data-all data-prop)
 (import roguelike/items items-page-named)
 (import roguelike/traps trap-make trap-r trap-c trap-name trap-found?)
 (import roguelike/map
@@ -34,7 +34,7 @@
   game-floor game-floor! game-pack game-pack! game-turn game-turn! game-known game-known! game-deepest
   game-deepest! game-seed game-guises game-goal-placed? game-goal-placed! game-pages-placed game-page-placed!
   game-quests game-quest-state! game-placed game-placed! game-traps game-traps! game-new
-  game-screen game-screen! game-kept game-keep! game-screens? game-screen-key
+  game-screen game-screen! game-kept game-keep! game-screens? game-screen-key game-chain game-chain!
   player-r player-c player-at! player-hp player-hp! player-hpmax player-hpmax! player-str player-str!
   player-strmax player-strmax! player-level player-level! player-exp player-exp! player-gold player-gold!
   player-armour player-armour! player-weapon player-weapon! player-rings player-rings! player-food
@@ -73,6 +73,26 @@
           (if (null? (player-weapon p)) "" (item-letter (player-weapon p)))
           (if (null? (player-armour p)) "" (item-letter (player-armour p)))
           (Str8 join "" (List map item-letter (player-rings p))))))
+
+; The chain, a link's quest form flattened to a form a line, since a
+; xon form holds atoms only: (link NAME GIVER X Y WANT LX LY CARRIER
+; CLASS REWARD), LX LY -1 with no (lies ...) and CARRIER "" with none,
+; then its (link-ask LINE ...), (link-again ...) and (link-done ...).
+(def %sv-chain-forms
+  (fn (_ g)
+    (List flat-map
+      (fn (_ q)
+        (def rec (rest q))
+        (def prop (fn (_ key default) (def v (data-prop rec key ())) (if (null? v) default v)))
+        (def reward (first (prop (lit rewards) (list (list (lit goal) "")))))
+        (List append
+          (list (List append (list (lit link) (List ref 0 rec) (List ref 1 rec))
+                             (prop (lit screen) (list -1 -1)) (list (List ref 1 (prop (lit wants) (list (lit bring) ""))))
+                             (prop (lit lies) (list -1 -1)) (prop (lit carrier) (list ""))
+                             (list (symbol->str (first reward)) (List ref 1 reward))))
+          (list (pair (lit link-ask) (prop (lit ask) ())) (pair (lit link-again) (prop (lit again) ()))
+                (pair (lit link-done) (prop (lit done) ())))))
+      (game-chain g))))
 
 ; A level's forms: its map M, the ITEMS on its floor, its TRAPS and
 ; CREATURES.  Stairs it lacks are -1.
@@ -114,6 +134,7 @@
             (pair (lit pages) (game-pages-placed g))
             (pair (lit quests) (List flat-map (fn (_ q) (list (first q) (symbol->str (rest q)))) (game-quests g)))
             (pair (lit placed) (game-placed g)))
+      (%sv-chain-forms g)
       (List map (fn (_ args) (pair (lit guise) (pair (symbol->str (first args)) (rest args)))) (game-guises g))
       (List map (fn (_ it) (%sv-item (lit pack) it)) (game-pack g))
       (list (%sv-worn p))
@@ -181,6 +202,26 @@
 
 (def %sv-conditions
   (fn (self l) (if (null? l) () (pair (pair (Str8 ->sym (first l)) (List ref 1 l)) (self (List drop 2 l))))))
+
+; The chain's quest forms from FORMS' link lines: each (link ...) with
+; the link-ask, link-again and link-done lines that follow it.
+(def %sv-chain
+  (fn (self forms)
+    (if (null? forms) ()
+      ((fn (_ f)
+         (if (not (eq? (first f) (lit link))) (self (rest forms))
+           (do (def a (rest f))
+               (def after (fn (_ head) (def hit (List find (fn (_ x) (eq? (first x) head)) (rest forms))) (if (null? hit) () (rest hit))))
+               (pair (List append
+                       (list (lit quest) (List ref 0 a) (List ref 1 a)
+                             (list (lit screen) (List ref 2 a) (List ref 3 a)) (list (lit wants) (lit bring) (List ref 4 a)))
+                       (if (< (List ref 5 a) 0) () (list (list (lit lies) (List ref 5 a) (List ref 6 a))))
+                       (if (str=? (List ref 7 a) "") () (list (list (lit carrier) (List ref 7 a))))
+                       (list (pair (lit ask) (after (lit link-ask))) (pair (lit again) (after (lit link-again)))
+                             (pair (lit done) (after (lit link-done)))
+                             (list (lit rewards) (list (Str8 ->sym (List ref 8 a)) (List ref 9 a)))))
+                     (self (rest forms))))))
+       (first forms)))))
 ; The trap saved as ARGS, (R C NAME FOUND), or nil for a kind the set lacks.
 (def %sv-trap
   (fn (_ set args)
@@ -246,6 +287,7 @@
             (List for-each (fn (_ name) (game-page-placed! g name)) (List reverse (%sv-one forms (lit pages))))
             (%sv-quests! g (%sv-one forms (lit quests)))
             (List for-each (fn (_ name) (game-placed! g name)) (List reverse (%sv-one forms (lit placed))))
+            (game-chain! g (%sv-chain forms))
             (game-map! g (%sv-level forms))
             (game-pack! g (%sv-items g set (%sv-all forms (lit pack))))
             (game-floor! g (%sv-items g set (%sv-all forms (lit floor))))

@@ -14,7 +14,11 @@
 ; level seen.  Walking into the giver opens the quest and says its (ask
 ; LINE ...); with it open, its (again LINE ...), or, once the want is
 ; met, its (done LINE ...) and the choice of one of its (rewards (CLASS
-; NAME) (CLASS NAME)).  Each thing is placed once a game.
+; NAME) (CLASS NAME)).  Each thing is placed once a game.  In a world
+; of screens a quest stands on its (screen X Y) in place of a level,
+; and a token it wants lies where its (lies X Y) says; the game's own
+; chain, the quests made from the set's scenes (see chain.x), is read
+; with the set's.
 
 (module roguelike/quests)
 
@@ -24,16 +28,26 @@
 (import roguelike/dungeon dungeon-spot)
 (import roguelike/state
   game-rng game-set game-depth game-map game-player game-creatures game-creatures! game-floor game-floor!
-  game-pack game-ask! game-quest-state game-quest-state! game-placed? game-placed!
+  game-pack game-ask! game-quest-state game-quest-state! game-placed? game-placed! game-chain game-screen
   player-r player-c creature-make creature-name creature-carried!
   item-make item-name item-class? item-at! item-letter!
   state-tell! state-roll state-free? state-items-at state-remove-pack!)
 (import roguelike/items items-new items-pickup! items-name)
 
-(def %qs-quests (fn (_ g) (data-all (game-set g) (lit quest))))
+; The set's quests, then the game's chain.
+(def %qs-quests (fn (_ g) (List append (data-all (game-set g) (lit quest)) (List map rest (game-chain g)))))
 (def %qs-name (fn (_ q) (first q)))
 (def %qs-giver (fn (_ q) (List ref 1 q)))
 (def %qs-level (fn (_ q) (data-prop1 q (lit level) 0)))
+; Whether the screen stood on is (X . Y) of PROP's (PROP X Y) in Q.
+(def %qs-on-screen?
+  (fn (_ g q prop)
+    (def at (data-prop q prop ()))
+    (def here (game-screen g))
+    (match ((null? at) #f) ((null? here) #f) ((= (first at) (first here)) (= (List ref 1 at) (rest here))) (#t #f))))
+; Whether Q's giver belongs on the level in hand: its (screen X Y), or
+; its (level N) the depth.
+(def %qs-here? (fn (_ g q) (if (null? (data-prop q (lit screen) ())) (= (game-depth g) (%qs-level q)) (%qs-on-screen? g q (lit screen)))))
 (def %qs-wants (fn (_ q) (data-prop q (lit wants) ())))
 (def %qs-items (fn (_ q) (def w (%qs-wants q)) (if (if (null? w) #f (eq? (first w) (lit bring))) (rest w) ())))
 
@@ -41,7 +55,8 @@
 (def %qs-kind (fn (_ g name) (List find (fn (_ k) (str=? (first k) name)) (data-all (game-set g) (lit creature)))))
 (def %qs-item-form
   (fn (_ g class name)
-    (List find (fn (_ f) (if (eq? (first f) class) (str=? (List ref 1 f) name) #f)) (data-all (game-set g) (lit item)))))
+    (if (eq? class (lit goal)) (list (lit goal) name)
+      (List find (fn (_ f) (if (eq? (first f) class) (str=? (List ref 1 f) name) #f)) (data-all (game-set g) (lit item))))))
 ; A token's form: the set's, or a bare one.
 (def %qs-token (fn (_ g name) (def f (%qs-item-form g (lit token) name)) (if (null? f) (list (lit token) name) f)))
 
@@ -78,19 +93,24 @@
           (game-placed! g name)))))
 
 ; Of Q's N tokens, the Kth lies on level LEVEL - N + 1 + K.
+; Of Q's N tokens, the Kth lies on level LEVEL - N + 1 + K; with a
+; (lies X Y), every one on that screen.
 (def %qs-place-tokens!
   (fn (_ g q)
     (def names (%qs-items q))
     (def k (- (game-depth g) (+ 1 (- (%qs-level q) (List length names)))))
-    (when (if (< k 0) #f (< k (List length names)))
-      ((fn (_ name) (unless (game-placed? g name) (%qs-place-token! g q name))) (List ref k names)))))
+    (def lay! (fn (_ name) (unless (game-placed? g name) (%qs-place-token! g q name))))
+    (match ((not (null? (data-prop q (lit lies) ()))) (when (%qs-on-screen? g q (lit lies)) (List for-each lay! names)))
+           ((if (< k 0) #t (not (< k (List length names)))) ())
+           (#t (lay! (List ref k names))))))
 
-; Each quest's giver on its level, and its tokens on theirs, once.
+; Each quest's giver on its level or screen, and its tokens on theirs,
+; once.
 (def quests-place!
   (fn (_ g)
     (List for-each
       (fn (_ q)
-        (when (if (= (game-depth g) (%qs-level q)) (not (game-placed? g (Str8 append "giver " (%qs-name q)))) #f)
+        (when (if (%qs-here? g q) (not (game-placed? g (Str8 append "giver " (%qs-name q)))) #f)
           (%qs-place-giver! g q))
         (%qs-place-tokens! g q))
       (%qs-quests g))))

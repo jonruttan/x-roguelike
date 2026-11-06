@@ -1,0 +1,75 @@
+; scenes.xon -- the kettle set: the links an errand is made of.
+;
+; (scene NAME GIVER . PROPS): the GIVER creature, one that talks, who
+; (wants "thing") and, given it, (gives CLASS "name") or (gives goal).
+; In the lines, {want} is the thing wanted and {where} the way to it
+; from the giver's screen.  Each game draws a chain from these: a
+; scene giving the goal stands in Kettle's square; what it wants,
+; another scene gives, a screen farther out; the last want lies on the
+; ground, or with its carrier (see items.xon).  The chain is read
+; outward and paid inward.
+
+; Who has the ledger, and what they want for it.
+(scene "the widow" "bailiff's widow" (wants "the pump-house key") (gives goal)
+  (ask "My husband was the Guild's bailiff, and kept their ledger in the pump"
+       "house, under the floor.  It goes to the town, not the Guild.  The key"
+       "went to the watchman when he died; the watchman is {where}.")
+  (again "The key.  The watchman has it, {where}.")
+  (done "That is the key.  The ledger is the town's now; lay it on the well-head."))
+(scene "the clerk" "Guild clerk" (wants "a letter of the council") (gives goal)
+  (ask "I copied the ledger before the Guild sealed it, and I will hand the"
+       "copy over on the council's word and nothing less.  Bring me a letter"
+       "of the council.  One was being drafted {where}.")
+  (again "The council's letter, {where}.")
+  (done "That is the council's hand.  Here is the copy, every page of it."))
+
+; Who has the key.
+(scene "the watchman" "night watchman" (wants "a flask of spirits") (gives token "the pump-house key")
+  (ask "I have the pump-house key, and I have had a cold night every night"
+       "since the pumps stopped.  A flask of spirits and the key is yours."
+       "The ferryman keeps a flask; he is {where}.")
+  (again "A flask, {where}, and the key is yours.")
+  (done "Ah.  That warms.  The key; the lock sticks, so lift the door as you turn it."))
+(scene "the smith" "smith" (wants "a sack of flour") (gives token "the pump-house key")
+  (ask "I cut the pump-house lock and I can cut a key for it, but the forge is"
+       "cold and so is the house.  The miller owes me a sack of flour, {where}."
+       "Fetch it and I will cut your key.")
+  (again "The flour first, {where}.")
+  (done "There.  A key for the pump house, cut from memory; it will turn."))
+
+; Who has a flask.
+(scene "the ferryman" "ferryman" (wants "the ferry pole") (gives token "a flask of spirits")
+  (ask "The flask is yours when the ferry runs, and it does not run without its"
+       "pole, which the water took in the spring.  It fetched up {where}.")
+  (again "The pole, {where}, and then the flask.")
+  (done "That is the pole.  Here is the flask; leave some for the watchman."))
+(scene "the innkeeper" "innkeeper" (wants "the lamp") (gives token "a flask of spirits")
+  (ask "Spirits I have, but the cellar is dark since the lamp was taken off its"
+       "hook.  A thief went out the back with it, {where}.")
+  (again "My lamp, {where}.")
+  (done "The lamp.  Here is a flask from the cellar, the last of the good cask."))
+
+; Who has flour.
+(scene "the miller" "miller" (wants "the mill pin") (gives token "a sack of flour")
+  (ask "No flour grinds without the pin that holds the stone, and the pin fell"
+       "in the race and washed down.  It will be lying {where}.")
+  (again "The pin, {where}.")
+  (done "The pin.  Give me an hour and the stone turns; take the sack by the door."))
+
+; Who can get the council's letter.
+(scene "the surveyor" "surveyor" (wants "the surveyor's chain") (gives token "a letter of the council")
+  (ask "The council will sign a letter when I show them the levels, and I"
+       "cannot level without my chain.  A crow took the brass end of it, {where}.")
+  (again "The chain, {where}.")
+  (done "The chain.  The levels are what I said they were, and the council has"
+        "signed.  Here is the letter."))
+(scene "the councillor" "councillor" (wants "the sealed order") (gives token "a letter of the council")
+  (ask "The council writes no letter against the Guild without the Guild's own"
+       "sealed order in its hand.  The carter carried it out of town, {where}.")
+  (again "The order, {where}.")
+  (done "The Guild's own seal.  The council has written its letter; here."))
+(scene "the carter" "carter" (wants "the lamp") (gives token "the sealed order")
+  (ask "The order is in my cart under the sacks, and I do not unload in the"
+       "dark.  My lamp was taken on the road, {where}.")
+  (again "The lamp, {where}.")
+  (done "A lamp.  The order, from under the sacks; it is sealed still."))
