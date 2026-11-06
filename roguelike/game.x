@@ -58,6 +58,7 @@
   items-drop! items-quaff! items-read! items-zap! items-eat! items-wield! items-wear! items-take-off!
   items-put-on! items-remove!)
 (import roguelike/quests quests-place! quests-talk!)
+(import roguelike/chain chain-build!)
 (import roguelike/traps traps-found-at traps-place! traps-step! traps-search!)
 
 (def %gm-roll2 (fn (_ g spec) (state-roll (game-rng g) (List ref 0 spec) (List ref 1 spec))))
@@ -165,8 +166,7 @@
     (game-traps! g (List ref 3 level))))
 
 ; Screen X Y entered, the player landing at or near cell AT: its level
-; taken up again, or made and its band's word said.  With the goal in
-; hand, the hub is the win.
+; taken up again, or made and its band's word said.
 (def %gm-enter-screen!
   (fn (_ g x y at)
     (def kept (game-kept-level g (game-screen-key x y)))
@@ -179,8 +179,17 @@
           ((fn (_ land) (player-at! (game-player g) (first land) (rest land))) (%gm-landing g at))
           (%gm-light! g)
           (%gm-note-floor! g)))
-    (%gm-keep! g)
-    (when (if (items-goal-held? g) (if (= x (first (game-hub g))) (= y (rest (game-hub g))) #f) #f)
+    (%gm-keep! g)))
+
+; With the goal in hand on the hub screen, the win: by a step onto it,
+; or by the goal given there.
+(def %gm-home!
+  (fn (_ g)
+    (def here (game-screen g))
+    (when (match ((not (null? (game-over g))) #f)
+                 ((not (game-screens? g)) #f)
+                 ((not (items-goal-held? g)) #f)
+                 (#t (if (= (first here) (first (game-hub g))) (= (rest here) (rest (game-hub g))) #f)))
       (do (game-over! g (lit won))
           (state-tell! g (lit won) "You bring {goal} home.  You have won."
             (list (pair "goal" (first (game-param g (lit goal) (list "the prize" "*" 20))))))))))
@@ -218,11 +227,13 @@
                     (List range 0 (game-world-cols g)))))
       (List range 0 (game-world-rows g)))))
 
-; A game on SET from SEED, ROWS by COLS: on level 1, or on the hub
-; screen of a world of screens, in its middle.
+; A game on SET from SEED, ROWS by COLS, its chain of quests drawn from
+; the set's scenes: on level 1, or on the hub screen of a world of
+; screens, in its middle.
 (def game-make
   (fn (_ set seed rows cols)
     (def g (game-new set seed rows cols))
+    (chain-build! g)
     (if (game-screens? g)
       (%gm-enter-screen! g (first (game-hub g)) (rest (game-hub g)) (pair (int/ (- rows 2) 2) (int/ cols 2)))
       (%gm-descend! g))
@@ -286,7 +297,8 @@
     (%gm-creatures-act! g)
     (player-tick! (game-player g))
     (creatures-wander! g)
-    (%gm-light! g)))
+    (%gm-light! g)
+    (%gm-home! g)))
 
 ; --- moving ------------------------------------------------------------------
 
@@ -363,13 +375,13 @@
     (search (list (pair (player-r p) (player-c p))) ())))
 
 ; One step toward what is not yet seen, a turn: whether the walk goes
-; on.  It ends with a creature in view, a question asked, nothing left
-; to see, a hundred steps taken, or the game over.
+; on.  It ends with a creature in view that does not talk, a question
+; asked, nothing left to see, a hundred steps taken, or the game over.
 (def game-explore!
   (fn (_ g)
     (def n (game-exploring g))
     (def stop (fn (_) (game-exploring! g ()) #f))
-    (def shown (if (null? n) () (List find (fn (_ cr) (creatures-shown? g cr)) (game-creatures g))))
+    (def shown (if (null? n) () (List find (fn (_ cr) (if (creature-trait? cr (lit talks)) #f (creatures-shown? g cr))) (game-creatures g))))
     (match
       ((null? n) #f)
       ((not (null? (game-over g))) (stop))

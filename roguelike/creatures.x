@@ -34,10 +34,12 @@
 
 ; --- spawning ----------------------------------------------------------------
 
-; The set's kinds for DEPTH.
+; The set's kinds for DEPTH: those whose (depth LO HI) covers it, never
+; one that talks, which a quest places.
 (def creatures-kinds
   (fn (_ g depth)
-    (List filter (fn (_ k) (state-covers? (data-prop k (lit depth) (list 1 99)) depth)) (data-all (game-set g) (lit creature)))))
+    (List filter (fn (_ k) (if (data-trait? k (lit talks)) #f (state-covers? (data-prop k (lit depth) (list 1 99)) depth)))
+      (data-all (game-set g) (lit creature)))))
 
 (def %cr-hp
   (fn (_ g kind)

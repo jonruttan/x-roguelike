@@ -31,7 +31,9 @@
 ; (NAME . STATE) each, 23 the names of what the quests have placed, 24
 ; the level's traps, 25 the steps taken exploring, or nil when not, 26
 ; the screen stood on, (X . Y), or nil in a descent, 27 the levels
-; kept, (KEY . LEVEL) each, a LEVEL being (MAP CREATURES FLOOR TRAPS).
+; kept, (KEY . LEVEL) each, a LEVEL being (MAP CREATURES FLOOR TRAPS),
+; 28 the chain: the quests made for this game from the set's scenes,
+; each a (quest ...) form as a set would write it.
 ; Every slot here is read through the object doors, not the class: a
 ; class send costs some two hundred objects, and a turn reads thousands.
 (def %st-ref (fn (_ v k) (obj-ref v (int+ k 1))))
@@ -129,6 +131,8 @@
     (match ((< x 0) #f) ((< y 0) #f) ((< x (game-world-cols g)) (< y (game-world-rows g))) (#t #f))))
 ; The key a screen's level is kept under.
 (def game-screen-key (fn (_ x y) (Str8 append (Str8 str x) "," (Str8 str y))))
+(def game-chain (fn (_ g) (%st-get g 28)))
+(def game-chain! (fn (_ g forms) (%st-put! g 28 forms)))
 
 ; The set's bands, (band NAME TO . PROPS) each, run one after another
 ; from level 1, each to its TO.  The band the depth is in, as (FROM .
@@ -299,7 +303,7 @@
 
 (def game-new
   (fn (_ set seed rows cols)
-    (def g (Vector make 28 ()))
+    (def g (Vector make 29 ()))
     (def rng (Random sw seed))
     (%st-put! g 0 rng)
     (%st-put! g 1 set)
@@ -320,6 +324,7 @@
     (%st-put! g 25 ())
     (%st-put! g 26 ())
     (%st-put! g 27 ())
+    (%st-put! g 28 ())
     g))
 
 ; --- messages ----------------------------------------------------------------
@@ -434,7 +439,7 @@
   game-log game-rows game-cols game-epitaph game-epitaph! game-seed game-goal-placed? game-goal-placed!
   game-pages-placed game-page-placed! game-quests game-quest-state game-quest-state! game-placed game-placed?
   game-placed! game-traps game-traps! game-exploring game-exploring? game-exploring!
-  game-screen game-screen! game-kept game-kept-level game-keep!
+  game-screen game-screen! game-kept game-kept-level game-keep! game-chain game-chain!
   game-world game-screens? game-world-cols game-world-rows game-hub game-screen-distance game-screen-in?
   game-screen-key
   game-param game-param1 game-band game-band-from band-name band-to band-prop1 game-new

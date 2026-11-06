@@ -9,16 +9,16 @@ descents, and their specs stand.
 
 ## the set
 
-### the kettle set loads: seven by five screens, open ground, the goal four screens out, no hunger
+### the kettle set loads: seven by five screens, open ground, a goal with no level, no hunger
 
 ```roguelike
 (def set (spec-set-named "kettle"))
 (def world (data-one set 'world ()))
 (write (list (data-get set 'set "") (first world) (List ref 1 world) (List ref 2 world) (data-get set 'level-style 'rooms)
-             (List ref 2 (data-one set 'goal ())) (data-get set 'hunger 1) (List length (data-all set 'creature))))
+             (List length (data-one set 'goal ())) (data-get set 'hunger 1) (List length (data-all set 'creature))))
 ```
 ---
-    ("kettle" 'screens 7 5 'open 4 0 9)
+    ("kettle" 'screens 7 5 'open 2 0 19)
 
 ## open ground
 
@@ -40,16 +40,16 @@ descents, and their specs stand.
 
 ## the hub
 
-### a new game starts on the hub screen, in its middle, at depth 0, with nothing about, and says so
+### a new game starts on the hub screen, in its middle, at depth 0, nobody about but the chain's giver, and says so
 
 ```roguelike
 (def g (spec-game-on (spec-set-named "kettle") 4 ()))
 (def p (game-player g))
-(write (list (first (game-screen g)) (rest (game-screen g)) (first (game-hub g)) (rest (game-hub g)) (game-depth g) (game-creatures g)
+(write (list (first (game-screen g)) (rest (game-screen g)) (first (game-hub g)) (rest (game-hub g)) (game-depth g) (List map creature-name (game-creatures g))
              (player-r p) (< (state-dist 11 40 (player-r p) (player-c p)) 10) (game-messages g) (List ref 23 (spec-screen g))))
 ```
 ---
-    (3 2 3 2 0 () 11 #t ("Kettle's square, by the well-head.  The Guild's ledger is somewhere in the valley; bring it back here.") "Screen:3,2  Gold:0  Hp:14(14)  Str:16(16)  Arm:0  Exp:1/0")
+    (3 2 3 2 0 ("Guild clerk") 11 #t ("Kettle's square, by the well-head.  Someone here knows where the Guild's ledger is; ask about.") "Screen:3,2  Gold:0  Hp:14(14)  Str:16(16)  Arm:0  Exp:1/0")
 
 ## the edges
 
@@ -126,7 +126,7 @@ descents, and their specs stand.
 
 ## the goal
 
-### the goal lies on the first screen reached four out, and on no other
+### a goal with no level lies on no screen, however far out: it is someone's to give
 
 ```roguelike
 (def g (spec-game-on (spec-set-named "kettle") 4 ()))
@@ -144,7 +144,7 @@ descents, and their specs stand.
 (write (list three four (game-depth g) (goal?)))
 ```
 ---
-    ((3 #f) (4 #t) 4 #f)
+    ((3 #f) (4 #f) 4 #f)
 
 ### the goal brought back to the square is the win; brought elsewhere, it is not
 

@@ -1,6 +1,6 @@
 ; messages.xon -- the kettle set: what the game says.
 
-(message welcome "Kettle's square, by the well-head.  The Guild's ledger is somewhere in the valley; bring it back here.")
+(message welcome "Kettle's square, by the well-head.  Someone here knows where the Guild's ledger is; ask about.")
 (message won "You lay the ledger on the well-head.  Kettle has its proof, and the Guild has lost its mine.")
 (message edge "The valley ends here.")
 (message world-map "The valley:")

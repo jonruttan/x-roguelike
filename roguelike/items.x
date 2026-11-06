@@ -87,11 +87,12 @@
                         (items-new g (%it-random-form g))))
           (self g (- n 1))))))
 
-; The goal, (goal NAME GLYPH DEPTH), on its level, once.
+; The goal, (goal NAME GLYPH DEPTH), on its level, once; one with no
+; DEPTH lies nowhere, and is someone's to give.
 (def items-place-goal!
   (fn (_ g)
     (def goal (game-param g (lit goal) (list "the prize" "*" 20)))
-    (when (if (game-goal-placed? g) #f (= (game-depth g) (List ref 2 goal)))
+    (when (match ((game-goal-placed? g) #f) ((< (List length goal) 3) #f) (#t (= (game-depth g) (List ref 2 goal))))
       (do (%it-put! g (item-make (list (lit goal) (first goal)) 1 0))
           (game-goal-placed! g)))))
 

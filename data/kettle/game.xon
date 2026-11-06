@@ -6,16 +6,20 @@
 ; in the middle; open ground, (level-style open), with (clumps LO HI)
 ; thickets of (clump-size LO HI) cells; sight to eight; no hunger.
 ; A screen's depth is its distance from the hub, so what lives on it,
-; and the gold on it, grow with the walk out.  The goal lies four
-; screens from the square, and bringing it back there is the win.
+; and the gold on it, grow with the walk out.  The goal is in someone's
+; keeping, at the end of a chain of trades drawn each game from
+; scenes.xon, and bringing it back to the square is the win.
 
 (set "kettle")
 (title "Kettle")
 
 (world screens 7 5)
 
-; The goal: its name, its glyph, and how far from the hub it lies.
-(goal "the Guild ledger" "*" 4)
+; The goal: its name and its glyph; with no level it lies nowhere, and
+; is given by the last link of the chain (see scenes.xon).  (chain LO
+; HI) is how many links a chain has at most.
+(goal "the Guild ledger" "*")
+(chain 2 3)
 
 (player 14 16)
 (unarmed 1 3)
