@@ -213,33 +213,50 @@
           (player-food p))))
 
 ; One game from SEED to its end or CAP turns: (SEED HOW EPITAPH DEEPEST
-; TURNS POTIONS FOODS ARRIVALS).  Thirty keys without a turn passing
-; is the bot stuck, and it rests one.
+; TURNS POTIONS FOODS ARRIVALS WEAPON-TURN MET), the turn a weapon was
+; first held or nil, and the hostile creatures met by then, or by the
+; end.  Thirty keys without a turn passing is the bot stuck, and it
+; rests one.
 (def %bl-trace
   (fn (_ g)
     (def p (game-player g))
     (%bl-line (Str8 str (game-turn g)) " L" (Str8 str (game-depth g)) " hp " (Str8 str (player-hp p)) "/" (Str8 str (player-hpmax p))
               " at " (Str8 str (player-r p)) "," (Str8 str (player-c p)) "  " (Str8 join " | " (game-messages g)))))
 
+; The hostile creatures in view join those met, slot 5 of S, once each;
+; the turn a weapon is first held is slot 6, and the count met by then
+; slot 7.
+(def %bl-met!
+  (fn (_ g s)
+    (List for-each
+      (fn (_ cr)
+        (if (if (%bl-hostile? cr) (creatures-shown? g cr) #f)
+          (unless (List any? (fn (_ m) (same? m cr)) (Vector ref 5 s)) (Vector set! 5 (pair cr (Vector ref 5 s)) s))))
+      (game-creatures g))
+    (when (if (null? (Vector ref 6 s)) (not (null? (player-weapon (game-player g)))) #f)
+      (do (Vector set! 6 (game-turn g) s) (Vector set! 7 (List length (Vector ref 5 s)) s)))))
+
 (def %bl-game
   (fn (_ set seed cap)
     (def trace? (not (str=? (%bl-env "BALANCE_TRACE" "") "")))
     (Heap collect)
     (def g (game-make set seed 24 80))
-    (def s (Vector of #f 0 0 0 #f))
+    (def s (Vector of #f 0 0 0 #f () () 0))
     (def arrivals (Vector of (list (%bl-arrival g))))
     (def loop
       (fn (self n turn stalled)
         (def depth (game-depth g))
         (unless (if (null? (game-over g)) (< cap (game-turn g)) #t)
           (do (if (< 30 stalled) (game-key! g ".") (%bl-turn! g s))
+              (%bl-met! g s)
               (when trace? (%bl-trace g))
               (when (= 0 (% n 20)) (Heap collect))
               (unless (= depth (game-depth g)) (Vector set! 0 (pair (%bl-arrival g) (Vector ref 0 arrivals)) arrivals))
               (self (+ n 1) (game-turn g) (if (= turn (game-turn g)) (+ stalled 1) 0))))))
     (loop 0 0 0)
     (list seed (if (null? (game-over g)) (lit capped) (game-over g)) (game-epitaph g) (game-deepest g) (game-turn g)
-          (Vector ref 2 s) (Vector ref 3 s) (List reverse (Vector ref 0 arrivals)))))
+          (Vector ref 2 s) (Vector ref 3 s) (List reverse (Vector ref 0 arrivals))
+          (Vector ref 6 s) (if (null? (Vector ref 6 s)) (List length (Vector ref 5 s)) (Vector ref 7 s)))))
 
 ; --- the report --------------------------------------------------------------
 
@@ -313,6 +330,17 @@
     (%bl-line " level  games   hp%  turns  weapon armour   food")
     (List for-each (fn (_ d) (%bl-arrival-row games d)) (%bl-levels set))))
 
+(def %bl-first-weapon
+  (fn (_ games)
+    (def armed (List filter (fn (_ r) (not (null? (List ref 8 r)))) games))
+    (def bare (List reject (fn (_ r) (not (null? (List ref 8 r)))) games))
+    (%bl-line "The first weapon")
+    (%bl-line " found in " (Str8 str (List length armed)) " of " (Str8 str (List length games)) " games, on turn "
+              (Str8 str (%bl-mean (List map (fn (_ r) (List ref 8 r)) armed))) ", with "
+              (Str8 str (%bl-mean (List map (fn (_ r) (List ref 9 r)) armed))) " creatures met before it")
+    (%bl-line " never found in " (Str8 str (List length bare)) " games, which met "
+              (Str8 str (%bl-mean (List map (fn (_ r) (List ref 9 r)) bare))) " creatures")))
+
 (def %bl-report
   (fn (_ set games)
     (def mean (fn (_ k) (Str8 str (%bl-mean (List map (fn (_ r) (List ref k r)) games)))))
@@ -321,6 +349,8 @@
     (%bl-ends set games)
     (%bl-line "")
     (%bl-causes set games)
+    (%bl-line "")
+    (%bl-first-weapon games)
     (%bl-line "")
     (%bl-arrivals set games)
     (%bl-line "")
