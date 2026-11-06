@@ -59,14 +59,14 @@ them, what each asks, and what it pays.  On the delve set.
 (game-key! g ",")
 (def held (List map (fn (_ it) (items-name g it)) (game-pack g)))
 (game-key! g key)
-(def offered (list (spec-row g 0) (List any? (fn (_ r) (Str8 starts? " a) a miner's blade   b) boiled leather [2]" r)) (spec-screen g)) (game-quest-state g "the lamp")))
+(def offered (list (spec-row g 0) (List any? (fn (_ r) (Str8 starts? " a) a miner's blade (str 14)   b) boiled leather [2] (str 12)" r)) (spec-screen g)) (game-quest-state g "the lamp")))
 (game-key! g "a")
 (def got (List map (fn (_ it) (items-name g it)) (game-pack g)))
 (game-key! g key)
 (write (list held offered got (game-quest-state g "the lamp") (game-messages g)))
 ```
 ---
-    (("the foreman's lamp") ("Which will you take?" #t 'reward) ("a miner's blade") 'done ("The lamp-keeper has nothing more to ask."))
+    (("the foreman's lamp") ("Which will you take?" #t 'reward) ("a miner's blade (str 14)") 'done ("The lamp-keeper has nothing more to ask."))
 
 ### the surveyor on level 5 wants the level seen whole: a survey read, it pays
 

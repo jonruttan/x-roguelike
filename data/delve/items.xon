@@ -2,8 +2,10 @@
 ;
 ; The classes and effects are the engine's (see data/classic/items.xon);
 ; potions and scrolls are known on sight here, so only wands and rings
-; wear guises.  No food: there is no hunger in the Delve.  The pages
-; are in pages.xon.
+; wear guises.  A weapon or armour's (strength N) is what it asks of
+; the player, less one an upgrade: short of it, a weapon lands less and
+; armour protects less.  Food is scarce, and the store of it is what
+; hunger is.  The pages are in pages.xon.
 
 (item potion "mending" (rarity 30) (effect heal 10 20))
 (item potion "deep mending" (rarity 10) (effect heal 25 45))
@@ -15,8 +17,7 @@
 
 (item scroll "survey" (rarity 18) (effect mapping))
 (item scroll "blink" (rarity 14) (effect teleport))
-(item scroll "temper" (rarity 12) (effect enchant-weapon))
-(item scroll "plating" (rarity 12) (effect enchant-armour))
+(item scroll "upgrade" (rarity 24) (effect upgrade))
 (item scroll "panic" (rarity 8) (effect fear))
 (item scroll "stillness" (rarity 8) (effect hold 6))
 
@@ -30,15 +31,18 @@
 (item ring "mending" (rarity 10) (bonus regeneration 1))
 (item ring "silence" (rarity 8) (bonus stealth 1))
 
-(item weapon "lantern pole" (rarity 10) (damage 1 4))
-(item weapon "pick" (rarity 14) (damage 1 6))
-(item weapon "miner's blade" (rarity 12) (damage 2 7))
-(item weapon "sledge" (rarity 8) (damage 3 10))
+(item weapon "lantern pole" (rarity 10) (damage 1 4) (strength 10))
+(item weapon "pick" (rarity 14) (damage 1 6) (strength 12))
+(item weapon "miner's blade" (rarity 12) (damage 2 7) (strength 14))
+(item weapon "sledge" (rarity 8) (damage 3 10) (strength 17))
 
-(item armour "oilskin" (rarity 12) (armour 1))
-(item armour "boiled leather" (rarity 12) (armour 2))
-(item armour "scale coat" (rarity 8) (armour 4))
-(item armour "plated harness" (rarity 4) (armour 6))
+(item armour "oilskin" (rarity 12) (armour 1) (strength 10))
+(item armour "boiled leather" (rarity 12) (armour 2) (strength 12))
+(item armour "scale coat" (rarity 8) (armour 4) (strength 15))
+(item armour "plated harness" (rarity 4) (armour 6) (strength 18))
+
+(item food "miner's tin" (rarity 20) (nutrition 900))
+(item food "dried fish" (rarity 12) (nutrition 500))
 
 ; What the people below ask for, and what they give: never drawn for a
 ; level.
@@ -46,7 +50,7 @@
 (item token "pump valve" (rarity 0))
 (item token "pump crank" (rarity 0))
 (item token "pump seal" (rarity 0))
-(item weapon "foreman's pick" (rarity 0) (damage 3 9))
+(item weapon "foreman's pick" (rarity 0) (damage 3 9) (strength 16))
 
 (guise wand "oak" "bone" "brass" "glass" "iron" "willow" "jet" "copper")
 (guise ring "jade" "onyx" "amber" "opal" "iron" "coral" "garnet" "pearl")

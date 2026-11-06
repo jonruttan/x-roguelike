@@ -28,7 +28,8 @@
 ; names known, 14 the deepest level reached, 15 the log (newest first),
 ; 16 rows, 17 columns, 18 the epitaph, 19 the seed, 20 whether the goal
 ; has been placed, 21 the names of the pages placed, 22 the quests,
-; (NAME . STATE) each, 23 the names of what the quests have placed.
+; (NAME . STATE) each, 23 the names of what the quests have placed, 24
+; the level's traps.
 ; Every slot here is read through the object doors, not the class: a
 ; class send costs some two hundred objects, and a turn reads thousands.
 (def %st-ref (fn (_ v k) (obj-ref v (int+ k 1))))
@@ -83,6 +84,8 @@
 (def game-placed (fn (_ g) (%st-get g 23)))
 (def game-placed? (fn (_ g name) (List includes? name (%st-get g 23))))
 (def game-placed! (fn (_ g name) (%st-put! g 23 (pair name (%st-get g 23)))))
+(def game-traps (fn (_ g) (%st-get g 24)))
+(def game-traps! (fn (_ g l) (%st-put! g 24 l)))
 
 ; The set's parameter HEAD, its values, or DEFAULT's.
 (def game-param (fn (_ g head default) (data-one (game-set g) head default)))
@@ -257,7 +260,7 @@
 
 (def game-new
   (fn (_ set seed rows cols)
-    (def g (Vector make 24 ()))
+    (def g (Vector make 25 ()))
     (def rng (Random sw seed))
     (%st-put! g 0 rng)
     (%st-put! g 1 set)
@@ -274,6 +277,7 @@
     (%st-put! g 21 ())
     (%st-put! g 22 ())
     (%st-put! g 23 ())
+    (%st-put! g 24 ())
     g))
 
 ; --- messages ----------------------------------------------------------------
@@ -362,13 +366,23 @@
                0 (player-rings (game-player g)))))
 (def state-ring? (fn (_ g key) (< 0 (state-ring-bonus g key))))
 
-; The player's defence: the armour's, its enchantment, and the rings'.
+(def state-strength (fn (_ g) (+ (player-str (game-player g)) (state-ring-bonus g (lit strength)))))
+
+; The strength IT asks, its (strength N) less its enchantment, beyond
+; the player's: 0 with none asked, or enough had.
+(def state-shortfall
+  (fn (_ g it)
+    (def need (item-prop1 it (lit strength) 0))
+    (def short (- (- need (item-enchant it)) (state-strength g)))
+    (match ((= need 0) 0) ((< short 0) 0) (#t short))))
+
+; The player's defence: the armour's, its enchantment, less what it
+; asks in strength beyond the player's, and the rings'.
 (def state-defence
   (fn (_ g)
     (def a (player-armour (game-player g)))
-    (+ (if (null? a) 0 (+ (item-prop1 a (lit armour) 0) (item-enchant a)))
+    (+ (if (null? a) 0 (- (+ (item-prop1 a (lit armour) 0) (item-enchant a)) (state-shortfall g a)))
        (state-ring-bonus g (lit protection)))))
-(def state-strength (fn (_ g) (+ (player-str (game-player g)) (state-ring-bonus g (lit strength)))))
 
 (provide roguelike/state
   game-rng game-set game-depth game-depth! game-map game-map! game-player game-creatures game-creatures!
@@ -376,8 +390,8 @@
   game-ask game-ask! game-over game-over! game-guises game-known game-known! game-deepest game-deepest!
   game-log game-rows game-cols game-epitaph game-epitaph! game-seed game-goal-placed? game-goal-placed!
   game-pages-placed game-page-placed! game-quests game-quest-state game-quest-state! game-placed game-placed?
-  game-placed! game-param game-param1 game-band game-band-from band-name band-to band-prop1
-  game-new
+  game-placed! game-traps game-traps! game-param game-param1 game-band game-band-from band-name band-to
+  band-prop1 game-new
   player-r player-c player-at! player-hp player-hp! player-hpmax player-hpmax! player-str player-str!
   player-strmax player-strmax! player-level player-level! player-exp player-exp! player-gold player-gold!
   player-armour player-armour! player-weapon player-weapon! player-rings player-rings! player-food player-food!
@@ -391,4 +405,4 @@
   state-roll state-chance? state-dir state-dirs state-dist state-adjacent? state-sign
   state-creature-at state-creature-named state-items-at state-player-at? state-free?
   state-remove-creature! state-remove-floor! state-remove-pack!
-  state-ring-bonus state-ring? state-defence state-strength)
+  state-ring-bonus state-ring? state-defence state-strength state-shortfall)

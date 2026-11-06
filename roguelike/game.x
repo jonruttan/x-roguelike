@@ -10,7 +10,9 @@
 ; command that needs an answer -- which thing, which way, really? --
 ; asks, and the next key answers it.  Every turn taken, the creatures
 ; take theirs, hunger grows, hit points return, and the view is lit
-; again.  The stairs down make a new level; the stairs up are sealed
+; again.  With the set's (starve N), hunger past nothing costs a hit
+; point every N turns and stops the hit points returning, in place of
+; the faint and the end.  The stairs down make a new level; the stairs up are sealed
 ; until the goal is held, and then each level climbed is made anew,
 ; roused and hostile.  A set's bands each say their (enter "TEXT") on
 ; their first level and put their (guardian "NAME") by the stairs down
@@ -28,7 +30,7 @@
 (import roguelike/dungeon dungeon-generate)
 (import roguelike/state
   game-rng game-set game-depth game-depth! game-map game-map! game-player game-creatures game-creatures!
-  game-floor game-floor! game-pack game-turn game-turn! game-ask game-ask! game-over game-over!
+  game-floor game-floor! game-pack game-turn game-turn! game-ask game-ask! game-over game-over! game-traps!
   game-deepest game-deepest! game-rows game-cols game-param game-param1 game-new game-epitaph!
   game-messages game-messages! game-log game-band game-band-from band-to band-prop1
   player-r player-c player-at! player-hp player-hp! player-hpmax player-level player-food player-food!
@@ -45,6 +47,7 @@
   items-drop! items-quaff! items-read! items-zap! items-eat! items-wield! items-wear! items-take-off!
   items-put-on! items-remove!)
 (import roguelike/quests quests-place! quests-talk!)
+(import roguelike/traps traps-found-at traps-place! traps-step! traps-search!)
 
 (def %gm-roll2 (fn (_ g spec) (state-roll (game-rng g) (List ref 0 spec) (List ref 1 spec))))
 
@@ -80,6 +83,7 @@
     (game-map! g m)
     (game-creatures! g ())
     (game-floor! g ())
+    (game-traps! g ())
     (def at (if (eq? arriving (lit up)) (map-up m) (map-down m)))
     (player-at! (game-player g) (first at) (rest at))
     (%gm-light! g)
@@ -89,6 +93,7 @@
     (items-place-goal! g)
     (items-place-pages! g)
     (quests-place! g)
+    (traps-place! g)
     (%gm-light! g)))
 
 ; The band's (enter "TEXT"), said on its first level.
@@ -128,10 +133,15 @@
 
 ; --- the turn ----------------------------------------------------------------
 
+; Whether hunger is past nothing under the set's (starve N).
+(def %gm-starving?
+  (fn (_ g) (if (< 0 (game-param1 g (lit starve) 0)) (< (player-food (game-player g)) 0) #f)))
+
 (def %gm-hunger!
   (fn (_ g)
     (def p (game-player g))
     (def spec (game-param g (lit hunger) (list 1300 300 150)))
+    (def starve (game-param1 g (lit starve) 0))
     (unless (if (state-ring? g (lit sustenance)) (= 1 (% (game-turn g) 2)) (< (List ref 0 spec) 1))
       (player-food! p (- (player-food p) 1)))
     (def f (player-food p))
@@ -139,19 +149,24 @@
       ((< (List ref 0 spec) 1) ())
       ((= f (List ref 1 spec)) (state-tell! g (lit hungry) "You are getting hungry." ()))
       ((= f (List ref 2 spec)) (state-tell! g (lit weak) "You are weak with hunger." ()))
+      ((%gm-starving? g)
+        (when (= 0 (% (game-turn g) starve))
+          (do (state-tell! g (lit starving) "You are starving." ())
+              (combat-hurt-player! g 1 (state-text g (lit starved) "starved to death" ())))))
       ((< f -150) (combat-hurt-player! g 10000 (state-text g (lit starved) "starved to death" ())))
       ((if (< f 0) (state-chance? (game-rng g) 15) #f)
         (do (state-tell! g (lit faint) "You faint from lack of food." ()) (creatures-act! g)))
       (#t ()))))
 
 ; A hit point back every so many turns: the set's (regen N), two fewer
-; a level, four at least; every third turn with a ring of regeneration.
+; a level, four at least; every third turn with a ring of regeneration;
+; none while starving.
 (def %gm-regen!
   (fn (_ g)
     (def p (game-player g))
     (def period (if (state-ring? g (lit regeneration)) 3
                   ((fn (_ n) (if (< n 4) 4 n)) (- (game-param1 g (lit regen) 20) (* 2 (- (player-level p) 1))))))
-    (when (if (= 0 (% (game-turn g) period)) (< (player-hp p) (player-hpmax p)) #f)
+    (when (match ((%gm-starving? g) #f) ((not (= 0 (% (game-turn g) period))) #f) (#t (< (player-hp p) (player-hpmax p))))
       (player-hp! p (+ (player-hp p) 1)))))
 
 (def %gm-creatures-act!
@@ -194,7 +209,7 @@
       ((not (null? cr)) (if (creature-trait? cr (lit talks)) (quests-talk! g cr) (do (combat-player-attacks! g cr) #t)))
       ((not (map-walkable? (game-map g) r c)) #f)
       ((creatures-door-diagonal? (game-map g) (player-r p) (player-c p) (first d) (rest d)) #f)
-      (#t (do (player-at! p r c) (%gm-light! g) (%gm-note-floor! g) #t)))))
+      (#t (do (player-at! p r c) (%gm-light! g) (traps-step! g) (%gm-note-floor! g) #t)))))
 
 ; --- exploring ---------------------------------------------------------------
 
@@ -208,9 +223,10 @@
                  (match ((not (map-in? m rr cc)) #f) ((map-seen? m rr cc) #f) (#t (not (= (map-tile m rr cc) tile-rock)))))
       (state-dirs))))
 
-; The first step, (DR . DC), of the shortest walk over seen cells from
-; the player to the nearest frontier, or nil with none: a breadth-first
-; search, each cell remembering the first step that reached it.
+; The first step, (DR . DC), of the shortest walk over seen cells, a
+; found trap never among them, from the player to the nearest frontier,
+; or nil with none: a breadth-first search, each cell remembering the
+; first step that reached it.
 (def %gm-explore-step
   (fn (_ g)
     (def m (game-map g))
@@ -227,6 +243,7 @@
                       (match ((not (map-in? m rr cc)) ())
                              ((not (map-seen? m rr cc)) ())
                              ((not (map-walkable? m rr cc)) ())
+                             ((not (null? (traps-found-at g rr cc))) ())
                              ((creatures-door-diagonal? m r c (first d) (rest d)) ())
                              ((not (null? (Vector ref (at rr cc) came))) ())
                              (#t (do (Vector set! (at rr cc) (if (null? step) d step) came) (pair rr cc)))))
@@ -309,7 +326,7 @@
 (def %gm-commands
   (list
     (pair "." (fn (_ g) #t))
-    (pair "s" (fn (_ g) #t))
+    (pair "s" (fn (_ g) (do (traps-search! g) #t)))
     (pair ">" (fn (_ g) (%gm-stairs-down! g)))
     (pair "<" (fn (_ g) (%gm-stairs-up! g)))
     (pair "," (fn (_ g) (items-pickup! g)))
@@ -406,7 +423,8 @@
 (def game-help
   (fn (_ g)
     (list "h j k l y u b n  move; the arrows too.  Walk into a creature to attack it, or to talk."
-          ".  s   rest a turn          ,  g   pick up what is here"
+          ".      rest a turn          s      search beside you"
+          ",  g   pick up what is here"
           "o      explore what is unseen until something comes into view"
           "L      what has been said lately"
           ">      go down the stairs   <      go up, with the goal in hand"

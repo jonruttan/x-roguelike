@@ -3,8 +3,10 @@
 ;
 ; What this set turns on that classic leaves off: levels carved as
 ; caves, lit by sight to a radius, potions and scrolls known on sight,
-; no food clock -- the pressure is what wanders in -- and bands, each
-; with its colour, its word on arrival and its guardian.
+; hunger as a store of food rather than a clock, gear that asks for
+; strength and grows by a scroll, traps found by searching, the blow on
+; a sleeper, and bands, each with its colour, its word on arrival and
+; its guardian.
 
 (set "delve")
 (title "The Delve")
@@ -33,8 +35,18 @@
 (player 14 16)
 (unarmed 1 3)
 
-; No hunger: a first value under one turns the clock off.
-(hunger 0 0 0)
+; Food at the start; when hunger is felt; when it weakens.  Past
+; nothing, (starve N) costs a hit point every N turns and stops them
+; returning, in place of the faint and the end.
+(hunger 1600 400 200)
+(starve 6)
+
+; Traps a level, hidden until stepped on or searched out beside; the
+; kinds are in traps.xon.
+(traps 1 3)
+
+; A blow on a sleeper always lands, and does this many times the damage.
+(surprise 2)
 
 ; Sight to seven cells, through nothing solid.
 (view 7)
@@ -71,3 +83,4 @@
 (glyph goal "*")
 (glyph page "%")
 (glyph token "'")
+(glyph trap "^")
