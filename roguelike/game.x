@@ -68,6 +68,7 @@
 (import roguelike/traps traps-found-at traps-place! traps-step! traps-search!)
 (import roguelike/interiors interiors-door! interiors-params interiors-prop1)
 (import roguelike/data data-one data-region)
+(import roguelike/scale scale-check!)
 
 (def %gm-roll2 (fn (_ g spec) (state-roll (game-rng g) (List ref 0 spec) (List ref 1 spec))))
 
@@ -324,9 +325,10 @@
 
 ; A game on SET from SEED, ROWS by COLS, its chain of quests drawn from
 ; the set's scenes: on level 1, or on the hub screen of a world of
-; screens, in its middle.
+; screens, in its middle.  A set naming a scale off the ladder raises.
 (def game-make
   (fn (_ set seed rows cols)
+    (scale-check! set)
     (def g (game-new set seed rows cols))
     (chain-build! g)
     (if (game-screens? g)

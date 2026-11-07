@@ -26,13 +26,33 @@
   map-make map-rows map-cols map-rooms map-rooms! map-down map-down! map-up!
   map-tile map-set! map-in? map-passable? map-opaque? room-r0 room-c0 room-r1 room-c1 room-centre map-each!
   map-fill-unreached!)
+(import roguelike/scale scale-rung scale-across scale-down scale-area)
 
 ; The set's parameters, (KEY . VALUES) alist, or DEFAULT's values.
 (def %dg-p
   (fn (_ params key default)
     (def p (Assoc find key params))
     (if (null? p) default (rest p))))
-(def %dg-roll (fn (_ rng lo hi) (+ lo (rng int (+ 1 (- hi lo))))))
+; A roll from LO to HI; LO when HI is below it, as a size a cell short
+; of its room can be at a large scale.
+(def %dg-roll (fn (_ rng lo hi) (if (< hi lo) lo (+ lo (rng int (+ 1 (- hi lo)))))))
+
+; The level's scale, (scale N), as (ACROSS . DOWN) metres a cell: 1, a
+; metre by two, when the set names none.  Every size a level is carved
+; to is in metres, and comes out in cells at its scale.
+(def %dg-scale (fn (_ params) (scale-rung (first (%dg-p params (lit scale) (list 1))))))
+; A size in metres, (KEY LO HI), as (LO . HI) cells across, down, or of
+; ground covered, at SCALE.
+(def %dg-metres
+  (fn (_ params key lo hi to)
+    ((fn (_ v) (pair (to (first v)) (to (List ref 1 v)))) (%dg-p params key (list lo hi)))))
+(def %dg-across (fn (_ params scale key lo hi) (%dg-metres params key lo hi (fn (_ m) (scale-across scale m)))))
+(def %dg-down (fn (_ params scale key lo hi) (%dg-metres params key lo hi (fn (_ m) (scale-down scale m)))))
+(def %dg-area (fn (_ params scale key lo hi) (%dg-metres params key lo hi (fn (_ m) (scale-area scale m)))))
+; An extent in metres, (KEY W H), as (W . H) cells at SCALE.
+(def %dg-extent
+  (fn (_ params scale key w h)
+    ((fn (_ v) (pair (scale-across scale (first v)) (scale-down scale (List ref 1 v)))) (%dg-p params key (list w h)))))
 
 ; Whether rooms A and B touch or overlap, a cell's margin kept.
 (def %dg-apart?
@@ -124,17 +144,21 @@
     (pair (%dg-roll rng (+ (room-r0 room) 1) (- (room-r1 room) 1))
           (%dg-roll rng (+ (room-c0 room) 1) (- (room-c1 room) 1)))))
 
-; A level of rooms: (rooms LO HI), (room-size WLO WHI HLO HHI), (lit
-; PERCENT STEP), the percent a room is lit at depth 1 and what that gains
-; a level.
+; A level of rooms: (rooms LO HI), (room-size WLO WHI HLO HHI) metres
+; of floor, (lit PERCENT STEP), the percent a room is lit at depth 1 and
+; what that gains a level.
 (def %dg-rooms!
   (fn (_ rng m depth params)
     (def rows (map-rows m))
     (def cols (map-cols m))
+    (def scale (%dg-scale params))
     (def want (%dg-roll rng (List ref 0 (%dg-p params (lit rooms) (list 6 9))) (List ref 1 (%dg-p params (lit rooms) (list 6 9)))))
     (def lit-pct (+ (List ref 0 (%dg-p params (lit lit) (list 95 -4)))
                     (* (- depth 1) (List ref 1 (%dg-p params (lit lit) (list 95 -4))))))
-    (def rooms (%dg-sort (%dg-place rng rows cols (%dg-p params (lit room-size) (list 4 12 3 6))
+    (def size (%dg-p params (lit room-size) (list 4 12 6 12)))
+    (def cells (list (scale-across scale (List ref 0 size)) (scale-across scale (List ref 1 size))
+                     (scale-down scale (List ref 2 size)) (scale-down scale (List ref 3 size))))
+    (def rooms (%dg-sort (%dg-place rng rows cols cells
                                     (fn (_) (< (rng int 100) lit-pct)) want 200 ())
                          ()))
     (List for-each (fn (_ room) (%dg-carve-room! m room)) rooms)
@@ -241,8 +265,8 @@
 
 ; --- open ground -------------------------------------------------------------
 
-; Open ground: every cell floor, then (clumps LO HI) thickets,
-; each a walk of (clump-size LO HI) steps from a cell within the
+; Open ground: every cell floor, then (clumps LO HI) thickets, each a
+; walk over (clump-size LO HI) square metres from a cell within the
 ; border, so the outermost ring stays floor and every edge can be
 ; walked to from every other; a pocket of floor a clump closes is
 ; filled in.  No rooms and no stairs: a screen is left by its edges.
@@ -266,10 +290,10 @@
     (def cols (map-cols m))
     (map-each! 0 0 (- rows 1) (- cols 1) (fn (_ r c) (map-set! m r c tile-floor)))
     (def clumps (%dg-p params (lit clumps) (list 6 12)))
-    (def size (%dg-p params (lit clump-size) (list 8 24)))
+    (def size (%dg-area params (%dg-scale params) (lit clump-size) 16 48))
     ((fn (self n)
        (when (< 0 n)
-         (do (%dg-clump! rng m (%dg-roll rng 1 (- rows 2)) (%dg-roll rng 1 (- cols 2)) (%dg-roll rng (first size) (List ref 1 size)))
+         (do (%dg-clump! rng m (%dg-roll rng 1 (- rows 2)) (%dg-roll rng 1 (- cols 2)) (%dg-draw rng size))
              (self (- n 1)))))
      (%dg-roll rng (first clumps) (List ref 1 clumps)))
     (%dg-pockets! m)
@@ -279,61 +303,76 @@
 ; --- a town ------------------------------------------------------------------
 
 ; A town: streets and terraces.  Every cell is street; then rows of
-; terraces, each (terrace-depth LO HI) cells deep, walls included, with
-; (street LO HI) cells of street between one row and the next; along a
-; row, terraces of (terrace-length LO HI) cells with (lane LO HI) cells
-; of lane between.  A terrace is houses side by side, each (house-width
-; LO HI) cells along, its own wall included, with one door in its front
-; or its back, onto the street.  Two cells round the edge are street,
-; and the (square W H) in the middle is left clear, a cell of street
-; round it.  No rooms and no stairs: a screen is left by its edges.
+; terraces, each (terrace-depth LO HI) metres deep, walls included,
+; with (street LO HI) metres of street between one row and the next;
+; along a row, terraces of (terrace-length LO HI) metres with (lane LO
+; HI) metres of lane between.  A terrace is houses side by side, each
+; (house-width LO HI) metres along, its own wall included, with one
+; door in its front or its back, onto the street.  Two cells round the
+; edge are street, and the (square W H) metres in the middle is left
+; clear, a cell of street round it.  A terrace too shallow at its scale
+; for a room inside its walls is drawn solid, each house a door in its
+; front or its back.  No rooms and no stairs: a screen is left by its
+; edges.
 
 ; The houses of the terrace walled from R0 C0 to R1 C1, from column X:
 ; a wall at the end of each but the last, and each a door.
 (def %dg-houses!
   (fn (self rng m r0 c0 r1 c1 x width)
-    (def w (+ x (%dg-roll rng (first width) (List ref 1 width))))
+    (def w (+ x (%dg-draw rng width)))
     (def end (if (< (- c1 3) w) c1 w))
     (when (< end c1) (map-each! (+ r0 1) end (- r1 1) end (fn (_ r c) (map-set! m r c tile-wall))))
     (map-set! m (if (rng bool) r0 r1) (%dg-roll rng (+ x 1) (- end 1)) tile-door)
     (when (< end c1) (self rng m r0 c0 r1 c1 end width))))
+; The houses of the solid terrace from R0 C0 to R1 C1, from column X:
+; each a door.
+(def %dg-fronts!
+  (fn (self rng m r0 r1 x c1 width)
+    (unless (< c1 x)
+      (do (def end (%dg-min c1 (+ x (- (%dg-draw rng width) 1))))
+          (map-set! m (if (rng bool) r0 r1) (%dg-roll rng x end) tile-door)
+          (self rng m r0 r1 (+ end 1) c1 width)))))
 (def %dg-terrace!
   (fn (_ rng m r0 c0 r1 c1 width)
     (when (< 4 (- c1 c0))
-      (do (%dg-carve-room! m (list r0 c0 r1 c1 #f))
-          (%dg-houses! rng m r0 c0 r1 c1 c0 width)))))
+      (if (< (- r1 r0) 2)
+        (do (%dg-fill! m r0 c0 r1 c1 tile-wall)
+            (%dg-fronts! rng m r0 r1 c0 c1 width))
+        (do (%dg-carve-room! m (list r0 c0 r1 c1 #f))
+            (%dg-houses! rng m r0 c0 r1 c1 c0 (pair (%dg-max 2 (first width)) (%dg-max 2 (rest width)))))))))
 ; A row of terraces from R0 to R1, from column C, kept off the columns
 ; SC0 to SC1 when SQUARE? (the row reaches the square).
 (def %dg-terraces!
-  (fn (self rng m params r0 r1 c square? sc0 sc1)
+  (fn (self rng m params scale r0 r1 c square? sc0 sc1)
     (def last (- (map-cols m) 3))
     (when (< (+ c 4) last)
-      (do (def len (%dg-p params (lit terrace-length) (list 14 28)))
-          (def e ((fn (_ e) (if (< last e) last e)) (+ c (- (%dg-roll rng (first len) (List ref 1 len)) 1))))
-          (def width (%dg-p params (lit house-width) (list 4 8)))
-          (def lane (%dg-p params (lit lane) (list 1 3)))
+      (do (def len (%dg-across params scale (lit terrace-length) 14 28))
+          (def e ((fn (_ e) (if (< last e) last e)) (+ c (- (%dg-draw rng len) 1))))
+          (def width (%dg-across params scale (lit house-width) 4 8))
+          (def lane (%dg-across params scale (lit lane) 1 3))
           (if (if square? (if (< c (+ sc1 2)) (< (- sc0 2) e) #f) #f)
             (do (%dg-terrace! rng m r0 c r1 (- sc0 2) width)
-                (self rng m params r0 r1 (+ sc1 2) square? sc0 sc1))
+                (self rng m params scale r0 r1 (+ sc1 2) square? sc0 sc1))
             (do (%dg-terrace! rng m r0 c r1 e width)
-                (self rng m params r0 r1 (+ e (+ 1 (%dg-roll rng (first lane) (List ref 1 lane)))) square? sc0 sc1)))))))
+                (self rng m params scale r0 r1 (+ e (+ 1 (%dg-draw rng lane))) square? sc0 sc1)))))))
 (def %dg-town!
   (fn (_ rng m params)
     (def rows (map-rows m))
     (def cols (map-cols m))
     (map-each! 0 0 (- rows 1) (- cols 1) (fn (_ r c) (map-set! m r c tile-floor)))
-    (def sq (%dg-p params (lit square) (list 14 4)))
-    (def sr0 (int/ (- rows (List ref 1 sq)) 2))
+    (def scale (%dg-scale params))
+    (def sq (%dg-extent params scale (lit square) 14 8))
+    (def sr0 (int/ (- rows (rest sq)) 2))
     (def sc0 (int/ (- cols (first sq)) 2))
-    (def sr1 (+ sr0 (- (List ref 1 sq) 1)))
+    (def sr1 (+ sr0 (- (rest sq) 1)))
     (def sc1 (+ sc0 (- (first sq) 1)))
-    (def depth (%dg-p params (lit terrace-depth) (list 4 6)))
-    (def street (%dg-p params (lit street) (list 1 2)))
+    (def depth (%dg-down params scale (lit terrace-depth) 8 12))
+    (def street (%dg-down params scale (lit street) 2 4))
     ((fn (self r)
-       (def r1 (+ r (- (%dg-roll rng (first depth) (List ref 1 depth)) 1)))
+       (def r1 (+ r (- (%dg-draw rng depth) 1)))
        (when (< r1 (- rows 2))
-         (do (%dg-terraces! rng m params r r1 2 (if (< r (+ sr1 2)) (< (- sr0 2) r1) #f) sc0 sc1)
-             (self (+ r1 (+ 1 (%dg-roll rng (first street) (List ref 1 street))))))))
+         (do (%dg-terraces! rng m params scale r r1 2 (if (< r (+ sr1 2)) (< (- sr0 2) r1) #f) sc0 sc1)
+             (self (+ r1 (+ 1 (%dg-draw rng street)))))))
      2)
     (map-rooms! m ())
     m))
@@ -370,13 +409,13 @@
 ; A coal pit worked bord and pillar.  A haulage road two cells wide
 ; runs the length of the level along the middle, from the shaft at one
 ; end to the dip at the other.  Off it, above and below, panels of the
-; seam (panel LO HI) cells long were worked into bords a cell wide with
-; pillars of coal (pillar W H) between; (worked PERCENT) of panels were
-; worked, and the rest left whole or driven by a single heading.  Of a
-; worked panel's pillars, (robbed PERCENT) were taken out as it was
-; worked back, and (crushed PERCENT) of the rest have come down.  Rock
-; beside the workings is wall.  The stairs up are at the shaft, the
-; stairs down at the dip; which end is which, by a coin.
+; seam (panel LO HI) metres long were worked into bords a cell wide
+; with pillars of coal (pillar W H) metres between; (worked PERCENT) of
+; panels were worked, and the rest left whole or driven by a single
+; heading.  Of a worked panel's pillars, (robbed PERCENT) were taken out
+; as it was worked back, and (crushed PERCENT) of the rest have come
+; down.  Rock beside the workings is wall.  The stairs up are at the
+; shaft, the stairs down at the dip; which end is which, by a coin.
 
 ; A panel's pillar block from row R0 to R1, column C0 to C1: robbed,
 ; crushed or standing.
@@ -405,8 +444,9 @@
     (def rows (map-rows m))
     (def cols (map-cols m))
     (def mr (int/ rows 2))
-    (def pillar (%dg-p params (lit pillar) (list 4 2)))
-    (def panel (%dg-range params (lit panel) 10 22))
+    (def scale (%dg-scale params))
+    (def pillar (%dg-extent params scale (lit pillar) 4 4))
+    (def panel (%dg-across params scale (lit panel) 10 22))
     (def worked (first (%dg-p params (lit worked) (list 75))))
     (def robbed (first (%dg-p params (lit robbed) (list 20))))
     (def crushed (first (%dg-p params (lit crushed) (list 10))))
@@ -419,7 +459,7 @@
                  (def near (if (< 0 side) (+ mr 1) (- mr 2)))
                  (def far (if (< 0 side) (- rows 3) 2))
                  (match ((%dg-chance? rng worked)
-                          (%dg-panel! rng m c e near far side (first pillar) (List ref 1 pillar) robbed crushed))
+                          (%dg-panel! rng m c e near far side (first pillar) (rest pillar) robbed crushed))
                         ((rng bool) (%dg-fill! m (%dg-min near far) (int/ (+ c e) 2) (%dg-max near far) (int/ (+ c e) 2) tile-floor))
                         (#t ())))
                (list -1 1))
@@ -434,13 +474,13 @@
 ; --- a flooded reach ---------------------------------------------------------
 
 ; A flooded reach: a channel the water runs along from the west edge to
-; the east, its course wandering a row at a time, (channel LO HI) cells
+; the east, its course wandering a row at a time, (channel LO HI) metres
 ; deep; along stretches of it the lower part is deep water, three rows of
 ; the upper part always shallow enough to wade.  Pockets the water
 ; washed out of the rock open off it, (pockets LO HI) of them, each a
-; wander of (pocket-size LO HI) steps.  Rock beside is wall.  The stairs
-; up are at the west end, the stairs down at the east: the water runs
-; one way.
+; wander over (pocket-size LO HI) square metres.  Rock beside is wall.
+; The stairs up are at the west end, the stairs down at the east: the
+; water runs one way.
 
 ; A wander of K steps from R C carving rock to floor, kept off the edge;
 ; it never steps into water, so what it carves is reached from where it
@@ -457,9 +497,10 @@
   (fn (_ rng m params)
     (def rows (map-rows m))
     (def cols (map-cols m))
-    (def deep (%dg-range params (lit channel) 5 8))
+    (def scale (%dg-scale params))
+    (def deep (%dg-down params scale (lit channel) 10 16))
     (def pockets (%dg-range params (lit pockets) 4 8))
-    (def size (%dg-range params (lit pocket-size) 20 60))
+    (def size (%dg-area params scale (lit pocket-size) 40 120))
     ; Each column's top and bottom rows of the channel, and whether its
     ; bottom is dry.
     (def tops (Vector make cols 0))
@@ -469,7 +510,11 @@
        (when (< c (- cols 2))
          (do (def t (%dg-clamp 1 (- y (int/ w 2)) (- rows (+ w 1))))
              (def b (+ t (- w 1)))
-             (%dg-fill! m t c b c tile-floor)
+             ; A channel a row or two deep, at a large scale, can step
+             ; clear of the column before; the floor reaches back to it.
+             (if (< 2 c)
+               (%dg-fill! m (%dg-min t (Vector ref (- c 1) bottoms)) c (%dg-max b (Vector ref (- c 1) tops)) c tile-floor)
+               (%dg-fill! m t c b c tile-floor))
              (when pool? (%dg-fill! m (+ t 3) c b c tile-water))
              (Vector set! c t tops)
              (Vector set! c b bottoms)
@@ -495,7 +540,7 @@
 ; The well-keepers' works: dressed stone laid without mortar, built to a
 ; plan.  A stair runs the length of the level along the middle, a cell
 ; wide; vaults open off it in pairs, one above and one below, alike,
-; each (vault-width LO HI) by (vault-height LO HI) cells inside, a door
+; each (vault-width LO HI) by (vault-height LO HI) metres inside, a door
 ; in the middle of the side facing the stair; where no vault opens,
 ; (niches PERCENT) of the stair's wall is cut back a cell, for the dead.
 ; The stairs up are at the west end, the stairs down at the east.
@@ -504,8 +549,9 @@
     (def rows (map-rows m))
     (def cols (map-cols m))
     (def mr (int/ rows 2))
-    (def vw (%dg-range params (lit vault-width) 5 11))
-    (def vh (%dg-range params (lit vault-height) 2 5))
+    (def scale (%dg-scale params))
+    (def vw (%dg-across params scale (lit vault-width) 5 11))
+    (def vh (%dg-down params scale (lit vault-height) 4 10))
     (def niches (first (%dg-p params (lit niches) (list 30))))
     (%dg-fill! m mr 2 mr (- cols 3) tile-floor)
     ((fn (self c)
@@ -518,9 +564,9 @@
              (%dg-box! m (+ mr 1) c (+ mr (+ h 2)) c1 tile-dressed)
              (map-set! m (- mr 1) cm tile-door)
              (map-set! m (+ mr 1) cm tile-door)
-             (self (+ c1 (%dg-roll rng 2 6))))
+             (self (+ c1 (%dg-roll rng (scale-across scale 2) (scale-across scale 6)))))
          ()))
-     (%dg-roll rng 3 6))
+     (%dg-roll rng (scale-across scale 3) (scale-across scale 6)))
     (map-each! mr 3 mr (- cols 4)
       (fn (_ r c)
         (List for-each
@@ -534,7 +580,7 @@
 
 ; The well-house: a cave round the court the well-keepers walled about
 ; the stone's pool.  The cave is carved as caves are; in its middle the
-; court, (court W H) cells outside, its walls dressed, a door in the
+; court, (court W H) metres outside, its walls dressed, a door in the
 ; middle of each side and a passage from each door out into the cave;
 ; in the court the pool, deep water, with a walk two cells wide round
 ; it.  Whatever the court cut off is filled.  The stairs up are in the
@@ -549,10 +595,10 @@
     (def rows (map-rows m))
     (def cols (map-cols m))
     (%dg-cave! rng m params)
-    (def court (%dg-p params (lit court) (list 31 11)))
-    (def r0 (int/ (- rows (List ref 1 court)) 2))
+    (def court (%dg-extent params (%dg-scale params) (lit court) 31 22))
+    (def r0 (int/ (- rows (rest court)) 2))
     (def c0 (int/ (- cols (first court)) 2))
-    (def r1 (+ r0 (- (List ref 1 court) 1)))
+    (def r1 (+ r0 (- (rest court) 1)))
     (def c1 (+ c0 (- (first court) 1)))
     (def rm (int/ (+ r0 r1) 2))
     (def cm (int/ (+ c0 c1) 2))
@@ -590,25 +636,33 @@
 ; width of the level along the middle row, so that it meets the road on
 ; the next screen, a hedge each side of it with a gate here and there.
 ; Above and below it, inside a headland two cells wide round the edge,
-; the ground is cut into closes: a piece longer than (close W H) is
-; halved across its longer side by a hedge with a gate in it.  Of the
-; hedges' cells, (trees PERCENT) are hedgerow trees.
+; the ground is cut into closes: a piece longer than (close W H) metres
+; is halved across its longer side by a hedge with a gate in it.  Of
+; the hedges' cells, (trees PERCENT) are hedgerow trees.
 
+; A hedge from R0 C0 to R1 C1, short of any gate it would close: a
+; cell beside a gate is left open, so the gate still leads somewhere.
+(def %dg-hedge!
+  (fn (_ m r0 c0 r1 c1)
+    (map-each! r0 c0 r1 c1
+      (fn (_ r c)
+        (unless (List any? (fn (_ d) (= (map-tile m (+ r (first d)) (+ c (rest d))) tile-gate)) %dg-four)
+          (map-set! m r c tile-hedge))))))
 ; The piece from R0 C0 to R1 C1 hedged into closes.
 (def %dg-closes!
   (fn (self rng m r0 c0 r1 c1 cw ch)
     (def w (+ (- c1 c0) 1))
     (def h (+ (- r1 r0) 1))
     (match
-      ((if (< cw w) (< (* 2 h) (+ w 1)) #f)
+      ((if (< (%dg-max cw 6) w) (< (* 2 h) (+ w 1)) #f)
         (do (def x (%dg-roll rng (+ c0 3) (- c1 3)))
-            (%dg-fill! m r0 x r1 x tile-hedge)
+            (%dg-hedge! m r0 x r1 x)
             (map-set! m (%dg-roll rng r0 r1) x tile-gate)
             (self rng m r0 c0 r1 (- x 1) cw ch)
             (self rng m r0 (+ x 1) r1 c1 cw ch)))
-      ((< ch h)
+      ((< (%dg-max ch 4) h)
         (do (def y (%dg-roll rng (+ r0 2) (- r1 2)))
-            (%dg-fill! m y c0 y c1 tile-hedge)
+            (%dg-hedge! m y c0 y c1)
             (map-set! m y (%dg-roll rng c0 c1) tile-gate)
             (self rng m r0 c0 (- y 1) c1 cw ch)
             (self rng m (+ y 1) c0 r1 c1 cw ch)))
@@ -622,7 +676,8 @@
     (def rows (map-rows m))
     (def cols (map-cols m))
     (def mr (int/ rows 2))
-    (def close (%dg-p params (lit close) (list 16 5)))
+    (def scale (%dg-scale params))
+    (def close (%dg-extent params scale (lit close) 16 10))
     (def trees (first (%dg-p params (lit trees) (list 8))))
     (%dg-fill! m 0 0 (- rows 1) (- cols 1) tile-floor)
     (List for-each
@@ -630,11 +685,11 @@
         (%dg-fill! m r 2 r (- cols 3) tile-hedge)
         ((fn (self c)
            (when (< c (- cols 3))
-             (do (map-set! m r c tile-gate) (self (+ c (%dg-roll rng 10 24))))))
-         (%dg-roll rng 3 12)))
+             (do (map-set! m r c tile-gate) (self (+ c (%dg-roll rng (scale-across scale 10) (scale-across scale 24)))))))
+         (%dg-roll rng (scale-across scale 3) (scale-across scale 12))))
       (list (- mr 1) (+ mr 1)))
-    (%dg-closes! rng m 2 2 (- mr 2) (- cols 3) (first close) (List ref 1 close))
-    (%dg-closes! rng m (+ mr 2) 2 (- rows 3) (- cols 3) (first close) (List ref 1 close))
+    (%dg-closes! rng m 2 2 (- mr 2) (- cols 3) (first close) (rest close))
+    (%dg-closes! rng m (+ mr 2) 2 (- rows 3) (- cols 3) (first close) (rest close))
     (%dg-trees! rng m trees)
     (map-rooms! m ())
     m))
@@ -643,22 +698,24 @@
 
 ; Hills: heath with gritstone edges across it, boulders fallen off them,
 ; and bog in the low ground.  (edges LO HI) edges, each a line of rock
-; (edge-length LO HI) long running east, a row up or down now and then,
-; with a gap here and there where a sheep track climbs through, and
-; boulders on the ground below it; (bogs LO HI) bogs, each a wander of
-; (bog-size LO HI) steps of wet ground with pools in it; (gorse LO HI)
-; clumps of gorse, each a wander of (gorse-size LO HI) steps.  Two cells
-; round the edge are left clear, and ground cut off is filled.
+; (edge-length LO HI) metres long running east, a row up or down now
+; and then, with a gap here and there where a sheep track climbs
+; through, and boulders on the ground below it; (bogs LO HI) bogs, each
+; a wander over (bog-size LO HI) square metres of wet ground with pools
+; in it; (gorse LO HI) clumps of gorse, each a wander over (gorse-size
+; LO HI) square metres.  Two cells round the edge are left clear, and
+; ground cut off is filled.
 (def %dg-hills!
   (fn (_ rng m params)
     (def rows (map-rows m))
     (def cols (map-cols m))
     (def edges (%dg-range params (lit edges) 2 4))
-    (def span (%dg-range params (lit edge-length) 20 50))
+    (def scale (%dg-scale params))
+    (def span (%dg-across params scale (lit edge-length) 20 50))
     (def bogs (%dg-range params (lit bogs) 1 3))
-    (def bog (%dg-range params (lit bog-size) 20 60))
+    (def bog (%dg-area params scale (lit bog-size) 40 120))
     (def gorse (%dg-range params (lit gorse) 3 6))
-    (def furze (%dg-range params (lit gorse-size) 8 20))
+    (def furze (%dg-area params scale (lit gorse-size) 16 40))
     (def inner? (fn (_ r c) (if (< 1 r) (if (< r (- rows 2)) (if (< 1 c) (< c (- cols 2)) #f) #f) #f)))
     (%dg-fill! m 0 0 (- rows 1) (- cols 1) tile-floor)
     ((fn (self n)
@@ -668,7 +725,7 @@
                   (do (unless (= (rng int 14) 0) (map-set! m r c tile-edge))
                       (when (= (rng int 7) 0)
                         ((fn (_ br bc) (when (inner? br bc) (map-set! m br bc tile-edge)))
-                         (+ r (%dg-roll rng 2 3)) (+ c (- (rng int 3) 1))))
+                         (+ r (%dg-roll rng (scale-down scale 4) (scale-down scale 6))) (+ c (- (rng int 3) 1))))
                       (self2 (%dg-clamp 2 (+ r (if (= (rng int 9) 0) (- (rng int 3) 1) 0)) (- rows 3)) (+ c 1) (- k 1)))))
               (%dg-roll rng 3 (- rows 6)) (%dg-roll rng 2 (- cols 20)) (%dg-draw rng span))
              (self (- n 1)))))
@@ -709,6 +766,7 @@
     (def ruins (%dg-range params (lit ruins) 1 3))
     (def stones (%dg-range params (lit stones) 0 2))
     (def fallen (first (%dg-p params (lit fallen) (list 30))))
+    (def scale (%dg-scale params))
     (def times (fn (_ n f) ((fn (self n) (when (< 0 n) (do (f) (self (- n 1))))) n)))
     (%dg-fill! m 0 0 (- rows 1) (- cols 1) tile-floor)
     (times (%dg-draw rng scars)
@@ -716,12 +774,12 @@
         (if (rng bool)
           (do (def r (%dg-roll rng 3 (- rows 4)))
               (def c0 (%dg-roll rng 2 (int/ cols 2)))
-              (def c1 (%dg-min (- cols 3) (+ c0 (%dg-roll rng 15 40))))
+              (def c1 (%dg-min (- cols 3) (+ c0 (%dg-roll rng (scale-across scale 15) (scale-across scale 40)))))
               (def gap (%dg-roll rng c0 c1))
               (map-each! r c0 r c1 (fn (_ r c) (unless (if (< (- gap 1) c) (< c (+ gap 2)) #f) (map-set! m r c tile-scar)))))
           (do (def c (%dg-roll rng 4 (- cols 5)))
               (def r0 (%dg-roll rng 2 (int/ rows 2)))
-              (def r1 (%dg-min (- rows 3) (+ r0 (%dg-roll rng 5 12))))
+              (def r1 (%dg-min (- rows 3) (+ r0 (%dg-roll rng (scale-down scale 10) (scale-down scale 24)))))
               (map-each! r0 c r1 c (fn (_ r c) (map-set! m r c tile-scar)))))))
     (times (%dg-draw rng holes)
       (fn (_)
@@ -732,8 +790,8 @@
           (List for-each (fn (_ d) (map-set! m (+ r (first d)) (+ c (rest d)) tile-rock)) %dg-four))))
     (times (%dg-draw rng ruins)
       (fn (_)
-        (def w (%dg-roll rng 6 14))
-        (def h (%dg-roll rng 4 7))
+        (def w (%dg-roll rng (scale-across scale 6) (scale-across scale 14)))
+        (def h (%dg-roll rng (scale-down scale 8) (scale-down scale 14)))
         (def r0 (%dg-roll rng 2 (- rows (+ h 2))))
         (def c0 (%dg-roll rng 2 (- cols (+ w 2))))
         (def r1 (+ r0 (- h 1)))
@@ -745,7 +803,7 @@
     (times (%dg-draw rng stones)
       (fn (_)
         (def r (%dg-roll rng 3 (- rows 4)))
-        ((fn (self c n) (when (< 0 n) (do (map-set! m r c tile-dressed) (self (+ c 2) (- n 1)))))
+        ((fn (self c n) (when (< 0 n) (do (map-set! m r c tile-dressed) (self (+ c (scale-across scale 2)) (- n 1)))))
          (%dg-roll rng 3 (- cols 20)) (%dg-roll rng 4 7))))
     (%dg-reach! m 0 0 tile-scar)
     (map-rooms! m ())

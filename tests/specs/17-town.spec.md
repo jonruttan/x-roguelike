@@ -12,7 +12,7 @@ round it is not.
 ### a town: a street round the edge, the square clear in the middle, and rows of terraces, each house walls round a floor with one door onto the street
 
 ```roguelike
-(def m (dungeon-generate (Random sw 5) 22 80 0 '((level-style town) (square 14 4))))
+(def m (dungeon-generate (Random sw 5) 22 80 0 '((level-style town) (square 14 8))))
 (def cells (fn (_ r0 c0 r1 c1) (List flat-map (fn (_ r) (List map (fn (_ c) (pair r c)) (List range c0 (+ c1 1)))) (List range r0 (+ r1 1)))))
 (def tile (fn (_ p) (map-tile m (first p) (rest p))))
 (def floor? (fn (_ ps) (List all? (fn (_ p) (= (tile p) tile-floor)) ps)))
