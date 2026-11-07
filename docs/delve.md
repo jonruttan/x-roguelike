@@ -513,6 +513,12 @@ the reason for the new one.
 
 ## The dale of Kettle
 
+Kettle is a market town of some two thousand people, and the only town
+in the dale.  It lives on three things: the farms on the drained floor,
+the wool off the hills, and the pit.  The pit came last and grew
+biggest.  Nearly every trade in the dale came to work for it, and since
+the pumps stopped nearly every trade is idle or short.
+
 Out from the square, each band a rock and an age:
 
 - **Kettle**: the town on the coal measures, its square and well-head
@@ -525,6 +531,223 @@ Out from the square, each band a rock and an age:
   the Guild's men cleared the rim.
 - **The Rim**: bare limestone all round the dale, the well-keepers'
   stones, and the Guild's men about them.  The old vaults run down.
+
+### What the pit needed
+
+A pit is more than a hole and a pick.  Everything it used came from
+somewhere in the dale or over the pass, and bringing it was someone's
+trade.
+
+| What | For | Who | From |
+|---|---|---|---|
+| Timber | props, roof bars, tub frames, the gin | woodcutters, sawyers | the oak wood on the valley sides, sawn at the pithead |
+| Light | the miners' candles, the lamps at the shafts | the chandler, the lamp-keeper | tallow from the farms' sheep and cattle |
+| Iron | picks, wedges, rails, tub wheels, chains, the engine's bolts | the smith, the furnacemen | the Guild's furnace, on the coal measures' own ironstone |
+| Rope | the winding rope, the shaft ladders' lashings | the ropemaker | hemp from the Plain, laid on the ropewalk by the river |
+| Horses | the gin that winds the coal up, the carts, the packhorse trains | horse-keepers, carters, the smith as farrier | oats and hay from the farms |
+| Leather | the pumps' bucket leathers, harness, the miners' caps and knee-pads | the tanner, the cobbler | hides from the farms, oak bark from the wood |
+| Brick | the engine house chimney, the shaft linings, the furnace | the brickmakers | the pit's own fireclay, fired in the brickfield's kilns |
+| Stone | the engine house, the Guild hall, the pithead walls | quarrymen, masons | the gritstone edge above the town |
+| Lime | mortar for all of it, and to sweeten the clay fields | the limeburners | the rim's limestone, burned in kilns along the rim |
+| Fuel | the engine, the furnace, the forge, every hearth | the pit | its own coal; before the pit, peat and charcoal |
+| Air | fresh air through the workings | the furnace-keeper | a fire at the foot of the upcast shaft, which draws the air round |
+| Food | the miners, the horses | farmers, the miller, the baker | oats and barley ground at the mill, mutton off the hills, dried fish up from the coast |
+| Money | wages, the engine, the debt | the Guild's clerks | the League's banks, on credit |
+
+The engine only pumps.  The coal comes up the winding shaft in baskets
+on the rope, wound by horses walking the gin at the shaft-head.  There
+is no powder, so the hewers win coal with pick and wedge, and the
+quarrymen split gritstone with wedges and feathers.  Before each shift
+the fire-boss went in alone, lying flat under wet sacking, with a
+candle on a long pole to burn off the gas gathered in the roof.
+
+### The town
+
+The pithead is at the top of the main street, the square and the
+well-head are in the middle, and the river is at the bottom.
+
+- **The square.**  The well-head stands in the middle: the
+  well-keepers' stone mouth, the charter cut round it, and the Guild's
+  iron pump on it.  The moot stands here when the town is called.  On
+  market day the farms, the hill folk and the pedlars fill it.
+- **The pump-house**, against the well-head, is the Guild's.  The
+  pump's rods come up in it, and the ledger is under its floor.
+- **The Guild hall**, of gritstone, is the biggest building in the
+  town.  It holds the council chamber, the pay office, the strongroom
+  and the clerks.
+- **The council house**, plainer, stands across the square.  It holds
+  the town's own officers, the town surveyor and his levels, and the
+  town's copy of the charter.
+- **The Guild's shop.**  The Guild paid part of every wage in its own
+  tickets, good only here.  The shop is still open and selling dear,
+  on credit against wages that no longer come, so the town owes the
+  Guild too.
+- **The inn** is where the carriers and pedlars stop and the town
+  drinks.  Its yard and stables take the packhorse trains.
+- **The smithy.**  The smith shoes the horses and makes every iron
+  thing the pit uses.  The forge is cold for want of coal.
+- **The chandler's** sells tallow candles and lamp oil, rendered from
+  the farms' fat, and the smell carries all down the street.
+- **The bakehouse** is the town's common oven, where the terraces bake
+  their bread.  It burned coal; now it burns what wood it can get, one
+  day in three.
+- **The chapel and its graveyard.**  A long row of stones there marks
+  the firedamp shift, every one with the same day on it.
+- **The terraces** are the miners' rows below the pithead: brick under
+  stone-slate, a yard behind each with a shallow well and kale.  Doors
+  are shuttered where families have gone over the pass to look for
+  work.
+- **The Guild houses** are stone, near the square, with gardens.
+- **The watch house** stands where the road comes into the town.
+
+### The pithead
+
+At the top of the main street, the pit's own ground:
+
+- **The engine house**: gritstone, tall, with its beam out through the
+  wall over the engine shaft and the pump rods hanging from it.  The
+  boiler house is beside it, and the brick chimney above, cold.  The
+  engine came over the pass in pieces, on carriers' wagons over two
+  summers, on the League's credit.
+- **The engine shaft**, where the pumps hang.  Its water stands at the
+  lower galleries, and rises.
+- **The winding shaft**, with the horse gin over it: a great drum the
+  horses walk round, the rope, and the banksman's stage.  It is the way
+  down.
+- **The furnace shaft**, the upcast.  It has been cold since the fire at
+  its foot went out with the coal, and the air below is going bad.
+- **The pit office**, with the daybook, the pay lists and the foreman's
+  room.
+- **The lamp room**, where the lamp-keeper gave out every light and
+  took every light back, and counted them: a light not given back was
+  a man not up.
+- **The sawpit and the timber yard.**
+- **The coal yard**, empty, and the packhorse stand.
+- **The spoil heap**: black shale, as high as the engine house.
+- **The Guild's furnace**, where ironstone was smelted with the pit's
+  coal.  Cold, with its ironstone heaps beside it.
+- **The brickfield**: the clay pit and kilns, at the town's edge by
+  the pithead.
+
+### The river end
+
+- **The mill** stands on the race above the weir: the town's corn
+  mill, for oats and barley, with the millwright's shop beside it.  It
+  has the one wheel in the dale still turning.  The drought has the
+  race low, but it turns.
+- **The weir**, with the eel traps beside it.
+- **The ropewalk**: a long straight shed along the bank.
+- **The tannery** stands downstream of everything, for the smell, with
+  its pits and the oak bark stacked to dry.
+- **The ferry** crosses below the town, where the river runs deep, on
+  the ferryman's rope.  The road west to the gap and the coast crosses
+  there.
+- **The poor end**, by the water: the eel-catcher, the scrap-picker,
+  the washerwomen.
+
+### The farms
+
+- **The closes**: hedged fields on the drained floor, of oats, barley
+  and hay meadow, with cattle and the farm horses.
+- **The drains**: dikes and ditches that keep the floor dry and run to
+  the river.  The drainers' old wind pumps and horse pumps stand along
+  them.  They have been idle since the engine drew the ground water
+  down below them, and some have fallen.
+- **The farmsteads**: stone houses with barns, dairies and cellars.
+- **The road** from the square, out through the farms and up to the
+  pass.
+
+### The valley sides
+
+- **The oak wood** covers the slopes between the floor and the hills.
+  The near part is coppiced, and its trades work there: woodcutters,
+  the bark-peelers who strip oak bark for the tanner in spring, the
+  charcoal burners at their hearths, and the sawyers.  Deeper in is old
+  wood, with boar and wolves.
+- **Charcoal** fed the forge before the pit's coal.  Since the pit
+  stopped the burners are the busiest trade in the dale, and they
+  cannot make enough.
+- **Candle Force**, in its clough, with rags on the thorns and coin in
+  the pool under the fall.
+
+### The hills
+
+- **The quarry** is on the nearest gritstone edge, with the masons'
+  yard at its foot.  Millstones lie below the edge where they were
+  abandoned half-dressed.
+- **The peat moss** is on the tops, with the peat-cutters' banks and
+  stacks.  Peat is the hill folk's fuel, and now the town's.  It is cut
+  in spring and dried through summer, so this year's stacks are ready.
+- **The shepherds'** folds, washfolds by the becks, and bothies.  Their
+  wool goes down to market.
+- **The pass road** climbs east, over the packhorse bridge on the beck,
+  to the cairn at the top.
+- **The bog**, and the bog lights over it.
+
+### The rim
+
+- **The grazing**: short grass, the best in the dale, and the
+  shepherds' summer pasture until the Guild's men drove them off.
+- **The well-keepers' city**: most of it fallen, and much of it carried
+  away.  For three hundred years Kettle has burned the rim's stone for
+  lime, and the city's dressed blocks were the easiest to burn.  So the
+  masons know the well-keepers' dry-laid work better than anyone: they
+  have been taking it apart for generations.
+- **The limekilns** stand along the rim with their heaps, cold with the
+  rest.
+- **The rag-trees** by the springs at the foot of the scars.
+- **The shakeholes, caves and scars.**
+- **The Guild's dig** in the old vaults: a camp, a windlass over the
+  shaft they are sinking, and bolt-men at the edges.
+
+### The trades
+
+Who the dale's people are, by what they do.
+
+| Work | Trades |
+|---|---|
+| The pit | hewers, putters, the banksman, horse-keepers, the fire-boss, the lamp-keeper, the furnace-keeper, sawyers |
+| Water | the engine-wright, pumpmen, drainers, the millwright |
+| Stone and earth | quarrymen, masons, brickmakers, limeburners |
+| Wood | woodcutters, charcoal burners, bark-peelers |
+| Iron, leather and rope | the smith, the Guild's furnacemen, the tanner, the cobbler, the ropemaker |
+| Food | farmers, the miller, the baker, the eel-catcher, and the hill folk's shepherds and peat-cutters |
+| Carrying and selling | carters, packhorse men, the pedlar, the chandler, the innkeeper |
+| The town | the council, the town surveyor, the watchman, the ferryman, the herb-wife, the knife-grinder, the scrap-picker |
+| The Guild | the council of the Guild, its clerks, its shopkeeper, its bailiffs and hired men |
+
+### What the town needs now
+
+Three weeks without the pit, the town is short of:
+
+- **Fuel.**  No coal.  Peat from the moss and charcoal from the wood,
+  carried in by hand and horse, are all the town burns: enough to cook,
+  not enough to work the forge full, and nothing like the furnace or
+  the engine.
+- **Water.**  The yard wells are falling.  The well-head runs through
+  the Guild's pump.
+- **Money.**  No wages, and the Guild's shop on credit.
+- **Hands.**  Families are going over the pass before the snow.
+
+To send anyone down the pit now:
+
+- **A way down**: the winding shaft, and the gin horses fed.
+- **Light**: the chandler's tallow, and the lamp room's count kept.
+- **Air**: the furnace shaft's fire lit again with charcoal, or the
+  upper workings go bad.
+- **Props** from the sawyers, **rope** from the ropemaker, and **food**
+  from the baker and the farms.
+
+To start the pumps again:
+
+- **Fuel** for the engine, more than the dale has without the pit.
+- **The broken part.**  Hollis knew the engine, and he is below.  The
+  smith can forge and the furnace can cast, but nobody above knows
+  what broke.
+- **Leathers** for the pump buckets, from the tanner.
+- **Or the old way**: the drainers' horse pumps, which need only horses
+  and fodder.  They cannot reach the pit's depth, but they can hold the
+  top of the water.
 
 ### Design notes for the town
 
