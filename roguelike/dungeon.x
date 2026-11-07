@@ -24,7 +24,8 @@
   tile-rock tile-floor tile-wall tile-door tile-passage tile-down tile-up
   tile-water tile-pillar tile-fall tile-dressed tile-hedge tile-gate tile-thicket tile-edge tile-bog tile-scar
   map-make map-rows map-cols map-rooms map-rooms! map-down map-down! map-up!
-  map-tile map-set! map-in? map-passable? map-opaque? room-r0 room-c0 room-r1 room-c1 room-centre map-each!)
+  map-tile map-set! map-in? map-passable? map-opaque? room-r0 room-c0 room-r1 room-c1 room-centre map-each!
+  map-fill-unreached!)
 
 ; The set's parameters, (KEY . VALUES) alist, or DEFAULT's values.
 (def %dg-p
@@ -255,31 +256,8 @@
           (self rng m (+ r (first d)) (+ c (rest d)) (- k 1))))))
 
 ; Every cell a creature can stand on that cannot be walked to from R C,
-; a step at a time across a side, made FILL.
-(def %dg-reach!
-  (fn (_ m r0 c0 fill)
-    (def rows (map-rows m))
-    (def cols (map-cols m))
-    (def seen (Vector make (* rows cols) #f))
-    (def at (fn (_ r c) (+ (* r cols) c)))
-    (def step?
-      (fn (_ r c)
-        (match ((not (map-in? m r c)) #f)
-               ((Vector ref (at r c) seen) #f)
-               ((not (map-passable? (map-tile m r c))) #f)
-               (#t (do (Vector set! (at r c) #t seen) #t)))))
-    (def flood
-      (fn (self stack)
-        (unless (null? stack)
-          (do (def r (first (first stack)))
-              (def c (rest (first stack)))
-              (def next (List filter (fn (_ p) (step? (first p) (rest p)))
-                          (list (pair (- r 1) c) (pair (+ r 1) c) (pair r (- c 1)) (pair r (+ c 1)))))
-              (self (List append next (rest stack)))))))
-    (Vector set! (at r0 c0) #t seen)
-    (flood (list (pair r0 c0)))
-    (map-each! 0 0 (- rows 1) (- cols 1)
-      (fn (_ r c) (when (if (map-passable? (map-tile m r c)) (not (Vector ref (at r c) seen)) #f) (map-set! m r c fill))))))
+; a step at a time across a side, made FILL (see map.x).
+(def %dg-reach! (fn (_ m r0 c0 fill) (map-fill-unreached! m r0 c0 fill)))
 (def %dg-pockets! (fn (_ m) (%dg-reach! m 0 0 tile-thicket)))
 
 (def %dg-open!

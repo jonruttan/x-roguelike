@@ -182,6 +182,38 @@
 ; Whether tile T stops sight.
 (def map-opaque? (fn (_ t) (obj-ref %mp-opaque (int+ t 1))))
 
+; Every cell of M a creature can stand on that cannot be walked to from
+; R0 C0, a step at a time across a side, made FILL.  The cells are
+; walked by their offsets, the ones reached marked in a buffer of their
+; own, so a level costs no list a cell.
+(def map-fill-unreached!
+  (fn (_ m r0 c0 fill)
+    (def cols (map-cols m))
+    (def n (int* (map-rows m) cols))
+    (def t (str->ptr (%mp-get m 2)))
+    (def seen-buf (%mp-buffer n))
+    (def seen (str->ptr seen-buf))
+    (def open? (fn (_ i) (if (= (ptr-ref seen i 1) 0) (obj-ref %mp-passable (int+ (ptr-ref t i 1) 1)) #f)))
+    (def push (fn (_ i s) (if (open? i) (do (ptr-set! seen i 1 1) (pair i s)) s)))
+    (def flood
+      (fn (self s)
+        (unless (null? s)
+          (do (def i (first s))
+              (def c (- i (int* (int/ i cols) cols)))
+              (def s1 (if (int< i cols) (rest s) (push (- i cols) (rest s))))
+              (def s2 (if (int< (int+ i cols) n) (push (int+ i cols) s1) s1))
+              (def s3 (if (int< 0 c) (push (- i 1) s2) s2))
+              (self (if (int< c (- cols 1)) (push (int+ i 1) s3) s3))))))
+    (def start (%mp-off m r0 c0))
+    (ptr-set! seen start 1 1)
+    (flood (list start))
+    ((fn (self i)
+       (when (int< i n)
+         (do (when (open? i) (ptr-set! t i fill 1))
+             (self (int+ i 1)))))
+     0)
+    ()))
+
 (def %mp-abs (fn (_ n) (if (< n 0) (- 0 n) n)))
 (def %mp-max (fn (_ a b) (if (< a b) b a)))
 ; NUM/DEN to the nearest integer, halves away from zero.
@@ -199,14 +231,59 @@
               (#t (self (+ i 1)))))
      1)))
 
+; The lines of sight within RADIUS on a map COLS wide: for each cell DR
+; DC from the eye, (DR DC DELTA . OFFSETS), DELTA the cell's distance
+; along the buffer and OFFSETS the cells strictly between, stepped as
+; %mp-clear? steps them, each as its distance.  They depend on nothing
+; else, so they are made once and kept against the last RADIUS and
+; COLS asked for.
+(def %mp-rays-made (Vector of () ()))
+(def %mp-rays
+  (fn (_ radius cols)
+    (def key (Vector ref 0 %mp-rays-made))
+    (if (if (null? key) #f (if (= (first key) radius) (= (rest key) cols) #f))
+      (Vector ref 1 %mp-rays-made)
+      (do (def span (List range (- 0 radius) (+ radius 1)))
+          (def ray
+            (fn (_ dr dc)
+              (def n (%mp-max (%mp-abs dr) (%mp-abs dc)))
+              (pair dr (pair dc (pair (+ (* dr cols) dc)
+                (List map (fn (_ i) (+ (* (%mp-round (* dr i) n) cols) (%mp-round (* dc i) n)))
+                  (if (< n 2) () (List range 1 n))))))))
+          (def rays (List flat-map (fn (_ dr) (List map (fn (_ dc) (ray dr dc)) span)) span))
+          (Vector set! 0 (pair radius cols) %mp-rays-made)
+          (Vector set! 1 rays %mp-rays-made)
+          rays))))
+; Whether none of the cells at OFFSETS from BASE in tiles T is opaque.
+(def %mp-ray-clear?
+  (fn (self t base offs)
+    (match ((null? offs) #t)
+           ((obj-ref %mp-opaque (int+ (ptr-ref t (int+ base (first offs)) 1) 1)) #f)
+           (#t (self t base (rest offs))))))
+
 ; What is in view from R C within RADIUS: every cell a clear line
 ; reaches, the walls at the edge of sight included.  Everything else
-; leaves view.
+; leaves view.  The lines are %mp-rays', the same %mp-clear? walks.
 (def map-light-radius!
   (fn (_ m r c radius)
-    (%mp-zero! (str->ptr (%mp-get m 4)) 0 (int* (map-rows m) (map-cols m)))
-    (map-each! (- r radius) (- c radius) (+ r radius) (+ c radius)
-      (fn (_ rr cc) (when (if (map-in? m rr cc) (%mp-clear? m r c rr cc) #f) (%mp-mark! m rr cc))))))
+    (def rows (map-rows m))
+    (def cols (map-cols m))
+    (def t (str->ptr (%mp-get m 2)))
+    (def seen (str->ptr (%mp-get m 3)))
+    (def vis (str->ptr (%mp-get m 4)))
+    (def base (int+ (int* r cols) c))
+    (%mp-zero! vis 0 (int* rows cols))
+    ((fn (self l)
+       (unless (null? l)
+         (do (def ray (first l))
+             (def rr (int+ r (first ray)))
+             (def cc (int+ c (first (rest ray))))
+             (def more (rest (rest ray)))
+             (when (if (int< rr 0) #f (if (int< cc 0) #f (if (int< rr rows) (int< cc cols) #f)))
+               (when (%mp-ray-clear? t base (rest more))
+                 ((fn (_ i) (ptr-set! vis i 1 1) (ptr-set! seen i 1 1)) (int+ base (first more)))))
+             (self (rest l)))))
+     (%mp-rays radius cols))))
 
 ; --- drawing -----------------------------------------------------------------
 
@@ -285,4 +362,4 @@
   map-in? map-tile map-set! map-seen? map-seen! map-visible? map-passable? map-walkable?
   room-r0 room-c0 room-r1 room-c1 room-lit? room-covers? room-inside? room-centre map-room-at
   map-each! map-opaque? map-light! map-light-radius! map-row-glyphs! map-visible-next map-visible-run
-  map-reveal!)
+  map-reveal! map-fill-unreached!)
