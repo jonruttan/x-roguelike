@@ -440,13 +440,14 @@ charter.
     means.  On the way he writes to Ada; the letter is never sent.
 14. **The engine fails.**  Run harder on a third less coal, without
     Hollis, the old engine breaks.  The pumps stop, the lower galleries
-    drown, the coal face is under water, and the pit stops.  Kettle has
-    no coal: cold hearths, a cold forge, cold nights in a frost hollow.
-    All the pit's water now pours down the breach, faster than the stair
-    below can take it, and stands in its upper reach as it runs: the
-    Flood.  The stair shafts fill with water running down; no one can
-    climb against it.  The water rising in the workings drives their gas
-    out, and the Candle burns tall.
+    drown, the coal face is under water, and the pit stops.  The Guild
+    has sent every ton it could raise east, so there is no stock, and
+    the outcrops are the Guild's by the charter: cold hearths, a cold
+    forge, cold nights in a frost hollow.  All the pit's water now pours
+    down the breach, faster than the stair below can take it, and stands
+    in its upper reach as it runs: the Flood.  The stair shafts fill with
+    water running down; no one can climb against it.  The water rising
+    in the workings drives their gas out, and the Candle burns tall.
 15. **The refusal.**  Nine days below the breach, keepers bar the way
     to the Well-House, and Tam is lost at the fourth stair.  The foreman
     will not bring the stone up for the Guild.  He sends the rest up and
@@ -472,11 +473,13 @@ charter.
 When the game begins it is late summer, some three weeks after the
 pumps stopped.
 
-- **Kettle**: no coal, cold hearths and a cold forge, the yard wells
-  falling, the well-head still running through the Guild's pump, and
-  the Candle burning tall in its clough.  The council will not move
-  against the Guild without proof.  The ledger is under the pump-house
-  floor; the key has gone astray.
+- **Kettle**: no coal for the town, cold hearths and a cold forge, the
+  yard wells falling, the well-head still running through the Guild's
+  pump, and the Candle burning tall in its clough.  The town eats on
+  the Guild's credit, so the council will not move against the Guild
+  without proof.  The ledger is under the pump-house floor; the key has
+  gone astray.  The first snow, which closes the Nick, is some ten weeks
+  off.
 - **The pit**: drowned from the lower galleries down.  The stair shafts
   run with water.
 - **Below**: the lamp-keeper dead on the second level and not lying
@@ -845,8 +848,10 @@ At the top of the main street, the pit's own ground:
   took every light back, and counted them: a light not given back was
   a man not up.
 - **The sawpit and the timber yard.**
-- **The coal yard**, empty, and the packhorse stand.
-- **The spoil heap**: black shale, as high as the engine house.
+- **The coal yard**, empty: the last of it went east for the debt.  The
+  packhorse stand beside it.
+- **The spoil heap**, the Tip: black shale, as high as the engine
+  house, with small coal through it that the poor pick out by hand.
 - **The Guild's furnace**, where ironstone was smelted with the pit's
   coal.  Cold, with its ironstone heaps beside it.
 - **The brickfield**: the clay pit and kilns, at the town's edge by
@@ -960,14 +965,82 @@ The names people use, and why.
 | the lamp room's board | the Tally | each man's brass tally hangs on a nail while he is down; a man "left on the nail" is dead below |
 | the well-keepers | the old people | Kettle has no other name for them; the hill folk will not say one |
 
+### How Kettle lives
+
+**Who holds what.**
+
+- **The floor** is the Guild's.  The charter lets the drainers work the
+  ground they drain, so the farms are let by the Guild to tenants, and
+  the rent is paid in grain to the Guild's granary.
+- **What lies beneath** is the Guild's too: the pit, and every outcrop
+  where the seams come up at the floor's edge, where the drains first
+  turned coal up.
+- **The well** is common to all, by the charter.
+- **Hagg Wood** is the town's common.  Each household's cut is drawn
+  by lot.
+- **The High Moss** is the hill folk's, and the town buys its peat.
+- **The river** is free, for eels and trout.
+
+**Who feeds the town.**  A pit town of two thousand grew past what the
+dale's fields feed.  The difference was meal, salt and dried fish
+bought over the Nick with coal money, and the coal money has stopped.
+Now:
+
+- **The Guild's shop**, on credit, feeds most of the town.  Its stock
+  is the granary's rent grain and goods brought over the Nick on the
+  League's credit, which the League extends because the holdwater will
+  pay.  So the Guild feeds the town on money borrowed against selling
+  the town's water.
+- **The farms** feed themselves first and sell the rest for coin or
+  barter.  This year's harvest is thin with the drought.
+- **The river** gives eels in their autumn run downstream, and trout.
+- **The hill folk** sell mutton and peat, fewer since the Guild's men
+  drove them off the rim.
+- **Pedlars and carriers** sell for coin until the Nick closes.
+- **The chapel** keeps a soup pot from what the farms give.
+
+**Where the coal is.**  Kettle sits on coal, and none of it is the
+town's to burn:
+
+- **The face** is under water in the drowned lower galleries.
+- **The upper galleries** are worked out.  What is left is the pillars
+  that hold the roof, and robbing them brings the roof down.
+- **The coal yard** went east for the debt.
+- **The outcrops** are the Guild's by the charter.  A man with a spade
+  could dig them; a man who does is a thief, and the distrainers see
+  to it.  Some dig by night.
+- **The Tip** has small coal through its shale, and the poor pick it
+  out by hand, a sack a day.
+
+**The clock.**  The first snow closes the Nick, some ten weeks after
+the game begins.  After it no carrier comes, and the Guild's shop has
+only what it holds.  Without salt the autumn killing cannot be cured,
+and there is no meat after midwinter.  Without coal a frost hollow is
+killing cold, and the moss's peat was cut for the hill folk, not for
+two thousand people.  The town gets through the autumn as it is; it
+does not get through the winter.  The Guild's dig on the rim has the
+same clock.
+
+**After the ledger.**  Laid on the Well Stone, the ledger ends the
+Guild's charter, and what it held passes to the town: the floor and
+its rents, the granary, what lies beneath, and the outcrops, which any
+household may then dig.  The Guild's shop shuts, and the League's
+credit with it.  The town loses its supplier and gains its larder.
+
+**After the stone.**  With the holdwater laid in the Well Stone, the
+pit is lost under the water, and Kettle shrinks back to what the dale
+can feed: the farms, wool, stone, lime, leather, charcoal, and coal dug
+at the outcrops for its own hearths, not for the League.  Some families
+go over the Nick and do not come back.  The dale keeps its water.
+
 ### What the town needs now
 
 Three weeks without the pit, the town is short of:
 
-- **Fuel.**  No coal.  Peat from the moss and charcoal from the wood,
-  carried in by hand and horse, are all the town burns: enough to cook,
-  not enough to work the forge full, and nothing like the furnace or
-  the engine.
+- **Fuel.**  No coal for the town.  Peat from the moss, charcoal from
+  the wood and what the Tip gives, carried in by hand and horse, are all
+  the town burns: enough to cook, not enough to work the forge full,
+  and nothing like the furnace or the engine.
 - **Water.**  The yard wells are falling.  The well-head runs through
   the Guild's pump.
 - **Money.**  No wages, and the Guild's shop on credit.
