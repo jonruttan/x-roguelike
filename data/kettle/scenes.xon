@@ -3,13 +3,14 @@
 ; (scene NAME GIVER . PROPS): the GIVER creature, one that talks, who
 ; (wants "thing") and, given it, (gives CLASS "name") or (gives goal).
 ; In the lines, {want} is the thing wanted and {where} the way to it
-; from the giver's screen.  Each game draws a chain from these: a
-; scene giving the goal stands in Kettle's square; what it wants,
-; another scene gives, a screen farther out; the last want lies on the
-; ground, or with its carrier (see items.xon).  The chain is read
-; outward and paid inward.  Every way back from the goal runs five links
-; deep, so the longest chain the valley holds, (chain 4 5), is always
-; met (see choices.xon).
+; as the people say it: the band's (where "TEXT") and which way from
+; here, "up in the hills, north-east of here".  Each game draws a chain
+; from these: a scene giving the goal stands in Kettle's square; what
+; it wants, another scene gives, a screen farther out; the last want
+; lies on the ground, or with its carrier (see items.xon).  The chain
+; is read outward and paid inward.  Every way back from the goal runs
+; five links deep, so the longest chain the valley holds, (chain 4 5),
+; is always met (see choices.xon).
 
 ; Who has the ledger, and what they want for it.
 (scene "the widow" "bailiff's widow" (wants "the pump-house key") (gives goal)
