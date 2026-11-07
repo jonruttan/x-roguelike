@@ -443,8 +443,15 @@
                  (match ((not (map-in? m rr cc)) #f) ((map-seen? m rr cc) #f) (#t (not (= (map-tile m rr cc) tile-rock)))))
       (state-dirs))))
 
+; Whether one of the people stands at R C: walking into them talks, so
+; a walk goes round them.
+(def %gm-person-at?
+  (fn (_ g r c)
+    (def cr (state-creature-at g r c))
+    (if (null? cr) #f (creature-trait? cr (lit talks)))))
+
 ; The first step, (DR . DC), of the shortest walk over seen cells, a
-; found trap never among them, from the player to the nearest frontier,
+; found trap or one of the people never among them, from the player to the nearest frontier,
 ; or nil with none: a breadth-first search, each cell remembering the
 ; first step that reached it.
 (def %gm-explore-step
@@ -464,6 +471,7 @@
                              ((not (map-seen? m rr cc)) ())
                              ((not (map-walkable? m rr cc)) ())
                              ((not (null? (traps-found-at g rr cc))) ())
+                             ((%gm-person-at? g rr cc) ())
                              ((creatures-door-diagonal? m r c (first d) (rest d)) ())
                              ((not (null? (Vector ref (at rr cc) came))) ())
                              (#t (do (Vector set! (at rr cc) (if (null? step) d step) came) (pair rr cc)))))
