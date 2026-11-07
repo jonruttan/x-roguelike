@@ -9,7 +9,7 @@ of it and the win at the hub.
 
 ## the set
 
-### the kettle set has ten scenes, two of them giving the goal, a goal with no level, and a chain of two or three
+### the kettle set has nineteen scenes, two of them giving the goal, a goal with no level, and a chain of two or three
 
 ```roguelike
 (def set (spec-set-named "kettle"))
@@ -18,7 +18,7 @@ of it and the win at the hub.
              (List length (data-one set 'goal ())) (data-one set 'chain ())))
 ```
 ---
-    (10 2 2 (2 3))
+    (19 2 2 (2 3))
 
 ## the way to a screen
 
@@ -53,7 +53,7 @@ of it and the win at the hub.
              lies (dist (prop last 'lies)) (List length (List distinct (List map (fn (_ q) (List ref 2 q)) chain)))))
 ```
 ---
-    (#t #t #t 'goal (0 1) #t (#t #f) 2 2)
+    (#t #t #t 'goal (0 1 2) #t (#t #t #f) 3 3)
 
 ## the errand
 
@@ -110,6 +110,7 @@ of it and the win at the hub.
   (fn (_ q)
     (def s (prop q 'screen))
     (travel! (List ref 0 s) (List ref 1 s))
+    (spec-press-until g (lit escape) (fn (_) (null? (game-ask g))) 5)
     (def giver (List find (fn (_ cr) (str=? (creature-name cr) (List ref 2 q))) (game-creatures g)))
     (def key (spec-beside! g giver))
     (game-key! g key)
@@ -123,7 +124,7 @@ of it and the win at the hub.
              (List any? (fn (_ it) (eq? (item-class it) 'token)) (game-pack g)) (first (game-log g))))
 ```
 ---
-    (#t ('done 'done) 'won #t #f "You lay the ledger on the well-head.  Kettle has its proof, and the Guild has lost its mine.")
+    (#t ('done 'done 'done) 'won #t #f "You lay the ledger on the well-head.  Kettle has its proof, and the Guild has lost its mine.")
 
 ## saving
 
@@ -147,4 +148,4 @@ of it and the win at the hub.
              (game-quest-state h (List ref 1 (first (game-chain g))))))
 ```
 ---
-    (#t #t ("the clerk" "the surveyor") #t #t 'open)
+    (#t #t ("the clerk" "the surveyor" "the scrap-picker") #t #t 'open)
