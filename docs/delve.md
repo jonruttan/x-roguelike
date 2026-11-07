@@ -579,6 +579,38 @@ Each age answers it: kin keep it, a company sells it.  The town's
 answer is the player's act.  The question the next sets ask is harder:
 whose water is it, when the Plain is dry because the dale is wet?
 
+### The long arc: the curse
+
+Kettle knows it is cursed: a spring that never fails, and a dale that
+fails anyway.  The long arc asks why.  Each set gives an answer that
+is true and is not the last:
+
+1. **Kettle: the Guild.**  Debt, a broken charter, the coal yard sold
+   east.  The ledger proves it and the town takes the charter back.
+   True, and not why.
+2. **The Delve: the stone.**  It drank the pit and it drinks the dale.
+   The town keeps it.  Truer, and still not why.
+3. **The count: the Brand.**  At the fourth stair each return is a
+   tailed star over a picture of who was tempted under it.  The Guild
+   is only the latest.  The curse comes round every three hundred
+   years.
+4. **The bargain: why the stone drinks at all.**  The well-keepers'
+   first bargain, struck when their kin over the pass were dying of
+   thirst, and what it cost.  Left open.
+
+Each faith already names the curse, so the town has rival answers,
+and each is partly right:
+
+- **The White Church:** the Rot.
+- **The chapel:** the Giver's warning.
+- **The hill folk:** the sky's fire, come looking.
+- **The Listeners:** the fall, coming again.
+
+The player learns which part of each is right.  Under the curse is the
+world's question, what we owe to what keeps us alive: a place that
+holds what everyone needs is taken in every age, and every taking
+leaves it worse.
+
 ## The people
 
 - **Ada**, the bailiff's widow.  Knows where the ledger is; the key
