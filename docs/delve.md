@@ -742,6 +742,19 @@ people reads it its own way.  None is settled.
   whoever knows of the stone is tempted to move it.  The well-keepers
   carried it east under the Brand, and the Guild means to sell it east
   under the Brand again.
+
+  **The Brand's years** are years of deprivation and need: drought,
+  failing wells and thirst, everywhere at once.  In ordinary years water
+  is a commodity, drawn, carried and traded, salt for water.  In the
+  Brand's years it becomes an asset: what is worth having is no longer
+  the water but the place it comes from, and whoever holds the stone
+  holds a country's water.  That is the temptation.  Every return in
+  the count was such a time: the bargain, when the well-keepers' kin
+  over the pass were dying of thirst; the turnings-back, people driven
+  down the stair by need; the settlers, who came up the river for the
+  spring that never fails.  Now there is drought in the hills, the
+  Plain's wells are failing faster, and the League is buying sweet
+  water, and the Guild sees an asset.
 - **The Sparks**: falling stars out of the north-east, every late
   summer, so they are falling now.  They are the herders' sparks that
   fell short of the clough, and the hill folk say each one is a bog
