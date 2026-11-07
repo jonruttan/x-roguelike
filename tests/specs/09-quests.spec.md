@@ -7,7 +7,7 @@ them, what each asks, and what it pays.  On the delve set.
 
 ## meeting
 
-### the lamp-keeper stands on level 2, and a cave crawler there carries the lamp
+### the lamp-keeper stands on level 2, and a knocker there carries the lamp
 
 ```roguelike
 (def g (spec-game-on (spec-set-named "delve") 4 ()))
@@ -20,7 +20,7 @@ them, what each asks, and what it pays.  On the delve set.
 (write (list none (not (null? keeper)) (creature-trait? keeper 'talks) (creature-name carrier) (item-name (creature-carried carrier)) (game-placed g)))
 ```
 ---
-    (#f #t #t "cave crawler" "the foreman's lamp" ("the foreman's lamp" "giver the lamp"))
+    (#f #t #t "knocker" "the foreman's lamp" ("the foreman's lamp" "giver the lamp"))
 
 ### walking into the lamp-keeper opens the quest and shows what it asks, for a turn; again, it presses
 

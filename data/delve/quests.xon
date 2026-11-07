@@ -10,7 +10,7 @@
 ; NAME)) is the player's to choose.
 
 (quest "the lamp" "lamp-keeper" (level 2)
-  (wants bring "the foreman's lamp") (carrier "cave crawler")
+  (wants bring "the foreman's lamp") (carrier "knocker")
   (ask "I kept the lamps at the breach.  When the crew went down I went too,"
        "and I did not come back up.  I do not mind that.  I mind the dark."
        "A crawler took my lamp when I fell.  Bring it back, and you may have"

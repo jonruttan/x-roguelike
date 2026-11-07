@@ -48,9 +48,9 @@ blow on a sleeper -- is in 10-elements.
 (player-hp! (game-player g) 1000)
 (def down! (fn (_) (def m (game-map g)) (player-at! (game-player g) (first (map-down m)) (rest (map-down m))) (game-key! g ">")))
 (down!)
-(def none (List any? (fn (_ cr) (str=? (creature-name cr) "pit foreman")) (game-creatures g)))
+(def none (List any? (fn (_ cr) (str=? (creature-name cr) "fire-boss")) (game-creatures g)))
 (down!)
-(def guardian (List find (fn (_ cr) (str=? (creature-name cr) "pit foreman")) (game-creatures g)))
+(def guardian (List find (fn (_ cr) (str=? (creature-name cr) "fire-boss")) (game-creatures g)))
 (def m (game-map g))
 (def near? (< (state-dist (creature-r guardian) (creature-c guardian) (first (map-down m)) (rest (map-down m))) 2))
 (def turn (game-turn g))
@@ -62,7 +62,7 @@ blow on a sleeper -- is in 10-elements.
 (write (list none near? barred still (game-depth g)))
 ```
 ---
-    (#f #t ("The pit foreman stands over the shaft down.") (3 #t) 4)
+    (#f #t ("The fire-boss stands over the shaft down.") (3 #t) 4)
 
 ## pages
 
@@ -173,9 +173,9 @@ blow on a sleeper -- is in 10-elements.
 (game-key! g ">")
 (game-creatures! g ())
 (def open (spec-open g))
-(creatures-place! g (spec-creature g "cave crawler") (first (rest open)) (rest (rest open)) 'asleep)
+(creatures-place! g (spec-creature g "pit ferret") (first (rest open)) (rest (rest open)) 'asleep)
 (def n (List length (game-creatures g)))
-(write (list (< 1 n) (< n 5) (List all? (fn (_ cr) (str=? (creature-name cr) "cave crawler")) (game-creatures g))
+(write (list (< 1 n) (< n 5) (List all? (fn (_ cr) (str=? (creature-name cr) "pit ferret")) (game-creatures g))
              (List all? (fn (_ cr) (< (state-dist (creature-r cr) (creature-c cr) (first (rest open)) (rest (rest open))) 2)) (game-creatures g))))
 ```
 ---
@@ -187,9 +187,9 @@ blow on a sleeper -- is in 10-elements.
 (def g (spec-game-on (spec-set-named "delve") 4 ()))
 (game-creatures! g ())
 (def line (if (null? (spec-open-line g 3)) (spec-open-line g 2) (spec-open-line g 3)))
-(def cr (spec-place! g "sling imp" (first (rest line)) (rest (rest line)) 100 'awake))
+(def cr (spec-place! g "knocker" (first (rest line)) (rest (rest line)) 100 'awake))
 (creature-state! cr 'fleeing)
-(def shot? (fn (_) (List any? (fn (_ m) (str=? m "The sling imp shoots a stone at you!")) (game-log g))))
+(def shot? (fn (_) (List any? (fn (_ m) (str=? m "The knocker shoots a stone at you!")) (game-log g))))
 (spec-press-until g "." shot? 80)
 (write (list (not (null? line)) (shot?) (< (player-hp (game-player g)) 14)))
 ```
@@ -204,8 +204,8 @@ blow on a sleeper -- is in 10-elements.
 (def open (spec-open g))
 (spec-place! g "ossuary priest" (first (rest open)) (rest (rest open)) 1000 'awake)
 (player-hp! (game-player g) 1000)
-(spec-press-until g "." (fn (_) (List any? (fn (_ cr) (str=? (creature-name cr) "bone husk")) (game-creatures g))) 100)
-(write (list (< 1 (List length (game-creatures g))) (List any? (fn (_ cr) (str=? (creature-name cr) "bone husk")) (game-creatures g))
+(spec-press-until g "." (fn (_) (List any? (fn (_ cr) (str=? (creature-name cr) "bone heap")) (game-creatures g))) 100)
+(write (list (< 1 (List length (game-creatures g))) (List any? (fn (_ cr) (str=? (creature-name cr) "bone heap")) (game-creatures g))
              (List any? (fn (_ m) (Str8 starts? "The ossuary priest calls" m)) (game-log g))))
 ```
 ---
@@ -292,7 +292,7 @@ blow on a sleeper -- is in 10-elements.
 (player-hp! (game-player g) 1000)
 (game-creatures! g ())
 (def open (spec-open g))
-(creatures-place! g (spec-creature g "cave crawler") (first (rest open)) (rest (rest open)) 'asleep)
+(creatures-place! g (spec-creature g "pit ferret") (first (rest open)) (rest (rest open)) 'asleep)
 (def alone (List length (game-creatures g)))
 (game-creatures! g ())
 (spec-press-until g "s" (fn (_) #f) 60)
@@ -316,7 +316,7 @@ blow on a sleeper -- is in 10-elements.
 (game-creatures! g ())
 (def m (game-map g))
 (def open (spec-open g))
-(def sleeper (spec-place! g "cave crawler" (first (rest open)) (rest (rest open)) 1000 'asleep))
+(def sleeper (spec-place! g "pit ferret" (first (rest open)) (rest (rest open)) 1000 'asleep))
 (game-key! g "s")
 (def woke (creature-state sleeper))
 (creature-state! sleeper 'wandering)

@@ -10,24 +10,24 @@
 (creature "mine rat" "r" (depth 1 3) (level 1) (hp 2 5) (attack 1 3) (defence 2) (exp 2) (pack 1 2) (traits erratic))
 (creature "drip toad" "t" (depth 1 5) (level 1) (hp 4 8) (attack 1 4) (defence 2) (exp 3) (traits venom slow))
 (creature "gas mote" "m" (depth 2 5) (level 2) (hp 1 3) (attack 1 2) (defence 6) (exp 3) (pack 2 5) (traits erratic dazzle wakeful))
-(creature "sling imp" "i" (depth 2 6) (level 2) (hp 4 9) (attack 1 3) (defence 4) (exp 6) (ranged 2 5) (shot "a stone") (traits ranged skittish))
-(creature "cave crawler" "c" (depth 2 7) (level 2) (hp 5 10) (attack 1 5) (defence 3) (exp 5) (pack 2 3))
+(creature "knocker" "k" (depth 2 6) (level 2) (hp 4 9) (attack 1 3) (defence 4) (exp 6) (ranged 2 5) (shot "a stone") (traits ranged skittish))
+(creature "pit ferret" "f" (depth 2 3) (level 2) (hp 5 10) (attack 1 5) (defence 3) (exp 5) (pack 2 3))
 (creature "gallery shade" "g" (depth 2 4) (level 2) (hp 5 9) (attack 1 4) (defence 4) (exp 6) (traits cold slow))
-(creature "pit foreman" "F" (depth 0 0) (level 3) (hp 20 28) (attack 2 7) (defence 5) (exp 45) (traits cold regen))
+(creature "fire-boss" "F" (depth 0 0) (level 3) (hp 20 28) (attack 2 7) (defence 5) (exp 45) (traits cold regen))
 
 ; The Flood, 4 to 6: what lives in standing water.
 (creature "lantern eel" "e" (depth 4 7) (level 3) (hp 8 14) (attack 2 6) (defence 4) (exp 10) (traits dazzle fast))
-(creature "silt crab" "C" (depth 4 7) (level 3) (hp 8 14) (attack 1 5) (defence 7) (exp 9) (pack 1 3) (traits slow))
-(creature "pit lurker" "L" (depth 4 8) (level 4) (hp 16 26) (attack 3 9) (defence 5) (exp 20) (traits stationary sticky))
-(creature "flood wraith" "W" (depth 5 7) (level 5) (hp 10 16) (attack 2 8) (defence 6) (exp 25) (traits invisible cold))
+(creature "silt crayfish" "C" (depth 4 7) (level 3) (hp 8 14) (attack 1 5) (defence 7) (exp 9) (pack 1 3) (traits slow))
+(creature "great leech" "L" (depth 4 8) (level 4) (hp 16 26) (attack 3 9) (defence 5) (exp 20) (traits stationary sticky))
+(creature "drowned shade" "S" (depth 5 7) (level 5) (hp 10 16) (attack 2 8) (defence 6) (exp 25) (traits invisible cold))
 (creature "undertow" "U" (depth 0 0) (level 6) (hp 32 44) (attack 4 10) (defence 6) (exp 90) (traits cold sticky regen))
 
 ; The Old Works, 7 to 9: the builders' dead, and their keepers.
-(creature "bone husk" "z" (depth 6 10) (level 3) (hp 6 12) (attack 1 6) (defence 3) (exp 7) (traits slow))
-(creature "tunnel shrike" "s" (depth 6 12) (level 5) (hp 9 15) (attack 2 7) (defence 7) (exp 28) (traits fast erratic))
-(creature "ossuary priest" "P" (depth 7 10) (level 5) (hp 12 20) (attack 2 6) (defence 5) (exp 30) (summon "bone husk") (traits summon))
+(creature "bone heap" "z" (depth 7 10) (level 3) (hp 6 12) (attack 1 6) (defence 3) (exp 7) (traits slow))
+(creature "cave bat" "b" (depth 7 12) (level 5) (hp 9 15) (attack 2 7) (defence 7) (exp 28) (traits fast erratic))
+(creature "ossuary priest" "P" (depth 7 10) (level 5) (hp 12 20) (attack 2 6) (defence 5) (exp 30) (summon "bone heap") (traits summon))
 (creature "rust golem" "G" (depth 7 11) (level 7) (hp 30 45) (attack 5 12) (defence 8) (exp 70) (traits slow regen))
-(creature "hollow mason" "M" (depth 0 0) (level 9) (hp 38 52) (attack 5 12) (defence 9) (exp 130) (summon "bone husk") (traits summon slow regen))
+(creature "doorkeeper" "M" (depth 0 0) (level 9) (hp 38 52) (attack 5 12) (defence 9) (exp 130) (summon "bone heap") (traits summon slow regen))
 
 ; The people: each talks when walked into, and asks for something (see
 ; quests.xon); never drawn for a level.
@@ -36,6 +36,6 @@
 (creature "pump-wright" "&" (depth 0 0) (level 1) (hp 1 1) (attack 0 0) (defence 0) (exp 0) (traits talks))
 
 ; The Heart, 10 to 12: what keeps the stone company.
-(creature "deep warden" "D" (depth 9 12) (level 9) (hp 40 60) (attack 6 14) (defence 8) (exp 150) (ranged 4 10) (shot "a shard of light") (traits ranged regen wakeful))
-(creature "lode spark" "v" (depth 10 12) (level 8) (hp 6 10) (attack 2 6) (defence 8) (exp 22) (pack 2 4) (traits fast erratic dazzle wakeful))
-(creature "lodestar keeper" "K" (depth 0 0) (level 11) (hp 55 80) (attack 7 16) (defence 9) (exp 300) (summon "tunnel shrike") (traits summon regen wakeful))
+(creature "glass keeper" "D" (depth 9 12) (level 9) (hp 40 60) (attack 6 14) (defence 8) (exp 150) (ranged 4 10) (shot "a shard of light") (traits ranged regen wakeful))
+(creature "glow-midge" "v" (depth 10 12) (level 8) (hp 6 10) (attack 2 6) (defence 8) (exp 22) (pack 2 4) (traits fast erratic dazzle wakeful))
+(creature "well keeper" "K" (depth 0 0) (level 11) (hp 55 80) (attack 7 16) (defence 9) (exp 300) (summon "cave bat") (traits summon regen wakeful))
