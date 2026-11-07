@@ -13,11 +13,13 @@
 
 ; Who has the ledger, and what they want for it.
 (scene "the widow" "bailiff's widow" (wants "the pump-house key") (gives goal)
-  (ask "My husband was the Guild's bailiff, and kept their ledger in the pump"
-       "house, under the floor.  It goes to the town, not the Guild.  The key"
-       "went astray when he died; there is one to be had {where}.")
+  (ask "My husband was the Guild's head bailiff.  Before he went below after"
+       "the foreman's crew he put the Guild's ledger under the pump-house floor,"
+       "and he did not come up.  It goes to the town, not the Guild.  The key"
+       "went astray; there is one to be had {where}.")
   (again "The key, {where}.")
-  (done "That is the key.  The ledger is the town's now; lay it on the well-head."))
+  (done "That is the key.  The ledger is the town's now; lay it on the well-head,"
+        "and if they ask, Ada sent you."))
 (scene "the clerk" "Guild clerk" (wants "a letter of the council") (gives goal)
   (ask "I copied the ledger before the Guild sealed it, and I will hand the"
        "copy over on the council's word and nothing less.  Bring me a letter"
@@ -59,9 +61,11 @@
   (done "The pin.  Give me an hour and the stone turns; take the sack by the door."))
 
 ; Who can get the council's letter.
-(scene "the surveyor" "surveyor" (wants "the surveyor's chain") (gives token "a letter of the council")
-  (ask "The council will sign a letter when I show them the levels, and I"
-       "cannot level without my chain.  A crow took the brass end of it, {where}.")
+(scene "the town surveyor" "town surveyor" (wants "the surveyor's chain") (gives token "a letter of the council")
+  (ask "The Guild's surveyor went below with the foreman's crew and has not"
+       "come up, so the council has me.  It will sign a letter when I show it"
+       "the levels, and I cannot level without my chain.  A crow took the brass"
+       "end of it, {where}.")
   (again "The chain, {where}.")
   (done "The chain.  The levels are what I said they were, and the council has"
         "signed.  Here is the letter."))
