@@ -8,15 +8,16 @@
 ;
 ; A save is xon, a form a line: the game's numbers, the player, each
 ; item by its class and name, each creature by its name, the pages
-; placed, the quests and what they placed, the chain, the level's traps by their
-; kind's name, its tiles and seen flags as strings of digits, its
-; rooms and stairs; then, in a world of screens, the doors laid and the
-; interior stood in, and each other level kept, screen or interior,
-; after a (screen KEY) line, the same way.
-; Reading one builds the game again on the same set; a thing the set no
-; longer has is left out.  A save is read once and then removed by the
-; play that read it, so a game is played through once.  The scores are
-; lines, best first.
+; placed, the quests and what they placed, the chain, the choices it was
+; played with, the level's traps by their kind's name, its tiles and
+; seen flags as strings of digits, its rooms and stairs; then, in a
+; world of screens, the doors laid and the interior stood in, and each
+; other level kept, screen or interior, after a (screen KEY) line, the
+; same way.  Reading one builds the game again on the same set with the
+; same choices; a thing the set no longer has is left out.  A save is
+; read once and then removed by the play that read it, so a game is
+; played through once.  The scores are lines, best first, each with the
+; choices its game was played with.
 
 (module roguelike/save)
 
@@ -24,7 +25,7 @@
 (import x/sys/posix)
 (import x/sys/file)
 (import x/codec/xon)
-(import roguelike/data data-all data-prop)
+(import roguelike/data data-all data-prop data-choices data-chosen data-choose)
 (import roguelike/items items-page-named)
 (import roguelike/traps trap-make trap-r trap-c trap-name trap-found?)
 (import roguelike/map
@@ -137,7 +138,8 @@
             (pair (lit quests) (List flat-map (fn (_ q) (list (first q) (symbol->str (rest q)))) (game-quests g)))
             (pair (lit placed) (game-placed g))
             (pair (lit doors) (List flat-map (fn (_ d) (list (first d) (rest d))) (List reverse (game-doors g))))
-            (pair (lit inside) (if (null? (game-inside g)) () (list (game-inside g)))))
+            (pair (lit inside) (if (null? (game-inside g)) () (list (game-inside g))))
+            (pair (lit choices) (List flat-map (fn (_ c) (List map symbol->str c)) (data-chosen (game-set g)))))
       (%sv-chain-forms g)
       (List map (fn (_ args) (pair (lit guise) (pair (symbol->str (first args)) (rest args)))) (game-guises g))
       (List map (fn (_ it) (%sv-item (lit pack) it)) (game-pack g))
@@ -275,15 +277,25 @@
              (Str8 index-of "/" carried)))
           cr))))
 
-; The game saved at PATH on SET, ROWS by COLS, or nil with none there
-; or one that cannot be read.  The guises are the saved game's: the
-; game is made with its seed and then given them.
+; The choices saved in FORMS, (GROUP NAME) each, that PLAIN still offers.
+(def %sv-choices
+  (fn (_ forms plain)
+    (def pairs (fn (self l) (if (null? l) () (pair (list (Str8 ->sym (first l)) (Str8 ->sym (List ref 1 l))) (self (List drop 2 l))))))
+    (def offered (data-choices plain))
+    (List filter (fn (_ c) (List any? (fn (_ o) (if (eq? (first o) (first c)) (eq? (List ref 1 o) (List ref 1 c)) #f)) offered))
+      (pairs (%sv-one forms (lit choices))))))
+
+; The game saved at PATH on the set PLAIN, ROWS by COLS, or nil with
+; none there or one that cannot be read.  The game is played with the
+; choices it was saved with, those the set still offers.  The guises are
+; the saved game's: the game is made with its seed and then given them.
 (def save-read
-  (fn (_ path set rows cols)
+  (fn (_ path plain rows cols)
     (if (not (File exists? path)) ()
       (guard (e ())
         (do (def parts (%sv-split (Xon parse (File read-all path)) () () ()))
             (def forms (rest (first parts)))
+            (def set (data-choose plain (%sv-choices forms plain)))
             (def head (%sv-one forms (lit saved)))
             (def g (game-new set (List ref 0 head) rows cols))
             (Vector set! 12 (List map (fn (_ a) (pair (Str8 ->sym (first a)) (rest a))) (%sv-all forms (lit guise))) g)

@@ -87,4 +87,42 @@
              (first (rest (rest (first set)))))
            (#t (self (rest set) what default)))))
 
-(provide roguelike/data data-load data-all data-one data-get data-prop data-prop1 data-trait? data-glyph)
+; --- choices -------------------------------------------------------------------
+
+; A set's (choice GROUP NAME . FORMS) is one way to play it, picked
+; from GROUP: its FORMS go in front of the set's, so a knob the set has
+; once -- (world ...), (chain ...), (creatures ...) -- is the choice's,
+; and a form it has many of -- (scene ...), (band ...) -- is added to.
+; A set with choices made carries a (chosen GROUP NAME) for each in front.
+
+; Every (GROUP NAME) SET offers, in order.
+(def data-choices (fn (_ set) (List map (fn (_ c) (list (first c) (List ref 1 c))) (data-all set (lit choice)))))
+
+; The (GROUP NAME) choices SET was made with.
+(def data-chosen (fn (_ set) (data-all set (lit chosen))))
+
+; A choice (GROUP NAME) as GROUP=NAME.
+(def data-choice-text (fn (_ pk) (Str8 append (symbol->str (first pk)) "=" (symbol->str (List ref 1 pk)))))
+
+; SET with each of PICKS, (GROUP NAME) each, made: their forms in front.
+; A pick the set does not offer, or a group picked twice, raises.
+(def data-choose
+  (fn (_ set picks)
+    (def offered (data-all set (lit choice)))
+    (def find (fn (_ pk) (List find (fn (_ c) (if (eq? (first c) (first pk)) (eq? (List ref 1 c) (List ref 1 pk)) #f)) offered)))
+    (def offers (fn (_) (if (null? offered) "none" (Str8 join " " (List map data-choice-text (data-choices set))))))
+    (List for-each
+      (fn (_ pk)
+        (match ((null? (find pk))
+                 (Err raise (lit arg) (Str8 append "the set has no choice " (data-choice-text pk) "; it has " (offers)) ()))
+               ((< 1 (List count-if (fn (_ q) (eq? (first q) (first pk))) picks))
+                 (Err raise (lit arg) (Str8 append (symbol->str (first pk)) " is chosen more than once") ()))
+               (#t ())))
+      picks)
+    (List append
+      (List map (fn (_ pk) (list (lit chosen) (first pk) (List ref 1 pk))) picks)
+      (List flat-map (fn (_ pk) (List drop 2 (find pk))) picks)
+      set)))
+
+(provide roguelike/data data-load data-all data-one data-get data-prop data-prop1 data-trait? data-glyph
+  data-choices data-chosen data-choice-text data-choose)
