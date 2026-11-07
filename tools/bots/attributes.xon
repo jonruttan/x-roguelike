@@ -1,0 +1,35 @@
+; attributes.xon -- what the balance bot is made of.
+;
+; (attribute NAME LO HI): each game's bot rolls a whole number in LO..HI
+; for each, from the game's seed, so a seed is the same player each run.
+; BALANCE_QUAFF and the like fix one for every game of a run.
+;   quaff      drinks mending under this % of its hit points
+;   retreat    with a foe beside it, steps away under this %, 0 never
+;   rest       with nothing hostile in view, rests under this %
+;   ready      rests to this % before stairs down and before a guardian
+;   courage    goes for a foe it sees only at or above this %
+;   chase      walks this far, at most, to fight a foe it sees
+;   greed      walks this far, at most, to an item with a hostile in view
+;   curiosity  sees this % of a level's open ground before it takes
+;              stairs it knows, 100 all it can reach
+
+(attribute quaff 0 60)
+(attribute retreat 0 60)
+(attribute rest 0 100)
+(attribute ready 0 100)
+(attribute courage 0 100)
+(attribute chase 0 40)
+(attribute greed 0 30)
+(attribute curiosity 0 100)
+
+; (archetype NAME TEXT (ATTRIBUTE LO HI) ...): a kind of player, each
+; attribute it names narrowed to LO..HI, the rest rolled in full.
+; BALANCE_ARCHETYPE names one; without it every attribute rolls in full.
+(archetype "brawler" "goes for whatever it sees and rests little"
+  (courage 0 30) (chase 20 40) (rest 20 50) (retreat 0 0))
+(archetype "careful" "drinks early, rests to full, backs off when losing"
+  (quaff 40 60) (retreat 30 60) (rest 80 100) (ready 90 100) (courage 60 100) (chase 0 6))
+(archetype "magpie" "walks to whatever it sees lying, whatever is about"
+  (greed 15 30) (curiosity 90 100))
+(archetype "diver" "takes the stairs as soon as it knows them"
+  (curiosity 0 20) (courage 70 100) (chase 0 4))
