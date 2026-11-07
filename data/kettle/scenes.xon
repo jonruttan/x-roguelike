@@ -7,14 +7,16 @@
 ; scene giving the goal stands in Kettle's square; what it wants,
 ; another scene gives, a screen farther out; the last want lies on the
 ; ground, or with its carrier (see items.xon).  The chain is read
-; outward and paid inward.
+; outward and paid inward.  Every way back from the goal runs five links
+; deep, so the longest chain the valley holds, (chain 4 5), is always
+; met (see choices.xon).
 
 ; Who has the ledger, and what they want for it.
 (scene "the widow" "bailiff's widow" (wants "the pump-house key") (gives goal)
   (ask "My husband was the Guild's bailiff, and kept their ledger in the pump"
        "house, under the floor.  It goes to the town, not the Guild.  The key"
-       "went to the watchman when he died; the watchman is {where}.")
-  (again "The key.  The watchman has it, {where}.")
+       "went astray when he died; there is one to be had {where}.")
+  (again "The key, {where}.")
   (done "That is the key.  The ledger is the town's now; lay it on the well-head."))
 (scene "the clerk" "Guild clerk" (wants "a letter of the council") (gives goal)
   (ask "I copied the ledger before the Guild sealed it, and I will hand the"
@@ -27,7 +29,7 @@
 (scene "the watchman" "night watchman" (wants "a flask of spirits") (gives token "the pump-house key")
   (ask "I have the pump-house key, and I have had a cold night every night"
        "since the pumps stopped.  A flask of spirits and the key is yours."
-       "The ferryman keeps a flask; he is {where}.")
+       "There is a flask to be had {where}.")
   (again "A flask, {where}, and the key is yours.")
   (done "Ah.  That warms.  The key; the lock sticks, so lift the door as you turn it."))
 (scene "the smith" "smith" (wants "a sack of flour") (gives token "the pump-house key")
@@ -52,7 +54,7 @@
 ; Who has flour.
 (scene "the miller" "miller" (wants "the mill pin") (gives token "a sack of flour")
   (ask "No flour grinds without the pin that holds the stone, and the pin fell"
-       "in the race and washed down.  It will be lying {where}.")
+       "in the race and washed down, {where}.")
   (again "The pin, {where}.")
   (done "The pin.  Give me an hour and the stone turns; take the sack by the door."))
 
@@ -73,3 +75,58 @@
        "dark.  My lamp was taken on the road, {where}.")
   (again "The lamp, {where}.")
   (done "A lamp.  The order, from under the sacks; it is sealed still."))
+
+; Who has the ferry pole, the lamp, the mill pin, the brass of the
+; chain: what was lost on the way out, found by someone farther out.
+(scene "the eel-catcher" "eel-catcher" (wants "a coil of net twine") (gives token "the ferry pole")
+  (ask "A pole came down the river into my weir, and I have been propping my"
+       "nets on it.  Twine to mend them and I need no prop.  Twine is to be"
+       "had {where}.")
+  (again "Twine, {where}.")
+  (done "That will mend them.  Take the pole; it was the ferry's, I suppose."))
+(scene "the pedlar" "pedlar" (wants "a whetstone") (gives token "the lamp")
+  (ask "I gave a road thief a penny for this lamp and asked him nothing.  It"
+       "goes back for a fair trade: my whetstone cracked in the frost, and a"
+       "pedlar with dull shears cuts no cloth.  There is a whetstone {where}.")
+  (again "A whetstone, {where}.")
+  (done "A good grit.  The lamp, then, and tell no one where you had it."))
+(scene "the millwright" "millwright" (wants "a billet of seasoned oak") (gives token "the mill pin")
+  (ask "That pin is in the bottom of the race and will stay there.  I can turn"
+       "a new one, but not from green wood; it splits under the stone.  Find"
+       "me a billet of seasoned oak, {where}.")
+  (again "Seasoned oak, {where}.  Green will not do.")
+  (done "Three summers dry at least.  Here is the pin, turned while you watched."))
+(scene "the scrap-picker" "scrap-picker" (wants "a pair of hobnailed boots") (gives token "the surveyor's chain")
+  (ask "The crows bring me what shines and I sell it on.  A brass chain, yes,"
+       "I had it off a nest.  My boots are through at the toe, and the bog is"
+       "cold.  Hobnailed boots, {where}, and the chain is yours.")
+  (again "Boots, {where}.")
+  (done "Dry feet.  The chain; every link is there, I counted them."))
+
+; Who has the twine, the whetstone, the oak and the boots: the far
+; valley, where the last want lies out on the ground.
+(scene "the chandler" "chandler" (wants "a pot of pitch") (gives token "a coil of net twine")
+  (ask "Twine I sell, and I would give a coil for the pitch I paid for and"
+       "never had.  The cart that brought it turned over {where}.")
+  (again "My pitch, {where}.")
+  (done "Paid for twice, had once.  Here is the twine."))
+(scene "the knife-grinder" "knife-grinder" (wants "a treadle strap") (gives token "a whetstone")
+  (ask "My wheel turns on a leather strap, and the strap snapped and went"
+       "into the ditch {where}.  No strap, no wheel; no wheel, no stone to spare.")
+  (again "The strap, {where}.")
+  (done "It turns.  Take the old stone; this one is new and finer."))
+(scene "the woodcutter" "woodcutter" (wants "an iron wedge") (gives token "a billet of seasoned oak")
+  (ask "I have oak stacked three summers, and I split none of it without my"
+       "wedge.  I left it in a stump {where}, and the stump is still there.")
+  (again "The wedge, {where}.")
+  (done "That is the wedge.  A billet off the old stack; mind the grain."))
+(scene "the cobbler" "cobbler" (wants "a roll of tanned hide") (gives token "a pair of hobnailed boots")
+  (ask "Boots from what?  I have nails and no leather.  The tanner has a roll"
+       "of hide to spare; the tanner is {where}.")
+  (again "Hide, {where}.")
+  (done "Good hide.  The boots; the nails are set close for the bog."))
+(scene "the tanner" "tanner" (wants "a sack of oak bark") (gives token "a roll of tanned hide")
+  (ask "No hide tans without bark, and my bark is cut and bagged and lying"
+       "where I left it, {where}.  The smell keeps people off, mostly.")
+  (again "The bark, {where}.")
+  (done "Bark.  Take the roll from the top of the pile; it is the best of them."))
