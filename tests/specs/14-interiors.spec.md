@@ -78,7 +78,8 @@ a hundred, so a screen of the first ring always has a door.
 (game-key! g ">")
 (def m (game-map g))
 (write (list (game-inside g) (same? m screen) (map-down m) (= (player-r p) (first (map-up m))) (= (player-c p) (rest (map-up m)))
-             (List length (map-rooms m)) (game-messages g) (game-level-key g) (List length (game-kept g))
+             (List length (map-rooms m)) (List filter (fn (_ x) (if (str=? x "You go into the shed.") #t (str=? x "A shed."))) (List reverse (List take 5 (game-log g))))
+             (game-level-key g) (List length (game-kept g))
              (Str8 starts? "Screen:4,2 " (List ref 23 (spec-screen g)))))
 ```
 ---
