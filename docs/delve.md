@@ -239,6 +239,12 @@ The stone takes water in and gives it out where it lies.
   The old ground water follows it, slowly, over seasons.  Carried over
   the pass, the Plain would get a spring and the dale's wells would
   fail.  Laid anywhere in the dale, the dale keeps its water.
+- **Under the Brand** it drinks harder.  It answers the fire in the sky
+  by drawing water, as the grotto's mark says: fire given from above,
+  water drawn from below.  Its reach grows, ground water runs to it
+  from farther off, and springs and wells fail across the hills and
+  the Plain while the dale's well runs as it always has.  This is why
+  the Brand's years are years of need.
 
 Nothing else in the dale is uncanny of itself.  **The uncanny goes where
 the stone's water goes**: dead that do not lie still, stone that walks,
@@ -348,7 +354,9 @@ The air lies in layers, as the rock does.  From below:
   In a winter with the pit working, coal smoke lies under the cold air.
 - A northern latitude: low sun, long summer evenings, short winter days.
 - This summer is a drought: no rain for a month, the becks low, the
-  river thin.  The well-head runs as it always has.
+  river thin.  The becks are falling faster than a dry month explains:
+  the Brand is up, and the stone is drinking harder.  The well-head
+  runs as it always has.
 
 ### Soil
 
@@ -469,7 +477,9 @@ charter.
 9. **The water.**  The breach opens a short way from the hills to the
    stone.  The coal measures' water now runs to the breach and down,
    through every gallery on the way: the sumps rise in a drought.  The
-   Guild cuts coal to the pumps by a third, since coal is money owed
+   Brand rose the same month, and under it the stone drinks harder, so
+   more water comes through the workings each week than the engine was
+   built to lift.  The Guild cuts coal to the pumps by a third, since coal is money owed
    east, and orders them run harder.  The shallow wells in Kettle's
    yards begin to fall.
 10. **The first order.**  The Guild sends six down past the breach to
@@ -743,7 +753,8 @@ people reads it its own way.  None is settled.
   carried it east under the Brand, and the Guild means to sell it east
   under the Brand again.
 
-  **The Brand's years** are years of deprivation and need: drought,
+  **The Brand's years** are years of deprivation and need, because the
+  stone drinks harder under it (see **The stone's rule**): drought,
   failing wells and thirst, everywhere at once.  In ordinary years water
   is a commodity, drawn, carried and traded, salt for water.  In the
   Brand's years it becomes an asset: what is worth having is no longer
@@ -1151,6 +1162,27 @@ The names people use, and why.
   by lot.
 - **The High Moss** is the hill folk's, and the town buys its peat.
 - **The river** is free, for eels and trout.
+
+**Why the spring town ails.**  Kettle is not a spring town but a pit
+town that grew round a spring, and in the Brand's years the spring is
+part of what ails it:
+
+- **Water feeds nobody.**  The well keeps two thousand people alive; it
+  does not keep them fed, warm or paid.  That was the coal's work, and
+  the pit is stopped.
+- **The stone drank the pit.**  Drinking harder under the Brand, it
+  drew more water through the workings than the engine was built for,
+  and the engine broke under it.
+- **It drinks the dale too.**  Its draw does not stop at the dale's
+  edge.  The yard wells fall, the becks run low and the harvest is
+  thin, while the well-head runs as it always has.
+- **The well is common; its worth is not.**  With the country thirsty,
+  the water is an asset, and an asset is taken.  The Guild feeds the
+  town on credit borrowed against selling the town's water east, and
+  its bailiffs and distrainers are in the dale because of what the
+  dale holds.
+
+Everyone else is thirsty, so Kettle's spring is worth taking.
 
 **Who feeds the town.**  A pit town of two thousand grew past what the
 dale's fields feed.  The difference was meal, salt and dried fish
