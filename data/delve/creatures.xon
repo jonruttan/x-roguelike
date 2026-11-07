@@ -5,13 +5,16 @@
 ; summon calls a (summon "name") to its side while you are in view.
 ; A guardian has (depth 0 0): it is never drawn for a level, only put
 ; by its band on the band's last level.
-
+;
+; A band brings its kinds in a level or two at a time, not all at once:
+; level 2 adds the shade and the sling imp, level 3 the motes and the
+; crawlers.
 ; The Galleries, 1 to 3: what the mine bred, and one who did not leave.
 (creature "mine rat" "r" (depth 1 3) (level 1) (hp 2 5) (attack 1 3) (defence 2) (exp 2) (pack 1 2) (traits erratic))
 (creature "drip toad" "t" (depth 1 5) (level 1) (hp 4 8) (attack 1 4) (defence 2) (exp 3) (traits venom slow))
-(creature "gas mote" "m" (depth 2 5) (level 2) (hp 1 3) (attack 1 2) (defence 6) (exp 3) (pack 2 5) (traits erratic dazzle wakeful))
-(creature "sling imp" "i" (depth 2 6) (level 2) (hp 4 9) (attack 1 3) (defence 4) (exp 6) (ranged 2 5) (shot "a stone") (traits ranged skittish))
-(creature "cave crawler" "c" (depth 2 7) (level 2) (hp 5 10) (attack 1 5) (defence 3) (exp 5) (pack 2 3))
+(creature "gas mote" "m" (depth 3 5) (level 2) (hp 1 3) (attack 1 2) (defence 6) (exp 3) (pack 2 5) (traits erratic dazzle wakeful))
+(creature "sling imp" "i" (depth 2 6) (level 2) (hp 4 9) (attack 1 3) (defence 4) (exp 6) (ranged 1 3) (shot "a stone") (traits ranged skittish))
+(creature "cave crawler" "c" (depth 3 7) (level 2) (hp 5 10) (attack 1 5) (defence 3) (exp 5) (pack 1 3))
 (creature "gallery shade" "g" (depth 2 4) (level 2) (hp 5 9) (attack 1 4) (defence 4) (exp 6) (traits cold slow))
 (creature "pit foreman" "F" (depth 0 0) (level 3) (hp 20 28) (attack 2 7) (defence 5) (exp 45) (traits cold regen))
 
