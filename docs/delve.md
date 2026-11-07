@@ -27,14 +27,83 @@ out from Kettle's square to the rim.
 
 | Age | The stone is | Below | Above |
 |---|---|---|---|
-| **Industrial**: the Guild, now | a commodity with a price | the Galleries: the pit | Kettle and its farms, on the coal measures |
+| **Mercantile**: the Guild, now | a commodity with a price | the Galleries: the pit | Kettle and its farms, on the coal measures |
 | **Animistic**: the well-keepers, long gone | kin: kept, and bargained with | the Old Works: the well-keepers' stair | the rim: their city's stones on the limestone |
 | **Archaic**: before anyone | itself: what draws the water | the Well-House: the stone in its pool | the bog and the wild hills |
 
 The Flood lies between the Galleries and the Old Works, where the pit
 broke into the well-keepers' stair.  It belongs to no age: it is the
-breach itself, the industrial age's water pouring into the animistic
+breach itself, the mercantile age's water pouring into the animistic
 age's works.
+
+### Ways of living
+
+The three ages are what the stone is to people.  Within them, people
+have lived four ways, each grown out of the one before, and two more
+are coming.  Each way has left its marks, its places and its
+adversaries.
+
+| Way | Who | When | What it left | Where it is now | Its adversaries |
+|---|---|---|---|---|---|
+| **Tribal** | the herders who first came for the rim's grazing | before the city | rags on thorns, the old numbers | the hills and the High Moss; the hill folk are what is left of it | none of its own yet (see **Ideas**) |
+| **Communal** | the well-keepers, keeping the stone in common as kin | the long keeping | the stair, the channels, the well mouth, the ossuary | the Well-House and the Old Works | bone heaps, the ossuary priest |
+| **City-state** | the well-keepers' city on the rim | its height, to the bargain | walls and vaults, and the keepers built at its end | the rim and the Old Works' vaults; the Plain's towns keep the form | wall keepers, the doorkeeper, the glass keeper, the well keeper |
+| **Mercantile** | Kettle's settlers up the Seethe, the Guild, and the League's towns and banks | three hundred years ago, to now | the drained floor, the charter cut into the old people's stone, the market, the pit, the terraces, the Tip, the White Church | Kettle, its farms and the Galleries; the Plain's towns | the fire-boss, gallery shades, salvagers, the Guild's bailiffs, distrainers, the League's agents, Rot-hunters, salt-runners |
+| **Colonial** | nobody yet | coming | its first sign: the League buying sweet water from the dales | the Plain, reaching | none yet |
+| **Industrial** | nobody yet | coming | its first signs: the engine house, the furnace, the brickfield | the Plain first, where the League has the powder and the money | none yet |
+
+Before them all is the archaic, with no people in it: the stone, its
+pool, dripstone, the old bear and the pool-born.
+
+The mercantile way is now.  Kettle trades within a packhorse's reach:
+coal, wool and leather go over the Nick, salt comes back, and dried
+fish comes up from the coast.  Nobody carries goods farther than that,
+and nobody rules a place they cannot ride to.  The League reaches into
+the dales by credit, bought charters and hired men, not by holding
+them.  The Guild borrowed the Plain's form to borrow its money.
+
+Two ways are coming, and the holdwater would bring both:
+
+- **Colonial**: the Plain taking what a dale has and carrying it off to
+  the centre.  The League buying sweet water is its beginning; selling
+  the holdwater east would be the act in full.
+- **Industrial**: the dale is approaching it, with one engine bought on
+  credit, one furnace, horses at the gins, and no powder.  The engine
+  was industry's first foothold, and when it broke the dale fell back
+  on horses, peat and charcoal.  Industry would come from the Plain
+  with the League's powder and money, and the holdwater's price would
+  pay for it.
+
+### What each way left in words
+
+The dale speaks the settlers' tongue, but each way of living left words
+in it, and traditions kept by people who have forgotten the reasons.
+The oldest words are on the oldest things: water and heights.
+
+- **Tribal**: names nobody can explain, on waters and heights.  The
+  hill folk call the river the Oune and the High Moss Harrack, and count
+  their sheep unna, tava, tirra, sorra, pell.  The rags tied by springs
+  are theirs.
+- **Communal**: words for keeping and kin.  The hill folk call a spring
+  "a mother", and "holdwater" is the settlers' rendering of their tale
+  of "the water that holds".  A child's first drink is from the Well
+  Stone, "first water"; Kettle still keeps that, and the White Church
+  gives salt instead.
+- **City-state**: words of measure and order.  The hill folk measure a
+  climb in flights, the rise of a stair between landings, and call a
+  walled yard a court.  At midsummer they walk the line of the old wall
+  round the rim, "walking the wall", not knowing it was a city's.  The
+  marks are the city's writing: pictures, copied now on cloth.
+- **Mercantile, the settlers'**: the dale's everyday speech: beck,
+  clough, force, moss, edge, nick, hagg and scar, and the names they
+  gave: the Seethe, Kettle, Quern Edge.  The moot, the charter, the
+  market, and the chapel's light on the river.
+- **Mercantile, the Plain's**: words that came with money and the
+  church: guild, ledger, bailiff, credit, distraint; the Rot; salt
+  oaths, and bread and salt for a guest.
+- **The pit**: the newest words: firedamp, gin, banksman, hewer, putter,
+  the Beam, the Tip, the Tally.  The fire-boss and his craft came from
+  Halmere's salt miners.
 
 ### Three questions
 
@@ -135,7 +204,7 @@ rock coming up round it.  Walking out from the square crosses all three.
 
 - **The coal measures** fill the middle: sandstone, shale, coal seams,
   fireclay and ironstone.  Kettle, its farms and its pit stand on them.
-  Industrial.
+  Mercantile.
 - **Gritstone** rises round them as the hills: coarse sandstone,
   millstone rock, which weathers to edges and boulders.  It holds water
   and gives it out in springs at its foot; on the flat tops the rain
@@ -221,7 +290,7 @@ is going down.  Each faith reads it in its own way (see **Faith**).
 The hill folk say the dale ends the day it goes out.
 
 It is the same gas as the pit's gas motes and the blast that killed the
-firedamp shift: the industrial age's danger is the animistic age's
+firedamp shift: the mercantile age's danger is the animistic age's
 holy flame.
 
 ### Weather and sun
@@ -275,7 +344,7 @@ holy flame.
   mouths; graves under yews; marks cut in stone, mostly pictures.  Their
   craft was water and stone: rods and rings steeped in the stone's
   water, and keepers built of stone that the water moves.
-- **Industrial**: gritstone for the engine house and the Guild hall,
+- **Mercantile**: gritstone for the engine house and the Guild hall,
   fireclay brick and stone-slate roofs for the terraces, iron smelted
   from the coal measures' own ironstone, black shale spoil heaps,
   pumps and rails, and soot over all of it.
@@ -472,7 +541,7 @@ Two established churches, and the old ways under both.  Each people
 reveres what keeps it alive, and each church has made adversaries of
 what the earlier ages revered.  So every adversary deep below the dale
 is of an earlier age, and each faith has its own name for it.  The
-industrial age's adversaries are people: the Guild, its bailiffs and
+mercantile age's adversaries are people: the Guild, its bailiffs and
 hired men, road thieves, and the League's buyers (see **From time to
 time**).
 
@@ -609,11 +678,11 @@ the reason for the new one.
 
 ### From time to time
 
-The deep levels belong to the earlier ages.  The industrial age and the
+The deep levels belong to the earlier ages.  The mercantile age and the
 archaic age turn up now and then, each for a reason in the world:
 wanderers and happenings, never a level's own.
 
-**The industrial age**, in the dale and the Galleries, never below the
+**The mercantile age**, in the dale and the Galleries, never below the
 breach:
 
 | Adversary | Why now |
@@ -876,13 +945,13 @@ The names people use, and why.
 
 | Thing | Its name | Why |
 |---|---|---|
-| the river | the Seethe | the kettle steams off it on cold mornings |
+| the river | the Seethe | the kettle steams off it on cold mornings; the hill folk's older name is the Oune |
 | the gap west | Seethe Gap | the river leaves by it |
 | the pass east | the Nick, and its road the Salters' Road | the salt comes over it |
 | the beck over the Candle | Candle Beck, in Candle Clough | |
 | the oak wood | Hagg Wood | a hagg is a coppice's yearly cut |
 | the gritstone edge with the quarry | Quern Edge | querns were cut there before millstones |
-| the peat moss | the High Moss | |
+| the peat moss | the High Moss | the hill folk call it Harrack |
 | the rim | the Lime | the limeburners' word, and now everyone's |
 | the well-head | the Well Stone | "going to the Stone" is going to law |
 | the engine | the Beam | Kettle says "since the Beam stopped" |
@@ -1055,8 +1124,8 @@ Proposals, not decided.
   the Plain can say what dissolved them.  Did the well-keepers' bargain
   lay the stone near Halmere's beds?
 - The High Moss keeps its dead.  Cutting deeper for fuel, the
-  peat-cutters are finding bodies the moss has kept since before the
-  well-keepers, whole and brown.  The chapel will not bury them.  They
+  peat-cutters are finding bodies the moss has kept since the tribal
+  herders, whole and brown.  The chapel will not bury them.  They
   lie still, unless someone carries one down to where the stone's water
   runs.
 - A pit chapel at the foot of the Galleries: a niche the Kettle miners
