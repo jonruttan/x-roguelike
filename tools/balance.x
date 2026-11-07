@@ -45,7 +45,7 @@
 (import roguelike/creatures creatures-shown? creatures-door-diagonal?)
 (import roguelike/items items-goal-held?)
 (import roguelike/traps traps-found-at)
-(import roguelike/game game-make game-key! game-explore!)
+(import roguelike/game game-make game-key! game-explore! game-frontier?)
 
 (def %bl-say (fn (_ text) (Sys fd-write 1 text)))
 (def %bl-env
@@ -324,8 +324,14 @@
 (def %bl-sign (fn (_ n) (match ((< n 0) -1) ((< 0 n) 1) (#t 0))))
 
 ; Explore what is left of the screen, or wait a turn with none left.
+; With a hostile in view explore will not walk, and one the bot cannot
+; reach would hold it there: it walks to the edge of the unseen itself.
 (def %bl-look!
-  (fn (_ g s) (if (%bl-explored? g s) (game-key! g ".") (%bl-explore! g s))))
+  (fn (_ g s)
+    (match ((%bl-explored? g s) (game-key! g "."))
+           ((null? (%bl-shown-hostile g)) (%bl-explore! g s))
+           ((%bl-walk! g (fn (_ r c) (game-frontier? (game-map g) r c))) ())
+           (#t (%bl-explored! g s)))))
 
 ; A step toward screen TO: along the row first, then the column, to the
 ; edge on that side, and off it.
