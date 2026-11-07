@@ -28,7 +28,7 @@ out from Kettle's square to the rim.
 | Age | The stone is | Below | Above |
 |---|---|---|---|
 | **Mercantile**: the Guild, now | a commodity with a price | the Galleries: the pit | Kettle and its farms, on the coal measures |
-| **Animistic**: the well-keepers, long gone | kin: kept, and bargained with | the Old Works: the well-keepers' stair | the rim: their city's stones on the limestone |
+| **Animistic**: the well-keepers, long gone | kin: kept, and carried | the Old Works: the well-keepers' stair | the rim: their city's stones on the limestone |
 | **Archaic**: before anyone | itself: what draws the water | the Well-House: the stone in its pool | the bog and the wild hills |
 
 The Flood lies between the Galleries and the Old Works, where the pit
@@ -47,7 +47,7 @@ adversaries.
 |---|---|---|---|---|---|
 | **Tribal** | the herders who first came for the rim's grazing | before the city | rags on thorns, the old numbers | the hills and the High Moss; the hill folk are what is left of it | none of its own yet (see **Ideas**) |
 | **Communal** | the well-keepers, keeping the stone in common as kin | the long keeping | the stair, the channels, the well mouth, the ossuary | the Well-House and the Old Works | bone heaps, the ossuary priest |
-| **City-state** | the well-keepers' city on the rim | its height, to the bargain | walls and vaults, and the keepers built at its end | the rim and the Old Works' vaults; the Plain's towns keep the form | wall keepers, the doorkeeper, the glass keeper, the well keeper |
+| **City-state** | the well-keepers' city on the rim | its height, to the procession | walls and vaults, and the keepers built at its end | the rim and the Old Works' vaults; the Plain's towns keep the form | wall keepers, the doorkeeper, the glass keeper, the well keeper |
 | **Mercantile** | Kettle's settlers up the Seethe, the Guild, and the League's towns and banks | three hundred years ago, to now | the drained floor, the charter cut into the old people's stone, the market, the pit, the terraces, the Tip, the White Church | Kettle, its farms and the Galleries; the Plain's towns | the fire-boss, gallery shades, salvagers, the Guild's bailiffs, distrainers, the League's agents, Rot-hunters, salt-runners |
 | **Colonial** | nobody yet | coming | its first sign: the League buying sweet water from the dales | the Plain, reaching | none yet |
 | **Industrial** | nobody yet | coming | its first signs: the engine house, the furnace, the brickfield | the Plain first, where the League has the powder and the money | none yet |
@@ -420,7 +420,7 @@ charter.
    in the mire.  They keep the Candle lit.  Their city stands on the
    rim.  They bury their dead under yews there, and in time carry the
    bones down to the ossuary beside the pool, to lie near the stone.
-3. **The bargain.**  The Brand stands in the west.  In a great drought
+3. **The procession.**  The Brand stands in the west.  In a great drought
    their kin over the pass are dying of thirst.  The well-keepers do
    what kin do: they carry the stone over the pass in procession, as
    one carries a god to visit.  The water follows it.  Their own spring
@@ -594,9 +594,11 @@ is true and is not the last:
    tailed star over a picture of who was tempted under it.  The Guild
    is only the latest.  The curse comes round every three hundred
    years.
-4. **The bargain: why the stone drinks at all.**  The well-keepers'
-   first bargain, struck when their kin over the pass were dying of
-   thirst, and what it cost.  Left open.
+4. **The bargain: why the stone drinks at all.**  Older than the
+   well-keepers.  They found the stone already drinking, and kept it as
+   kin without knowing what it drank for.  Their procession east is the
+   first return the count records, not the first bargain.  Who struck
+   it, with what, and what it cost are left open.
 
 Each faith already names the curse, so the town has rival answers,
 and each is partly right:
@@ -792,7 +794,7 @@ people reads it its own way.  None is settled.
   Brand's years it becomes an asset: what is worth having is no longer
   the water but the place it comes from, and whoever holds the stone
   holds a country's water.  That is the temptation.  Every return in
-  the count was such a time: the bargain, when the well-keepers' kin
+  the count was such a time: the procession, when the well-keepers' kin
   over the pass were dying of thirst; the turnings-back, people driven
   down the stair by need; the settlers, who came up the river for the
   spring that never fails.  Now there is drought in the hills, the
@@ -1429,11 +1431,11 @@ Proposals, not decided.
   mirror of the Delve, its chapels carved in salt and its lakes of
   brine.
 - The Hall's oldest brine lakes are older than the mine, and nobody on
-  the Plain can say what dissolved them.  Did the well-keepers' bargain
+  the Plain can say what dissolved them.  Did the well-keepers' procession
   lay the stone near Halmere's beds?
 - The Brand's returns, the long arc: each return a temptation, and a
   set at each, its pictures at the fourth stair its pages: the
-  well-keepers' bargain, a turning-back by the keepers, the settlers'
+  well-keepers' procession, a turning-back by the keepers, the settlers'
   coming, now, and the next, when the colonial and industrial ways
   arrive.  Other dales' marks may show the same star over their own
   stones.
