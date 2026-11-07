@@ -39,7 +39,7 @@
   game-set game-depth game-deepest game-map game-player game-creatures game-pack game-over game-epitaph game-turn
   game-ask game-exploring? game-messages game-band band-name game-param
   player-r player-c player-hp player-hpmax player-str player-food player-weapon player-armour
-  item-class item-name item-prop item-prop1 item-enchant item-letter
+  item-class item-name item-prop item-prop1 item-enchant item-letter item-r item-c game-floor
   creature-r creature-c creature-state creature-trait? state-adjacent? state-dist state-shortfall state-creature-at state-items-at
   game-quest-state)
 (import roguelike/creatures creatures-shown? creatures-door-diagonal?)
@@ -158,8 +158,14 @@
     (if (not (Vector ref 4 s)) #t (not (null? (%bl-in-pack g (%bl-of-class (lit token))))))))
 
 ; The items at R C the bot has not given up on.
+(def %bl-given-up? (fn (_ s it) (List any? (fn (_ x) (same? x it)) (Vector ref 8 s))))
 (def %bl-wanted-at
-  (fn (_ g s r c) (List reject (fn (_ it) (List any? (fn (_ x) (same? x it)) (Vector ref 8 s))) (state-items-at g r c))))
+  (fn (_ g s r c) (List reject (fn (_ it) (%bl-given-up? s it)) (state-items-at g r c))))
+; Whether any item the bot has not given up lies on a seen cell: the
+; walk to one searches the whole seen map, so it waits on this.
+(def %bl-any-wanted?
+  (fn (_ g s)
+    (List any? (fn (_ it) (if (map-seen? (game-map g) (item-r it) (item-c it)) (not (%bl-given-up? s it)) #f)) (game-floor g))))
 
 ; Picks up what lies here; what stays put is left for good.
 (def %bl-pick-up!
@@ -291,7 +297,7 @@
     (def p (game-player g))
     (def giver (%bl-beside g (fn (_ cr) (creature-trait? cr (lit talks)))))
     (def here (%bl-wanted-at g s (player-r p) (player-c p)))
-    (def to-item (if (if (null? shown) #t (List ref 3 style)) (%bl-step-toward g (fn (_ r c) (not (null? (%bl-wanted-at g s r c))))) ()))
+    (def to-item (if (if (if (null? shown) #t (List ref 3 style)) (%bl-any-wanted? g s) #f) (%bl-step-toward g (fn (_ r c) (not (null? (%bl-wanted-at g s r c))))) ()))
     (match
       ((not (null? here)) (%bl-pick-up! g s))
       ((not (null? to-item)) (game-key! g (%bl-key-for (first to-item) (rest to-item))))
@@ -347,16 +353,16 @@
     (def s (Vector of #f 0 0 0 #f () () 0 ()))
     (def arrivals (Vector of (list (%bl-arrival g))))
     (def loop
-      (fn (self n turn stalled)
+      (fn (self turn stalled)
         (def depth (game-depth g))
         (unless (if (null? (game-over g)) (< cap (game-turn g)) #t)
           (do (if (< 30 stalled) (game-key! g ".") (%bl-turn! g s style))
               (%bl-met! g s)
               (when trace? (%bl-trace g))
-              (when (= 0 (% n 20)) (Heap collect))
+              (Heap collect)
               (unless (= depth (game-depth g)) (Vector set! 0 (pair (%bl-arrival g) (Vector ref 0 arrivals)) arrivals))
-              (self (+ n 1) (game-turn g) (if (= turn (game-turn g)) (+ stalled 1) 0))))))
-    (loop 0 0 0)
+              (self (game-turn g) (if (= turn (game-turn g)) (+ stalled 1) 0))))))
+    (loop 0 0)
     (list seed (if (null? (game-over g)) (lit capped) (game-over g)) (game-epitaph g) (game-deepest g) (game-turn g)
           (Vector ref 2 s) (Vector ref 3 s) (List reverse (Vector ref 0 arrivals))
           (Vector ref 6 s) (if (null? (Vector ref 6 s)) (List length (Vector ref 5 s)) (Vector ref 7 s)))))
