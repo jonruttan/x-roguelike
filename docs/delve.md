@@ -908,6 +908,34 @@ game yet.
 | adders at the yard wells, wolves come low *(to come)* | the hills' own animals, pushed toward the town as the stone drinks harder and the hill springs fail: the same creatures, nearer, and the curse showing in them |
 | Guild bailiff | the Guild's hired men, with bolts, about its dig on the rim |
 
+### From the older ages
+
+The older the creature, the longer the world has had to change it.
+All *(to come)*.
+
+**The well-keepers' age:**
+
+| Creature | Before | Since | Where |
+|---|---|---|---|
+| well eels | the well-keepers set eels in their wells to keep the water sweet | the stone's water has kept them living for centuries: huge, white and slow, kin to the lantern eels | the Well-House pool and the old well shafts |
+| root-bound dead | the city buried its dead under yews on the rim | the drought sends the yews' roots down for water, through the graves and into the Old Works' vaults, dragging the bones with them | the Old Works' vaults under the rim |
+| wild bees | the city's bee walls, kept for honey and mead | wild in the fallen walls, and fierce in a dry year | the rim's scars |
+
+**The tribal age, the herders before the city:**
+
+| Creature | Before | Since | Where |
+|---|---|---|---|
+| rim goats | the first herders' goats | a thousand years feral on the scars; with the Guild's men on the rim, wary and quick to butt | the rim |
+| bog bodies | offerings the herders gave to the moss, as the rags on thorns are given now | the drought dries the moss and the peat-cutters cut deeper and turn them up; the hill folk say the moss is giving back what it was given | the High Moss |
+
+**The archaic age**, besides the old bear, the pool-born and the
+dripstone below:
+
+| Creature | Before | Since | Where |
+|---|---|---|---|
+| the hyena den | cave hyenas dragged their kills into a side cave | gnawed bones heaped there, and some quickened by the stone's water | a rim cave off the Old Works |
+| the moss elk | a giant deer sunk in the bog before the moss grew over it | the drying moss shows its antlers, and on bog-light nights something walks | the High Moss, from time to time |
+
 ### From time to time
 
 The deep levels belong to the earlier ages.  The mercantile age and the
@@ -933,7 +961,7 @@ lowest Galleries, now and then:
 |---|---|
 | dripstone | the cave's own growth, columns and curtains the stone's water laid down over ages, moving where the water runs; it crusts what the well-keepers left, and in places a keeper stands half grown into the wall |
 | the old bear | the bones of a bear that denned in the stone's cave before anyone came, quickened by its water |
-| pool-born | blind white things of the stone's pool, older and larger than the crayfish, come up the stair with the water |
+| pool-born | blind white salamanders of the stone's pool, kin to the olm, older and larger than the crayfish, come up the stair with the water |
 
 ## What lies about
 
