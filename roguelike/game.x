@@ -435,7 +435,7 @@
 
 ; Whether R C of M, seen and walkable, lies beside a cell not yet seen
 ; that is not rock: a place worth walking to.
-(def %gm-frontier?
+(def game-frontier?
   (fn (_ m r c)
     (List any? (fn (_ d)
                  (def rr (+ r (first d)))
@@ -483,7 +483,7 @@
           (#t (do (def r (first (first front)))
                   (def c (rest (first front)))
                   (def step (Vector ref (at r c) came))
-                  (if (if (eq? step #t) #f (%gm-frontier? m r c)) step
+                  (if (if (eq? step #t) #f (game-frontier? m r c)) step
                     (self (rest front) (List append (reach r c (if (eq? step #t) () step)) back))))))))
     (Vector set! (at (player-r p) (player-c p)) #t came)
     (search (list (pair (player-r p) (player-c p))) ())))
@@ -743,4 +743,4 @@
           "S      save and leave       Q      quit"
           "?      these keys           Esc    stop asking")))
 
-(provide roguelike/game game-make game-key! game-explore! game-more! game-score game-score-lines game-score-text game-help)
+(provide roguelike/game game-make game-key! game-explore! game-frontier? game-more! game-score game-score-lines game-score-text game-help)
