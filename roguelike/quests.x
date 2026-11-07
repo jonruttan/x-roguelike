@@ -28,14 +28,16 @@
 (import roguelike/dungeon dungeon-spot)
 (import roguelike/state
   game-rng game-set game-depth game-map game-player game-creatures game-creatures! game-floor game-floor!
-  game-pack game-ask! game-quest-state game-quest-state! game-placed? game-placed! game-chain game-screen
+  game-pack game-ask! game-quest-state game-quest-state! game-placed? game-placed! game-chain game-screen game-below?
   player-r player-c creature-make creature-name creature-carried!
   item-make item-name item-class? item-at! item-letter!
   state-tell! state-roll state-free? state-items-at state-remove-pack!)
 (import roguelike/items items-new items-pickup! items-name)
 
 ; The set's quests, then the game's chain.
-(def %qs-quests (fn (_ g) (List append (data-all (game-set g) (lit quest)) (List map rest (game-chain g)))))
+; The quests of the set in force, and above, the chain's, which belong to the
+; screens.
+(def %qs-quests (fn (_ g) (List append (data-all (game-set g) (lit quest)) (if (game-below? g) () (List map rest (game-chain g))))))
 (def %qs-name (fn (_ q) (first q)))
 (def %qs-giver (fn (_ q) (List ref 1 q)))
 (def %qs-level (fn (_ q) (data-prop1 q (lit level) 0)))

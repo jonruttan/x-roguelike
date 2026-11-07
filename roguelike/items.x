@@ -33,7 +33,7 @@
 (import roguelike/dungeon dungeon-spot)
 (import roguelike/state
   game-rng game-set game-depth game-map game-player game-floor game-floor! game-pack game-pack! game-ask!
-  game-guises game-known game-known! game-param game-param1 game-goal-placed? game-goal-placed! game-band
+  game-guises game-known game-known! game-param game-param1 game-goal-placed? game-goal-placed! game-band game-world-all
   game-pages-placed game-page-placed! game-sure game-sure? game-sure! band-name band-to
   player-r player-c player-at! player-hp player-hp! player-hpmax player-hpmax! player-str player-str!
   player-strmax player-strmax! player-armour player-armour! player-weapon player-weapon! player-rings
@@ -182,7 +182,12 @@
       (do (%it-put! g (item-make (list (lit goal) (first goal)) 1 0))
           (game-goal-placed! g)))))
 
-(def items-goal-held? (fn (_ g) (List any? (fn (_ it) (item-class? it (lit goal))) (game-pack g))))
+; Whether the set's goal is in the pack: by its name, since a world with
+; a region has a goal above and another below.
+(def items-goal-held?
+  (fn (_ g)
+    (def name (first (game-param g (lit goal) (list "the prize"))))
+    (List any? (fn (_ it) (if (item-class? it (lit goal)) (str=? (item-name it) name) #f)) (game-pack g))))
 
 ; A page's item form from its (page NAME DEPTH LINE ...): (page NAME
 ; (text LINE ...)).
@@ -215,7 +220,8 @@
   (fn (_ g it) (unless (items-known? g it) (game-known! g (pair (item-name it) (game-known g))))))
 
 ; The guise of IT: the Nth name of its class's guises, N its place among
-; the set's items of that class.
+; the items of that class in the whole world, so it is the same above
+; and below.
 (def %it-index
   (fn (self name forms n)
     (match ((null? forms) 0)
@@ -224,7 +230,7 @@
 (def %it-guise
   (fn (_ g it)
     (def names (Assoc get (item-class it) (game-guises g)))
-    (def same (List filter (fn (_ f) (eq? (first f) (item-class it))) (%it-forms g)))
+    (def same (List filter (fn (_ f) (eq? (first f) (item-class it))) (game-world-all g (lit item))))
     (if (null? names) "strange" (List ref (% (%it-index (item-name it) same 0) (List length names)) names))))
 
 (def %it-vowel? (fn (_ s) (List any? (fn (_ v) (Str8 starts? v s)) (list "a" "e" "i" "o" "u"))))

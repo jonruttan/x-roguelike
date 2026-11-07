@@ -158,6 +158,16 @@ KIND N)`, a 256-colour index, from the set's `tui.xon`, and a kind the
 set does not name is drawn as the kind it is a sort of.  Another
 front-end reads its own file and the same terrain.
 
+Sets can share one world.  `(join NAME)` brings the set NAME in beside
+this one as a region: its forms are read with the set's and kept
+apart.  An interior with `(below NAME)` is a door down into that
+region instead of a place of its own.  Below, the region's forms are
+the set in force, so its levels are made, peopled and drawn as that
+set makes them, stairs and all.  The stairs up out of its first level
+come back onto the door, and they are open with or without the
+region's goal.  `kettle` joins `delve`: the pit on Kettle's square
+goes down into the Delve.  The score is always the first set's.
+
 What a game is worth is the set's `(score (NAME POINTS) ...)`: POINTS
 for each of `gold`, `deepest` (the level reached, or the screens out
 from the hub), `won`, `quests` done, `screens` visited and `places`
