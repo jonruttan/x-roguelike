@@ -81,6 +81,31 @@ files of `data/SET` alone, so the terminal game never reads these.
   without one.
 - `shadow` is drawn under the player and every creature, so they stand
   on the ground.
+- `(part P)`: one piece of a tile, put together by its neighbours (see
+  **Walls**).  A name with no parts is drawn whole.
+
+## Walls
+
+The level is seen from above and a little to the south, so a wall shows
+its face where the floor lies south of it and its top elsewhere.  A
+neighbour is solid when it is wall or rock, off the map, or not yet
+seen; anything else is open.
+
+| The cell | Drawn |
+|---|---|
+| wall, open to the south | `face`; `face-w` / `face-e` where open to the west / east |
+| wall, solid to the south | `top`; `n` `e` `w` rims where open that way; `ne` `nw` `se` `sw` where both sides are solid and the diagonal is open |
+| open, solid to the north | its ground, then the `shade` the face casts |
+
+Variants and weights hold within a part: a face may be propped,
+seeping, chalked or hung with a lamp.
+
+## Light
+
+Next, once the walls and ground are settled: things that give light,
+a torch in a bracket, a lamp left burning, the Candle's kin in the
+firedamp, each casting a glow over the cells round it, so a level is
+dark but for its lights and the player's lamp.
 
 Text, so it is read with `x/codec/xon`, diffed, and drawn by hand; no
 image tools.  Turned into RGBA once when the set is loaded.

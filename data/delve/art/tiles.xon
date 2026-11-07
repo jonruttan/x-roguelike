@@ -13,6 +13,8 @@
 ; "BAND") makes it that band's, in front of the set's.  Several tiles of
 ; one name are its variants: a cell takes one by its place, the same
 ; every time, (weight N) of them for each 1 of a tile without one.
+; (part P) is one piece of a tile drawn by its neighbours: a wall's top,
+; face, rims and corners, the shade a face casts on the floor.
 ; Anything with no tile is drawn as its glyph in the font.
 
 (size 16 16)
@@ -23,7 +25,7 @@
 (colour "d" 38 32 29)
 (colour "r" 62 53 47)
 (colour "R" 84 73 63)
-(colour "h" 108 95 80)
+(colour "h" 124 108 88)
 (colour "n" 24 23 26)
 (colour "N" 52 52 58)
 ; the floor: grit, stones, damp, standing water; light from above
@@ -31,8 +33,8 @@
 (colour "f" 54 48 43)
 (colour "F" 68 61 54)
 (colour "e" 34 30 28)
-(colour "w" 28 36 42)
-(colour "W" 50 62 70)
+(colour "w" 32 44 54)
+(colour "W" 66 92 108)
 (colour "z" 92 83 66)
 ; timber, iron, rust, leather, cloth
 (colour "t" 66 47 32)
@@ -46,95 +48,324 @@
 (colour "u" 72 55 42)
 (colour "U" 102 80 60)
 (colour "c" 40 42 50)
-(colour "C" 62 64 74)
+(colour "C" 66 74 92)
 ; skin, grey hair, bone and paper
 (colour "p" 168 132 108)
 (colour "P" 120 90 76)
 (colour "b" 132 126 112)
-(colour "B" 180 172 150)
+(colour "B" 200 190 164)
 ; lamp light, coin
 (colour "l" 214 164 86)
 (colour "L" 246 220 156)
-(colour "y" 156 126 58)
-(colour "Y" 204 176 100)
+(colour "y" 176 138 58)
+(colour "Y" 228 196 110)
 ; creatures: rat, toad, firedamp, the dead
-(colour "q" 74 65 58)
-(colour "Q" 104 92 80)
-(colour "g" 62 62 44)
-(colour "G" 94 92 62)
-(colour "H" 128 120 86)
-(colour "m" 120 160 172 110)
-(colour "M" 186 216 220 160)
+(colour "q" 84 72 64)
+(colour "Q" 122 106 92)
+(colour "g" 68 70 46)
+(colour "G" 112 110 66)
+(colour "H" 150 140 92)
+(colour "m" 130 180 200 120)
+(colour "M" 214 238 242 180)
 (colour "j" 120 160 172 45)
 (colour "K" 22 28 34 170)
-(colour "a" 88 100 106 120)
-(colour "A" 144 156 160 150)
+(colour "a" 98 124 138 140)
+(colour "A" 172 196 208 170)
 ; the Lodestar's cold light; a panel's ground
 (colour "x" 90 120 150 90)
 (colour "Z" 18 15 13 232)
 (colour "S" 0 0 0 110)
+(colour "-" 0 0 0 55)
+; a neckerchief, a shawl; a rat's ears and tail
+(colour "D" 132 44 36)
+(colour "X" 168 112 104)
 
 ; --- the ground -------------------------------------------------------------
 
-; The Galleries' rock: sandstone over shale over a coal seam.
-(tile wall (weight 4) (rows
-  "RhRRRhRRRRhRRRhR"
-  "RRRrRRRRRRRRrRRR"
+; The wall is drawn in pieces, by its neighbours (docs/graphics.md): its
+; face where the floor lies south of it, its top otherwise, with a rim
+; on each side open to the floor and a corner where only the diagonal
+; is.
+
+; The top: the rock seen from above.
+(tile wall (part top) (rows
+  "dndddnddddndddnd"
+  "ddddrdddnddddddd"
+  "ndddddddddddrddn"
+  "dddnddddrddddddd"
+  "ddddddndddddnddd"
+  "drdddddddddddddr"
+  "dddddnddddrddddd"
+  "nddddddddddddndd"
+  "ddddrddndddddddd"
+  "dddddddddddrdddd"
+  "dnddddrddddddddn"
+  "dddddddddndddddd"
+  "ddrdddddddddrddd"
+  "ddddddnddddddddd"
+  "ndddddddddddddnd"
+  "dddrddddnddddddd"))
+
+(tile wall (part n) (rows
+  "hRhhRhhhRhhRhhhR"
+  "RrRRrRRrRRRrRRrR"
+  ".r..r...r.r...r."
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"))
+
+(tile wall (part e) (rows
+  ".............rRh"
+  "..............Rh"
+  ".............rRh"
+  "..............Rh"
+  "..............rR"
+  ".............rRh"
+  "..............Rh"
+  "..............Rh"
+  ".............rRh"
+  "..............rh"
+  "..............Rh"
+  ".............rRh"
+  "..............Rh"
+  "..............RR"
+  ".............rRh"
+  "..............Rh"))
+
+(tile wall (part w) (rows
+  "hRr............."
+  "hR.............."
+  "hRr............."
+  "hR.............."
+  "Rr.............."
+  "hRr............."
+  "hR.............."
+  "hR.............."
+  "hRr............."
+  "hr.............."
+  "hR.............."
+  "hRr............."
+  "hR.............."
+  "RR.............."
+  "hRr............."
+  "hR.............."))
+
+(tile wall (part ne) (rows
+  ".............Rhh"
+  "..............Rh"
+  "...............R"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"))
+
+(tile wall (part nw) (rows
+  "hhR............."
+  "hR.............."
+  "R..............."
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"))
+
+(tile wall (part se) (rows
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "...............R"
+  "..............Rh"
+  ".............Rhh"))
+
+(tile wall (part sw) (rows
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "R..............."
+  "hR.............."
+  "hhR............."))
+
+; The face: the lip, sandstone over shale over a coal seam, the foot.
+(tile wall (part face) (weight 6) (rows
+  "dddnddddddnddddd"
+  "hhRhhhhRhhhhRhhh"
+  "RRRRrRRRRRRrRRRR"
+  "RhRRRRRhRRRRRhRR"
+  "RRRrRRRRRRrRRRRR"
   "rRRRRRkrRRRRRRrR"
-  "rrRrrrkrrrRrrrrr"
-  "drrrrrdrrrrrrdrr"
+  "rrrrrrkrrrrRrrrr"
   "ddrdddddddrddddd"
-  "dkdddddkddddddkd"
-  "ddddrddddddrdddd"
+  "dkddddddkddddkdd"
   "nnNnnnnnnnnnNnnn"
-  "nnnnnnNnnnnnnnNn"
+  "nNnnnNnnnnnnnnNn"
   "knnnnnnknnnnnnnk"
   "ddddddddrdddddrd"
-  "RRhRRRRRRRRhRRRR"
-  "RRRRRrRRkRRRRRrR"
-  "rRrRRRRrkrRRrRRr"
-  "rrrrrrrrkrrrdrrr"))
+  "rRRrRRRRrRRRRrRR"
+  "rrrrrrrrkrrrdrrr"
+  "kkkkkkkkkkkkkkkk"))
 
-; ... propped with a post where the roof was bad.
-(tile wall (rows
-  "RhRRRkTVtkRRRhRR"
-  "RRRrRkTVtkRRrRRR"
-  "rRRRRkTTtkRRRRrR"
-  "rrRrrkTVtkrrrrrr"
-  "drrrrkTVtkrrrdrr"
-  "ddrddktTtkdddddd"
-  "dkdddkTVtkdddkdd"
-  "ddddrkTVtkdrdddd"
+; ... propped and capped where the roof was bad.
+(tile wall (part face) (weight 2) (rows
+  "dddnddddddnddddd"
+  "hhRhhhhRhhhhRhhh"
+  "RRRkTTTTTTTkRRRR"
+  "RhRktttttttkRhRR"
+  "RRRRRkTVtkRRRRRR"
+  "rRRRRkTVtkRRRRrR"
+  "rrrrrkTTtkrRrrrr"
+  "ddrddkTVtkdddddd"
+  "dkdddkTVtkddkddd"
   "nnNnnkTVtknnNnnn"
-  "nnnnnkTTtknnnnNn"
+  "nNnnnkTTtknnnnNn"
   "knnnnkTVtknnnnnk"
   "dddddkTVtkdddrdd"
-  "RRhRRkTVtkRhRRRR"
-  "RRRRRktTtkRRRrRR"
-  "rRrRRkTVtkrRRrRr"
-  "rrrrrkTVtkrrdrrr"))
+  "rRRrRkTVtkRRRrRR"
+  "rrrrrkTVtkrrdrrr"
+  "kkkkkkkkkkkkkkkk"))
 
-; ... and scored by the picks.
-(tile wall (weight 2) (rows
-  "RhRRRhRRRRhRRRhR"
-  "RRkRRRRRRkRRrRRR"
-  "rRRkRRkrRRkRRRrR"
-  "rrRrkrkrrrRkrrrr"
-  "drrrrkdrrrrrkdrr"
+; ... seeping, the water out of the coal measures running orange.
+(tile wall (part face) (rows
+  "dddnddddddnddddd"
+  "hhRhhhhRhhhhRhhh"
+  "RRRRrRRRRRRrRRRR"
+  "RhRRRRRhRWRRRhRR"
+  "RRRrRRRRRwWRRRRR"
+  "rRRRRRkrRwWRRRrR"
+  "rrrrrrkrrwWoRrrr"
+  "ddrddddddwWodddd"
+  "dkddddddkwWodkdd"
+  "nnNnnnnnnwWonNnn"
+  "nNnnnNnnnwWonnNn"
+  "knnnnnnkowWoonnk"
+  "ddddddddowWoodrd"
+  "rRRrRRRRoWWooRRR"
+  "rrrrrrrooWWWoorr"
+  "kkkkkkkwWWWwkkkk"))
+
+; ... scored by the picks, a shift's tally chalked on it.
+(tile wall (part face) (rows
+  "dddnddddddnddddd"
+  "hhRhhhhRhhhhRhhh"
+  "RRRRrRRRRRRrRRRR"
+  "RhRkRRRhRRRRkhRR"
+  "RRRRkRRBRBRBRRkR"
+  "rRRRRkkrBRBRBRrR"
+  "rrrrrrkrBrBrBrrr"
   "ddrdddddddrddddd"
-  "dkdddddkddddddkd"
-  "ddddrddddddrdddd"
+  "dkddddddkddddkdd"
   "nnNnnnnnnnnnNnnn"
-  "nNnnnnnnnnnNnnnn"
+  "nNnnnNnnnnnnnnNn"
   "knnnnnnknnnnnnnk"
   "ddddddddrdddddrd"
-  "RRhRRRRRRRRhRRRR"
-  "RRRkRrRRRRkRRRrR"
-  "rRrRkRRrRRRkrRRr"
-  "rrrrrkrrrdrrrkrr"))
+  "rRRrRRRRrRRRRrRR"
+  "rrrrrrrrkrrrdrrr"
+  "kkkkkkkkkkkkkkkk"))
+
+; ... a hook, and a lamp left on it.
+(tile wall (part face) (rows
+  "dddnddddddnddddd"
+  "hhRhhhhRhhhhRhhh"
+  "RRRRrRRRRRRrRRRR"
+  "RhRRRRRiIRRRRhRR"
+  "RRRrRRRRiRRRRRRR"
+  "rRRRRRkIIkRRRRrR"
+  "rrrrrrkyykrRrrrr"
+  "ddrdddkyYkrddddd"
+  "dkddddkkkkddddkd"
+  "nnNnnnnnnnnnNnnn"
+  "nNnnnNnnnnnnnnNn"
+  "knnnnnnknnnnnnnk"
+  "ddddddddrdddddrd"
+  "rRRrRRRRrRRRRrRR"
+  "rrrrrrrrkrrrdrrr"
+  "kkkkkkkkkkkkkkkk"))
+
+; The face's ends, where the floor turns round it.
+(tile wall (part face-w) (rows
+  "................"
+  "kh.............."
+  "kR.............."
+  "kh.............."
+  "kR.............."
+  "kr.............."
+  "kr.............."
+  "kd.............."
+  "kd.............."
+  "kN.............."
+  "kn.............."
+  "kn.............."
+  "kd.............."
+  "kR.............."
+  "kr.............."
+  "kk.............."))
+
+(tile wall (part face-e) (rows
+  "................"
+  ".............hdk"
+  ".............Rdk"
+  ".............Rdk"
+  ".............rdk"
+  ".............rdk"
+  ".............ddk"
+  "..............dk"
+  "..............dk"
+  ".............nnk"
+  ".............nnk"
+  ".............nnk"
+  "..............dk"
+  ".............rdk"
+  ".............rdk"
+  "..............kk"))
 
 ; Grit and coal dust.
-(tile floor (weight 14) (rows
+(tile floor (weight 24) (rows
   "sssfssssessssfss"
   "ssssssfsssssssss"
   "sfssssssssssfsss"
@@ -208,6 +439,63 @@
   "sfsssssssssssess"
   "ssssssssssssssss"
   "ssssssssfsssssss"))
+
+; ... a fall of rubble from the roof.
+(tile floor (rows
+  "sssfssssessssfss"
+  "ssssssfsssssssss"
+  "sfssssssssssfsss"
+  "sssssessssssssse"
+  "ssssssssfsssssss"
+  "sssssssfssssssss"
+  "ssssssskkkssssss"
+  "sssskkkRhrkkssss"
+  "ssskRhrkRrrRkkss"
+  "sskrRrrdkrRhrkss"
+  "skRhrdkRrrdrrdks"
+  "skdrrddrddrddkss"
+  "sskkkkkkkkkkksss"
+  "ssssfssssssessss"
+  "ssssssssssssssss"
+  "sessssssssssssss"))
+
+; ... a tub's wheel, broken off.
+(tile floor (rows
+  "ssssssssssssssss"
+  "ssfsssssssssssss"
+  "ssssssssssssssss"
+  "ssssssssssssesss"
+  "sssssskkkkssssss"
+  "sssskkIIIIkkssss"
+  "ssskIkkiikkIksss"
+  "ssskIkiOOikIksss"
+  "ssskIkiOOikiksss"
+  "ssskIkkiikssssss"
+  "sssskkIIkksfssss"
+  "sssssskkssssssss"
+  "ssssssssssssssss"
+  "sfssssssssssssss"
+  "ssssssssssssesss"
+  "ssssssssssssssss"))
+
+; The shade a wall's face casts on the floor below it.
+(tile floor (part shade) (rows
+  "SSSSSSSSSSSSSSSS"
+  "SSSSSSSSSSSSSSSS"
+  "----------------"
+  "-.-.-.-.-.-.-.-."
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"))
 
 (tile passage (as floor))
 
@@ -299,7 +587,7 @@
   "......kpPPk..Tk."
   "......kPpPk..Tk."
   ".......kPk...Tk."
-  ".....kcCCCckTk.."
+  ".....kcDDDckTk.."
   "....kcCCcCCTk..."
   "....kcCCcCPk...."
   "...kPkcCcCck...."
@@ -321,10 +609,10 @@
   "................"
   "................"
   "................"
-  "....kkQQQQQk...."
+  "....kXQQQQQk...."
   "..kkQqQQQQqqk..."
-  "kPQqkqqqqqqqqkk."
-  ".kkkqkkkkkqkkPPk"
+  "kPQqLqqqqqqqqkk."
+  ".kkkqkkkkkqkkXXk"
   "................"))
 
 (tile "drip toad" (rows
@@ -338,10 +626,10 @@
   "................"
   "................"
   ".....kkkkkk....."
-  "...kHkGGGGkHk..."
+  "...kHLkGGkLHk..."
   "..kGGGHGGGHGGGk."
   ".kgGHGGGGGGHGGgk"
-  "kggggGGGGGGggggk"
+  "kggggGoGGoGggggk"
   "kgkkggggggggkkgk"
   ".kk..kkkkkk..kk."))
 
@@ -390,10 +678,10 @@
   "......kbbbk....."
   "......kpPbk....."
   "......kPpPk..kk."
-  ".....kOOOOOk.lLk"
-  "....kOoOOOoOkPk."
-  "....kOOOoOOk...."
-  "....kcOOOOck...."
+  ".....kDDDDDk.lLk"
+  "....kDoDDDoDkPk."
+  "....kDDDoDDk...."
+  "....kcDDDDck...."
   "....kccccccck..."
   "...kccCcccCcck.."
   "...kcccCccccck.."
