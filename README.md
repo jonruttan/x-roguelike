@@ -118,10 +118,11 @@ Each game of `kettle` is an errand drawn from the set's scenes: `(scene
 NAME GIVER . PROPS)` is a link, the GIVER a creature that talks, who
 `(wants "thing")` and, given it, `(gives CLASS "name")` or `(gives
 goal)`, with its `(ask ...)`, `(again ...)` and `(done ...)` lines, in
-which `{want}` is the thing wanted and `{where}` the way to it in
-screens.  A scene giving the goal stands on the hub; what it wants,
-another scene gives, a screen farther out, and so on, `(chain LO HI)`
-links at most; the last want lies on the ground a screen beyond, or
+which `{want}` is the thing wanted and `{where}` the way to it as the
+people say it: the `(where "TEXT")` of the band it lies in and which
+way from here, "up in the hills, north-east of here".  A scene giving
+the goal stands on the hub; what it wants, another scene gives, a
+screen farther out, and so on, `(chain LO HI)` links at most; the last want lies on the ground a screen beyond, or
 with the token's `(carrier "kind")`.  A `(goal NAME GLYPH)` with no
 level lies nowhere and is the chain's to give.  The chain is read
 outward, by what each person says, and paid inward, by what each
