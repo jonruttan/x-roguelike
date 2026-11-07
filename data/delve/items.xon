@@ -12,7 +12,9 @@
 ;
 ; The player comes in bare-handed and has to find a weapon before the
 ; packs find them: the Galleries hold the miners' tools and mending,
-; and the rest lies deeper, by its (depth LO HI).
+; and the rest lies deeper, by its (depth LO HI).  A pick lies
+; somewhere in each band, (per-band 1), and may be found by chance as
+; well: bare hands last until it is found, not all the way down.
 
 (item potion "mending" (rarity 30) (effect heal 10 20))
 (item potion "deep mending" (rarity 10) (depth 4 12) (effect heal 25 45))
@@ -39,7 +41,7 @@
 (item ring "silence" (rarity 8) (depth 6 12) (bonus stealth 1))
 
 (item weapon "lantern pole" (rarity 10) (depth 1 6) (damage 1 4) (strength 10))
-(item weapon "pick" (rarity 14) (damage 1 6) (strength 12))
+(item weapon "pick" (rarity 14) (per-band 1) (damage 1 6) (strength 12))
 (item weapon "miner's blade" (rarity 12) (depth 2 12) (damage 2 7) (strength 14))
 (item weapon "sledge" (rarity 8) (depth 5 12) (damage 3 10) (strength 17))
 

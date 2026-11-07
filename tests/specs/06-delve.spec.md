@@ -186,12 +186,13 @@ blow on a sleeper -- is in 10-elements.
 ```roguelike
 (def g (spec-game-on (spec-set-named "delve") 4 ()))
 (game-creatures! g ())
+(player-hp! (game-player g) 1000)
 (def line (if (null? (spec-open-line g 3)) (spec-open-line g 2) (spec-open-line g 3)))
 (def cr (spec-place! g "knocker" (first (rest line)) (rest (rest line)) 100 'awake))
 (creature-state! cr 'fleeing)
 (def shot? (fn (_) (List any? (fn (_ m) (str=? m "The knocker shoots a stone at you!")) (game-log g))))
 (spec-press-until g "." shot? 80)
-(write (list (not (null? line)) (shot?) (< (player-hp (game-player g)) 14)))
+(write (list (not (null? line)) (shot?) (< (player-hp (game-player g)) 1000)))
 ```
 ---
     (#t #t #t)
@@ -379,7 +380,7 @@ blow on a sleeper -- is in 10-elements.
 
 ## what each level is sure of
 
-### something to eat lies on every level; the Galleries lay one vigour and one upgrade over their three levels
+### something to eat lies on every level; the Galleries lay one vigour, one upgrade and one pick over their three levels
 
 ```roguelike
 (def g (spec-game-on (spec-set-named "delve") 4 ()))
@@ -391,7 +392,7 @@ blow on a sleeper -- is in 10-elements.
 (def second-food (food?))
 (down!)
 (def count (fn (_ name) (List count-if (fn (_ x) (str=? x (Str8 append "band The Galleries: " name))) (game-sure g))))
-(write (list (game-depth g) first-food second-food (food?) (count "vigour") (count "upgrade")))
+(write (list (game-depth g) first-food second-food (food?) (count "vigour") (count "upgrade") (count "pick")))
 ```
 ---
-    (3 #t #t #t 1 1)
+    (3 #t #t #t 1 1 1)
