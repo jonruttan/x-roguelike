@@ -35,7 +35,9 @@
 ; 28 the chain: the quests made for this game from the set's scenes,
 ; each a (quest ...) form as a set would write it, 29 the doors laid,
 ; (KEY . NAME) each, the screen's key and the interior behind it, 30
-; the interior stood in, its name, or nil outside.
+; the interior stood in, its name, or nil outside, 31 the marks of what
+; the set has made sure of: "stocked N" for each level stocked, and one
+; "band NAME: ITEM" for each item a band has laid.
 ; Every slot here is read through the object doors, not the class: a
 ; class send costs some two hundred objects, and a turn reads thousands.
 (def %st-ref (fn (_ v k) (obj-ref v (int+ k 1))))
@@ -141,6 +143,9 @@
 (def game-door! (fn (_ g key name) (%st-put! g 29 (pair (pair key name) (%st-get g 29)))))
 (def game-inside (fn (_ g) (%st-get g 30)))
 (def game-inside! (fn (_ g name) (%st-put! g 30 name)))
+(def game-sure (fn (_ g) (%st-get g 31)))
+(def game-sure? (fn (_ g mark) (List includes? mark (%st-get g 31))))
+(def game-sure! (fn (_ g mark) (%st-put! g 31 (pair mark (%st-get g 31)))))
 ; The key the level in hand is kept under: its screen's, or, inside,
 ; that with a > after it.
 (def game-level-key
@@ -240,11 +245,13 @@
 ; --- creatures ---------------------------------------------------------------
 
 ; A creature is a vector: 0 its kind, (NAME GLYPH . PROPS), 1 row, 2
-; column, 3 hit points, 4 its state (asleep, awake or fleeing), 5 the
-; conditions, 6 an item it carries.
+; column, 3 hit points, 4 its state (asleep, awake, wandering or
+; fleeing), 5 the conditions, 6 an item it carries, 7 where it is
+; making for, (R . C), or nil.  Where it makes for is not saved: a
+; creature read back picks its way afresh.
 (def creature-make
   (fn (_ kind r c hp state)
-    (def cr (Vector make 7 ()))
+    (def cr (Vector make 8 ()))
     (%st-set! cr 0 kind)
     (%st-set! cr 1 r)
     (%st-set! cr 2 c)
@@ -262,6 +269,8 @@
 (def creature-state! (fn (_ cr s) (%st-set! cr 4 s)))
 (def creature-carried (fn (_ cr) (%st-ref cr 6)))
 (def creature-carried! (fn (_ cr it) (%st-set! cr 6 it)))
+(def creature-target (fn (_ cr) (%st-ref cr 7)))
+(def creature-target! (fn (_ cr at) (%st-set! cr 7 at)))
 (def creature-name (fn (_ cr) (first (creature-kind cr))))
 (def creature-glyph (fn (_ cr) (List ref 1 (creature-kind cr))))
 (def creature-prop (fn (_ cr key default) (data-prop (creature-kind cr) key default)))
@@ -317,7 +326,7 @@
 
 (def game-new
   (fn (_ set seed rows cols)
-    (def g (Vector make 31 ()))
+    (def g (Vector make 32 ()))
     (def rng (Random sw seed))
     (%st-put! g 0 rng)
     (%st-put! g 1 set)
@@ -430,6 +439,10 @@
                0 (player-rings (game-player g)))))
 (def state-ring? (fn (_ g key) (< 0 (state-ring-bonus g key))))
 
+; Whether the level is one of the set's (gentle N) first.
+(def state-gentle?
+  (fn (_ g) (def n (game-param1 g (lit gentle) 0)) (if (< 0 n) (not (< n (game-depth g))) #f)))
+
 (def state-strength (fn (_ g) (+ (player-str (game-player g)) (state-ring-bonus g (lit strength)))))
 
 ; The strength IT asks, its (strength N) less its enchantment, beyond
@@ -454,7 +467,7 @@
   game-ask game-ask! game-over game-over! game-guises game-known game-known! game-deepest game-deepest!
   game-log game-rows game-cols game-epitaph game-epitaph! game-seed game-goal-placed? game-goal-placed!
   game-pages-placed game-page-placed! game-quests game-quest-state game-quest-state! game-placed game-placed?
-  game-placed! game-traps game-traps! game-exploring game-exploring? game-exploring!
+  game-placed! game-sure game-sure? game-sure! game-traps game-traps! game-exploring game-exploring? game-exploring!
   game-screen game-screen! game-kept game-kept-level game-keep! game-chain game-chain!
   game-doors game-door game-door! game-inside game-inside! game-level-key
   game-world game-screens? game-world-cols game-world-rows game-hub game-screen-distance game-screen-in?
@@ -465,7 +478,7 @@
   player-armour player-armour! player-weapon player-weapon! player-rings player-rings! player-food player-food!
   player-conditions player-conditions! player-condition player-condition! player-tick!
   creature-make creature-kind creature-r creature-c creature-at! creature-hp creature-hp! creature-state
-  creature-state! creature-carried creature-carried! creature-name creature-glyph creature-prop creature-prop1
+  creature-state! creature-carried creature-carried! creature-target creature-target! creature-name creature-glyph creature-prop creature-prop1
   creature-trait? creature-condition creature-condition! creature-tick!
   item-make item-form item-class item-name item-prop item-prop1 item-count item-count! item-charges
   item-charges! item-enchant item-enchant! item-letter item-letter! item-r item-c item-at! item-class? item-class-in?
@@ -473,4 +486,4 @@
   state-roll state-chance? state-dir state-dirs state-dist state-adjacent? state-covers? state-sign
   state-creature-at state-creature-named state-items-at state-player-at? state-free?
   state-remove-creature! state-remove-floor! state-remove-pack!
-  state-ring-bonus state-ring? state-defence state-strength state-shortfall)
+  state-ring-bonus state-ring? state-gentle? state-defence state-strength state-shortfall)

@@ -8,9 +8,10 @@
 ;
 ; A save is xon, a form a line: the game's numbers, the player, each
 ; item by its class and name, each creature by its name, the pages
-; placed, the quests and what they placed, the chain, the choices it was
-; played with, the level's traps by their kind's name, its tiles and
-; seen flags as strings of digits, its rooms and stairs; then, in a
+; placed, the quests and what they placed, what the set made sure of,
+; the chain, the choices it was played with, the level's traps by
+; their kind's name, its tiles and seen flags as strings of digits, its
+; rooms and stairs; then, in a
 ; world of screens, the doors laid and the interior stood in, and each
 ; other level kept, screen or interior, after a (screen KEY) line, the
 ; same way.  Reading one builds the game again on the same set with the
@@ -35,7 +36,7 @@
   game-set game-depth game-depth! game-map game-map! game-player game-creatures game-creatures!
   game-floor game-floor! game-pack game-pack! game-turn game-turn! game-known game-known! game-deepest
   game-deepest! game-seed game-guises game-goal-placed? game-goal-placed! game-pages-placed game-page-placed!
-  game-quests game-quest-state! game-placed game-placed! game-traps game-traps! game-new
+  game-quests game-quest-state! game-placed game-placed! game-sure game-sure! game-traps game-traps! game-new
   game-screen game-screen! game-kept game-keep! game-screens? game-screen-key game-chain game-chain!
   game-doors game-door! game-inside game-inside! game-level-key
   player-r player-c player-at! player-hp player-hp! player-hpmax player-hpmax! player-str player-str!
@@ -137,6 +138,7 @@
             (pair (lit pages) (game-pages-placed g))
             (pair (lit quests) (List flat-map (fn (_ q) (list (first q) (symbol->str (rest q)))) (game-quests g)))
             (pair (lit placed) (game-placed g))
+            (pair (lit sure) (game-sure g))
             (pair (lit doors) (List flat-map (fn (_ d) (list (first d) (rest d))) (List reverse (game-doors g))))
             (pair (lit inside) (if (null? (game-inside g)) () (list (game-inside g))))
             (pair (lit choices) (List flat-map (fn (_ c) (List map symbol->str c)) (data-chosen (game-set g)))))
@@ -307,6 +309,7 @@
             (List for-each (fn (_ name) (game-page-placed! g name)) (List reverse (%sv-one forms (lit pages))))
             (%sv-quests! g (%sv-one forms (lit quests)))
             (List for-each (fn (_ name) (game-placed! g name)) (List reverse (%sv-one forms (lit placed))))
+            (List for-each (fn (_ mark) (game-sure! g mark)) (List reverse (%sv-one forms (lit sure))))
             (game-chain! g (%sv-chain forms))
             (%sv-doors! g (%sv-one forms (lit doors)))
             (List for-each (fn (_ name) (game-inside! g name)) (%sv-one forms (lit inside)))

@@ -15,6 +15,17 @@
 ; regen, stationary, erratic, invisible, breath, skittish, talks.  A fast creature takes two turns in one; a slow one,
 ; every other; so does one slowed by a wand.  A creature held by a
 ; scroll does nothing.
+;
+; A set with (hunt sight) hunts only by sight.  Every creature starts
+; asleep, a wakeful one wandering.  A sleeper in view wakes by a chance
+; of one in its distance plus the player's stealth; one wandering makes
+; for a cell somewhere on the level, and notices the player in view by
+; one in half its distance plus the stealth.  One awake makes for the
+; player while in view, then for where it last saw them, and wanders
+; again once there.  Those that arrive come wandering.  The set's
+; (elbow-room N) puts nothing within N cells of where the player
+; arrives; on its (gentle N) first levels a pack comes as one and none
+; arrive.
 
 (module roguelike/creatures)
 
@@ -24,12 +35,13 @@
 (import roguelike/map map-visible? map-tile map-down tile-door)
 (import roguelike/dungeon dungeon-spot)
 (import roguelike/state
-  game-rng game-set game-depth game-map game-player game-creatures game-creatures! game-turn game-param1
+  game-rng game-set game-depth game-map game-player game-creatures game-creatures! game-turn game-param game-param1
   player-r player-c player-condition state-covers?
   creature-make creature-r creature-c creature-at! creature-hp creature-hp! creature-state creature-state!
   creature-carried creature-name creature-prop creature-prop1 creature-trait? creature-condition creature-tick!
+  creature-target creature-target!
   state-say! state-tell! state-roll state-chance? state-dirs state-dist state-adjacent? state-sign state-free?
-  state-ring?)
+  state-ring? state-ring-bonus state-gentle?)
 (import roguelike/combat combat-creature-attacks! combat-hurt-player!)
 
 ; --- spawning ----------------------------------------------------------------
@@ -47,12 +59,23 @@
     (state-roll (game-rng g) (first d) (List ref 1 d))))
 (def %cr-hp-most (fn (_ cr) (List ref 1 (creature-prop cr (lit hp) (list 1 6)))))
 
-; How a new creature of KIND starts: awake when asked, when wakeful, or
-; by a chance of two in five.
+; Whether the set hunts by sight, (hunt sight).
+(def %cr-sight? (fn (_ g) (eq? (game-param1 g (lit hunt) (lit anywhere)) (lit sight))))
+; One chance in N, N at least one.
+(def %cr-one-in? (fn (_ g n) (= 0 ((game-rng g) int (if (< n 1) 1 n)))))
+(def %cr-stealth (fn (_ g) (state-ring-bonus g (lit stealth))))
+; How far CR stands from the player.
+(def %cr-dist
+  (fn (_ g cr) (def p (game-player g)) (state-dist (creature-r cr) (creature-c cr) (player-r p) (player-c p))))
+
+; How a new creature of KIND starts: awake when asked; when wakeful,
+; awake, or wandering by sight; asleep by sight; else asleep by a
+; chance of three in five.
 (def %cr-start
   (fn (_ g kind awake?)
     (match (awake? (lit awake))
-           ((data-trait? kind (lit wakeful)) (lit awake))
+           ((data-trait? kind (lit wakeful)) (if (%cr-sight? g) (lit wandering) (lit awake)))
+           ((%cr-sight? g) (lit asleep))
            ((state-chance? (game-rng g) 60) (lit asleep))
            (#t (lit awake)))))
 
@@ -63,7 +86,7 @@
 ; (pack LO HI), that many at most, the rest on free cells around it.
 (def creatures-place!
   (fn (_ g kind r c state)
-    (def pack (data-prop kind (lit pack) ()))
+    (def pack (if (state-gentle? g) () (data-prop kind (lit pack) ())))
     (def more (if (null? pack) 0 (- (state-roll (game-rng g) (first pack) (List ref 1 pack)) 1)))
     (game-creatures! g (pair (creature-make kind r c (%cr-hp g kind) state) (game-creatures g)))
     ((fn (self dirs n)
@@ -76,16 +99,27 @@
                (self (rest dirs) n)))))
      ((game-rng g) shuffle %cr-around) more)))
 
-; One creature of the depth, out of view, AWAKE? or as it comes.
-(def creatures-spawn-one!
-  (fn (_ g awake?)
+; Whether a creature may be put at R C: free, out of view, and past the
+; set's elbow room from the player.
+(def %cr-spot?
+  (fn (_ g r c)
+    (def p (game-player g))
+    (match ((not (state-free? g r c)) #f)
+           ((map-visible? (game-map g) r c) #f)
+           (#t (< (game-param1 g (lit elbow-room) 0) (state-dist r c (player-r p) (player-c p)))))))
+; One creature of the depth put where it may be, in the state START
+; gives its kind.
+(def %cr-spawn-one!
+  (fn (_ g start)
     (def kinds (creatures-kinds g (game-depth g)))
     (unless (null? kinds)
       (do (def kind ((game-rng g) choice kinds))
-          (def at (dungeon-spot (game-rng g) (game-map g)
-                    (fn (_ r c) (if (state-free? g r c) (not (map-visible? (game-map g) r c)) #f)) 100))
+          (def at (dungeon-spot (game-rng g) (game-map g) (fn (_ r c) (%cr-spot? g r c)) 100))
           (unless (null? at)
-            (creatures-place! g kind (first at) (rest at) (%cr-start g kind awake?)))))))
+            (creatures-place! g kind (first at) (rest at) (start kind)))))))
+; One creature of the depth, AWAKE? or as it comes.
+(def creatures-spawn-one!
+  (fn (_ g awake?) (%cr-spawn-one! g (fn (_ kind) (%cr-start g kind awake?)))))
 
 (def creatures-spawn!
   (fn (self g n awake?) (unless (< n 1) (do (creatures-spawn-one! g awake?) (self g (- n 1) awake?)))))
@@ -108,10 +142,23 @@
     (unless (if (null? kind) #t (null? at))
       (creatures-place! g kind (first at) (rest at) (if (data-trait? kind (lit wakeful)) (lit awake) (lit asleep))))))
 
-; Now and then a creature arrives on the level, awake: one chance in the
-; set's (wander N) a turn.
+; Whether the level has room for one more: always, but by sight, while
+; it holds fewer than the most of the set's (creatures LO HI), those
+; that talk aside.  Those by sight are not drawn to the player to be
+; killed, and would gather without it.
+(def %cr-room?
+  (fn (_ g)
+    (if (not (%cr-sight? g)) #t
+      (< (List count-if (fn (_ cr) (not (creature-trait? cr (lit talks)))) (game-creatures g))
+         (List ref 1 (game-param g (lit creatures) (list 3 6)))))))
+
+; Now and then a creature arrives on the level, awake, or wandering by
+; sight: one chance in the set's (wander N) a turn while there is room,
+; none on a gentle level.
 (def creatures-wander!
-  (fn (_ g) (when (= 0 ((game-rng g) int (game-param1 g (lit wander) 60))) (creatures-spawn-one! g #t))))
+  (fn (_ g)
+    (when (match ((state-gentle? g) #f) ((not (%cr-room? g)) #f) (#t (%cr-one-in? g (game-param1 g (lit wander) 60))))
+      (%cr-spawn-one! g (fn (_ kind) (if (%cr-sight? g) (lit wandering) (lit awake)))))))
 
 ; --- moving ------------------------------------------------------------------
 
@@ -150,15 +197,56 @@
 
 ; --- the turn ----------------------------------------------------------------
 
+(def %cr-seen? (fn (_ g cr) (map-visible? (game-map g) (creature-r cr) (creature-c cr))))
+(def %cr-player-at (fn (_ g) (pair (player-r (game-player g)) (player-c (game-player g)))))
+; CR awake, making for the player.
+(def %cr-rouse! (fn (_ g cr) (creature-state! cr (lit awake)) (creature-target! cr (%cr-player-at g))))
+
 ; A sleeping CR wakes when the player is next to it; when in view, by
-; a chance of one in three, one in ten with a ring of stealth.
-(def %cr-maybe-wake!
+; a chance of one in three, one in ten with a ring of stealth.  By
+; sight, only in view, by one in its distance plus the stealth.
+(def %cr-wakes?
   (fn (_ g cr)
-    (def p (game-player g))
-    (def near? (state-adjacent? (creature-r cr) (creature-c cr) (player-r p) (player-c p)))
-    (def seen? (map-visible? (game-map g) (creature-r cr) (creature-c cr)))
-    (when (match (near? #t) ((not seen?) #f) ((state-ring? g (lit stealth)) (state-chance? (game-rng g) 10)) (#t (state-chance? (game-rng g) 34)))
-      (creature-state! cr (lit awake)))))
+    (def near? (state-adjacent? (creature-r cr) (creature-c cr) (player-r (game-player g)) (player-c (game-player g))))
+    (match ((%cr-sight? g) (if (%cr-seen? g cr) (%cr-one-in? g (+ (%cr-dist g cr) (%cr-stealth g))) #f))
+           (near? #t)
+           ((not (%cr-seen? g cr)) #f)
+           ((state-ring? g (lit stealth)) (state-chance? (game-rng g) 10))
+           (#t (state-chance? (game-rng g) 34)))))
+(def %cr-maybe-wake! (fn (_ g cr) (when (%cr-wakes? g cr) (%cr-rouse! g cr))))
+
+; CR a step toward where it makes for, a cell of the level picked when
+; it has none.  Once there, or stopped, it has none again.
+(def %cr-head!
+  (fn (_ g cr)
+    (when (null? (creature-target cr))
+      (creature-target! cr (dungeon-spot (game-rng g) (game-map g) (fn (_ r c) (state-free? g r c)) 100)))
+    (def to (creature-target cr))
+    (def r0 (creature-r cr))
+    (def c0 (creature-c cr))
+    (unless (null? to) (%cr-toward! g cr (first to) (rest to)))
+    (when (match ((null? to) #t)
+                 ((if (= r0 (creature-r cr)) (= c0 (creature-c cr)) #f) #t)
+                 ((if (= (first to) (creature-r cr)) (= (rest to) (creature-c cr)) #f) #t)
+                 (#t #f))
+      (creature-target! cr ()))))
+
+; A wandering CR notices the player in view by one in half its distance
+; plus the stealth, and otherwise goes on its way; one stationary waits.
+(def %cr-wander!
+  (fn (_ g cr)
+    (match ((if (%cr-seen? g cr) (%cr-one-in? g (+ (int/ (%cr-dist g cr) 2) (%cr-stealth g))) #f) (%cr-rouse! g cr))
+           ((creature-trait? cr (lit stationary)) ())
+           (#t (%cr-head! g cr)))))
+
+; An awake CR, by sight: for the player in view, else for where it last
+; saw them, and wandering once there.
+(def %cr-hunt!
+  (fn (_ g cr)
+    (if (%cr-seen? g cr)
+      (do (creature-target! cr (%cr-player-at g)) (%cr-toward! g cr (player-r (game-player g)) (player-c (game-player g))))
+      (do (unless (null? (creature-target cr)) (%cr-head! g cr))
+          (when (null? (creature-target cr)) (creature-state! cr (lit wandering)))))))
 
 ; Whether CR, with breath, has the player in a line within seven cells.
 (def %cr-in-line?
@@ -233,12 +321,14 @@
       ((creature-trait? cr (lit talks)) ())
       ((< 0 (creature-condition cr (lit held))) ())
       ((eq? (creature-state cr) (lit asleep)) (%cr-maybe-wake! g cr))
+      ((eq? (creature-state cr) (lit wandering)) (%cr-wander! g cr))
       ((%cr-breathes? g cr) (%cr-breathe! g cr))
       ((%cr-summons? g cr) (%cr-summon! g cr))
       ((eq? (creature-state cr) (lit fleeing)) (%cr-away! g cr (player-r p) (player-c p)))
       ((state-adjacent? (creature-r cr) (creature-c cr) (player-r p) (player-c p)) (combat-creature-attacks! g cr))
       ((creature-trait? cr (lit stationary)) ())
       ((if (creature-trait? cr (lit erratic)) (state-chance? (game-rng g) 50) #f) (%cr-random-step! g cr))
+      ((%cr-sight? g) (%cr-hunt! g cr))
       (#t (%cr-toward! g cr (player-r p) (player-c p))))))
 
 ; How many turns CR takes this turn: two when fast or hastened, one
@@ -277,8 +367,13 @@
            ((creature-trait? cr (lit invisible)) #f)
            (#t #t))))
 
-; Every creature awake: a clamour.
-(def creatures-wake-all! (fn (_ g) (List for-each (fn (_ cr) (when (eq? (creature-state cr) (lit asleep)) (creature-state! cr (lit awake)))) (game-creatures g))))
+; Every creature asleep or wandering awake, making for the player: a
+; clamour.
+(def creatures-wake-all!
+  (fn (_ g)
+    (List for-each (fn (_ cr) (when (match ((eq? (creature-state cr) (lit asleep)) #t) ((eq? (creature-state cr) (lit wandering)) #t) (#t #f))
+                                (%cr-rouse! g cr)))
+      (game-creatures g))))
 ; Every creature in view runs.
 (def creatures-scare!
   (fn (_ g)

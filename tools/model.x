@@ -31,8 +31,10 @@
 ;                 points 3 to 8 more a level
 ;
 ; Two numbers are the engine's and not the set's: a creature starts
-; asleep 60 times in 100 unless wakeful (creatures.x %cr-start), and a
-; level-up gives 3 to 8 hit points (combat.x).  An erratic creature
+; asleep 60 times in 100 unless wakeful (creatures.x %cr-start), every
+; one asleep or wandering by (hunt sight), and a level-up gives 3 to 8
+; hit points (combat.x).  On the set's (gentle N) first levels a pack
+; is one and none wander in.  An erratic creature
 ; still strikes every turn it is beside the player; the first blow on
 ; a sleeper (surprise) is left out.  The player's level is a ceiling:
 ; it counts every creature killed.  MODEL_LEVEL fixes the player's
@@ -117,25 +119,38 @@
 (def %md-kinds
   (fn (_ set depth)
     (List filter (fn (_ k) (if (data-trait? k (lit talks)) #f (%md-covers? k depth))) (data-all set (lit creature)))))
-(def %md-pack-mid (fn (_ kind) (%md-mid (data-prop kind (lit pack) (list 1 1)))))
+; Whether the set hunts by sight; whether DEPTH is one of its gentle
+; first levels.
+(def %md-sight? (fn (_ set) (eq? (first (data-one set (lit hunt) (list (lit anywhere)))) (lit sight))))
+(def %md-gentle?
+  (fn (_ set depth) (def n (first (data-one set (lit gentle) (list 0)))) (if (< 0 n) (not (< n depth)) #f)))
+; KIND's pack at DEPTH: one on a gentle level.
+(def %md-pack (fn (_ set depth kind) (if (%md-gentle? set depth) (list 1 1) (data-prop kind (lit pack) (list 1 1)))))
+(def %md-pack-mid (fn (_ set depth) (fn (_ kind) (%md-mid (%md-pack set depth kind)))))
 
 ; The level's creatures: (EACH AWAKE WANDER), how many at the start, how
-; many of those awake, and how many more come in a hundred turns.
+; many of those awake and hunting, and how many more come in a hundred
+; turns.  By sight none starts hunting, and on a gentle level none
+; comes.
 (def %md-numbers
-  (fn (_ set kinds)
+  (fn (_ set depth kinds)
     (def placements (%md-mid (data-one set (lit creatures) (list 3 6))))
-    (def awake (fn (_ k) (* (if (data-trait? k (lit wakeful)) (%md-f 1) (/ (%md-f 40) 100)) (%md-pack-mid k))))
-    (list (* placements (%md-mean (List map %md-pack-mid kinds)))
+    (def mid (%md-pack-mid set depth))
+    (def awake (fn (_ k) (* (match ((%md-sight? set) (%md-f 0)) ((data-trait? k (lit wakeful)) (%md-f 1)) (#t (/ (%md-f 40) 100)))
+                            (mid k))))
+    (list (* placements (%md-mean (List map mid kinds)))
           (* placements (%md-mean (List map awake kinds)))
-          (/ (* 100 (%md-mean (List map %md-pack-mid kinds))) (first (data-one set (lit wander) (list 60)))))))
+          (if (%md-gentle? set depth) (%md-f 0)
+            (/ (* 100 (%md-mean (List map mid kinds))) (first (data-one set (lit wander) (list 60))))))))
 
 ; The experience the level's creatures hold, all of them killed.
 (def %md-exp-at
   (fn (_ set depth)
     (def kinds (%md-kinds set depth))
-    (* (first (%md-numbers set kinds))
-       (%md-mean (List map (fn (_ k) (* (%md-f (data-prop1 k (lit exp) 0)) (%md-pack-mid k))) kinds))
-       (/ (%md-f 1) (%md-mean (List map %md-pack-mid kinds))))))
+    (def mid (%md-pack-mid set depth))
+    (* (first (%md-numbers set depth kinds))
+       (%md-mean (List map (fn (_ k) (* (%md-f (data-prop1 k (lit exp) 0)) (mid k))) kinds))
+       (/ (%md-f 1) (%md-mean (List map mid kinds))))))
 
 ; The chance a draw at DEPTH is of GROUP, gold aside.
 (def %md-draw
@@ -204,8 +219,8 @@
 
 (def %md-level-lines
   (fn (_ set depth kinds)
-    (def n (%md-numbers set kinds))
-    (%md-line " creatures " (%md-dec (first n)) " at the start, " (%md-dec (List ref 1 n)) " of them awake, "
+    (def n (%md-numbers set depth kinds))
+    (%md-line " creatures " (%md-dec (first n)) " at the start, " (%md-dec (List ref 1 n)) " of them hunting, "
               (%md-dec (List ref 2 n)) " more every hundred turns")
     (%md-line " items " (%md-dec (%md-mid (data-one set (lit items) (list 4 8)))) " a level: a weapon on "
               (%md-pct 0 (%md-on-level set depth (lit weapon))) " of levels, armour on "
@@ -218,7 +233,7 @@
 
 ; KIND's row against WHO bare and with GEAR.
 (def %md-kind-row
-  (fn (_ kind who gear)
+  (fn (_ set depth kind who gear)
     (def bonus (%md-str-bonus (List ref 1 who)))
     (def hp (first who))
     (def kh (data-prop kind (lit hp) (list 1 6)))
@@ -230,7 +245,7 @@
     (def one-armed (* (%md-hurt kind armour) t-armed))
     (def open (fn (_ one) (%md-most (fn (_ k) (/ (* one (* k (+ k 1))) 2)) hp)))
     (def line (fn (_ one) (%md-most (fn (_ k) (* one k)) hp)))
-    (def pack (data-prop kind (lit pack) (list 1 1)))
+    (def pack (%md-pack set depth kind))
     (%md-line " " (%md-rpad 18 (first kind)) (%md-pct 6 you) (%md-pct 6 (%md-hit (data-prop1 kind (lit level) 1) 0))
               (%md-col 8 (%md-hurt kind 0)) (%md-col 9 t-bare) (%md-col 7 t-armed) (%md-col 11 one-bare) (%md-col 7 one-armed)
               (%md-pad 7 (%md-span pack))
@@ -246,7 +261,7 @@
     (%md-head set depth who gear)
     (%md-level-lines set depth kinds)
     (%md-titles)
-    (List for-each (fn (_ k) (%md-kind-row k who gear)) kinds)
+    (List for-each (fn (_ k) (%md-kind-row set depth k who gear)) kinds)
     (%md-line "")))
 
 (def %md-main

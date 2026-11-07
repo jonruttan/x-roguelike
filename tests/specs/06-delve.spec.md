@@ -164,15 +164,18 @@ blow on a sleeper -- is in 10-elements.
 
 ## creatures
 
-### a pack is placed together
+### below the first level, a pack is placed together
 
 ```roguelike
 (def g (spec-game-on (spec-set-named "delve") 4 ()))
+(player-hp! (game-player g) 1000)
+(player-at! (game-player g) (first (map-down (game-map g))) (rest (map-down (game-map g))))
+(game-key! g ">")
 (game-creatures! g ())
 (def open (spec-open g))
-(creatures-place! g (spec-creature g "mine rat") (first (rest open)) (rest (rest open)) 'asleep)
+(creatures-place! g (spec-creature g "cave crawler") (first (rest open)) (rest (rest open)) 'asleep)
 (def n (List length (game-creatures g)))
-(write (list (< 1 n) (< n 5) (List all? (fn (_ cr) (str=? (creature-name cr) "mine rat")) (game-creatures g))
+(write (list (< 1 n) (< n 5) (List all? (fn (_ cr) (str=? (creature-name cr) "cave crawler")) (game-creatures g))
              (List all? (fn (_ cr) (< (state-dist (creature-r cr) (creature-c cr) (first (rest open)) (rest (rest open))) 2)) (game-creatures g))))
 ```
 ---
@@ -266,3 +269,97 @@ blow on a sleeper -- is in 10-elements.
 ```
 ---
     (#t "a potion of mending" #f #t)
+
+## hunting by sight
+
+### a new game's creatures are all asleep, none within eight cells of the player, and the first level has no traps
+
+```roguelike
+(def g (spec-game-on (spec-set-named "delve") 4 ()))
+(def p (game-player g))
+(def kept (List reject (fn (_ cr) (creature-trait? cr 'talks)) (game-creatures g)))
+(write (list (< 0 (List length kept)) (List all? (fn (_ cr) (eq? (creature-state cr) 'asleep)) kept)
+             (List all? (fn (_ cr) (< 8 (state-dist (creature-r cr) (creature-c cr) (player-r p) (player-c p)))) kept)
+             (game-traps g)))
+```
+---
+    (#t #t #t ())
+
+### on the first level a pack comes as one and none arrive; below it, they arrive wandering
+
+```roguelike
+(def g (spec-game-on (spec-set-named "delve") 4 ()))
+(player-hp! (game-player g) 1000)
+(game-creatures! g ())
+(def open (spec-open g))
+(creatures-place! g (spec-creature g "cave crawler") (first (rest open)) (rest (rest open)) 'asleep)
+(def alone (List length (game-creatures g)))
+(game-creatures! g ())
+(spec-press-until g "s" (fn (_) #f) 60)
+(def none (List length (game-creatures g)))
+(def m (game-map g))
+(player-at! (game-player g) (first (map-down m)) (rest (map-down m)))
+(game-key! g ">")
+(game-creatures! g ())
+(spec-press-until g "s" (fn (_) (not (null? (game-creatures g)))) 400)
+(write (list alone none (game-depth g) (not (null? (game-creatures g)))
+             (List all? (fn (_ cr) (eq? (creature-state cr) 'wandering)) (game-creatures g))))
+```
+---
+    (1 0 2 #t #t)
+
+### a sleeper beside the player wakes; one wandering beside them notices them; one awake out of sight with nowhere to go wanders
+
+```roguelike
+(def g (spec-game-on (spec-set-named "delve") 4 ()))
+(player-hp! (game-player g) 1000)
+(game-creatures! g ())
+(def m (game-map g))
+(def open (spec-open g))
+(def sleeper (spec-place! g "cave crawler" (first (rest open)) (rest (rest open)) 1000 'asleep))
+(game-key! g "s")
+(def woke (creature-state sleeper))
+(creature-state! sleeper 'wandering)
+(game-key! g "s")
+(def noticed (creature-state sleeper))
+(game-creatures! g ())
+(def hidden (List find (fn (_ at) (if (= (map-tile m (first at) (rest at)) tile-floor) (not (map-visible? m (first at) (rest at))) #f))
+              (List fold (fn (_ acc r) (List append acc (List map (fn (_ c) (pair r c)) (List range 0 80)))) () (List range 0 22))))
+(def far (spec-place! g "rust golem" (first hidden) (rest hidden) 1000 'awake))
+(game-key! g "s")
+(write (list woke noticed (creature-state far)))
+```
+---
+    ('awake 'awake 'wandering)
+
+### a blow on one wandering lands unawares
+
+```roguelike
+(def g (spec-game-on (spec-set-named "delve") 4 ()))
+(game-creatures! g ())
+(def open (spec-open g))
+(spec-place! g "rust golem" (first (rest open)) (rest (rest open)) 1000 'wandering)
+(game-key! g (first open))
+(write (first (game-messages g)))
+```
+---
+    "You strike the rust golem unawares."
+
+## what each level is sure of
+
+### something to eat lies on every level; the Galleries lay one vigour and one upgrade over their three levels
+
+```roguelike
+(def g (spec-game-on (spec-set-named "delve") 4 ()))
+(player-hp! (game-player g) 1000)
+(def food? (fn (_) (List any? (fn (_ it) (eq? (item-class it) 'food)) (game-floor g))))
+(def down! (fn (_) (def m (game-map g)) (player-at! (game-player g) (first (map-down m)) (rest (map-down m))) (game-key! g ">")))
+(def first-food (food?))
+(down!)
+(def second-food (food?))
+(down!)
+(def count (fn (_ name) (List count-if (fn (_ x) (str=? x (Str8 append "band The Galleries: " name))) (game-sure g))))
+(write (list (game-depth g) first-food second-food (food?) (count "vigour") (count "upgrade")))
+```
+---
+    (3 #t #t #t 1 1)

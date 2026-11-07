@@ -21,7 +21,7 @@
 (import roguelike/dungeon dungeon-spot)
 (import roguelike/state
   game-rng game-set game-map game-player game-traps game-traps! game-param
-  player-r player-c player-condition! state-tell! state-roll state-adjacent? state-items-at)
+  player-r player-c player-condition! state-tell! state-roll state-adjacent? state-items-at state-gentle?)
 (import roguelike/combat combat-hurt-player!)
 (import roguelike/creatures creatures-wake-all!)
 (import roguelike/items items-teleport!)
@@ -57,12 +57,12 @@
             (game-traps! g (pair (trap-make (first at) (rest at) ((game-rng g) choice kinds) #f) (game-traps g))))
           (self g kinds (- n 1))))))
 ; The set's (traps LO HI) of its kinds, hidden, on floor cells with
-; nothing on them.
+; nothing on them; none on a gentle level.
 (def traps-place!
   (fn (_ g)
     (def kinds (data-all (game-set g) (lit trap)))
     (def spec (game-param g (lit traps) ()))
-    (unless (if (null? kinds) #t (null? spec))
+    (unless (match ((null? kinds) #t) ((null? spec) #t) (#t (state-gentle? g)))
       (%tr-place! g kinds (state-roll (game-rng g) (first spec) (List ref 1 spec))))))
 
 (def %tr-effect!

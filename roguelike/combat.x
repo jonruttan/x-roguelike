@@ -81,14 +81,16 @@
     (state-remove-creature! g cr)
     (%cb-level-up! g)))
 
-; The player strikes CR.
+; The player strikes CR: on one asleep or wandering, unaware, a sure
+; blow the set's (surprise N) times over when N is more than one.
 (def combat-player-attacks!
   (fn (_ g cr)
     (def subs (list (pair "name" (creature-name cr))))
     (def p (game-player g))
     (def w (player-weapon p))
     (def short (if (null? w) 0 (state-shortfall g w)))
-    (def surprise (if (eq? (creature-state cr) (lit asleep)) (game-param1 g (lit surprise) 1) 1))
+    (def unaware? (match ((eq? (creature-state cr) (lit asleep)) #t) ((eq? (creature-state cr) (lit wandering)) #t) (#t #f)))
+    (def surprise (if unaware? (game-param1 g (lit surprise) 1) 1))
     (if (if (< 1 surprise) #f (not (combat-hit? (game-rng g) (- (player-level p) short) (creature-prop1 cr (lit defence) 3))))
       (state-tell! g (lit miss) "You miss the {name}." subs)
       (do (creature-hp! cr (- (creature-hp cr) (* surprise (%cb-player-damage g))))
