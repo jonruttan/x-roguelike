@@ -23,7 +23,7 @@ descents, and their specs stand.
 
 ## open ground
 
-### no rooms and no stairs, the outer ring floor, most of it floor with some wall, and every cell reachable
+### no rooms and no stairs, the outer ring floor, most of it floor with some thicket, and every cell reachable
 
 ```roguelike
 (def set (spec-set-named "kettle"))
@@ -33,7 +33,7 @@ descents, and their specs stand.
 (def ring? (List all? (fn (_ p) (= (map-tile m (first p) (rest p)) tile-floor))
              (List append (List map (fn (_ c) (pair 0 c)) (List range 0 80)) (List map (fn (_ c) (pair 21 c)) (List range 0 80))
                           (List map (fn (_ r) (pair r 0)) (List range 0 22)) (List map (fn (_ r) (pair r 79)) (List range 0 22)))))
-(write (list (map-rooms m) (map-down m) (map-up m) ring? (< (* 22 80 60) (* 100 floor)) (< (* 100 floor) (* 22 80 98)) (< 0 (count tile-wall))
+(write (list (map-rooms m) (map-down m) (map-up m) ring? (< (* 22 80 60) (* 100 floor)) (< (* 100 floor) (* 22 80 98)) (< 0 (count tile-thicket))
              (List all? (fn (_ ok) ok) (List map (fn (_ seed) ((fn (_ v) (Heap collect) v) (spec-connected? (spec-level-on set seed 1)))) (List range 1 11)))))
 ```
 ---

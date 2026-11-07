@@ -1,0 +1,24 @@
+; tui.xon -- the classic set: how the terminal draws it.
+;
+; A front-end's own forms; nothing else reads them.  (glyph WHAT "g")
+; is what stands for WHAT: a kind of terrain, a class of item, the
+; player.  (colour KIND N) is a kind of terrain's colour, 0-255; a kind
+; with no glyph or colour of its own looks like the kind it is a sort
+; of (see roguelike/map).
+
+(glyph floor ".")
+(glyph wall "#")
+(glyph door "+")
+(glyph passage "#")
+(glyph down ">")
+(glyph up "<")
+(glyph player "@")
+(glyph potion "!")
+(glyph scroll "?")
+(glyph wand "/")
+(glyph ring "=")
+(glyph weapon ")")
+(glyph armour "[")
+(glyph food ":")
+(glyph gold "$")
+(glyph goal "*")

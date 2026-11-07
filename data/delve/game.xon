@@ -19,18 +19,25 @@
 ; one before to TO.  (enter "TEXT") is said on its first level; the
 ; (guardian "NAME") creature waits by the stairs down on its last, and
 ; they stay shut while it lives; (colour N) is the level's colour, 0-255.
+; Each band carves its levels in its own shape, (level-style STYLE): the
+; pit worked bord and pillar, the flooded reach of the old stair, the
+; well-keepers' works, and the well-house round the stone's pool.
 (band "The Galleries" 3 (colour 94)
   (enter "The Galleries: the worked mine, propped and railed, its lamps long out.")
-  (guardian "fireman"))
+  (guardian "fireman")
+  (level-style pit))
 (band "The Flood" 6 (colour 67)
   (enter "The Flood: the water stands here, and runs one way.")
-  (guardian "undertow"))
+  (guardian "undertow")
+  (level-style flood))
 (band "The Old Works" 9 (colour 65)
   (enter "The Old Works: dressed stone, set without mortar, older than the mine.")
-  (guardian "warder"))
+  (guardian "warder")
+  (level-style works))
 (band "The Heart" 12 (colour 96)
   (enter "The Heart: the stone moves here, and the water is quiet.")
-  (guardian "Old Man"))
+  (guardian "Old Man")
+  (level-style well))
 
 (player 14 16)
 (unarmed 1 3)
@@ -79,23 +86,3 @@
 
 ; Classes known without being tried.
 (known potion scroll)
-
-(glyph floor ".")
-(glyph wall "#")
-(glyph door "+")
-(glyph passage ".")
-(glyph down ">")
-(glyph up "<")
-(glyph player "@")
-(glyph potion "!")
-(glyph scroll "?")
-(glyph wand "/")
-(glyph ring "=")
-(glyph weapon ")")
-(glyph armour "[")
-(glyph food ":")
-(glyph gold "$")
-(glyph goal "*")
-(glyph page "%")
-(glyph token "'")
-(glyph trap "^")

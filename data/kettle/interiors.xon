@@ -20,7 +20,7 @@
 
 (interior "old city vault" (depth 4 5) (chance 50)
   (enter "The Guild's lamps have been here before you, and the vault runs on past where they dug.")
-  (level-style caves) (cave-fill 35)
+  (level-style works)
   (creatures 2 4) (items 2 3))
 
 ; The pit, on the square: (below SET) makes its door the way down into
