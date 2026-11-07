@@ -248,6 +248,27 @@ blow on a sleeper -- is in 10-elements.
 ---
     (#t #t)
 
+### the walk goes round one who talks, never into them
+
+```roguelike
+(def first-step
+  (fn (_)
+    (def g (spec-game-on (spec-set-named "delve") 4 ()))
+    (game-creatures! g ())
+    (game-key! g "o")
+    (pair (player-r (game-player g)) (player-c (game-player g)))))
+(def at (first-step))
+(def g (spec-game-on (spec-set-named "delve") 4 ()))
+(game-creatures! g ())
+(spec-place! g "surveyor" (first at) (rest at) 1 'awake)
+(game-key! g "o")
+(def walk (fn (self n asked) (if (game-explore! g) (self (+ n 1) (if asked #t (not (null? (game-ask g))))) (list n asked))))
+(def done (walk 0 (not (null? (game-ask g)))))
+(write (list (< 0 (first done)) (first (rest done))))
+```
+---
+    (#t #f)
+
 ### L shows what was said lately, and takes no turn
 
 ```roguelike
