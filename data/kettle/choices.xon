@@ -1,0 +1,18 @@
+; choices.xon -- the kettle set: the ways to play it, --choose GROUP=NAME.
+;
+; (choice GROUP NAME . FORMS): one way to play the set, its FORMS in
+; front of the set's.  A group picked from not at all is the set as it
+; stands, which is its normal.
+;
+; The size: the valley and the errand.  What lives in the valley, and
+; what lies about, runs five rings out from the square, as far as the
+; seven by five valley reaches; so the large game is the longest errand
+; the valley holds, not a wider valley.
+(choice size small (world screens 5 3) (chain 1 2))
+(choice size normal)
+(choice size large (chain 4 5))
+
+; The difficulty: how many creatures a screen, and how hunger bites.
+(choice difficulty easy (creatures 1 3) (hunger 1800 300 150) (starve 12))
+(choice difficulty normal)
+(choice difficulty hard (creatures 3 7) (hunger 900 300 150) (starve 3))

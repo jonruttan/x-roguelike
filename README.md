@@ -8,7 +8,7 @@ is a game of its own on the same engine; `classic`, `delve` and
 `kettle` are the three shipped, the last a world of screens rather
 than a descent.
 
-    x -l roguelike -- [-s NAME] [-S N] [-d DIR] [play]
+    x -l roguelike -- [-s NAME] [-c GROUP=NAME]... [-S N] [-d DIR] [play]
     x -l roguelike -- scores
 
 The goal lies on the deepest level.  Held, it opens the stairs up, and
@@ -134,6 +134,16 @@ gold, fifty a level and a thousand for the win.  The end of a game
 says a line for each, in the set's `(message score-NAME "TEXT")` where
 it has one.  `kettle` counts its errands, the screens walked and the
 doors gone through.
+
+A set may offer ways to play it: `(choice GROUP NAME . FORMS)` is one,
+picked with `-c GROUP=NAME`, `--choose GROUP=NAME`, one a group.  Its
+forms go in front of the set's, so a knob the set has once is the
+choice's and a form it has many of is added to.  `-h` with `--set`
+lists what the set offers.  A save keeps a game's choices, and the
+scores show them beside each game.  `kettle` offers `size` `small`, a
+five by three valley and a short errand, `normal`, and `large`, the
+longest errand the valley holds; and `difficulty` `easy`, `normal` and
+`hard`, the creatures a screen and how hunger bites.
 
 What lies about is dispersed by two forms any set may use.  An item's
 `(depth LO HI)` is the levels, or the rings out from the hub, where it

@@ -29,3 +29,14 @@ accepts is what usage prints, in short and --long spellings.
 ```
 ---
     ("delve" "7" ("play") "delve" "7" ("scores") "-x" #t)
+
+### --choose spells a choice, as often as there are groups; one without GROUP=NAME stops the command line before a game
+
+```roguelike
+(import x/sys/opts)
+(def o (Opts parse roguelike-options (list "-c" "size=small" "--choose=difficulty=hard" "play")))
+(write (list (Str8 includes? "-c,--choose" (Opts usage roguelike-options)) (Opts values o "-c")
+             (roguelike-main (list "-c" "small")) (roguelike-main (list "--choose" "=small"))))
+```
+---
+    (#t ("size=small" "difficulty=hard") 2 2)

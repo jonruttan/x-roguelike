@@ -13,6 +13,7 @@
 ; level made or game started collects first.
 (import roguelike/base roguelike-version roguelike-main roguelike-options
   data-load data-all data-one data-get data-prop data-prop1 data-trait? data-glyph
+  data-choices data-chosen data-choice-text data-choose
   map-rows map-cols map-rooms map-down map-up map-tile map-seen? map-visible? map-walkable? room-lit?
   room-r0 room-c0 room-r1 room-c1 room-centre
   map-room-at map-light-radius! tile-rock tile-floor tile-wall tile-door tile-passage tile-down tile-up

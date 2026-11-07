@@ -7,16 +7,18 @@
 ; @license MIT No Attribution (MIT-0)
 ; lint-known: %lang-root
 ;
-;   x -l roguelike -- [-s NAME] [-S N] [-d DIR] [play]   a game
+;   x -l roguelike -- [-s NAME] [-c GROUP=NAME]... [-S N] [-d DIR] [play]
+;                                                       a game
 ;   x -l roguelike -- scores                            the best games
 ;
 ; The options are one declaration to the platform's Opts, which parses
 ; them and prints the help.  The set is a directory of .xon files under
-; the bundle's data/, or any directory given to --data.  Playing takes
-; the terminal: raw, on the
-; alternate screen, the cursor on the player, given back as it was on
-; the way out.  A game is saved by S and taken up again by the next
-; play; a finished game goes to the scores.
+; the bundle's data/, or any directory given to --data; --choose picks a
+; way to play it from those the set offers, and -h lists them.  Playing
+; takes the terminal: raw, on the alternate screen, the cursor on the
+; player, given back as it was on the way out.  A game is saved by S and
+; taken up again by the next play, with the choices it was saved with;
+; a finished game goes to the scores, its choices beside it.
 
 (module roguelike/cli)
 
@@ -27,8 +29,8 @@
 (import x/repl/term)
 (import x/tui/screen)
 (import x/sys/opts)
-(import roguelike/data data-load data-get)
-(import roguelike/state
+(import roguelike/data data-load data-get data-choices data-chosen data-choice-text data-choose)
+(import roguelike/state game-set
   game-over game-epitaph game-depth game-deepest game-messages game-ask game-player player-gold game-exploring? game-exploring!)
 (import roguelike/game game-make game-key! game-explore! game-score game-score-text game-help)
 (import roguelike/draw game-draw!)
@@ -42,6 +44,7 @@
   (Opts declare "x -l roguelike --" "[OPTIONS] [play | scores]"
     "A roguelike: a dungeon crawl whose creatures, items and messages are a set of .xon files.\nWith no word, or play, a game; scores lists the best games.  Playing, ? lists the keys."
     (list (Opts arg "-s" "--set" "NAME" "The set to play: classic, delve, kettle, or a directory under data/")
+          (Opts arg "-c" "--choose" "GROUP=NAME" "A way to play the set, of those it offers; -h lists them; again for another group")
           (Opts arg "-S" "--seed" "N" "The seed; the same seed is the same dungeon")
           (Opts arg "-d" "--data" "DIR" "Where the sets are, in place of the bundle's data/")
           (Opts flag "-V" "--version" "Print the version and exit")
@@ -122,6 +125,12 @@
 
 (def %cl-esc (fn (_ text) (Str8 append "\x1b" text)))
 
+; The choices game G is played with, as " [GROUP=NAME ...]", or "".
+(def %cl-chosen-text
+  (fn (_ g)
+    (def chosen (data-chosen (game-set g)))
+    (if (null? chosen) "" (Str8 append " [" (Str8 join " " (List map data-choice-text chosen)) "]"))))
+
 ; The game over: the epitaph said, a score kept, a save removed.
 (def %cl-finish!
   (fn (_ g set)
@@ -130,7 +139,8 @@
       ((eq? how (lit saved)) (do (save-write! g (save-path "save")) (%cl-say 1 "Saved.  Play again to take it up.\n") 0))
       (#t (do (when (File exists? (save-path "save")) (File unlink (save-path "save")))
               (save-score! (save-path "scores") (game-score g) (game-deepest g)
-                (match ((eq? how (lit won)) "won") ((eq? how (lit quit)) "quit") (#t (game-epitaph g))))
+                (Str8 append (match ((eq? how (lit won)) "won") ((eq? how (lit quit)) "quit") (#t (game-epitaph g)))
+                  (%cl-chosen-text g)))
               (%cl-say 1 (Str8 append
                            (match ((eq? how (lit won)) "You won") ((eq? how (lit quit)) "You quit")
                                   (#t (Str8 append "You were " (game-epitaph g))))
@@ -143,6 +153,29 @@
   (fn (_ opts)
     (if (null? (Opts value opts "-S")) (+ 1 (rest (Sys time-of-day))) (%cl-to-int (Opts value opts "-S")))))
 
+; The set --set names, under the data directory.
+(def %cl-set (fn (_ opts) (data-load (Str8 append (%cl-data-dir opts) "/" (Opts value opts "-s" "classic")))))
+
+; The choices --choose gives, (GROUP NAME) each; a word without an = raises.
+(def %cl-picks
+  (fn (_ opts)
+    (List map
+      (fn (_ w)
+        (def at (Str8 index-of "=" w))
+        (if (if (null? at) #t (< at 1)) (Err raise (lit arg) (Str8 append "--choose takes GROUP=NAME, not " w) ())
+          (list (Str8 ->sym (Str8 sub 0 at w)) (Str8 ->sym (Str8 sub (+ at 1) (- (Str8 length w) (+ at 1)) w)))))
+      (Opts values opts "-c"))))
+
+; The help, and the choices the set offers.
+(def %cl-help
+  (fn (_ opts)
+    (%cl-say 1 (Opts usage roguelike-options))
+    (def offered (guard (e ()) (data-choices (%cl-set opts))))
+    (unless (null? offered)
+      (%cl-say 1 (Str8 append "\nThe set " (Opts value opts "-s" "classic") " offers:\n"
+                   (Str8 join "" (List map (fn (_ c) (Str8 append "  -c " (data-choice-text c) "\n")) offered)))))
+    0))
+
 (def %cl-play
   (fn (_ opts)
     ; x.sh parks the user's terminal on fd 3 while the boot stream holds
@@ -153,11 +186,10 @@
       ((not (if (Term tty? 0) (Sys isatty 1) #f)) (do (%cl-say 2 "x-roguelike: not a terminal\n") 1))
       ((if (< (first size) 60) #t (< (rest size) 20)) (do (%cl-say 2 "x-roguelike: the terminal must be 60 by 20 at least\n") 1))
       (#t (do
-        (def dir (%cl-data-dir opts))
-        (def name (Opts value opts "-s" "classic"))
-        (def set (data-load (Str8 append dir "/" name)))
+        (def set (%cl-set opts))
+        (def picks (%cl-picks opts))
         (def saved (save-read (save-path "save") set (rest size) (first size)))
-        (def g (if (null? saved) (game-make set (%cl-seed opts) (rest size) (first size)) saved))
+        (def g (if (null? saved) (game-make (data-choose set picks) (%cl-seed opts) (rest size) (first size)) saved))
         (def screen (Screen make (rest size) (first size)))
         (def token (Term raw! 0))
         (Term emit 1 (Str8 append (%cl-esc "[?1049h")))
@@ -180,12 +212,14 @@
     (def opts (Opts parse roguelike-options args))
     (def words (Opts operands opts))
     (def seed (Opts value opts "-S"))
+    (def bad-pick (guard (e (%cl-err-text e)) (do (%cl-picks opts) ())))
     (match
       ((not (null? (Opts unknown opts)))
         (do (%cl-say 2 (Str8 append "x-roguelike: no such option: " (Opts unknown opts) "\n" (Opts usage roguelike-options))) 2))
-      ((Opts on? opts "-h") (do (%cl-say 1 (Opts usage roguelike-options)) 0))
+      ((Opts on? opts "-h") (%cl-help opts))
       ((Opts on? opts "-V") (do (%cl-say 1 (Str8 append "x-roguelike " roguelike-version "\n")) 0))
       ((if (null? seed) #f (null? (%cl-to-int seed))) (do (%cl-say 2 "x-roguelike: --seed takes a number\n") 2))
+      ((not (null? bad-pick)) (do (%cl-say 2 (Str8 append "x-roguelike: " bad-pick "\n")) 2))
       ((null? words) (guard (e (do (%cl-say 2 (Str8 append "x-roguelike: " (%cl-err-text e) "\n")) 1)) (%cl-play opts)))
       ((str=? (first words) "play") (guard (e (do (%cl-say 2 (Str8 append "x-roguelike: " (%cl-err-text e) "\n")) 1)) (%cl-play opts)))
       ((str=? (first words) "scores") (%cl-scores))
