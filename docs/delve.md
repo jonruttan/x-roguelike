@@ -842,9 +842,18 @@ people reads it its own way.  None is settled.
 
 ## What lives where
 
+**Before, and since.**  Every creature was there before, and the
+world has changed it.  Nothing comes from nowhere.  A creature has a
+before (what it was, and why it was there) and a since (what changed
+it: the breach, the stone's water, the pit stopping, the drought).
+The gallery shades were the firedamp shift; the lantern eels were
+river eels; the rust golem was sound while the works were dry.  A
+creature with no before is not ready to ship.
+
 Each creature fits its rock and its age, or is the uncanny where the
 stone's water runs.  Current names are given where they change, with
-the reason for the new one.
+the reason for the new one.  Rows marked *(to come)* are not in the
+game yet.
 
 ### The pit: the Galleries, levels 1 to 3
 
@@ -856,6 +865,7 @@ the reason for the new one.
 | **knocker** (sling imp) | the pit's own tale, the thing that knocks and throws stones; walks since the breach |
 | **pit ferret** (cave crawler) | feral, bred from the miners' ratters; hunts in packs |
 | gallery shade | the firedamp shift, forty years dead, walking since the breach |
+| pit pony *(to come)* | worked the haulage roads from stables underground, and was left below when the pumps stopped; three weeks in the dark have made it half-blind, frightened and quick to kick |
 | **fire-boss** (pit foreman) | guardian; that shift's gas-tester, who saw the Candle burn tall and sent them down anyway |
 
 ### The breach: the Flood, levels 4 to 6
@@ -866,6 +876,7 @@ the reason for the new one.
 | **silt crayfish** (silt crab) | blind white crayfish, up from the stone's pool |
 | **great leech** (pit lurker) | lies in the standing water and holds on |
 | **drowned shade** (flood wraith) | the Flood's dead |
+| ochre-crusted *(to come)* | any of these, standing long in the Flood: water out of the coal measures runs orange with iron ochre and crusts whatever stays in it |
 | undertow | guardian; the Flood's current, given a will by the stone's water |
 
 ### The well-keepers' works: the Old Works, levels 7 to 9
@@ -894,6 +905,7 @@ the reason for the new one.
 | road thief | the pit is stopped and men are hungry |
 | adder, hornet nest, boar, hill wolf | the wild hills and woods |
 | bog light | marsh gas over the bog, kin to the Candle; uncanny only to the shepherds |
+| adders at the yard wells, wolves come low *(to come)* | the hills' own animals, pushed toward the town as the stone drinks harder and the hill springs fail: the same creatures, nearer, and the curse showing in them |
 | Guild bailiff | the Guild's hired men, with bolts, about its dig on the rim |
 
 ### From time to time
@@ -919,7 +931,7 @@ lowest Galleries, now and then:
 
 | Adversary | What it is |
 |---|---|
-| dripstone | the cave's own growth, columns and curtains the stone's water laid down over ages, moving where the water runs |
+| dripstone | the cave's own growth, columns and curtains the stone's water laid down over ages, moving where the water runs; it crusts what the well-keepers left, and in places a keeper stands half grown into the wall |
 | the old bear | the bones of a bear that denned in the stone's cave before anyone came, quickened by its water |
 | pool-born | blind white things of the stone's pool, older and larger than the crayfish, come up the stair with the water |
 
