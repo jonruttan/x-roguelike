@@ -1,0 +1,67 @@
+; game.xon -- the town set: Kettle, the market town on the valley floor,
+; over the Delve.  Five screens of streets at two metres a cell, each a
+; district: the square, the pithead at the top of the main street, the
+; river end at the bottom, the terraces to the east and Guild Street to
+; the west (see docs/delve.md, The town).
+;
+; The kettle set joins this one as a region of its world: the town's
+; door is on the valley's hub, and a game of kettle starts through it,
+; on the square.  A step off the town's edge is out onto that door.
+; Nothing hostile walks the streets; what the town holds is its people.
+
+(set "town")
+(title "Kettle")
+(scale 2)
+
+; A world of screens three by three, of which the town names five: the
+; square in the middle, a district a step off each of its sides.
+(world screens 3 3)
+
+; The Delve lies under the pithead: the set beside this one, a region of
+; the same world, gone into by the pit's door (see the Pithead below).
+(join "delve")
+
+(player 14 16)
+(unarmed 1 3)
+(hunger 1200 300 150)
+(starve 6)
+(view 8)
+
+; Streets and terraces, in metres: rows of brick terraces under slate,
+; a house four to six metres along, a street between the rows.
+(level-style town)
+(terrace-depth 9 12)
+(terrace-length 24 56)
+(house-width 4 6)
+(lane 2 3)
+(street 3 5)
+(square 30 12)
+
+(creatures 0 0)
+(items 0 0)
+(gold 0 0 0)
+(exp 10)
+(regen 12)
+(known potion scroll)
+
+; The town as one band, so its walls and setts are drawn as the town's.
+(band "Kettle" 1)
+
+; The districts: (screen NAME (X Y) . PROPS), its PROPS in front of the
+; set's on that screen, its (enter "TEXT") said the first time there.
+(screen "the Square" (1 1)
+  (square 90 36))
+(screen "the Pithead" (1 0)
+  (enter "The pithead: the engine house cold, the gin still, the Tip black.")
+  (square 120 45)
+  (interior "pit" (depth 1 1) (chance 100) (region "delve")
+    (enter "The winding shaft: the cage gone, ladders down into the dark, and water loud below.")))
+(screen "the River End" (1 2)
+  (enter "The river end: the mill race low, the ropewalk, the tannery's reek.")
+  (house-width 5 8) (terrace-length 20 40) (lane 3 6) (square 40 12))
+(screen "the Terraces" (2 1)
+  (enter "The terraces: the miners' rows, doors shuttered, the chapel beyond.")
+  (terrace-length 40 100) (house-width 4 5) (street 4 6) (square 2 2))
+(screen "Guild Street" (0 1)
+  (enter "Guild Street: the Guild hall, the White Church, the Guild's shop.")
+  (terrace-depth 12 18) (house-width 8 16) (terrace-length 24 48) (street 6 9) (square 30 15))

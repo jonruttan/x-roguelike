@@ -2,34 +2,36 @@
 # @weight 1
 
 roguelike/data, roguelike/state and roguelike/game on the kettle set:
-one world.  Kettle joins the delve set as a region, and the pit's door
-on the square is the way down into it.  Below, the Delve's forms are
-the set in force; the way up out of its first level comes back onto
-the door.
+one world.  The town joins the delve set as a region, and the pit's
+door on the pithead, a step north of the square, is the way down into
+it.  Below, the Delve's forms are the set in force; the way up out of
+its first level comes back onto the door.
 
 
 ## the world
 
-### the kettle set joins the delve set: its forms are a region of Kettle's, and the pit on the square goes down into it
+### the town joins the delve set: its forms are a region of the valley's world, and the pit on the pithead goes down into it
 
 ```roguelike
 (def set (spec-set-named "kettle"))
-(def pit (List find (fn (_ f) (str=? (first f) "pit")) (data-all set 'interior)))
+(def town (data-region set "town"))
+(def pithead (List find (fn (_ s) (str=? (first s) "the Pithead")) (data-all town 'screen)))
+(def pit (List find (fn (_ f) (if (pair? f) (if (eq? (first f) 'interior) (str=? (List ref 1 f) "pit") #f) #f)) (List drop 2 pithead)))
 (def region (data-region set "delve"))
-(write (list (data-all set 'join) (data-get region 'title "") (List length (data-all region 'band))
-             (rest (Assoc find 'depth (rest pit))) (rest (Assoc find 'below (rest pit)))
+(write (list (data-all town 'join) (data-get region 'title "") (List length (data-all region 'band))
+             (rest (Assoc find 'depth (List drop 2 pit))) (rest (Assoc find 'region (List drop 2 pit)))
              (List any? (fn (_ f) (str=? (first f) "the Guild ledger")) (data-all set 'goal))
-             (first (first (data-all set 'band))) (first (first (data-all region 'band)))))
+             (first (first (data-all town 'band))) (first (first (data-all region 'band)))))
 ```
 ---
-    ((("delve")) "The Delve" 4 (0 0) ("delve") #t "Kettle" "The Galleries")
+    ((("delve")) "The Delve" 4 (1 1) ("delve") #t "Kettle" "The Galleries")
 
 ## the way down
 
-### the square lays the pit's door, and a step onto it says where it goes
+### the pithead lays the pit's door, and a step onto it says where it goes
 
 ```roguelike
-(def g (spec-game-on (spec-set-named "kettle") 4 ()))
+(def g (spec-to-pithead! (spec-game-on (spec-set-named "kettle") 4 ())))
 (def p (game-player g))
 (game-creatures! g ())
 (def door (map-down (game-map g)))
@@ -37,7 +39,7 @@ the door.
          (list (pair "j" (pair -1 0)) (pair "k" (pair 1 0)) (pair "l" (pair 0 -1)) (pair "h" (pair 0 1)))))
 (player-at! p (+ (first door) (first (rest d))) (+ (rest door) (rest (rest d))))
 (game-key! g (first d))
-(write (list (game-door g "3,2") (= (map-tile (game-map g) (first door) (rest door)) tile-down)
+(write (list (game-door g "town/1,0") (= (map-tile (game-map g) (first door) (rest door)) tile-down)
              (= (player-r p) (first door)) (= (player-c p) (rest door)) (game-messages g)))
 ```
 ---
@@ -46,7 +48,7 @@ the door.
 ### > on the door goes down into the Delve: its first level, made by its forms, the player on its stairs up, and the pit's word and the band's
 
 ```roguelike
-(def g (spec-game-on (spec-set-named "kettle") 4 ()))
+(def g (spec-to-pithead! (spec-game-on (spec-set-named "kettle") 4 ())))
 (def p (game-player g))
 (game-creatures! g ())
 (def door (map-down (game-map g)))
@@ -64,7 +66,7 @@ the door.
 ### the stairs below go on down and back up as the Delve's do
 
 ```roguelike
-(def g (spec-game-on (spec-set-named "kettle") 4 ()))
+(def g (spec-to-pithead! (spec-game-on (spec-set-named "kettle") 4 ())))
 (def p (game-player g))
 (game-creatures! g ())
 (def door (map-down (game-map g)))
@@ -86,10 +88,10 @@ the door.
 
 ## the way up
 
-### < on the first level's stairs up, with nothing in hand, climbs out onto the door, the square as it was left
+### < on the first level's stairs up, with nothing in hand, climbs out onto the door, the pithead as it was left
 
 ```roguelike
-(def g (spec-game-on (spec-set-named "kettle") 4 ()))
+(def g (spec-to-pithead! (spec-game-on (spec-set-named "kettle") 4 ())))
 (def p (game-player g))
 (game-creatures! g ())
 (def square (game-map g))
@@ -104,12 +106,12 @@ the door.
              (game-over g) (game-messages g)))
 ```
 ---
-    (#f () 0 #t #t "Kettle" #t #t () ("You climb out of the pit."))
+    (#t "town" 1 #t #t "Kettle" #t #t () ("You climb out of the pit."))
 
-### the Delve's goal brought up is not Kettle's: on the square it is no win
+### the Delve's goal brought up is not Kettle's: on the pithead it is no win
 
 ```roguelike
-(def g (spec-game-on (spec-set-named "kettle") 4 ()))
+(def g (spec-to-pithead! (spec-game-on (spec-set-named "kettle") 4 ())))
 (def p (game-player g))
 (game-creatures! g ())
 (def door (map-down (game-map g)))
@@ -125,14 +127,14 @@ the door.
 (write (list (game-below? g) (game-over g) (item-name (first (game-pack g)))))
 ```
 ---
-    (#f () "the Lodestar")
+    (#t () "the Lodestar")
 
 ## kept
 
-### a game saved below is read back below, and the way up still finds the square it left
+### a game saved below is read back below, and the way up still finds the pithead it left
 
 ```roguelike
-(def g (spec-game-on (spec-set-named "kettle") 4 ()))
+(def g (spec-to-pithead! (spec-game-on (spec-set-named "kettle") 4 ())))
 (def p (game-player g))
 (game-creatures! g ())
 (def door (map-down (game-map g)))
@@ -156,4 +158,4 @@ the door.
              (data-get (game-set h) 'title "")))
 ```
 ---
-    ((#t "delve" 1 "The Delve" #t #t #t) #f #t #t "Kettle")
+    ((#t "delve" 1 "The Delve" #t #t #t) #t #t #t "Kettle")

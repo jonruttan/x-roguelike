@@ -12,7 +12,7 @@ of it and the win at the hub.
 ### the kettle set has nineteen scenes, two of them giving the goal, a goal with no level, and a chain of two or three
 
 ```roguelike
-(def set (spec-set-named "kettle"))
+(def set (spec-valley))
 (def scenes (data-all set 'scene))
 (write (list (List length scenes) (List count-if (fn (_ s) (eq? (first (data-prop s 'gives ())) 'goal)) scenes)
              (List length (data-one set 'goal ())) (data-one set 'chain ())))
@@ -25,7 +25,7 @@ of it and the win at the hub.
 ### the way from one screen to another is said as the people say it: where it lies, then which way from here
 
 ```roguelike
-(def g (spec-game-on (spec-set-named "kettle") 4 ()))
+(def g (spec-game-on (spec-valley) 4 ()))
 (write (list (chain-where g (pair 3 2) (pair 5 1)) (chain-where g (pair 3 2) (pair 3 4)) (chain-where g (pair 3 2) (pair 2 2))
              (chain-where g (pair 3 2) (pair 4 0)) (chain-where g (pair 3 2) (pair 3 2))))
 ```
@@ -37,7 +37,7 @@ of it and the win at the hub.
 ### a new game's chain: the goal's giver on the hub, each link a screen farther out, each want the next link's gift, the last want lying a screen beyond
 
 ```roguelike
-(def g (spec-game-on (spec-set-named "kettle") 4 ()))
+(def g (spec-game-on (spec-valley) 4 ()))
 (def chain (game-chain g))
 (def prop (fn (_ q key) (data-prop (rest q) key ())))
 (def at (fn (_ q) (prop q 'screen)))
@@ -61,7 +61,7 @@ of it and the win at the hub.
 ### the goal's giver stands in the square and, walked into, says the way to what they want
 
 ```roguelike
-(def g (spec-game-on (spec-set-named "kettle") 4 ()))
+(def g (spec-game-on (spec-valley) 4 ()))
 (def chain (game-chain g))
 (def prop (fn (_ q key) (data-prop (rest q) key ())))
 (def first-q (first chain))
@@ -81,7 +81,7 @@ of it and the win at the hub.
 ### the last want lies where the chain says, walked to; the errand paid inward from there ends with the goal in the square, and the win
 
 ```roguelike
-(def g (spec-game-on (spec-set-named "kettle") 4 ()))
+(def g (spec-game-on (spec-valley) 4 ()))
 (player-hp! (game-player g) 1000)
 (def p (game-player g))
 (def chain (game-chain g))
@@ -132,7 +132,7 @@ of it and the win at the hub.
 ### the chain comes back from a save, and so does a link's state
 
 ```roguelike
-(def g (spec-game-on (spec-set-named "kettle") 4 ()))
+(def g (spec-game-on (spec-valley) 4 ()))
 (def giver (List find (fn (_ cr) (creature-trait? cr 'talks)) (game-creatures g)))
 (game-creatures! g (list giver))
 (game-key! g (spec-beside! g giver))
@@ -141,7 +141,7 @@ of it and the win at the hub.
 (File close (first tmp))
 (def path (rest tmp))
 (save-write! g path)
-(def h (save-read path (spec-set-named "kettle") 24 80))
+(def h (save-read path (spec-valley) 24 80))
 (File unlink path)
 (def names (fn (_ x) (List map (fn (_ q) (List ref 1 q)) (game-chain x))))
 (write (list (not (null? h)) (= (List length (game-chain g)) (List length (game-chain h))) (names g) (str=? (Str8 join "|" (names g)) (Str8 join "|" (names h)))

@@ -1,9 +1,9 @@
 ; creatures.xon -- the kettle set: what is met in the valley, by its
-; distance from Kettle's square.
+; distance from the town on the hub.
 ;
 ; The traits are the engine's (see data/classic/creatures.xon and
-; data/delve/creatures.xon).  Nothing has (depth 0 ...): the square is
-; safe.
+; data/delve/creatures.xon).  Nothing has (depth 0 ...): the fields round
+; the town are safe.
 
 ; A screen or two out: the farms and the road.
 (creature "farm dog" "d" (depth 1 2) (level 1) (hp 3 6) (attack 1 3) (defence 3) (exp 2) (traits skittish) (tale "A farm dog: the farms' own, and no friend to strangers."))

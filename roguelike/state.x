@@ -16,7 +16,7 @@
 (import x/type/vector)
 (import x/num/random)
 (import x/core/doors obj-ref obj-set! int+ int/)
-(import roguelike/data data-all data-one data-get data-prop data-prop1 data-trait?)
+(import roguelike/data data-all data-one data-get data-region data-prop data-prop1 data-trait?)
 (import roguelike/map map-walkable?)
 
 ; --- the game ----------------------------------------------------------------
@@ -37,9 +37,10 @@
 ; (KEY . NAME) each, the screen's key and the interior behind it, 30
 ; the interior stood in, its name, or nil outside, 31 the marks of what
 ; the set has made sure of: "stocked N" for each level stocked, and one
-; "band NAME: ITEM" for each item a band has laid, 32 the region stood
-; in, its name, or nil above, 33 the set the game began on, while below,
-; 34 the names of the kinds whose tale has been told.
+; "band NAME: ITEM" for each item a band has laid, 32 the regions stood
+; in, innermost first, each (NAME SET SCREEN DEPTH): the region's name,
+; and the set, the screen and the depth at its door, 33 unused, 34 the
+; names of the kinds whose tale has been told.
 ; Every slot here is read through the object doors, not the class: a
 ; class send costs some two hundred objects, and a turn reads thousands.
 (def %st-ref (fn (_ v k) (obj-ref v (int+ k 1))))
@@ -133,12 +134,29 @@
   (fn (_ g x y)
     (def hub (game-hub g))
     (+ (%st-abs (- x (first hub))) (%st-abs (- y (rest hub))))))
-; Whether screen X Y lies within the world.
+; The set's (screen NAME (X Y) . PROPS) for screen X Y, or nil: a
+; screen named, whose PROPS are in front of its band's on it.
+(def %st-screen-at
+  (fn (_ g x y)
+    (List find (fn (_ f) (def at (List ref 1 f)) (if (= (first at) x) (= (List ref 1 at) y) #f))
+      (data-all (game-set g) (lit screen)))))
+; Whether screen X Y lies within the world: inside its W by H, and, in
+; a world that names its screens, one of them.
 (def game-screen-in?
   (fn (_ g x y)
-    (match ((< x 0) #f) ((< y 0) #f) ((< x (game-world-cols g)) (< y (game-world-rows g))) (#t #f))))
-; The key a screen's level is kept under.
-(def game-screen-key (fn (_ x y) (Str8 append (Str8 str x) "," (Str8 str y))))
+    (match ((< x 0) #f) ((< y 0) #f) ((not (< x (game-world-cols g))) #f) ((not (< y (game-world-rows g))) #f)
+           ((null? (data-all (game-set g) (lit screen))) #t)
+           (#t (not (null? (%st-screen-at g x y)))))))
+; The screen stood on as the set names it, (NAME (X Y) . PROPS), or nil.
+(def game-screen-form
+  (fn (_ g) (def at (game-screen g)) (if (null? at) () (%st-screen-at g (first at) (rest at)))))
+; Its name, or "".
+(def game-screen-name (fn (_ g) (def f (game-screen-form g)) (if (null? f) "" (first f))))
+; The regions stood in as a path, outermost first, each name with a /
+; after it: "" above.
+(def %st-path (fn (_ g) (List fold (fn (_ acc f) (Str8 append (first f) "/" acc)) "" (%st-get g 32))))
+; The key screen X Y's level is kept under: the path, then X,Y.
+(def game-screen-key (fn (_ g x y) (Str8 append (%st-path g) (Str8 str x) "," (Str8 str y))))
 (def game-chain (fn (_ g) (%st-get g 28)))
 (def game-chain! (fn (_ g forms) (%st-put! g 28 forms)))
 (def game-doors (fn (_ g) (%st-get g 29)))
@@ -151,20 +169,25 @@
 (def game-sure? (fn (_ g mark) (List includes? mark (%st-get g 31))))
 (def game-sure! (fn (_ g mark) (%st-put! g 31 (pair mark (%st-get g 31)))))
 
-; Below a door into a region, (region NAME . FORMS) of the set (see
-; data.x), the region's forms are the set in force, so every level
-; there is made, drawn and peopled by them, and the set the game began
-; on waits until the player climbs back out.
-(def game-region (fn (_ g) (%st-get g 32)))
+; Through a door into a region, (region NAME . FORMS) of the set (see
+; data.x), the region's forms are the set in force, so every place
+; there is made, drawn and peopled by them, and the set the door is in
+; waits until the player comes back out.  A region may have doors into
+; another: each is stood in inside the last.
+(def game-regions (fn (_ g) (%st-get g 32)))
+; The region stood in, the innermost, or nil.
+(def game-region (fn (_ g) (def l (%st-get g 32)) (if (null? l) () (first (first l)))))
 (def game-below? (fn (_ g) (not (null? (%st-get g 32)))))
 ; The set the game began on, below or not.
-(def game-top-set (fn (_ g) (if (game-below? g) (%st-get g 33) (game-set g))))
-; Into the region NAME, whose forms are FORMS.
+(def game-top-set
+  (fn (_ g) (def l (%st-get g 32)) (if (null? l) (game-set g) (List ref 1 (List ref (- (List length l) 1) l)))))
+; Into the region NAME, whose forms are FORMS: the set, the screen and
+; the depth at the door kept, to come back to.
 (def game-go-below!
   (fn (_ g name forms)
-    (%st-put! g 33 (game-set g))
+    (%st-put! g 32 (pair (list name (game-set g) (game-screen g) (game-depth g)) (%st-get g 32)))
     (%st-put! g 1 forms)
-    (%st-put! g 32 name)))
+    (%st-put! g 26 ())))
 ; The ARGS of every form headed HEAD in the whole world: the set the
 ; game began on, then each of its regions, so a thing carried from one
 ; into the other is still known by its form.
@@ -172,17 +195,35 @@
   (fn (_ g head)
     (def top (game-top-set g))
     (List append (data-all top head) (List flat-map (fn (_ r) (data-all (rest r) head)) (data-all top (lit region))))))
-; Back out of the region onto the set the game began on.
+; Home, where the goal brought is the win, as (REGION X . Y): the hub of
+; the world the game starts in, which is the region behind the door the
+; set's (start NAME) names, or "", the set the game began on, with none.
+(def game-home
+  (fn (_ g)
+    (def top (game-top-set g))
+    (def start (data-get top (lit start) ""))
+    (def door (if (str=? start "") () (List find (fn (_ f) (str=? (first f) start)) (data-all top (lit interior)))))
+    (def region (if (null? door) "" (data-get (rest door) (lit region) "")))
+    (def world (data-one (if (str=? region "") top (data-region top region)) (lit world) (list (lit descent) 0 0)))
+    (pair region (pair (int/ (List ref 1 world) 2) (int/ (List ref 2 world) 2)))))
+; The region stood in, or "" in the set the game began on.
+(def game-place (fn (_ g) (if (game-below? g) (game-region g) "")))
+
+; Back out of the region stood in onto its door: the set, the screen and
+; the depth there again.
 (def game-go-above!
   (fn (_ g)
-    (%st-put! g 1 (%st-get g 33))
-    (%st-put! g 32 ())
-    (%st-put! g 33 ())))
+    (def door (first (%st-get g 32)))
+    (%st-put! g 32 (rest (%st-get g 32)))
+    (%st-put! g 1 (List ref 1 door))
+    (%st-put! g 26 (List ref 2 door))
+    (%st-put! g 2 (List ref 3 door))))
 ; The key the level in hand is kept under: its screen's, or, inside,
-; that with a > after it.
+; that with a > after it; in a descent, which keeps none, the path.
 (def game-level-key
   (fn (_ g)
-    (def key (game-screen-key (first (game-screen g)) (rest (game-screen g))))
+    (def at (game-screen g))
+    (def key (if (null? at) (%st-path g) (game-screen-key g (first at) (rest at))))
     (if (null? (game-inside g)) key (Str8 append key ">"))))
 
 ; The set's bands, (band NAME TO . PROPS) each, run one after another
@@ -201,10 +242,14 @@
 (def band-name (fn (_ b) (first b)))
 (def band-to (fn (_ b) (List ref 1 b)))
 (def band-prop1 (fn (_ b key default) (data-prop1 b key default)))
-; The forms the level in hand is made and drawn by: its band's PROPS in
-; front of the set's, so a knob or a glyph the band names is its own.
+; The forms the level in hand is made and drawn by: its screen's PROPS,
+; where the set names it, then its band's, in front of the set's, so a
+; knob or a glyph the screen or the band names is its own.
 (def game-forms
-  (fn (_ g) (def b (game-band g)) (if (null? b) (game-set g) (List append (rest (rest b)) (game-set g)))))
+  (fn (_ g)
+    (def b (game-band g))
+    (def s (game-screen-form g))
+    (List append (if (null? s) () (rest (rest s))) (if (null? b) () (rest (rest b))) (game-set g))))
 
 ; --- the player --------------------------------------------------------------
 
@@ -414,10 +459,12 @@
   (fn (_ text subs)
     (List fold (fn (_ t sub) (Str8 replace (Str8 append "{" (first sub) "}") (rest sub) t)) text subs)))
 
-; The set's message KEY, (message KEY "TEXT"), or DEFAULT, filled with SUBS.
+; The set's message KEY, (message KEY "TEXT"), or in a region that does
+; not say it, the set the game began on's, or DEFAULT, filled with SUBS.
 (def state-text
   (fn (_ g key default subs)
-    (def hit (List find (fn (_ args) (eq? (first args) key)) (data-all (game-set g) (lit message))))
+    (def find (fn (_ set) (List find (fn (_ args) (eq? (first args) key)) (data-all set (lit message)))))
+    (def hit ((fn (_ h) (if (if (null? h) (game-below? g) #f) (find (game-top-set g)) h)) (find (game-set g))))
     (state-fill (if (null? hit) default (List ref 1 hit)) subs)))
 
 ; Say the set's message KEY, or DEFAULT, filled with SUBS.
@@ -514,7 +561,8 @@
   game-ask game-ask! game-over game-over! game-guises game-known game-known! game-told game-told! game-deepest game-deepest!
   game-log game-rows game-cols game-epitaph game-epitaph! game-seed game-goal-placed? game-goal-placed!
   game-pages-placed game-page-placed! game-quests game-quest-state game-quest-state! game-placed game-placed?
-  game-region game-below? game-top-set game-world-all game-go-below! game-go-above!
+  game-regions game-region game-below? game-top-set game-world-all game-go-below! game-go-above!
+  game-screen-form game-screen-name game-home game-place
   game-placed! game-sure game-sure? game-sure! game-traps game-traps! game-exploring game-exploring? game-exploring!
   game-screen game-screen! game-kept game-kept-level game-keep! game-chain game-chain!
   game-doors game-door game-door! game-inside game-inside! game-level-key

@@ -9,23 +9,23 @@ a hundred, so a screen of the first ring always has a door.
 
 ## the set
 
-### the kettle set has three interiors, one for each ring of bands, each made its own way, and the pit on the square, which goes below
+### the kettle set has three interiors, one for each ring of bands, each made its own way, and the town on the hub, a region of its own
 
 ```roguelike
-(def set (spec-set-named "kettle"))
+(def set (spec-valley))
 (def prop (fn (_ f key) (def p (Assoc find key (rest f))) (if (null? p) () (rest p))))
-(def made (fn (_ f) (if (null? (prop f 'below)) (first (prop f 'level-style)) (pair 'below (prop f 'below)))))
+(def made (fn (_ f) (if (null? (prop f 'region)) (first (prop f 'level-style)) (pair 'region (prop f 'region)))))
 (write (List map (fn (_ f) (list (first f) (prop f 'depth) (made f))) (data-all set 'interior)))
 ```
 ---
-    (("farmhouse cellar" (1 2) 'rooms) ("shepherd's bothy" (3 3) 'rooms) ("old city vault" (4 5) 'works) ("pit" (0 0) ('below "delve")))
+    (("farmhouse cellar" (1 2) 'rooms) ("shepherd's bothy" (3 3) 'rooms) ("old city vault" (4 5) 'works) ("Kettle" (0 0) ('region "town")))
 
 ## doors
 
-### a screen of the first ring lays a door off its outer ring when an interior covers it; the hub lays only the pit's
+### a screen of the first ring lays a door off its outer ring when an interior covers it; the hub lays only the town's
 
 ```roguelike
-(def set (pair '(interior "shed" (depth 1 9) (chance 100) (rooms 1 1) (creatures 0 0) (items 0 0) (enter "A shed.")) (spec-set-named "kettle")))
+(def set (pair '(interior "shed" (depth 1 9) (chance 100) (rooms 1 1) (creatures 0 0) (items 0 0) (enter "A shed.")) (spec-valley)))
 (def g (spec-game-on set 4 ()))
 (def p (game-player g))
 (def hub (list (not (null? (map-down (game-map g)))) (game-door g "3,2")))
@@ -38,12 +38,12 @@ a hundred, so a screen of the first ring always has a door.
              (< 0 (first door)) (< (first door) 21) (< 0 (rest door)) (< (rest door) 79)))
 ```
 ---
-    ((#t "pit") #t #t "shed" #t #t #t #t)
+    ((#t "Kettle") #t #t "shed" #t #t #t #t)
 
 ### a step onto the door says where it goes
 
 ```roguelike
-(def set (pair '(interior "shed" (depth 1 9) (chance 100) (rooms 1 1) (creatures 0 0) (items 0 0) (enter "A shed.")) (spec-set-named "kettle")))
+(def set (pair '(interior "shed" (depth 1 9) (chance 100) (rooms 1 1) (creatures 0 0) (items 0 0) (enter "A shed.")) (spec-valley)))
 (def g (spec-game-on set 4 ()))
 (def p (game-player g))
 (game-creatures! g ())
@@ -64,7 +64,7 @@ a hundred, so a screen of the first ring always has a door.
 ### > on the door goes in: the interior's own level, made by its forms, with a way out and no way on, and what it says the first time
 
 ```roguelike
-(def set (pair '(interior "shed" (depth 1 9) (chance 100) (rooms 1 1) (creatures 0 0) (items 0 0) (enter "A shed.")) (spec-set-named "kettle")))
+(def set (pair '(interior "shed" (depth 1 9) (chance 100) (rooms 1 1) (creatures 0 0) (items 0 0) (enter "A shed.")) (spec-valley)))
 (def g (spec-game-on set 4 ()))
 (def p (game-player g))
 (game-creatures! g ())
@@ -88,7 +88,7 @@ a hundred, so a screen of the first ring always has a door.
 ### < on the way out comes out on the door, the screen as it was left; in again, the interior as it was left
 
 ```roguelike
-(def set (pair '(interior "shed" (depth 1 9) (chance 100) (rooms 1 1) (creatures 0 0) (items 0 0) (enter "A shed.")) (spec-set-named "kettle")))
+(def set (pair '(interior "shed" (depth 1 9) (chance 100) (rooms 1 1) (creatures 0 0) (items 0 0) (enter "A shed.")) (spec-valley)))
 (def g (spec-game-on set 4 ()))
 (def p (game-player g))
 (game-creatures! g ())
@@ -115,7 +115,7 @@ a hundred, so a screen of the first ring always has a door.
 ### > finds no stairs on a screen with no door, and no way further in inside
 
 ```roguelike
-(def set (pair '(interior "shed" (depth 1 9) (chance 100) (rooms 1 1) (creatures 0 0) (items 0 0) (enter "A shed.")) (spec-set-named "kettle")))
+(def set (pair '(interior "shed" (depth 1 9) (chance 100) (rooms 1 1) (creatures 0 0) (items 0 0) (enter "A shed.")) (spec-valley)))
 (def g (spec-game-on set 4 ()))
 (def p (game-player g))
 (game-creatures! g ())
@@ -141,7 +141,7 @@ a hundred, so a screen of the first ring always has a door.
 ### a save inside an interior comes back inside, the screen and the interior both kept and the door known
 
 ```roguelike
-(def set (pair '(interior "shed" (depth 1 9) (chance 100) (rooms 1 1) (creatures 0 0) (items 0 0) (enter "A shed.")) (spec-set-named "kettle")))
+(def set (pair '(interior "shed" (depth 1 9) (chance 100) (rooms 1 1) (creatures 0 0) (items 0 0) (enter "A shed.")) (spec-valley)))
 (def g (spec-game-on set 4 ()))
 (def p (game-player g))
 (game-creatures! g ())
@@ -172,7 +172,7 @@ a hundred, so a screen of the first ring always has a door.
 ### the farmhouse cellar is the only door the first ring lays, and over six seeds it lays some
 
 ```roguelike
-(def set (spec-set-named "kettle"))
+(def set (spec-valley))
 (def door-east
   (fn (_ seed)
     (def g (spec-game-on set seed ()))
@@ -192,7 +192,7 @@ a hundred, so a screen of the first ring always has a door.
 ### a game of a thousand keys among doors raises nothing and keeps every invariant
 
 ```roguelike
-(def set (pair '(interior "shed" (depth 1 9) (chance 100) (rooms 1 2) (creatures 0 1) (items 0 1)) (spec-set-named "kettle")))
+(def set (pair '(interior "shed" (depth 1 9) (chance 100) (rooms 1 2) (creatures 0 1) (items 0 1)) (spec-valley)))
 (def runs (List map (fn (_ seed) (spec-random-play set seed 1000)) (List range 3 4)))
 (write (list (List filter (fn (_ r) (not (null? (List ref 4 r)))) runs)
              (< 10 (List fold (fn (_ a r) (+ a (List ref 2 r))) 0 runs))))

@@ -13,7 +13,8 @@
 ; the chain, the choices it was played with, the level's traps by
 ; their kind's name, its tiles and seen flags as strings of digits, its
 ; rooms and stairs; then, in a world of screens, the doors laid, the
-; interior stood in, the region stood in below a door, whose the level
+; interior stood in, the regions stood in through doors, each with the
+; screen and depth at its door, whose the level
 ; in hand then is, and each other level kept, screen or interior, after
 ; a (screen KEY) line, the same way.  Reading one builds the game again on the same set with the
 ; same choices; a thing the set no longer has is left out.  A save is
@@ -39,7 +40,7 @@
   game-deepest! game-seed game-guises game-goal-placed? game-goal-placed! game-pages-placed game-page-placed!
   game-quests game-quest-state! game-placed game-placed! game-sure game-sure! game-traps game-traps! game-new
   game-screen game-screen! game-kept game-keep! game-screens? game-screen-key game-chain game-chain!
-  game-doors game-door! game-inside game-inside! game-level-key game-below? game-region game-top-set game-go-below!
+  game-doors game-door! game-inside game-inside! game-level-key game-below? game-region game-regions game-top-set game-go-below!
   player-r player-c player-at! player-hp player-hp! player-hpmax player-hpmax! player-str player-str!
   player-strmax player-strmax! player-level player-level! player-exp player-exp! player-gold player-gold!
   player-armour player-armour! player-weapon player-weapon! player-rings player-rings! player-food
@@ -115,6 +116,10 @@
                                  (if (null? (creature-carried cr)) "" (Str8 append (symbol->str (item-class (creature-carried cr))) "/" (item-name (creature-carried cr))))))
                 creatures))))
 
+; A screen's X and Y, (X . Y), or -1 for none.
+(def %sv-x (fn (_ at) (if (null? at) -1 (first at))))
+(def %sv-y (fn (_ at) (if (null? at) -1 (rest at))))
+
 ; The levels kept other than the one in hand, each after its (screen KEY).
 (def %sv-kept-forms
   (fn (_ g)
@@ -143,7 +148,7 @@
             (pair (lit sure) (game-sure g))
             (pair (lit doors) (List flat-map (fn (_ d) (list (first d) (rest d))) (List reverse (game-doors g))))
             (pair (lit inside) (if (null? (game-inside g)) () (list (game-inside g))))
-            (pair (lit below) (if (game-below? g) (list (game-region g)) ()))
+            (pair (lit regions) (List flat-map (fn (_ r) (list (List ref 0 r) (%sv-x (List ref 2 r)) (%sv-y (List ref 2 r)) (List ref 3 r))) (List reverse (game-regions g))))
             (pair (lit choices) (List flat-map (fn (_ c) (List map symbol->str c)) (data-chosen (game-top-set g)))))
       (%sv-chain-forms g)
       (List map (fn (_ args) (pair (lit guise) (pair (symbol->str (first args)) (rest args)))) (game-guises g))
@@ -290,6 +295,10 @@
     (List filter (fn (_ c) (List any? (fn (_ o) (if (eq? (first o) (first c)) (eq? (List ref 1 o) (List ref 1 c)) #f)) offered))
       (pairs (%sv-one forms (lit choices))))))
 
+; A (regions NAME X Y DEPTH ...) line as ((NAME X Y DEPTH) ...).
+(def %sv-regions
+  (fn (self l) (if (null? l) () (pair (List take 4 l) (self (List drop 4 l))))))
+
 ; The game saved at PATH on the set PLAIN, ROWS by COLS, or nil with
 ; none there or one that cannot be read.  The game is played with the
 ; choices it was saved with, those the set still offers.  The guises are
@@ -317,30 +326,37 @@
             (game-chain! g (%sv-chain forms))
             (%sv-doors! g (%sv-one forms (lit doors)))
             (List for-each (fn (_ name) (game-inside! g name)) (%sv-one forms (lit inside)))
-            ; Below, the level in hand is the region's; a thing carried or
-            ; dropped may come from anywhere in the world.
-            (def below (%sv-one forms (lit below)))
-            (def here (if (null? below) set (data-region set (first below))))
+            ; In a region, the level in hand is the region's; a thing carried
+            ; or dropped, or a creature kept, may come from anywhere in the
+            ; world.  Each region is gone into again from its door, outermost
+            ; first, the screen and the depth there as they were.
+            (def regions (%sv-regions (%sv-one forms (lit regions))))
+            (List for-each
+              (fn (_ r)
+                (game-screen! g (if (< (List ref 1 r) 0) () (pair (List ref 1 r) (List ref 2 r))))
+                (game-depth! g (List ref 3 r))
+                (game-go-below! g (first r) (data-region set (first r))))
+              regions)
+            (game-depth! g (List ref 1 head))
+            (def here (game-set g))
             (def world (List append set (List flat-map rest (data-all set (lit region)))))
             (game-map! g (%sv-level forms))
             (game-pack! g (%sv-items g world (%sv-all forms (lit pack))))
             (game-floor! g (%sv-items g world (%sv-all forms (lit floor))))
             (game-traps! g (List reject null? (List map (fn (_ a) (%sv-trap here a)) (%sv-all forms (lit trap)))))
             (game-creatures! g (List reject null? (List map (fn (_ a) (%sv-creature g here a)) (%sv-all forms (lit creature)))))
+            (List for-each
+              (fn (_ part)
+                (game-keep! g (first part)
+                  (list (%sv-level (rest part))
+                        (List reject null? (List map (fn (_ a) (%sv-creature g world a)) (%sv-all (rest part) (lit creature))))
+                        (%sv-items g world (%sv-all (rest part) (lit floor)))
+                        (List reject null? (List map (fn (_ a) (%sv-trap world a)) (%sv-all (rest part) (lit trap)))))))
+              (rest parts))
             (when (if (game-screens? g) (not (< (List ref 5 head) 0)) #f)
               (do (game-screen! g (pair (List ref 5 head) (List ref 6 head)))
-                  (List for-each
-                    (fn (_ part)
-                      (game-keep! g (first part)
-                        (list (%sv-level (rest part))
-                              (List reject null? (List map (fn (_ a) (%sv-creature g set a)) (%sv-all (rest part) (lit creature))))
-                              (%sv-items g world (%sv-all (rest part) (lit floor)))
-                              (List reject null? (List map (fn (_ a) (%sv-trap set a)) (%sv-all (rest part) (lit trap)))))))
-                    (rest parts))
-                  (when (null? below)
-                    (game-keep! g (game-level-key g)
-                      (list (game-map g) (game-creatures g) (game-floor g) (game-traps g))))))
-            (unless (null? below) (game-go-below! g (first below) here))
+                  (game-keep! g (game-level-key g)
+                    (list (game-map g) (game-creatures g) (game-floor g) (game-traps g)))))
             (%sv-player! g forms)
             (map-light! (game-map g) (player-r (game-player g)) (player-c (game-player g)))
             (state-say! g "Welcome back.")
