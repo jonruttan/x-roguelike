@@ -47,6 +47,7 @@
   game-exploring game-exploring! game-below? game-go-below! game-go-above! game-top-set
   game-screen game-screen! game-kept-level game-keep! game-screens? game-world-cols game-world-rows game-hub
   game-screen-distance game-screen-in? game-screen-key game-door game-inside game-inside! game-level-key
+  game-screen-form game-screen-name game-regions game-region game-home game-place
   game-deepest game-deepest! game-rows game-cols game-param game-param1 game-new game-epitaph! game-kept game-quests
   game-messages game-messages! game-log game-band game-band-from band-to band-prop1 game-forms
   player-r player-c player-at! player-hp player-hp! player-hpmax player-level player-food player-food!
@@ -67,7 +68,7 @@
 (import roguelike/chain chain-build!)
 (import roguelike/traps traps-found-at traps-place! traps-step! traps-search!)
 (import roguelike/interiors interiors-door! interiors-params interiors-prop1)
-(import roguelike/data data-one data-region)
+(import roguelike/data data-all data-one data-get data-region)
 (import roguelike/scale scale-check!)
 
 (def %gm-roll2 (fn (_ g spec) (state-roll (game-rng g) (List ref 0 spec) (List ref 1 spec))))
@@ -157,12 +158,16 @@
     (%gm-light! g)
     (Heap collect)))
 
-; The band's (enter "TEXT"), said on its first level.
+; The band's (enter "TEXT"), said on its first level, and the (enter
+; "TEXT") of the screen made, where the set names it.
 (def %gm-enter-band!
   (fn (_ g)
     (def b (game-band g))
+    (def s (game-screen-form g))
     (def text (if (null? b) "" (band-prop1 b (lit enter) "")))
-    (unless (if (str=? text "") #t (not (= (game-depth g) (game-band-from g)))) (state-say! g text))))
+    (def here (if (null? s) "" (data-get (rest (rest s)) (lit enter) "")))
+    (unless (if (str=? text "") #t (not (= (game-depth g) (game-band-from g)))) (state-say! g text))
+    (unless (str=? here "") (state-say! g here))))
 
 (def %gm-descend!
   (fn (_ g)
@@ -203,7 +208,7 @@
 ; taken up again, or made and its band's word said.
 (def %gm-enter-screen!
   (fn (_ g x y at)
-    (def kept (game-kept-level g (game-screen-key x y)))
+    (def kept (game-kept-level g (game-screen-key g x y)))
     (game-screen! g (pair x y))
     (game-depth! g (game-screen-distance g x y))
     (when (< (game-deepest g) (game-depth g)) (game-deepest! g (game-depth g)))
@@ -246,53 +251,69 @@
     (state-tell! g (lit go-out) "You come out of the {name}." subs)
     (%gm-keep! g)))
 
-; Through the door of the screen stood on, down into the region REGION
-; behind the interior NAME: the region's forms in force, its first
-; level made, the player on its stairs up, the interior's (enter
-; "TEXT") said and the band's word after it.  The screen is kept, to
-; come back to.
+; Through the door of the screen stood on into the region REGION behind
+; the interior NAME, the region's forms in force, the screen kept to
+; come back to.  A descent: down to its first level, made, the player on
+; its stairs up, the interior's (enter "TEXT") said and the band's word
+; after it.  A world of screens: onto its hub, the player in its middle,
+; the interior's word said and then the screen's.
 (def %gm-go-below!
   (fn (_ g name region)
     (def text (interiors-prop1 g name (lit enter) ""))
-    (def went (state-text g (lit go-below) "You go down the {name}." (list (pair "name" name))))
+    (def subs (list (pair "name" name)))
     (%gm-keep! g)
-    (game-go-below! g region (data-region (game-set g) region))
-    (game-depth! g 1)
-    (%gm-level! g (game-forms g) #f (lit up))
-    (state-say! g went)
-    (unless (str=? text "") (state-say! g text))
-    (%gm-enter-band! g)))
+    (game-go-below! g region (data-region (game-top-set g) region))
+    (if (game-screens? g)
+      (do (state-tell! g (lit go-into) "You go into {name}." subs)
+          (unless (str=? text "") (state-say! g text))
+          (%gm-enter-screen! g (first (game-hub g)) (rest (game-hub g)) (pair (int/ (- (game-rows g) 2) 2) (int/ (game-cols g) 2))))
+      (do (def went (state-text g (lit go-below) "You go down the {name}." subs))
+          (game-depth! g 1)
+          (%gm-level! g (game-forms g) #f (lit up))
+          (state-say! g went)
+          (unless (str=? text "") (state-say! g text))
+          (%gm-enter-band! g)))))
 
-; Up out of the region's first level onto the door of the screen it
-; lies under, the set the game began on in force again.
+; Out of the region stood in onto the door it lies behind, the set the
+; door is in in force again: up out of a descent's first level, or off
+; the edge of a world of screens.
 (def %gm-come-up!
   (fn (_ g)
+    (def left (if (game-screens? g) (lit leave) (lit come-up)))
     (game-go-above! g)
     (def name (game-door g (game-level-key g)))
-    (game-depth! g (game-screen-distance g (first (game-screen g)) (rest (game-screen g))))
     (%gm-restore! g (game-kept-level g (game-level-key g)))
     (player-at! (game-player g) (first (map-down (game-map g))) (rest (map-down (game-map g))))
     (%gm-light! g)
-    (state-tell! g (lit come-up) "You climb out of the {name}." (list (pair "name" name)))
+    (state-tell! g left (if (eq? left (lit leave)) "You leave {name}." "You climb out of the {name}.") (list (pair "name" name)))
     (%gm-keep! g)))
 
-; With the goal in hand on the hub screen, out of doors, the win: by a
-; step onto it, or by the goal given there.
+; Whether the player stands at home (see game-home), out of doors, in
+; the region home is in and none inside it.
+(def %gm-at-home?
+  (fn (_ g)
+    (def home (game-home g))
+    (def here (game-screen g))
+    (match ((not (game-screens? g)) #f)
+           ((not (null? (game-inside g))) #f)
+           ((< 1 (List length (game-regions g))) #f)
+           ((not (str=? (game-place g) (first home))) #f)
+           (#t (if (= (first here) (List ref 1 home)) (= (rest here) (rest (rest home))) #f)))))
+
+; With the game's goal in hand at home, the win: by a step there, or by
+; the goal given there.
 (def %gm-home!
   (fn (_ g)
-    (def here (game-screen g))
+    (def goal (first (data-one (game-top-set g) (lit goal) (list "the prize" "*" 20))))
     (when (match ((not (null? (game-over g))) #f)
-                 ((not (game-screens? g)) #f)
-                 ((not (null? (game-inside g))) #f)
-                 ((not (items-goal-held? g)) #f)
-                 (#t (if (= (first here) (first (game-hub g))) (= (rest here) (rest (game-hub g))) #f)))
+                 ((not (List any? (fn (_ it) (if (item-class? it (lit goal)) (str=? (item-name it) goal) #f)) (game-pack g))) #f)
+                 (#t (%gm-at-home? g)))
       (do (game-over! g (lit won))
-          (state-tell! g (lit won) "You bring {goal} home.  You have won."
-            (list (pair "goal" (first (game-param g (lit goal) (list "the prize" "*" 20))))))))))
+          (state-tell! g (lit won) "You bring {goal} home.  You have won." (list (pair "goal" goal)))))))
 
 ; A step DR DC off the edge of the screen: onto the next screen, the
-; player landing on the facing edge, or, at the world's edge, nowhere
-; and no turn.
+; player landing on the facing edge; at the edge of a region's world,
+; out onto its door; or, at the world's edge, nowhere and no turn.
 (def %gm-cross!
   (fn (_ g dr dc)
     (def p (game-player g))
@@ -306,9 +327,9 @@
     (def clamp (fn (_ v n) (match ((< v 0) 0) ((< (- n 1) v) (- n 1)) (#t v))))
     (def at (pair (if (= dy 0) (clamp r (map-rows m)) (if (< dy 0) (- (map-rows m) 1) 0))
                   (if (= dx 0) (clamp c (map-cols m)) (if (< dx 0) (- (map-cols m) 1) 0))))
-    (if (game-screen-in? g x y)
-      (do (%gm-keep! g) (%gm-enter-screen! g x y at) #t)
-      (do (state-tell! g (lit edge) "The world ends here." ()) #f))))
+    (match ((game-screen-in? g x y) (do (%gm-keep! g) (%gm-enter-screen! g x y at) #t))
+           ((game-below? g) (do (%gm-keep! g) (%gm-come-up! g) #t))
+           (#t (do (state-tell! g (lit edge) "The world ends here." ()) #f)))))
 
 ; The world as rows of screens: @ the one stood on, . one visited.
 (def %gm-world-lines
@@ -318,22 +339,29 @@
       (fn (_ y)
         (Str8 join " "
           (List map (fn (_ x) (match ((if (= x (first here)) (= y (rest here)) #f) "@")
-                                     ((not (null? (game-kept-level g (game-screen-key x y)))) ".")
+                                     ((not (null? (game-kept-level g (game-screen-key g x y)))) ".")
                                      (#t " ")))
                     (List range 0 (game-world-cols g)))))
       (List range 0 (game-world-rows g)))))
 
 ; A game on SET from SEED, ROWS by COLS, its chain of quests drawn from
 ; the set's scenes: on level 1, or on the hub screen of a world of
-; screens, in its middle.  A set naming a scale off the ladder raises.
+; screens, in its middle, and with the set's (start NAME), through the
+; door of the interior NAME there, which the hub must lay.  A set naming
+; a scale off the ladder raises.
 (def game-make
   (fn (_ set seed rows cols)
     (scale-check! set)
     (def g (game-new set seed rows cols))
+    (def start (data-get set (lit start) ""))
     (chain-build! g)
     (if (game-screens? g)
       (%gm-enter-screen! g (first (game-hub g)) (rest (game-hub g)) (pair (int/ (- rows 2) 2) (int/ cols 2)))
       (%gm-descend! g))
+    (unless (str=? start "")
+      (do (unless ((fn (_ d) (if (str? d) (str=? d start) #f)) (game-door g (game-level-key g)))
+            (Err raise (lit arg) "the hub laid no door to the set's start" start))
+          (%gm-go-below! g start (interiors-prop1 g start (lit region) ""))))
     (state-clear-messages! g)
     (state-clear-log! g)
     (state-tell! g (lit welcome) "You enter the dungeon." ())
@@ -524,8 +552,8 @@
       ((game-screens? g)
         ((fn (_ name)
            (match ((null? name) (do (state-tell! g (lit no-stairs) "There are no stairs here." ()) #f))
-                  ((str=? (interiors-prop1 g name (lit below) "") "") (do (%gm-go-in! g name) #t))
-                  (#t (do (%gm-go-below! g name (interiors-prop1 g name (lit below) "")) #t))))
+                  ((str=? (interiors-prop1 g name (lit region) "") "") (do (%gm-go-in! g name) #t))
+                  (#t (do (%gm-go-below! g name (interiors-prop1 g name (lit region) "")) #t))))
          (game-door g (game-level-key g))))
       ((not (null? guardian))
         (do (state-tell! g (lit barred) "The {name} bars the way down." (list (pair "name" (creature-name guardian)))) #f))

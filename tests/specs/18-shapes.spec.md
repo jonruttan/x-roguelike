@@ -118,10 +118,10 @@ cell is; how it looks is the front-end's (see the last case).
 
 ## the look
 
-### the terminal draws a kind of terrain by the set's glyph for it, or its own: a step out of Kettle's square onto the farms' road shows the hedges either side
+### the terminal draws a kind of terrain by the set's glyph for it, or its own: a step off the valley's hub onto the farms' road shows the hedges either side
 
 ```roguelike
-(def g (spec-game-on (spec-set-named "kettle") 4 ()))
+(def g (spec-game-on (spec-valley) 4 ()))
 (player-at! (game-player g) 11 79)
 (game-key! g "l")
 (def row (spec-row g 11))

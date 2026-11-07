@@ -25,7 +25,7 @@
 (import roguelike/data data-all data-prop data-prop1)
 (import roguelike/state
   game-rng game-set game-chain! game-hub game-world-cols game-world-rows game-screen-distance game-param
-  game-screens? state-roll state-fill)
+  game-screens? game-home state-roll state-fill)
 
 (def %ch-giver (fn (_ s) (List ref 1 s)))
 (def %ch-wants (fn (_ s) (data-prop1 s (lit wants) "")))
@@ -123,7 +123,22 @@
           (def screens (pair (game-hub g) (%ch-screens g (List length links) 1 (list (game-hub g)))))
           (def last (- (List length links) 1))
           (game-chain! g
-            (List map (fn (_ i) (%ch-quest g (List ref i links) (List ref i screens) (List ref (+ i 1) screens) (= i last)))
+            (List map (fn (_ i) ((fn (_ q) (if (= i 0) (%ch-home g q) q))
+                                 (%ch-quest g (List ref i links) (List ref i screens) (List ref (+ i 1) screens) (= i last))))
                       (List range 0 (List length links))))))))
+
+; Quest Q, the first link, moved home (see game-home): where home is in
+; a region, onto its hub there, a (region NAME) beside its (screen X Y);
+; its {where} still counts from the hub of the set's world.
+(def %ch-home
+  (fn (_ g q)
+    (def home (game-home g))
+    (if (str=? (first home) "") q
+      (List append
+        (List map (fn (_ f) (if (if (pair? f) (eq? (first f) (lit screen)) #f)
+                              (list (lit screen) (List ref 1 home) (rest (rest home)))
+                              f))
+          q)
+        (list (list (lit region) (first home)))))))
 
 (provide roguelike/chain chain-build! chain-where)

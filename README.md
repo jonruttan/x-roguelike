@@ -4,8 +4,8 @@ A roguelike on x-lang, as a lang bundle: a dungeon of rooms and
 passages made anew each game, creatures that wake and hunt, things to
 find and work out, hunger, and one life.  Every creature, item, guise,
 message and tuning number is read from a set of `.xon` files, so a set
-is a game of its own on the same engine; `classic`, `delve` and
-`kettle` are the three shipped, the last a world of screens rather
+is a game of its own on the same engine; `classic`, `delve`, `kettle`
+and `town` are the four shipped, the last two worlds of screens rather
 than a descent.
 
     x -l roguelike -- [-s NAME] [-c GROUP=NAME]... [-S N] [-d DIR] [play]
@@ -110,8 +110,9 @@ street; two cells round the edge are street, and the `(square W H)` in
 the middle is left clear.  In a world of screens the bands run from
 the hub, ring 0, and any form a band names besides its own -- a level
 knob, a level style -- is in front of the set's on its screens, so
-`kettle`'s first band, "Kettle", makes the square a town, and the rings
-out from it are fields, hills and the rim.
+`kettle`'s first band, "Kettle", lays hedged fields round the town's
+door on the hub, and the rings out from it are fields, hills and the
+rim.
 
 Each game of `kettle` is an errand drawn from the set's scenes: `(scene
 NAME GIVER . PROPS)` is a link, the GIVER a creature that talks, who
@@ -124,7 +125,7 @@ links at most; the last want lies on the ground a screen beyond, or
 with the token's `(carrier "kind")`.  A `(goal NAME GLYPH)` with no
 level lies nowhere and is the chain's to give.  The chain is read
 outward, by what each person says, and paid inward, by what each
-gives; the goal laid in the square is the win.  A quest a set writes
+gives; the goal laid in Kettle's square is the win.  A quest a set writes
 by hand may stand on a `(screen X Y)` in place of a level, its tokens
 on a `(lies X Y)`.
 
@@ -150,8 +151,9 @@ hedged closes either side of a road; `hills`, gritstone edges, bog and
 gorse; or `rim`, limestone scars, shakeholes and fallen walls.  Each
 style's knobs, and what each defaults to, are in its comment in
 `roguelike/dungeon.x`.  `delve`'s four bands are a pit, a flooded
-reach, the works and the well-house; `kettle`'s rings are the town,
-fields, hills and the rim.
+reach, the works and the well-house; `kettle`'s rings are the town's
+fields, the farms, the hills and the rim, and `town`'s districts are
+each a town.
 
 A level is drawn at a scale.  `(scale N)` makes each cell N metres
 across and the next number of the Fibonacci sequence, 1 2 3 5 8 13 21
@@ -175,13 +177,28 @@ front-end reads its own file and the same terrain.
 
 Sets can share one world.  `(join NAME)` brings the set NAME in beside
 this one as a region: its forms are read with the set's and kept
-apart.  An interior with `(below NAME)` is a door down into that
-region instead of a place of its own.  Below, the region's forms are
-the set in force, so its levels are made, peopled and drawn as that
-set makes them, stairs and all.  The stairs up out of its first level
-come back onto the door, and they are open with or without the
-region's goal.  `kettle` joins `delve`: the pit on Kettle's square
-goes down into the Delve.  The score is always the first set's.
+apart, and a region's own joins are regions of the same world.  An
+interior with `(region NAME)` is a door into that region instead of a
+place of its own.  In it, the region's forms are the set in force, so
+its places are made, peopled and drawn as that set makes them.  A
+region that is a descent is gone down into, stairs and all, and the
+stairs up out of its first level come back onto the door, open with or
+without the region's goal.  A region that is a world of screens is
+gone into on its hub, and a step off its edge comes back out onto the
+door.  Regions go inside regions: `kettle` joins `town`, Kettle itself,
+whose door is on the valley's hub, and `town` joins `delve`, the pit on
+its pithead going down into the Delve.  `(start NAME)` begins the game
+through the door NAME on the hub: a game of `kettle` begins on
+Kettle's square, and the goal brought home there is the win.  A
+message a region does not say is said in the first set's words, and
+the score is always the first set's.
+
+A world of screens may name its screens: `(screen NAME (X Y) .
+PROPS)` is screen X Y, its PROPS in front of its band's there, its
+`(enter "TEXT")` said the first time there, and a world that names any
+has only those.  `town` is five: the square, with the pithead north of
+it, the river end south, the terraces east and Guild Street west, at
+two metres a cell.
 
 What a game is worth is the set's `(score (NAME POINTS) ...)`: POINTS
 for each of `gold`, `deepest` (the level reached, or the screens out
@@ -210,7 +227,7 @@ as many as it likes, lays that many things of CLASS a level, each
 drawn by rarity from what the depth allows and laid out of view with a
 keeper beside it, a creature of the depth, asleep unless wakeful: a
 thing worth having and what stands between you and it.  `kettle`'s
-three bands past the square each have their word, their colour and their
+three bands past the hub each have their word, their colour and their
 caches, and few things lie loose.
 
 ## Running the suite

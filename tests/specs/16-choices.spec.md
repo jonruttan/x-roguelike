@@ -11,7 +11,7 @@ and roguelike/save keeping a game's choices.
 ### kettle offers three sizes and three difficulties; classic offers none
 
 ```roguelike
-(write (list (data-choices (spec-set-named "kettle")) (data-choices (spec-set))))
+(write (list (data-choices (spec-valley)) (data-choices (spec-set))))
 ```
 ---
     ((('size 'small) ('size 'normal) ('size 'large) ('difficulty 'easy) ('difficulty 'normal) ('difficulty 'hard)) ())
@@ -21,7 +21,7 @@ and roguelike/save keeping a game's choices.
 ### a small valley is five screens by three, its hub in the middle, and its errand two links at most
 
 ```roguelike
-(def set (data-choose (spec-set-named "kettle") '((size small))))
+(def set (data-choose (spec-valley) '((size small))))
 (def chain-length (fn (_ seed) (def g (spec-game-on set seed ())) (List length (game-chain g))))
 (def g (spec-game-on set 4 ()))
 (write (list (data-chosen set) (data-one set 'world ()) (game-hub g)
@@ -33,7 +33,7 @@ and roguelike/save keeping a game's choices.
 ### a large errand is four or five links: every way the scenes walk back from the goal runs five deep
 
 ```roguelike
-(def set (data-choose (spec-set-named "kettle") '((size large))))
+(def set (data-choose (spec-valley) '((size large))))
 (def scenes (data-all set 'scene))
 (def want (fn (_ s) (first (data-prop s 'wants ()))))
 (def gives? (fn (_ s name) (def gv (data-prop s 'gives ())) (if (< (List length gv) 2) #f (str=? (List ref 1 gv) name))))
@@ -54,7 +54,7 @@ and roguelike/save keeping a game's choices.
 ### choices from two groups combine; each overrides the set's own knob, and what neither names is the set's
 
 ```roguelike
-(def kettle (spec-set-named "kettle"))
+(def kettle (spec-valley))
 (def set (data-choose kettle '((size large) (difficulty hard))))
 (write (list (data-chosen set) (data-one set 'chain ()) (data-one set 'creatures ()) (data-one set 'starve ())
              (data-one set 'world ()) (data-one kettle 'chain ())))
@@ -65,7 +65,7 @@ and roguelike/save keeping a game's choices.
 ### normal is the set as it stands, and is kept as chosen
 
 ```roguelike
-(def kettle (spec-set-named "kettle"))
+(def kettle (spec-valley))
 (def set (data-choose kettle '((size normal))))
 (write (list (data-chosen set) (= (List length set) (+ 1 (List length kettle))) (data-one set 'chain ()) (data-chosen kettle)))
 ```
@@ -76,8 +76,8 @@ and roguelike/save keeping a game's choices.
 
 ```roguelike
 (def why (fn (_ set picks) (guard (e (e msg)) (data-choose set picks) "made")))
-(write (list (why (spec-set-named "kettle") '((size huge)))
-             (why (spec-set-named "kettle") '((size small) (size large)))
+(write (list (why (spec-valley) '((size huge)))
+             (why (spec-valley) '((size small) (size large)))
              (why (spec-set) '((size small)))))
 ```
 ---
@@ -88,7 +88,7 @@ and roguelike/save keeping a game's choices.
 ### a save keeps its choices: read on the plain set, the game is the small valley again; a choice the set no longer offers is dropped
 
 ```roguelike
-(def kettle (spec-set-named "kettle"))
+(def kettle (spec-valley))
 (def g (spec-game-on (data-choose kettle '((size small) (difficulty easy))) 4 ()))
 (def tmp (File temp "/tmp/x-roguelike-"))
 (File close (first tmp))

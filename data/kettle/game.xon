@@ -2,25 +2,27 @@
 ; screens, and no descent.
 ;
 ; What this set turns on: a world of screens, (world screens W H),
-; joined at their edges and kept, with Kettle's square on the hub screen
-; in the middle; open ground, (level-style open), with (clumps LO HI)
-; thickets over (clump-size LO HI) square metres; sight to eight;
-; hunger as a store; the rings out from the square as bands, each
-; laying its caches.
+; joined at their edges and kept, with the door into Kettle, the town,
+; on the hub screen in the middle; open ground, (level-style open),
+; with (clumps LO HI) thickets over (clump-size LO HI) square metres;
+; sight to eight; hunger as a store; the rings out from the town as
+; bands, each laying its caches.
 ; A screen's depth is its distance from the hub, so what lives on it,
 ; and the gold on it, grow with the walk out.  The goal is in someone's
 ; keeping, at the end of a chain of trades drawn each game from
-; scenes.xon, and bringing it back to the square is the win.
+; scenes.xon, and bringing it back to Kettle's square is the win.
 
 (set "kettle")
 (title "Kettle")
 
 (world screens 7 5)
 
-; The Delve lies under Kettle: the set beside this one, a region of the
-; same world, gone into by the pit's door on the square (see
-; interiors.xon) and made by its own forms.
-(join "delve")
+; The town is the set beside this one, a region of the same world: its
+; door is on the hub (see interiors.xon), and the game starts through
+; it, on the square, (start NAME) naming the door.  The Delve lies under
+; the town, gone into from its pithead.
+(join "town")
+(start "Kettle")
 
 ; The goal: its name and its glyph; with no level it lies nowhere, and
 ; is given by the last link of the chain (see scenes.xon).  (chain LO
@@ -58,18 +60,18 @@
 ; Classes known without being tried.
 (known potion scroll)
 
-; The rings out from the square as bands, (band NAME TO . PROPS), the
+; The rings out from the town as bands, (band NAME TO . PROPS), the
 ; first from the hub, each after it from the ring after the one before
 ; to TO: its word on first arrival, its colour, and its caches, (cache
 ; CLASS LO HI), that many things of CLASS a screen, each laid with a
 ; keeper beside it.  Any other form a band names is in front of the
 ; set's on its screens, and each band carves its screens in its own
-; shape, (level-style STYLE): Kettle itself is a town, its streets round
-; the square and its houses walled in stone; the farms are hedged fields
-; either side of the road; the hills gritstone edges and bog; the rim
-; limestone scars, shakeholes and the well-keepers' ruins.
-(band "Kettle" 0
-  (level-style town) (square 14 8))
+; shape, (level-style STYLE): the town's own fields round its door are
+; hedged closes; the farms are hedged fields either side of the road;
+; the hills gritstone edges and bog; the rim limestone scars, shakeholes
+; and the well-keepers' ruins.
+(band "Kettle" 0 (colour 70)
+  (level-style fields))
 (band "The Farms" 1 (colour 70) (level-style fields)
   (enter "The farms: hedged fields and the road, the town at your back.")
   (cache potion 1 2) (cache food 1 1) (cache weapon 0 1))

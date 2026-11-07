@@ -10,7 +10,7 @@ band's caches, each a thing worth having with a keeper beside it.
 ### nothing lies in the square that its (depth LO HI) keeps out, over six seeds
 
 ```roguelike
-(def set (spec-set-named "kettle"))
+(def set (spec-valley))
 (def allowed (list "mending" "survey" "walking staff" "waxed coat" "bread" "cheese" "gold"))
 (def hub-ok?
   (fn (_ seed)
@@ -28,7 +28,7 @@ band's caches, each a thing worth having with a keeper beside it.
 ### a screen of the first ring lays the band's caches, each with a keeper beside it, and says the band's word
 
 ```roguelike
-(def g (spec-game-on (spec-set-named "kettle") 4 ()))
+(def g (spec-game-on (spec-valley) 4 ()))
 (def p (game-player g))
 (player-at! p 11 79)
 (game-key! g "l")
@@ -45,7 +45,7 @@ band's caches, each a thing worth having with a keeper beside it.
 ### the square, in no band, lays none
 
 ```roguelike
-(def g (spec-game-on (spec-set-named "kettle") 4 ()))
+(def g (spec-game-on (spec-valley) 4 ()))
 (def kept? (fn (_ it) (List any? (fn (_ cr) (state-adjacent? (creature-r cr) (creature-c cr) (item-r it) (item-c it))) (game-creatures g))))
 (write (list (List map creature-name (game-creatures g)) (List count-if kept? (game-floor g))))
 ```
@@ -57,7 +57,7 @@ band's caches, each a thing worth having with a keeper beside it.
 ### a game of a thousand keys with caches and keepers raises nothing and keeps every invariant
 
 ```roguelike
-(def runs (List map (fn (_ seed) (spec-random-play (spec-set-named "kettle") seed 1000)) (List range 8 9)))
+(def runs (List map (fn (_ seed) (spec-random-play (spec-valley) seed 1000)) (List range 8 9)))
 (write (list (List filter (fn (_ r) (not (null? (List ref 4 r)))) runs)
              (< 20 (List fold (fn (_ a r) (+ a (List ref 2 r))) 0 runs))))
 ```

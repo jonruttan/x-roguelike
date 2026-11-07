@@ -102,7 +102,16 @@ front-end puts together, and `(as OTHER)` a tile of the art.
 (write (list (art-problems (spec-set-named "kettle") art) (List length (data-all art 'tile))))
 ```
 ---
-    (() 148)
+    (() 125)
+
+### town's art is whole, the town's walls and setts with it
+
+```roguelike
+(def art (data-load "data/town/art"))
+(write (list (art-problems (spec-set-named "town") art) (List length (data-all art 'tile))))
+```
+---
+    (() 45)
 
 
 ## the font

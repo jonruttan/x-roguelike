@@ -11,7 +11,7 @@ raised and every invariant kept.  Apart from 12-chain and
 ### two games of a thousand keys raise nothing and keep every invariant
 
 ```roguelike
-(def runs (List map (fn (_ seed) (spec-random-play (spec-set-named "kettle") seed 1000)) (List range 5 7)))
+(def runs (List map (fn (_ seed) (spec-random-play (spec-valley) seed 1000)) (List range 5 7)))
 (write (list (List filter (fn (_ r) (not (null? (List ref 4 r)))) runs)
              (< 40 (List fold (fn (_ a r) (+ a (List ref 2 r))) 0 runs))))
 ```

@@ -8,15 +8,16 @@
 ;
 ; A set's (interior NAME . PROPS) is a place behind a door: a screen
 ; made at a depth its (depth LO HI) covers lays a door to it when its
-; (chance PERCENT) comes up, the first of the set's interiors to do so,
-; one door a screen at most.  The door is a way in, > on it; the
+; (chance PERCENT) comes up, the first of the interiors to do so, one
+; door a screen at most; a named screen's own interiors come first.
+; The door is a way in, > on it; the
 ; interior's level is made by its own forms before the set's, so any
 ; knob it names -- (level-style ...), rooms when it names none, (rooms
 ; LO HI), (lit ...), (creatures LO HI), (items LO HI) -- is its own,
 ; and it has a way out, < on it, and no way further down.  Its (enter
-; "TEXT") is said the first time in.  One with (below NAME) has no level
-; of its own: its door goes down into the set's region NAME.  What goes
-; in and out, and what is kept, is the game's (see game.x).
+; "TEXT") is said the first time in.  One with (region NAME) has no
+; level of its own: its door goes into the world's region NAME.  What
+; goes in and out, and what is kept, is the game's (see game.x).
 
 (module roguelike/interiors)
 
@@ -24,11 +25,11 @@
 (import roguelike/map map-rows map-cols map-set! map-down! tile-down)
 (import roguelike/dungeon dungeon-spot)
 (import roguelike/state
-  game-rng game-set game-depth game-map game-door! game-level-key
+  game-rng game-set game-forms game-depth game-map game-door! game-level-key
   state-covers? state-chance? state-free? state-items-at)
 
 ; The set's interior named NAME, (NAME . PROPS), or nil.
-(def %in-named (fn (_ g name) (List find (fn (_ f) (str=? (first f) name)) (data-all (game-set g) (lit interior)))))
+(def %in-named (fn (_ g name) (List find (fn (_ f) (str=? (first f) name)) (data-all (game-forms g) (lit interior)))))
 ; The values of F's (KEY ...), or DEFAULT.
 (def %in-prop (fn (_ f key default) (def p (Assoc find key (rest f))) (if (null? p) default (rest p))))
 
@@ -59,7 +60,7 @@
         (fn (_ f) (if (state-covers? (%in-prop f (lit depth) (list 1 99)) (game-depth g))
                     (state-chance? (game-rng g) (first (%in-prop f (lit chance) (list 0))))
                     #f))
-        (data-all (game-set g) (lit interior))))
+        (data-all (game-forms g) (lit interior))))
     (def inner?
       (fn (_ r c)
         (match ((< r 1) #f) ((< c 1) #f) ((< (- (map-rows m) 2) r) #f) ((< (- (map-cols m) 2) c) #f)

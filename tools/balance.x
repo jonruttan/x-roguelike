@@ -41,7 +41,8 @@
   player-r player-c player-hp player-hpmax player-str player-food player-weapon player-armour
   item-class item-name item-prop item-prop1 item-enchant item-letter item-r item-c game-floor
   creature-r creature-c creature-state creature-trait? state-adjacent? state-dist state-shortfall state-creature-at state-items-at
-  game-quest-state game-screens? game-screen game-screen-key game-hub game-chain game-inside state-creature-named)
+  game-quest-state game-screens? game-screen game-screen-key game-hub game-chain game-inside state-creature-named
+  game-top-set game-home game-place game-below?)
 (import roguelike/creatures creatures-shown? creatures-door-diagonal?)
 (import roguelike/items items-goal-held?)
 (import roguelike/traps traps-found-at)
@@ -147,7 +148,7 @@
 (def %bl-place
   (fn (_ g)
     (if (game-screens? g)
-      (Str8 append (game-screen-key (first (game-screen g)) (rest (game-screen g))) "/" (if (null? (game-inside g)) "" (game-inside g)))
+      (Str8 append (game-screen-key g (first (game-screen g)) (rest (game-screen g))) "/" (if (null? (game-inside g)) "" (game-inside g)))
       (Str8 str (game-depth g)))))
 (def %bl-here? (fn (_ g s) (str=? (Vector ref 1 s) (%bl-place g))))
 (def %bl-explored? (fn (_ g s) (if (%bl-here? g s) (Vector ref 0 s) #f)))
@@ -302,24 +303,26 @@
 ; --- a world of screens ------------------------------------------------------
 
 ; The errand on a world of screens, in a player's order, or nil with no
-; chain: (KIND (X . Y) GIVER).  Outward, talk to each giver not yet
+; chain: (KIND (X . Y) GIVER PLACE), PLACE the region the screen is in,
+; or "".  Outward, talk to each giver not yet
 ; spoken to, which is when a player learns where the next stands; then
 ; fetch the last want where it lies; then inward, talk again to each
-; giver whose want is held; and with the goal held, home to the hub.
+; giver whose want is held; and with the goal held, home.
 (def %bl-errand
   (fn (_ g)
     (def links (game-chain g))
     (def state (fn (_ f) (game-quest-state g (List ref 1 f))))
     (def at (fn (_ f key) (def v (data-prop f key (list 0 0))) (pair (first v) (List ref 1 v))))
     (def want (fn (_ f) (List ref 1 (data-prop f (lit wants) (list (lit bring) "")))))
+    (def place (fn (_ f) (first (data-prop f (lit region) (list "")))))
     (def held? (fn (_ name) (not (null? (%bl-in-pack g (fn (_ it) (%bl-named? it name)))))))
     (def unopened (List find (fn (_ f) (null? (state f))) links))
     (def back (List find (fn (_ f) (if (eq? (state f) (lit done)) #f (held? (want f)))) (List reverse links)))
     (match ((null? links) ())
-           ((items-goal-held? g) (list (lit home) (game-hub g) ""))
-           ((not (null? unopened)) (list (lit talk) (at unopened (lit screen)) (List ref 2 unopened)))
-           ((not (null? back)) (list (lit talk) (at back (lit screen)) (List ref 2 back)))
-           (#t (list (lit fetch) (at (List ref (- (List length links) 1) links) (lit lies)) "")))))
+           ((%bl-goal-held? g) (list (lit home) (rest (game-home g)) "" (first (game-home g))))
+           ((not (null? unopened)) (list (lit talk) (at unopened (lit screen)) (List ref 2 unopened) (place unopened)))
+           ((not (null? back)) (list (lit talk) (at back (lit screen)) (List ref 2 back) (place back)))
+           (#t (list (lit fetch) (at (List ref (- (List length links) 1) links) (lit lies)) "" "")))))
 
 (def %bl-sign (fn (_ n) (match ((< n 0) -1) ((< 0 n) 1) (#t 0))))
 
@@ -354,13 +357,36 @@
     (def cr (state-creature-named g name))
     (unless (if (null? cr) #f (if (creatures-shown? g cr) (%bl-toward-creature! g cr) #f)) (%bl-look! g s))))
 
-; The errand's step: across to its screen, then the talk, the fetch, or
-; home, where the win comes at the end of the turn.
+; Whether the game's goal is in the pack, the set it began on's, in a
+; region or not.
+(def %bl-goal-held?
+  (fn (_ g)
+    (def name (first (data-one (game-top-set g) (lit goal) (list "the prize"))))
+    (not (null? (%bl-in-pack g (fn (_ it) (if (eq? (item-class it) (lit goal)) (str=? (item-name it) name) #f)))))))
+
+; A step toward the place PLACE: out of a region off any edge of its
+; world, the way to its door's world; or into the region, across to the
+; hub, to its door, and in.
+(def %bl-to-place!
+  (fn (_ g s place)
+    (def p (game-player g))
+    (def door (map-down (game-map g)))
+    (def hub (game-hub g))
+    (match ((game-below? g) (%bl-cross! g s (pair -1 (rest (game-screen g)))))
+           ((not (if (= (first (game-screen g)) (first hub)) (= (rest (game-screen g)) (rest hub)) #f)) (%bl-cross! g s hub))
+           ((null? door) (%bl-look! g s))
+           ((if (= (player-r p) (first door)) (= (player-c p) (rest door)) #f) (game-key! g ">"))
+           ((%bl-walk! g (fn (_ r c) (if (= r (first door)) (= c (rest door)) #f))) ())
+           (#t (%bl-look! g s)))))
+
+; The errand's step: into its place, across to its screen, then the
+; talk, the fetch, or home, where the win comes at the end of the turn.
 (def %bl-errand!
   (fn (_ g s errand shown)
     (def to (List ref 1 errand))
     (def there? (if (= (first (game-screen g)) (first to)) (= (rest (game-screen g)) (rest to)) #f))
-    (match ((not there?) (%bl-cross! g s to))
+    (match ((not (str=? (game-place g) (List ref 3 errand))) (%bl-to-place! g s (List ref 3 errand)))
+           ((not there?) (%bl-cross! g s to))
            ((eq? (first errand) (lit talk)) (%bl-talk-to! g s (List ref 2 errand)))
            ((eq? (first errand) (lit home)) (game-key! g "."))
            ((not (null? shown)) (unless (%bl-toward-creature! g shown) (%bl-look! g s)))

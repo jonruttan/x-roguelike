@@ -1055,7 +1055,13 @@ candle on a long pole to burn off the gas gathered in the roof.
 ### The town
 
 The pithead is at the top of the main street, the square and the
-well-head are in the middle, and the river is at the bottom.
+well-head are in the middle, and the river is at the bottom.  The
+town is five districts, each a screen at two metres a cell: **the
+Square** in the middle; **the Pithead** north of it; **the River End**
+south; **the Terraces** east, with the chapel; and **Guild Street**
+west, with the Guild hall, the White Church and the Guild's shop.  On
+the valley it is one place, its door on the hub, with its own fields
+round it.
 
 - **The square.**  The well-head stands in the middle: the
   well-keepers' stone mouth, the charter cut round it, and the Guild's

@@ -27,7 +27,7 @@ thousand for the win when the set names none; and its lines in words.
 
 ```roguelike
 (def set (pair '(score (gold 2) (screens 10) (places 25) (quests 100) (won 500) (par 3000 1))
-               (pair '(interior "shed" (depth 1 9) (chance 100) (rooms 1 1) (creatures 0 0) (items 0 0)) (spec-set-named "kettle"))))
+               (pair '(interior "shed" (depth 1 9) (chance 100) (rooms 1 1) (creatures 0 0) (items 0 0)) (spec-valley))))
 (def g (spec-game-on set 4 ()))
 (def p (game-player g))
 (game-creatures! g ())
@@ -51,7 +51,7 @@ thousand for the win when the set names none; and its lines in words.
 ### the par pays only on a win, and only for the turns under it
 
 ```roguelike
-(def set (pair '(score (won 500) (par 3000 1)) (spec-set-named "kettle")))
+(def set (pair '(score (won 500) (par 3000 1)) (spec-valley)))
 (def g (spec-game-on set 4 ()))
 (game-turn! g 1000)
 (def lost (game-score-lines g))
@@ -65,7 +65,7 @@ thousand for the win when the set names none; and its lines in words.
 ### each line in words, the set's (message score-NAME "TEXT") in place of the engine's
 
 ```roguelike
-(def set (pair '(score (gold 1) (won 500) (par 3000 2)) (pair '(message score-par "{points} for coming home in good time") (spec-set-named "kettle"))))
+(def set (pair '(score (gold 1) (won 500) (par 3000 2)) (pair '(message score-par "{points} for coming home in good time") (spec-valley))))
 (def g (spec-game-on set 4 ()))
 (player-gold! (game-player g) 7)
 (game-turn! g 2900)
@@ -80,7 +80,7 @@ thousand for the win when the set names none; and its lines in words.
 ### kettle counts gold, errands, screens and doors, and the ledger home; a game just begun has walked the square's screen
 
 ```roguelike
-(def set (spec-set-named "kettle"))
+(def set (spec-valley))
 (def g (spec-game-on set 4 ()))
 (write (list (List map first (data-one set 'score ())) (game-score g) (game-score-text g)))
 ```
