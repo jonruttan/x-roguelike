@@ -30,6 +30,27 @@ and roguelike/save keeping a game's choices.
 ---
     ((('size 'small)) ('screens 5 3) (2 . 1) #t)
 
+### a large errand is four or five links: every way the scenes walk back from the goal runs five deep
+
+```roguelike
+(def set (data-choose (spec-set-named "kettle") '((size large))))
+(def scenes (data-all set 'scene))
+(def want (fn (_ s) (first (data-prop s 'wants ()))))
+(def gives? (fn (_ s name) (def gv (data-prop s 'gives ())) (if (< (List length gv) 2) #f (str=? (List ref 1 gv) name))))
+(def least (fn (_ ns) (List fold (fn (_ a n) (if (< n a) n a)) 5 ns)))
+(def depth
+  (fn (self s used)
+    (def cands (List filter (fn (_ c) (if (List includes? (first c) used) #f (gives? c (want s)))) scenes))
+    (if (if (null? cands) #t (< 4 (List length used))) (List length used)
+      (least (List map (fn (_ c) (self c (pair (first c) used))) cands)))))
+(def starts (List filter (fn (_ s) (eq? (first (data-prop s 'gives ())) 'goal)) scenes))
+(def chain-length (fn (_ seed) (def g (spec-game-on set seed ())) (Heap collect) (List length (game-chain g))))
+(write (list (List map (fn (_ s) (depth s (list (first s)))) starts)
+             (List all? (fn (_ n) (if (< 3 n) (< n 6) #f)) (List map chain-length (List range 1 5)))))
+```
+---
+    ((5 5) #t)
+
 ### choices from two groups combine; each overrides the set's own knob, and what neither names is the set's
 
 ```roguelike
