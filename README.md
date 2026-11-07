@@ -95,12 +95,13 @@ a set says by depth -- what lives where, the gold, the goal, pages,
 quests, bands -- counts from the hub outward.  With the goal in hand,
 the hub is the win.  A world without `(world ...)` is a descent, as
 before.  `(level-style open)` carves open ground: every cell floor,
-`(clumps LO HI)` thickets of wall, each a walk of `(clump-size LO HI)`
-cells, the outer ring always clear, no rooms and no stairs.
-`(level-style town)` lays a town: streets, and rows of terraces
-`(terrace-depth LO HI)` cells deep with `(street LO HI)` between the
-rows, each terrace `(terrace-length LO HI)` along with `(lane LO HI)`
-between, its houses `(house-width LO HI)` each with a door onto the
+`(clumps LO HI)` thickets of wall, each a walk over `(clump-size LO
+HI)` square metres, the outer ring always clear, no rooms and no
+stairs.  `(level-style town)` lays a town: streets, and rows of
+terraces `(terrace-depth LO HI)` metres deep with `(street LO HI)`
+between the rows, each terrace `(terrace-length LO HI)` along with
+`(lane LO HI)` between, its houses `(house-width LO HI)` each with a
+door onto the
 street; two cells round the edge are street, and the `(square W H)` in
 the middle is left clear.  In a world of screens the bands run from
 the hub, ring 0, and any form a band names besides its own -- a level
@@ -147,6 +148,16 @@ style's knobs, and what each defaults to, are in its comment in
 `roguelike/dungeon.x`.  `delve`'s four bands are a pit, a flooded
 reach, the works and the well-house; `kettle`'s rings are the town,
 fields, hills and the rim.
+
+A level is drawn at a scale.  `(scale N)` makes each cell N metres
+across and the next number of the Fibonacci sequence, 1 2 3 5 8 13 21
+34 ..., down; a terminal cell is about that shape, so ground keeps its
+shape drawn.  A level with no scale is at 1, a metre by two, a person
+a cell.  Every size a style takes -- a room, a house, a field, a
+gallery, a scar -- is in metres, and comes out in cells at the level's
+scale, never less than one, so one plan draws true at every scale; a
+scale off the sequence is refused when the set is read.  A band's or
+an interior's scale is in front of the set's.
 
 What a cell is and how it is drawn are kept apart.  `roguelike/map`
 reports each cell's kind of terrain -- floor, wall, door, water,
