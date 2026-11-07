@@ -17,13 +17,23 @@ front-end puts together, and `(as OTHER)` a tile of the art.
 (def %art-prop (fn (_ t key) (List find (fn (_ p) (if (pair? p) (eq? (first p) key) #f)) (rest t))))
 (def %art-parts '(top face n e w ne nw se sw face-w face-e shade))
 (def %art-same? (fn (_ a b) (if (str? a) (if (str? b) (str=? a b) #f) (eq? a b))))
+(import x/core/doors int+ int< int= str-byte-ref char->int)
+(def %art-mask
+  (fn (_ cs)
+    (Str8 join "" (List map (fn (_ b) (if (List any? (fn (_ c) (= b c)) cs) "#" ".")) (List range 0 128)))))
+(def %art-inked?
+  (fn (self r i w mask)
+    (if (int< i w)
+      ((fn (_ b) (if (int< b 128) (if (int= 35 (char->int (str-byte-ref mask b))) (self r (int+ i 1) w mask) #f) #f))
+       (char->int (str-byte-ref r i)))
+      #t)))
 (def %art-rows
   (fn (_ n rows size chars)
     (def w (if (null? size) (Str8 length (first rows)) (first size)))
     (def h (if (null? size) (List length rows) (List ref 1 size)))
     (match ((not (= h (List length rows))) (list n "has the wrong number of rows"))
            ((not (List all? (fn (_ r) (= w (Str8 length r))) rows)) (list n "has a row of the wrong width"))
-           ((not (List all? (fn (_ r) (List all? (fn (_ i) (List any? (fn (_ c) (str=? c (Str8 sub i 1 r))) chars)) (List range 0 w))) rows))
+           ((not (List all? (fn (_ r) (%art-inked? r 0 w chars)) rows))
              (list n "has a pixel with no colour"))
            (#t ()))))
 (def %art-tile
@@ -48,11 +58,12 @@ front-end puts together, and `(as OTHER)` a tile of the art.
 (def art-problems
   (fn (_ set art)
     (def size (data-one art 'size (list 16 16)))
-    (def chars (List map (fn (_ c) (first c)) (data-all art 'colour)))
+    (def chars (%art-mask (List map (fn (_ c) (char->int (str-byte-ref (first c) 0))) (data-all art 'colour))))
     (def tiles (data-all art 'tile))
     (def known (pair 'panel (pair 'shadow (List append (List map (fn (_ g) (first g)) (data-all set 'glyph))
                                          (List map (fn (_ c) (first c)) (data-all set 'creature))))))
-    (List flat-map (fn (_ t) (%art-tile t size chars known tiles (data-all set 'band))) tiles)))
+    (def bands (data-all set 'band))
+    (List flat-map (fn (_ t) (%art-tile t size chars known tiles bands)) tiles)))
 (write (art-problems (spec-set-named "delve")
   (list '(size 2 2) '(colour "a" 1 2 3)
         '(tile wall (rows "aa" "a")) '(tile floor (rows "ab" "aa")) '(tile up (rows "aa"))
@@ -73,7 +84,25 @@ front-end puts together, and `(as OTHER)` a tile of the art.
 (write (list (art-problems (spec-set-named "delve") art) (List length (data-all art 'tile))))
 ```
 ---
-    (() 46)
+    (() 135)
+
+### classic's art is whole
+
+```roguelike
+(def art (data-load "data/classic/art"))
+(write (list (art-problems (spec-set-named "classic") art) (List length (data-all art 'tile))))
+```
+---
+    (() 57)
+
+### kettle's art is whole
+
+```roguelike
+(def art (data-load "data/kettle/art"))
+(write (list (art-problems (spec-set-named "kettle") art) (List length (data-all art 'tile))))
+```
+---
+    (() 148)
 
 
 ## the font

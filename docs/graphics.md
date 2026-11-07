@@ -44,7 +44,7 @@ name for a creature.
 | the player | `player` | 1 |
 | items | `potion` `scroll` `wand` `ring` `weapon` `armour` `food` `gold` `goal`, and `page` `token` where the set has them | 9 to 11 |
 | creatures | every `(creature NAME ...)` of the set, talkers each their own | classic 17, delve 23, kettle 28 |
-| bands | a band's own `wall` and `floor`, where its place differs | delve 3, kettle 3 |
+| bands | a band's own `wall` and `floor`, where its place differs | delve 3, kettle 4 |
 | the screen | `panel` (a nine-piece frame), `shadow` | 2 |
 
 Shared by every set, in `art/` at the top of the bundle: the font (the
@@ -139,4 +139,5 @@ things worn, patched, rusted and dropped.  A world people live in.
   standing water.  The Old Works: dressed limestone laid without
   mortar.  The Heart: the stone's dark glassy rock and its pool.
 - **kettle**: the dale above.  The town: soot-dark stone, slate.  The
-  farms: hedges and hay.  The hills: heather, gritstone and bog.
+  farms: hedges and hay.  The hills: heather, gritstone and bog.  The
+  far valley: limestone pavement and scar.

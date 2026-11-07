@@ -621,25 +621,6 @@
   "ekkkkkkkkkkkkkke"
   "eeeeeeeeeeeeeeee"))
 
-; A loose flag on a pivot, rusted blades in the gap round it.
-(tile trap (rows
-  "................"
-  "................"
-  "..kkkkkkkkkkkk.."
-  "..kJkkJkkJkkJk.."
-  "..kkfFffffffkk.."
-  "..kJfsssssfskJ.."
-  "..kkfssfsssskk.."
-  "..kJfsssssfskJ.."
-  "..kkfsssssssOk.."
-  "..kJfssfssssoJ.."
-  "..kkfsssssssOk.."
-  "..kJsssssfsskJ.."
-  "..kkkkkkkkkkkk.."
-  "..kJkkJkkOkkJk.."
-  "..kkkkkkkkkkkk.."
-  "................"))
-
 ; --- who walks there --------------------------------------------------------
 
 ; A vault-delver: a grey wool hood, a red cloak gone brown at the hem,
