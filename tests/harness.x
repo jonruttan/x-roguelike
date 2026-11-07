@@ -23,6 +23,7 @@
   game-messages game-turn game-ask game-over game-epitaph game-known game-deepest game-log game-pages-placed
   game-quest-state game-placed game-sure game-traps game-traps! game-exploring?
   game-screen game-screens? game-kept game-kept-level game-hub game-screen-key game-screen-distance game-chain
+  game-band band-name game-forms
   game-door game-inside game-level-key game-turn! game-over! game-deepest! game-quest-state!
   player-r player-c player-at! player-hp player-hp! player-hpmax player-str player-level player-exp player-gold player-gold!
   player-food player-food! player-condition player-weapon player-armour player-rings

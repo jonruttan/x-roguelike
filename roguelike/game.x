@@ -45,7 +45,7 @@
   game-screen game-screen! game-kept-level game-keep! game-screens? game-world-cols game-world-rows game-hub
   game-screen-distance game-screen-in? game-screen-key game-door game-inside game-inside! game-level-key
   game-deepest game-deepest! game-rows game-cols game-param game-param1 game-new game-epitaph! game-kept game-quests
-  game-messages game-messages! game-log game-band game-band-from band-to band-prop1
+  game-messages game-messages! game-log game-band game-band-from band-to band-prop1 game-forms
   player-r player-c player-at! player-hp player-hp! player-hpmax player-level player-food player-food!
   player-condition player-tick! player-armour player-rings player-gold
   state-say! state-tell! state-text state-clear-messages! state-clear-log! state-roll state-chance? state-dir state-dirs
@@ -148,7 +148,7 @@
   (fn (_ g)
     (game-depth! g (+ (game-depth g) 1))
     (when (< (game-deepest g) (game-depth g)) (game-deepest! g (game-depth g)))
-    (%gm-level! g (game-set g) #f (lit up))
+    (%gm-level! g (game-forms g) #f (lit up))
     (state-tell! g (lit stairs-down) "You descend to level {level}." (list (pair "level" (Str8 str (game-depth g)))))
     (%gm-enter-band! g)))
 
@@ -158,7 +158,7 @@
     (if (= (game-depth g) 0)
       (do (game-over! g (lit won))
           (state-tell! g (lit won) "You climb into daylight.  You have won." ()))
-      (do (%gm-level! g (game-set g) #t (lit down))
+      (do (%gm-level! g (game-forms g) #t (lit down))
           (state-tell! g (lit stairs-up) "You climb to level {level}." (list (pair "level" (Str8 str (game-depth g)))))))))
 
 ; --- the world of screens ----------------------------------------------------
@@ -184,7 +184,7 @@
     (game-depth! g (game-screen-distance g x y))
     (when (< (game-deepest g) (game-depth g)) (game-deepest! g (game-depth g)))
     (if (null? kept)
-      (do (%gm-level! g (game-set g) #f at) (%gm-enter-band! g))
+      (do (%gm-level! g (game-forms g) #f at) (%gm-enter-band! g))
       (do (%gm-restore! g kept)
           ((fn (_ land) (player-at! (game-player g) (first land) (rest land))) (%gm-landing g at))
           (%gm-light! g)

@@ -154,24 +154,25 @@
     (if (null? (game-inside g)) key (Str8 append key ">"))))
 
 ; The set's bands, (band NAME TO . PROPS) each, run one after another
-; from level 1, each to its TO.  The band the depth is in, as (FROM .
+; from the first level, each to its TO: level 1 in a descent, the hub,
+; ring 0, in a world of screens.  The band the depth is in, as (FROM .
 ; BAND), or nil past the last.
 (def %st-band-at
   (fn (self bands depth from)
     (match ((null? bands) ())
            ((not (< (List ref 1 (first bands)) depth)) (pair from (first bands)))
            (#t (self (rest bands) depth (+ 1 (List ref 1 (first bands))))))))
-(def game-band
-  (fn (_ g)
-    (def hit (%st-band-at (data-all (game-set g) (lit band)) (game-depth g) 1))
-    (if (null? hit) () (rest hit))))
-(def game-band-from
-  (fn (_ g)
-    (def hit (%st-band-at (data-all (game-set g) (lit band)) (game-depth g) 1))
-    (if (null? hit) 0 (first hit))))
+(def %st-band-hit
+  (fn (_ g) (%st-band-at (data-all (game-set g) (lit band)) (game-depth g) (if (game-screens? g) 0 1))))
+(def game-band (fn (_ g) (def hit (%st-band-hit g)) (if (null? hit) () (rest hit))))
+(def game-band-from (fn (_ g) (def hit (%st-band-hit g)) (if (null? hit) 0 (first hit))))
 (def band-name (fn (_ b) (first b)))
 (def band-to (fn (_ b) (List ref 1 b)))
 (def band-prop1 (fn (_ b key default) (data-prop1 b key default)))
+; The forms the level in hand is made and drawn by: its band's PROPS in
+; front of the set's, so a knob or a glyph the band names is its own.
+(def game-forms
+  (fn (_ g) (def b (game-band g)) (if (null? b) (game-set g) (List append (rest (rest b)) (game-set g)))))
 
 ; --- the player --------------------------------------------------------------
 
@@ -472,7 +473,7 @@
   game-doors game-door game-door! game-inside game-inside! game-level-key
   game-world game-screens? game-world-cols game-world-rows game-hub game-screen-distance game-screen-in?
   game-screen-key
-  game-param game-param1 game-band game-band-from band-name band-to band-prop1 game-new
+  game-param game-param1 game-band game-band-from band-name band-to band-prop1 game-forms game-new
   player-r player-c player-at! player-hp player-hp! player-hpmax player-hpmax! player-str player-str!
   player-strmax player-strmax! player-level player-level! player-exp player-exp! player-gold player-gold!
   player-armour player-armour! player-weapon player-weapon! player-rings player-rings! player-food player-food!

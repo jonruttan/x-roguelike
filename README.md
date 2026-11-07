@@ -96,6 +96,16 @@ the hub is the win.  A world without `(world ...)` is a descent, as
 before.  `(level-style open)` carves open ground: every cell floor,
 `(clumps LO HI)` thickets of wall, each a walk of `(clump-size LO HI)`
 cells, the outer ring always clear, no rooms and no stairs.
+`(level-style town)` lays a town: streets, and rows of terraces
+`(terrace-depth LO HI)` cells deep with `(street LO HI)` between the
+rows, each terrace `(terrace-length LO HI)` along with `(lane LO HI)`
+between, its houses `(house-width LO HI)` each with a door onto the
+street; two cells round the edge are street, and the `(square W H)` in
+the middle is left clear.  In a world of screens the bands run from
+the hub, ring 0, and any form a band names besides its own -- a level
+knob, a glyph -- is in front of the set's on its screens, so `kettle`'s
+first band, "Kettle", makes the square a town of stone walls in a
+valley of thickets.
 
 Each game of `kettle` is an errand drawn from the set's scenes: `(scene
 NAME GIVER . PROPS)` is a link, the GIVER a creature that talks, who
@@ -152,7 +162,7 @@ as many as it likes, lays that many things of CLASS a level, each
 drawn by rarity from what the depth allows and laid out of view with a
 keeper beside it, a creature of the depth, asleep unless wakeful: a
 thing worth having and what stands between you and it.  `kettle`'s
-three rings are its bands, each with its word, its colour and its
+three bands past the square each have their word, their colour and their
 caches, and few things lie loose.
 
 ## Running the suite
