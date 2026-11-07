@@ -21,7 +21,7 @@
   game-make game-key! game-explore! game-more! game-score game-score-lines game-score-text game-help game-draw!
   game-set game-depth game-map game-player game-creatures game-creatures! game-floor game-floor! game-pack game-pack!
   game-messages game-turn game-ask game-over game-epitaph game-known game-deepest game-log game-pages-placed
-  game-quest-state game-placed game-traps game-traps! game-exploring?
+  game-quest-state game-placed game-sure game-traps game-traps! game-exploring?
   game-screen game-screens? game-kept game-kept-level game-hub game-screen-key game-screen-distance game-chain
   game-band band-name game-forms
   game-door game-inside game-level-key game-turn! game-over! game-deepest! game-quest-state!

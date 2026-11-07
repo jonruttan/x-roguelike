@@ -49,19 +49,22 @@ searching, and the blow on a sleeper.  Each is off in classic.
 
 ## traps
 
-### a level has traps, hidden; s finds one beside you, and a pit stepped on hurts and is drawn
+### a level past the first has traps, hidden; s finds one beside you, and a pit stepped on hurts and is drawn
 
 ```roguelike
 (def g (spec-game-on (spec-set-named "delve") 4 ()))
-(game-creatures! g ())
 (def p (game-player g))
+(player-at! p (first (map-down (game-map g))) (rest (map-down (game-map g))))
+(game-key! g ">")
+(game-creatures! g ())
+(def turn (game-turn g))
 (def n (List length (game-traps g)))
 (def open (spec-open g))
 (def t (trap-make (first (rest open)) (rest (rest open)) (spec-trap g "pit") #f))
 (game-traps! g (list t))
 (def hidden (not (List any? (fn (_ r) (Str8 includes? "^" r)) (spec-screen g))))
 (game-key! g "s")
-(def found (list (game-messages g) (trap-found? t) (List any? (fn (_ r) (Str8 includes? "^" r)) (spec-screen g)) (game-turn g)))
+(def found (list (game-messages g) (trap-found? t) (List any? (fn (_ r) (Str8 includes? "^" r)) (spec-screen g)) (- (game-turn g) turn)))
 (def hp (player-hp p))
 (game-key! g (first open))
 (write (list (< 0 n) (< n 4) hidden found (game-messages g) (< (player-hp p) hp)))

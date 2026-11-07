@@ -25,7 +25,8 @@
 (module roguelike/items)
 
 (import x/type/vector)
-(import roguelike/data data-all data-prop data-glyph data-trait?)
+(import x/core/doors int/)
+(import roguelike/data data-all data-prop data-prop1 data-glyph data-trait?)
 (import roguelike/map
   map-walkable? map-reveal! map-rooms map-rooms! map-room-at room-r0 room-c0 room-r1 room-c1 map-tile map-visible?
   tile-floor)
@@ -33,7 +34,7 @@
 (import roguelike/state
   game-rng game-set game-depth game-map game-player game-floor game-floor! game-pack game-pack! game-ask!
   game-guises game-known game-known! game-param game-param1 game-goal-placed? game-goal-placed! game-band
-  game-pages-placed game-page-placed!
+  game-pages-placed game-page-placed! game-sure game-sure? game-sure! band-name band-to
   player-r player-c player-at! player-hp player-hp! player-hpmax player-hpmax! player-str player-str!
   player-strmax player-strmax! player-armour player-armour! player-weapon player-weapon! player-rings
   player-rings! player-food player-food! player-condition! player-gold player-gold!
@@ -132,6 +133,45 @@
           ((fn (self n) (when (< 0 n) (do (%it-cache! g (List ref 1 c)) (self (- n 1)))))
            (state-roll (game-rng g) (List ref 2 c) (List ref 3 c))))
         (List filter (fn (_ p) (if (pair? p) (eq? (first p) (lit cache)) #f)) (rest (rest b)))))))
+
+; The forms of CLASS whose depth covers the level.
+(def %it-class-here
+  (fn (_ g class)
+    (List filter (fn (_ f) (if (eq? (first f) class) (state-covers? (data-prop f (lit depth) (list 1 99)) (game-depth g)) #f))
+      (%it-forms g))))
+(def %it-put-form! (fn (_ g form) (unless (null? form) (%it-put! g (items-new g form)))))
+(def %it-lay!
+  (fn (self g form n) (when (< 0 n) (do (%it-put-form! g form) (self g form (- n 1))))))
+
+; How many of FORM, with (per-band N), the band owes this level: the
+; N not yet laid spread over the band's levels left, the share's whole
+; part and its fraction by chance, so the band's last level lays the
+; rest.  Each one laid is marked placed.
+(def %it-owed!
+  (fn (_ g b form)
+    (def key (Str8 append "band " (band-name b) ": " (List ref 1 form)))
+    (def left (- (data-prop1 form (lit per-band) 0) (List count-if (fn (_ x) (str=? x key)) (game-sure g))))
+    (def levels (+ 1 (- (band-to b) (game-depth g))))
+    (def n (match ((< left 1) 0)
+                  ((< levels 2) left)
+                  (#t (+ (int/ left levels) (if (< ((game-rng g) int levels) (% left levels)) 1 0)))))
+    ((fn (self k) (when (< 0 k) (do (game-sure! g key) (self (- k 1))))) n)
+    n))
+
+; What the set makes sure of, once a level, the first time it is made:
+; one of the (each-level CLASS) forms, by rarity, and what each form
+; with (per-band N) is owed.  Such a form is given its rarity 0 to be
+; found no other way.
+(def items-place-sure!
+  (fn (_ g)
+    (def key (Str8 append "stocked " (Str8 str (game-depth g))))
+    (def class (game-param1 g (lit each-level) ()))
+    (def banded (List filter (fn (_ f) (< 0 (data-prop1 f (lit per-band) 0))) (%it-forms g)))
+    (def b (game-band g))
+    (unless (match ((game-sure? g key) #t) ((null? class) (null? banded)) (#t #f))
+      (do (game-sure! g key)
+          (unless (null? class) (%it-put-form! g (%it-draw g (%it-class-here g class))))
+          (unless (null? b) (List for-each (fn (_ f) (%it-lay! g f (%it-owed! g b f))) banded))))))
 
 ; The goal, (goal NAME GLYPH DEPTH), on its level, once; one with no
 ; DEPTH lies nowhere, and is someone's to give.
@@ -509,7 +549,7 @@
     (state-tell! g (lit removed) "You take off {name}." (list (pair "name" (items-name g it))))))
 
 (provide roguelike/items
-  items-new items-spawn! items-place-caches! items-place-goal! items-goal-held? items-page-named items-place-pages!
+  items-new items-spawn! items-place-sure! items-place-caches! items-place-goal! items-goal-held? items-page-named items-place-pages!
   items-known? items-know! items-name items-worn
   items-glyph items-pack-lines items-by-letter items-pickup! items-drop! items-quaff! items-read! items-target items-zap!
   items-eat! items-wield! items-wear! items-take-off! items-put-on! items-remove! items-teleport!)

@@ -55,7 +55,7 @@
 (import roguelike/creatures
   creatures-spawn! creatures-guardian! creatures-wander! creatures-act! creatures-door-diagonal? creatures-shown?)
 (import roguelike/items
-  items-spawn! items-place-caches! items-place-goal! items-place-pages! items-goal-held? items-name items-worn
+  items-spawn! items-place-sure! items-place-caches! items-place-goal! items-place-pages! items-goal-held? items-name items-worn
   items-pack-lines
   items-by-letter items-pickup!
   items-drop! items-quaff! items-read! items-zap! items-eat! items-wield! items-wear! items-take-off!
@@ -128,6 +128,7 @@
     (creatures-spawn! g (+ (%gm-roll2 g (data-one params (lit creatures) (list 3 6))) (if hostile? 3 0)) hostile?)
     (unless (if hostile? #t (str=? (%gm-guardian-name g) "")) (creatures-guardian! g (%gm-guardian-name g)))
     (items-spawn! g (%gm-roll2 g (data-one params (lit items) (list 4 8))))
+    (unless hostile? (items-place-sure! g))
     (items-place-caches! g)
     (items-place-goal! g)
     (items-place-pages! g)
