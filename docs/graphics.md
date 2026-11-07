@@ -102,10 +102,21 @@ seeping, chalked or hung with a lamp.
 
 ## Light
 
-Next, once the walls and ground are settled: things that give light,
-a torch in a bracket, a lamp left burning, the Candle's kin in the
-firedamp, each casting a glow over the cells round it, so a level is
-dark but for its lights and the player's lamp.
+A level is dark but for what gives light.  `(light R G B N)` on a tile
+makes it give light of that colour, reaching N cells; `(flicker P)`
+makes it waver by P percent, as a flame does.
+
+- The level is drawn, then darkened; each light lifts the dark round
+  it, falling off to nothing at N cells, and tints it its colour.  A
+  light reaches only the cells it can see.
+- A flicker moves the light's reach and strength together, by a few
+  slow and quick waves, each light out of step with the rest; the
+  window redraws about twelve times a second while a light flickers.
+- Delve's lights: the player's lamp, the lamp-keeper's, the firedamp's
+  cold glow, the Lodestar's, and a salvager's candle stub on a face
+  here and there.  The Galleries' own lamps are long out (the band's
+  word on arrival), so no torch burns in a bracket there.  Deeper, the
+  light is the stone's water: "light from the rock".
 
 Text, so it is read with `x/codec/xon`, diffed, and drawn by hand; no
 image tools.  Turned into RGBA once when the set is loaded.

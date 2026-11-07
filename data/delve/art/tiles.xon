@@ -15,6 +15,8 @@
 ; every time, (weight N) of them for each 1 of a tile without one.
 ; (part P) is one piece of a tile drawn by its neighbours: a wall's top,
 ; face, rims and corners, the shade a face casts on the floor.
+; (light R G B N) makes a tile give light of that colour, N cells out;
+; (flicker P) makes it waver by P percent, as a flame does.
 ; Anything with no tile is drawn as its glyph in the font.
 
 (size 16 16)
@@ -233,7 +235,7 @@
   "hhR............."))
 
 ; The face: the lip, sandstone over shale over a coal seam, the foot.
-(tile wall (part face) (weight 6) (rows
+(tile wall (part face) (weight 10) (rows
   "dddnddddddnddddd"
   "hhRhhhhRhhhhRhhh"
   "RRRRrRRRRRRrRRRR"
@@ -319,6 +321,26 @@
   "rrrrrrkyykrRrrrr"
   "ddrdddkyYkrddddd"
   "dkddddkkkkddddkd"
+  "nnNnnnnnnnnnNnnn"
+  "nNnnnNnnnnnnnnNn"
+  "knnnnnnknnnnnnnk"
+  "ddddddddrdddddrd"
+  "rRRrRRRRrRRRRrRR"
+  "rrrrrrrrkrrrdrrr"
+  "kkkkkkkkkkkkkkkk"))
+
+; ... a candle stub a salvager stuck to the rock in a lump of clay, still
+; burning: the Galleries' lamps are long out.
+(tile wall (part face) (light 255 180 100 3) (flicker 25) (rows
+  "dddnddddddnddddd"
+  "hhRhhhhRhhhhRhhh"
+  "RRRRrRRRLRRrRRRR"
+  "RhRRRRRlLlRRRhRR"
+  "RRRrRRRRlRRRRRRR"
+  "rRRRRRkrBRRRRRrR"
+  "rrrrrrkuBurRrrrr"
+  "ddrdddduuudddddd"
+  "dkddddddkddddkdd"
   "nnNnnnnnnnnnNnnn"
   "nNnnnNnnnnnnnnNn"
   "knnnnnnknnnnnnnk"
@@ -579,7 +601,7 @@
 
 ; A delver: leather cap, a Guild jacket gone black, a pick on the
 ; shoulder and the lamp low in the other hand.
-(tile player (rows
+(tile player (light 255 196 118 5) (flicker 10) (rows
   "................"
   ".......kkk......"
   "......kuUuk.kk.."
@@ -634,7 +656,7 @@
   ".kk..kkkkkk..kk."))
 
 ; Firedamp pooled in the roof, a lamp's breath from burning.
-(tile "gas mote" (rows
+(tile "gas mote" (light 120 180 220 2) (flicker 30) (rows
   "................"
   "................"
   "................"
@@ -671,7 +693,7 @@
   "......Ka.aK....."
   "......K...K....."))
 
-(tile "lamp-keeper" (rows
+(tile "lamp-keeper" (light 255 186 108 3) (flicker 10) (rows
   "................"
   "................"
   ".......kkk......"
@@ -861,7 +883,7 @@
   "................"))
 
 ; The Lodestar: dark, glassy, beaded with water, cold light round it.
-(tile goal (rows
+(tile goal (light 110 150 210 2) (rows
   "................"
   "................"
   "................"

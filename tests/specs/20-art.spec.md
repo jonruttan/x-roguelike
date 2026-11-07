@@ -34,11 +34,15 @@ front-end puts together, and `(as OTHER)` a tile of the art.
     (def cut (%art-prop t 'cut))
     (def band (%art-prop t 'band))
     (def part (%art-prop t 'part))
+    (def light (%art-prop t 'light))
+    (def flicker (%art-prop t 'flicker))
     (List filter (fn (_ x) (not (null? x)))
       (list
         (if (List any? (fn (_ k) (%art-same? k n)) known) () (list n "names nothing in the set"))
         (if (null? band) () (if (List any? (fn (_ b) (str=? (first b) (List ref 1 band))) bands) () (list n "names no band")))
         (if (null? part) () (if (List any? (fn (_ p) (eq? p (List ref 1 part))) %art-parts) () (list n "names no part")))
+        (if (null? light) () (if (= 5 (List length light)) () (list n "has a light of the wrong shape")))
+        (if (null? flicker) () (if (null? light) (list n "flickers with no light") ()))
         (if (null? as) () (if (List any? (fn (_ o) (%art-same? (first o) (List ref 1 as))) tiles) () (list n "is drawn as nothing")))
         (if (null? rows) (if (null? as) (list n "has no rows") ()) (%art-rows n (rest rows) (if (null? cut) size ()) chars))))))
 (def art-problems
@@ -53,10 +57,11 @@ front-end puts together, and `(as OTHER)` a tile of the art.
   (list '(size 2 2) '(colour "a" 1 2 3)
         '(tile wall (rows "aa" "a")) '(tile floor (rows "ab" "aa")) '(tile up (rows "aa"))
         '(tile "nobody" (rows "aa" "aa")) '(tile down (as stairs)) '(tile wall (band "Nowhere") (rows "aa" "aa")) '(tile wall (part side) (rows "aa" "aa"))
+        '(tile gold (light 1 2) (rows "aa" "aa")) '(tile ring (flicker 5) (rows "aa" "aa"))
         '(tile panel (cut 1 1 1 1) (rows "aaa" "aaa" "aaa")))))
 ```
 ---
-    (('wall "has a row of the wrong width") ('floor "has a pixel with no colour") ('up "has the wrong number of rows") ("nobody" "names nothing in the set") ('down "is drawn as nothing") ('wall "names no band") ('wall "names no part"))
+    (('wall "has a row of the wrong width") ('floor "has a pixel with no colour") ('up "has the wrong number of rows") ("nobody" "names nothing in the set") ('down "is drawn as nothing") ('wall "names no band") ('wall "names no part") ('gold "has a light of the wrong shape") ('ring "flickers with no light"))
 
 
 ## the sets
@@ -68,4 +73,4 @@ front-end puts together, and `(as OTHER)` a tile of the art.
 (write (list (art-problems (spec-set-named "delve") art) (List length (data-all art 'tile))))
 ```
 ---
-    (() 45)
+    (() 46)
