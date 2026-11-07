@@ -9,25 +9,26 @@ a hundred, so a screen of the first ring always has a door.
 
 ## the set
 
-### the kettle set has three interiors, one for each ring of bands, each made its own way
+### the kettle set has three interiors, one for each ring of bands, each made its own way, and the pit on the square, which goes below
 
 ```roguelike
 (def set (spec-set-named "kettle"))
-(def prop (fn (_ f key) (rest (Assoc find key (rest f)))))
-(write (List map (fn (_ f) (list (first f) (prop f 'depth) (first (prop f 'level-style)))) (data-all set 'interior)))
+(def prop (fn (_ f key) (def p (Assoc find key (rest f))) (if (null? p) () (rest p))))
+(def made (fn (_ f) (if (null? (prop f 'below)) (first (prop f 'level-style)) (pair 'below (prop f 'below)))))
+(write (List map (fn (_ f) (list (first f) (prop f 'depth) (made f))) (data-all set 'interior)))
 ```
 ---
-    (("farmhouse cellar" (1 2) 'rooms) ("shepherd's bothy" (3 3) 'rooms) ("old city vault" (4 5) 'caves))
+    (("farmhouse cellar" (1 2) 'rooms) ("shepherd's bothy" (3 3) 'rooms) ("old city vault" (4 5) 'caves) ("pit" (0 0) ('below "delve")))
 
 ## doors
 
-### a screen of the first ring lays a door off its outer ring when an interior covers it; the hub, covered by none, lays none
+### a screen of the first ring lays a door off its outer ring when an interior covers it; the hub lays only the pit's
 
 ```roguelike
 (def set (pair '(interior "shed" (depth 1 9) (chance 100) (rooms 1 1) (creatures 0 0) (items 0 0) (enter "A shed.")) (spec-set-named "kettle")))
 (def g (spec-game-on set 4 ()))
 (def p (game-player g))
-(def hub (list (map-down (game-map g)) (game-door g "3,2")))
+(def hub (list (not (null? (map-down (game-map g)))) (game-door g "3,2")))
 (game-creatures! g ())
 (player-at! p 11 79)
 (game-key! g "l")
@@ -37,7 +38,7 @@ a hundred, so a screen of the first ring always has a door.
              (< 0 (first door)) (< (first door) 21) (< 0 (rest door)) (< (rest door) 79)))
 ```
 ---
-    ((() ()) #t #t "shed" #t #t #t #t)
+    ((#t "pit") #t #t "shed" #t #t #t #t)
 
 ### a step onto the door says where it goes
 

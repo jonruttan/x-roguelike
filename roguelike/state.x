@@ -37,7 +37,8 @@
 ; (KEY . NAME) each, the screen's key and the interior behind it, 30
 ; the interior stood in, its name, or nil outside, 31 the marks of what
 ; the set has made sure of: "stocked N" for each level stocked, and one
-; "band NAME: ITEM" for each item a band has laid.
+; "band NAME: ITEM" for each item a band has laid, 32 the region stood
+; in, its name, or nil above, 33 the set the game began on, while below.
 ; Every slot here is read through the object doors, not the class: a
 ; class send costs some two hundred objects, and a turn reads thousands.
 (def %st-ref (fn (_ v k) (obj-ref v (int+ k 1))))
@@ -146,6 +147,34 @@
 (def game-sure (fn (_ g) (%st-get g 31)))
 (def game-sure? (fn (_ g mark) (List includes? mark (%st-get g 31))))
 (def game-sure! (fn (_ g mark) (%st-put! g 31 (pair mark (%st-get g 31)))))
+
+; Below a door into a region, (region NAME . FORMS) of the set (see
+; data.x), the region's forms are the set in force, so every level
+; there is made, drawn and peopled by them, and the set the game began
+; on waits until the player climbs back out.
+(def game-region (fn (_ g) (%st-get g 32)))
+(def game-below? (fn (_ g) (not (null? (%st-get g 32)))))
+; The set the game began on, below or not.
+(def game-top-set (fn (_ g) (if (game-below? g) (%st-get g 33) (game-set g))))
+; Into the region NAME, whose forms are FORMS.
+(def game-go-below!
+  (fn (_ g name forms)
+    (%st-put! g 33 (game-set g))
+    (%st-put! g 1 forms)
+    (%st-put! g 32 name)))
+; The ARGS of every form headed HEAD in the whole world: the set the
+; game began on, then each of its regions, so a thing carried from one
+; into the other is still known by its form.
+(def game-world-all
+  (fn (_ g head)
+    (def top (game-top-set g))
+    (List append (data-all top head) (List flat-map (fn (_ r) (data-all (rest r) head)) (data-all top (lit region))))))
+; Back out of the region onto the set the game began on.
+(def game-go-above!
+  (fn (_ g)
+    (%st-put! g 1 (%st-get g 33))
+    (%st-put! g 32 ())
+    (%st-put! g 33 ())))
 ; The key the level in hand is kept under: its screen's, or, inside,
 ; that with a > after it.
 (def game-level-key
@@ -327,7 +356,7 @@
 
 (def game-new
   (fn (_ set seed rows cols)
-    (def g (Vector make 32 ()))
+    (def g (Vector make 34 ()))
     (def rng (Random sw seed))
     (%st-put! g 0 rng)
     (%st-put! g 1 set)
@@ -351,6 +380,8 @@
     (%st-put! g 28 ())
     (%st-put! g 29 ())
     (%st-put! g 30 ())
+    (%st-put! g 32 ())
+    (%st-put! g 33 ())
     g))
 
 ; --- messages ----------------------------------------------------------------
@@ -468,6 +499,7 @@
   game-ask game-ask! game-over game-over! game-guises game-known game-known! game-deepest game-deepest!
   game-log game-rows game-cols game-epitaph game-epitaph! game-seed game-goal-placed? game-goal-placed!
   game-pages-placed game-page-placed! game-quests game-quest-state game-quest-state! game-placed game-placed?
+  game-region game-below? game-top-set game-world-all game-go-below! game-go-above!
   game-placed! game-sure game-sure? game-sure! game-traps game-traps! game-exploring game-exploring? game-exploring!
   game-screen game-screen! game-kept game-kept-level game-keep! game-chain game-chain!
   game-doors game-door game-door! game-inside game-inside! game-level-key

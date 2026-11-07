@@ -11,10 +11,10 @@
 ; placed, the quests and what they placed, what the set made sure of,
 ; the chain, the choices it was played with, the level's traps by
 ; their kind's name, its tiles and seen flags as strings of digits, its
-; rooms and stairs; then, in a
-; world of screens, the doors laid and the interior stood in, and each
-; other level kept, screen or interior, after a (screen KEY) line, the
-; same way.  Reading one builds the game again on the same set with the
+; rooms and stairs; then, in a world of screens, the doors laid, the
+; interior stood in, the region stood in below a door, whose the level
+; in hand then is, and each other level kept, screen or interior, after
+; a (screen KEY) line, the same way.  Reading one builds the game again on the same set with the
 ; same choices; a thing the set no longer has is left out.  A save is
 ; read once and then removed by the play that read it, so a game is
 ; played through once.  The scores are lines, best first, each with the
@@ -26,7 +26,7 @@
 (import x/sys/posix)
 (import x/sys/file)
 (import x/codec/xon)
-(import roguelike/data data-all data-prop data-choices data-chosen data-choose)
+(import roguelike/data data-all data-region data-prop data-choices data-chosen data-choose)
 (import roguelike/items items-page-named)
 (import roguelike/traps trap-make trap-r trap-c trap-name trap-found?)
 (import roguelike/map
@@ -38,7 +38,7 @@
   game-deepest! game-seed game-guises game-goal-placed? game-goal-placed! game-pages-placed game-page-placed!
   game-quests game-quest-state! game-placed game-placed! game-sure game-sure! game-traps game-traps! game-new
   game-screen game-screen! game-kept game-keep! game-screens? game-screen-key game-chain game-chain!
-  game-doors game-door! game-inside game-inside! game-level-key
+  game-doors game-door! game-inside game-inside! game-level-key game-below? game-region game-top-set game-go-below!
   player-r player-c player-at! player-hp player-hp! player-hpmax player-hpmax! player-str player-str!
   player-strmax player-strmax! player-level player-level! player-exp player-exp! player-gold player-gold!
   player-armour player-armour! player-weapon player-weapon! player-rings player-rings! player-food
@@ -128,7 +128,7 @@
   (fn (_ g)
     (def p (game-player g))
     (def m (game-map g))
-    (def screen (if (game-screens? g) (list (first (game-screen g)) (rest (game-screen g))) (list -1 -1)))
+    (def screen (if (null? (game-screen g)) (list -1 -1) (list (first (game-screen g)) (rest (game-screen g)))))
     (List append
       (list (pair (lit saved) (List append (list (game-seed g) (game-depth g) (game-turn g) (game-deepest g) (if (game-goal-placed? g) 1 0)) screen))
             (list (lit player) (player-r p) (player-c p) (player-hp p) (player-hpmax p) (player-str p) (player-strmax p)
@@ -141,7 +141,8 @@
             (pair (lit sure) (game-sure g))
             (pair (lit doors) (List flat-map (fn (_ d) (list (first d) (rest d))) (List reverse (game-doors g))))
             (pair (lit inside) (if (null? (game-inside g)) () (list (game-inside g))))
-            (pair (lit choices) (List flat-map (fn (_ c) (List map symbol->str c)) (data-chosen (game-set g)))))
+            (pair (lit below) (if (game-below? g) (list (game-region g)) ()))
+            (pair (lit choices) (List flat-map (fn (_ c) (List map symbol->str c)) (data-chosen (game-top-set g)))))
       (%sv-chain-forms g)
       (List map (fn (_ args) (pair (lit guise) (pair (symbol->str (first args)) (rest args)))) (game-guises g))
       (List map (fn (_ it) (%sv-item (lit pack) it)) (game-pack g))
@@ -313,11 +314,16 @@
             (game-chain! g (%sv-chain forms))
             (%sv-doors! g (%sv-one forms (lit doors)))
             (List for-each (fn (_ name) (game-inside! g name)) (%sv-one forms (lit inside)))
+            ; Below, the level in hand is the region's; a thing carried or
+            ; dropped may come from anywhere in the world.
+            (def below (%sv-one forms (lit below)))
+            (def here (if (null? below) set (data-region set (first below))))
+            (def world (List append set (List flat-map rest (data-all set (lit region)))))
             (game-map! g (%sv-level forms))
-            (game-pack! g (%sv-items g set (%sv-all forms (lit pack))))
-            (game-floor! g (%sv-items g set (%sv-all forms (lit floor))))
-            (game-traps! g (List reject null? (List map (fn (_ a) (%sv-trap set a)) (%sv-all forms (lit trap)))))
-            (game-creatures! g (List reject null? (List map (fn (_ a) (%sv-creature g set a)) (%sv-all forms (lit creature)))))
+            (game-pack! g (%sv-items g world (%sv-all forms (lit pack))))
+            (game-floor! g (%sv-items g world (%sv-all forms (lit floor))))
+            (game-traps! g (List reject null? (List map (fn (_ a) (%sv-trap here a)) (%sv-all forms (lit trap)))))
+            (game-creatures! g (List reject null? (List map (fn (_ a) (%sv-creature g here a)) (%sv-all forms (lit creature)))))
             (when (if (game-screens? g) (not (< (List ref 5 head) 0)) #f)
               (do (game-screen! g (pair (List ref 5 head) (List ref 6 head)))
                   (List for-each
@@ -325,11 +331,13 @@
                       (game-keep! g (first part)
                         (list (%sv-level (rest part))
                               (List reject null? (List map (fn (_ a) (%sv-creature g set a)) (%sv-all (rest part) (lit creature))))
-                              (%sv-items g set (%sv-all (rest part) (lit floor)))
+                              (%sv-items g world (%sv-all (rest part) (lit floor)))
                               (List reject null? (List map (fn (_ a) (%sv-trap set a)) (%sv-all (rest part) (lit trap)))))))
                     (rest parts))
-                  (game-keep! g (game-level-key g)
-                    (list (game-map g) (game-creatures g) (game-floor g) (game-traps g)))))
+                  (when (null? below)
+                    (game-keep! g (game-level-key g)
+                      (list (game-map g) (game-creatures g) (game-floor g) (game-traps g))))))
+            (unless (null? below) (game-go-below! g (first below) here))
             (%sv-player! g forms)
             (map-light! (game-map g) (player-r (game-player g)) (player-c (game-player g)))
             (state-say! g "Welcome back.")
