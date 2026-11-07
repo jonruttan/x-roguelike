@@ -22,14 +22,15 @@ of it and the win at the hub.
 
 ## the way to a screen
 
-### the way from one screen to another is said in screens east or west, then south or north
+### the way from one screen to another is said as the people say it: where it lies, then which way from here
 
 ```roguelike
-(write (list (chain-where (pair 3 2) (pair 5 1)) (chain-where (pair 3 2) (pair 3 4)) (chain-where (pair 3 2) (pair 2 2))
-             (chain-where (pair 3 2) (pair 3 2))))
+(def g (spec-game-on (spec-set-named "kettle") 4 ()))
+(write (list (chain-where g (pair 3 2) (pair 5 1)) (chain-where g (pair 3 2) (pair 3 4)) (chain-where g (pair 3 2) (pair 2 2))
+             (chain-where g (pair 3 2) (pair 4 0)) (chain-where g (pair 3 2) (pair 3 2))))
 ```
 ---
-    ("two screens east and one screen north" "two screens south" "one screen west" "here, on this screen")
+    ("up in the hills, east of here" "up in the hills, south of here" "out in the farms, west of here" "up in the hills, north-east of here" "right here")
 
 ## the chain drawn
 
@@ -65,7 +66,7 @@ of it and the win at the hub.
 (def prop (fn (_ q key) (data-prop (rest q) key ())))
 (def first-q (first chain))
 (def second (List ref 1 chain))
-(def where (chain-where (pair 3 2) (pair (List ref 0 (prop second 'screen)) (List ref 1 (prop second 'screen)))))
+(def where (chain-where g (pair 3 2) (pair (List ref 0 (prop second 'screen)) (List ref 1 (prop second 'screen)))))
 (def giver (List find (fn (_ cr) (str=? (creature-name cr) (List ref 2 first-q))) (game-creatures g)))
 (game-creatures! g (list giver))
 (def key (spec-beside! g giver))
