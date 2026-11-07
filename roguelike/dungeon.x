@@ -289,8 +289,71 @@
     (map-rooms! m ())
     m))
 
+; --- a town ------------------------------------------------------------------
+
+; A town: streets and terraces.  Every cell is street; then rows of
+; terraces, each (terrace-depth LO HI) cells deep, walls included, with
+; (street LO HI) cells of street between one row and the next; along a
+; row, terraces of (terrace-length LO HI) cells with (lane LO HI) cells
+; of lane between.  A terrace is houses side by side, each (house-width
+; LO HI) cells along, its own wall included, with one door in its front
+; or its back, onto the street.  Two cells round the edge are street,
+; and the (square W H) in the middle is left clear, a cell of street
+; round it.  No rooms and no stairs: a screen is left by its edges.
+
+; The houses of the terrace walled from R0 C0 to R1 C1, from column X:
+; a wall at the end of each but the last, and each a door.
+(def %dg-houses!
+  (fn (self rng m r0 c0 r1 c1 x width)
+    (def w (+ x (%dg-roll rng (first width) (List ref 1 width))))
+    (def end (if (< (- c1 3) w) c1 w))
+    (when (< end c1) (map-each! (+ r0 1) end (- r1 1) end (fn (_ r c) (map-set! m r c tile-wall))))
+    (map-set! m (if (rng bool) r0 r1) (%dg-roll rng (+ x 1) (- end 1)) tile-door)
+    (when (< end c1) (self rng m r0 c0 r1 c1 end width))))
+(def %dg-terrace!
+  (fn (_ rng m r0 c0 r1 c1 width)
+    (when (< 4 (- c1 c0))
+      (do (%dg-carve-room! m (list r0 c0 r1 c1 #f))
+          (%dg-houses! rng m r0 c0 r1 c1 c0 width)))))
+; A row of terraces from R0 to R1, from column C, kept off the columns
+; SC0 to SC1 when SQUARE? (the row reaches the square).
+(def %dg-terraces!
+  (fn (self rng m params r0 r1 c square? sc0 sc1)
+    (def last (- (map-cols m) 3))
+    (when (< (+ c 4) last)
+      (do (def len (%dg-p params (lit terrace-length) (list 14 28)))
+          (def e ((fn (_ e) (if (< last e) last e)) (+ c (- (%dg-roll rng (first len) (List ref 1 len)) 1))))
+          (def width (%dg-p params (lit house-width) (list 4 8)))
+          (def lane (%dg-p params (lit lane) (list 1 3)))
+          (if (if square? (if (< c (+ sc1 2)) (< (- sc0 2) e) #f) #f)
+            (do (%dg-terrace! rng m r0 c r1 (- sc0 2) width)
+                (self rng m params r0 r1 (+ sc1 2) square? sc0 sc1))
+            (do (%dg-terrace! rng m r0 c r1 e width)
+                (self rng m params r0 r1 (+ e (+ 1 (%dg-roll rng (first lane) (List ref 1 lane)))) square? sc0 sc1)))))))
+(def %dg-town!
+  (fn (_ rng m params)
+    (def rows (map-rows m))
+    (def cols (map-cols m))
+    (map-each! 0 0 (- rows 1) (- cols 1) (fn (_ r c) (map-set! m r c tile-floor)))
+    (def sq (%dg-p params (lit square) (list 14 4)))
+    (def sr0 (int/ (- rows (List ref 1 sq)) 2))
+    (def sc0 (int/ (- cols (first sq)) 2))
+    (def sr1 (+ sr0 (- (List ref 1 sq) 1)))
+    (def sc1 (+ sc0 (- (first sq) 1)))
+    (def depth (%dg-p params (lit terrace-depth) (list 4 6)))
+    (def street (%dg-p params (lit street) (list 1 2)))
+    ((fn (self r)
+       (def r1 (+ r (- (%dg-roll rng (first depth) (List ref 1 depth)) 1)))
+       (when (< r1 (- rows 2))
+         (do (%dg-terraces! rng m params r r1 2 (if (< r (+ sr1 2)) (< (- sr0 2) r1) #f) sc0 sc1)
+             (self (+ r1 (+ 1 (%dg-roll rng (first street) (List ref 1 street))))))))
+     2)
+    (map-rooms! m ())
+    m))
+
 ; A level of ROWS by COLS at DEPTH, by PARAMS: rooms, or caves with
-; (level-style caves), or open ground with (level-style open).  With
+; (level-style caves), open ground with (level-style open), or a town
+; with (level-style town).  With
 ; (stairs up) the stairs down are floor: a level with a way back and
 ; none on.
 (def dungeon-generate
@@ -299,6 +362,7 @@
     (def style (first (%dg-p params (lit level-style) (list (lit rooms)))))
     (match ((eq? style (lit caves)) (%dg-caves! rng m params))
            ((eq? style (lit open)) (%dg-open! rng m params))
+           ((eq? style (lit town)) (%dg-town! rng m params))
            (#t (%dg-rooms! rng m depth params)))
     (def down (map-down m))
     (when (if (null? down) #f (eq? (first (%dg-p params (lit stairs) (list (lit both)))) (lit up)))

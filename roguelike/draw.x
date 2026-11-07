@@ -31,7 +31,7 @@
   game-over game-epitaph game-turn game-traps game-param1 game-screens? game-screen
   player-r player-c player-hp player-hpmax player-str player-strmax player-level player-exp player-gold
   player-food player-condition item-r item-c item-class? item-class creature-r creature-c creature-glyph
-  creature-trait? game-param game-band band-prop1 state-defence)
+  creature-trait? game-param game-band band-prop1 game-forms state-defence)
 (import roguelike/combat combat-exp-for)
 (import roguelike/creatures creatures-shown?)
 (import roguelike/items items-glyph items-pack-lines)
@@ -76,10 +76,11 @@
           (map-visible-run m r c))))
      (map-visible-next m r 0))))
 
-; The tile bytes and the item glyphs of a set, made once and kept
-; against the set they were made from; the band's styles, (COLOUR DIM
-; . PLAIN), kept against its colour.
-(def %dr-cache (Vector of () () () ()))
+; The tile bytes and the item glyphs of the level's forms, its band's
+; in front of the set's, made once and kept against the set and the
+; band they were made from; the band's styles, (COLOUR DIM . PLAIN),
+; kept against its colour.
+(def %dr-cache (Vector of () () () () ()))
 (def %dr-band-styles
   (fn (_ g)
     (def b (game-band g))
@@ -90,11 +91,14 @@
            (#t (do (Vector set! 3 (pair colour (pair (Style make (list (lit dim)) colour ()) (Style make () colour ()))) %dr-cache)
                    (rest (Vector ref 3 %dr-cache)))))))
 (def %dr-cached!
-  (fn (_ set)
-    (unless (same? set (Vector ref 0 %dr-cache))
-      (do (Vector set! 0 set %dr-cache)
-          (Vector set! 1 (%dr-tile-bytes set) %dr-cache)
-          (Vector set! 2 (List map (fn (_ c) (pair c (data-glyph set c "?")))
+  (fn (_ g)
+    (def b (game-band g))
+    (unless (if (same? (game-set g) (Vector ref 0 %dr-cache)) (same? b (Vector ref 4 %dr-cache)) #f)
+      (do (def forms (game-forms g))
+          (Vector set! 0 (game-set g) %dr-cache)
+          (Vector set! 4 b %dr-cache)
+          (Vector set! 1 (%dr-tile-bytes forms) %dr-cache)
+          (Vector set! 2 (List map (fn (_ c) (pair c (data-glyph forms c "?")))
                                    (list (lit potion) (lit scroll) (lit wand) (lit ring) (lit weapon) (lit armour)
                                          (lit food) (lit gold) (lit goal) (lit page) (lit token)))
                        %dr-cache)))))
@@ -106,8 +110,8 @@
     (when (if (null? at) #f (map-visible? m (first at) (rest at)))
       (screen-put! s (+ (first at) 1) (rest at) (bytes->str (list (Vector ref t bytes))) %dr-stairs))))
 (def %dr-map!
-  (fn (_ g s set m)
-    (%dr-cached! set)
+  (fn (_ g s m)
+    (%dr-cached! g)
     (def bytes (Vector ref 1 %dr-cache))
     (def buf (str-make (map-cols m)))
     (def styles (%dr-band-styles g))
@@ -210,7 +214,7 @@
   (fn (_ g s)
     (Screen fill s 0 0 (Screen cols s) %dr-plain)
     (Screen fill s (- (Screen rows s) 1) 0 (Screen cols s) %dr-plain)
-    (%dr-map! g s (game-set g) (game-map g))
+    (%dr-map! g s (game-map g))
     (%dr-traps! g s)
     (%dr-items! g s)
     (%dr-creatures! g s)
