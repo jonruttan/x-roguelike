@@ -31,7 +31,7 @@
 
 ; Every form of the set at DIR, in file-name order.  A missing directory
 ; raises.
-(def data-load
+(def %dt-load
   (fn (_ dir)
     (def names (%dt-sort (List filter %dt-xon? (File list-dir dir)) ()))
     (if (null? names) (Err raise (lit io) "no .xon files in the set" dir)
@@ -87,6 +87,22 @@
              (first (rest (rest (first set)))))
            (#t (self (rest set) what default)))))
 
+; The set at DIR, and after its forms, for each (join NAME) among them,
+; the set NAME beside it, as one (region NAME . FORMS): a place in the
+; same world made by its own forms (see state.x).
+(def data-load
+  (fn (_ dir)
+    (def forms (%dt-load dir))
+    (List append forms
+      (List map (fn (_ args) (pair (lit region) (pair (first args) (%dt-load (Str8 append dir "/../" (first args))))))
+        (data-all forms (lit join))))))
+
+; The forms of the region NAME of SET, or nil.
+(def data-region
+  (fn (_ set name)
+    (def hit (List find (fn (_ r) (str=? (first r) name)) (data-all set (lit region))))
+    (if (null? hit) () (rest hit))))
+
 ; --- choices -------------------------------------------------------------------
 
 ; A set's (choice GROUP NAME . FORMS) is one way to play it, picked
@@ -124,5 +140,5 @@
       (List flat-map (fn (_ pk) (List drop 2 (find pk))) picks)
       set)))
 
-(provide roguelike/data data-load data-all data-one data-get data-prop data-prop1 data-trait? data-glyph
+(provide roguelike/data data-load data-region data-all data-one data-get data-prop data-prop1 data-trait? data-glyph
   data-choices data-chosen data-choice-text data-choose)

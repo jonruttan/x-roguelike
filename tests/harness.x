@@ -12,7 +12,7 @@
 ; written from another directory.  x collects only when asked, so each
 ; level made or game started collects first.
 (import roguelike/base roguelike-version roguelike-main roguelike-options
-  data-load data-all data-one data-get data-prop data-prop1 data-trait? data-glyph
+  data-load data-region data-all data-one data-get data-prop data-prop1 data-trait? data-glyph
   data-choices data-chosen data-choice-text data-choose
   map-rows map-cols map-rooms map-down map-up map-tile map-seen? map-visible? map-walkable? room-lit?
   room-r0 room-c0 room-r1 room-c1 room-centre
@@ -25,6 +25,7 @@
   game-screen game-screens? game-kept game-kept-level game-hub game-screen-key game-screen-distance game-chain
   game-band band-name game-forms
   game-door game-inside game-level-key game-turn! game-over! game-deepest! game-quest-state!
+  game-below? game-region game-top-set
   player-r player-c player-at! player-hp player-hp! player-hpmax player-str player-level player-exp player-gold player-gold!
   player-food player-food! player-condition player-weapon player-armour player-rings
   creature-make creature-r creature-c creature-at! creature-hp creature-hp! creature-state creature-state!

@@ -16,6 +16,11 @@
 
 (world screens 7 5)
 
+; The Delve lies under Kettle: the set beside this one, a region of the
+; same world, gone into by the pit's door on the square (see
+; interiors.xon) and made by its own forms.
+(join "delve")
+
 ; The goal: its name and its glyph; with no level it lies nowhere, and
 ; is given by the last link of the chain (see scenes.xon).  (chain LO
 ; HI) is how many links a chain has at most.
