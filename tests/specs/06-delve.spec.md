@@ -170,9 +170,9 @@ blow on a sleeper -- is in 10-elements.
 (def g (spec-game-on (spec-set-named "delve") 4 ()))
 (game-creatures! g ())
 (def open (spec-open g))
-(creatures-place! g (spec-creature g "mine rat") (first (rest open)) (rest (rest open)) 'asleep)
+(creatures-place! g (spec-creature g "cave crawler") (first (rest open)) (rest (rest open)) 'asleep)
 (def n (List length (game-creatures g)))
-(write (list (< 1 n) (< n 5) (List all? (fn (_ cr) (str=? (creature-name cr) "mine rat")) (game-creatures g))
+(write (list (< 1 n) (< n 5) (List all? (fn (_ cr) (str=? (creature-name cr) "cave crawler")) (game-creatures g))
              (List all? (fn (_ cr) (< (state-dist (creature-r cr) (creature-c cr) (first (rest open)) (rest (rest open))) 2)) (game-creatures g))))
 ```
 ---
