@@ -266,11 +266,13 @@ The coal measures breathe firedamp: the gas of the coal, which seeps up
 wherever the shale is broken.  In a clough on the valley side a beck
 falls over a ledge of shale, Candle Force, and behind the fall the gas
 comes out of the rock in a small grotto.  A flame burns there, lit
-long ago and kept lit: **the Candle**.
+long ago and never out since: **the Candle**.
 
 1. **Why there**: the beck cut down through the shale and opened a
-   crack the gas rises through; a lightning strike or a herder's spark
-   lit it.
+   crack the gas rises through, and lightning lit it.  No hand lit the
+   Candle and nobody made it: the sky lit it, the rock feeds it, and
+   water falls over it.  The tribal herders saw it happen, and it is
+   their oldest tale, "the night the sky lit the fall".
 2. **What it became**: the well-keepers kept it as the dale's breath,
    fire living under falling water, the stone's other half, and tied
    rags by it as by their springs.  Kettle's folk keep the custom
@@ -283,15 +285,58 @@ long ago and kept lit: **the Candle**.
    shows it.  Nobody in Kettle doubts what that means.  The Guild says
    it is the drought.
 
-The Candle is how the dale reads the pit.  The fire-boss walked up
-Candle Clough every morning before the shift, and the town still goes
-up to look: tall means the water is rising below, and lower means it
-is going down.  Each faith reads it in its own way (see **Faith**).
+**How the Candle is read.**  The fire-boss walked up Candle Clough
+every morning before the shift, and the town still goes up to look.
+Two things stand it up tall:
+
+- **The sky.**  When the air's weight falls before a storm, more gas
+  comes out of the coal, and the Candle stands up.  The hill folk say
+  "when the Candle stands up, bring the sheep down", and a careful
+  fire-boss stops a shift.  It is the dale's glass.
+- **The water.**  Water rising in the workings drives their gas out to
+  it.
+
+So a tall Candle in settled weather means the pit.  A drought is
+settled weather, when the Candle should burn low; it burns taller than
+ever, which is how every shepherd knows the Guild's "it is the drought"
+for a lie.  Each faith reads the Candle in its own way (see **Faith**).
 The hill folk say the dale ends the day it goes out.
+
+**The Candle speaks.**  It breathes the air of the rock the pit is cut
+in, so whatever moves the air below moves the flame: a fall of roof, a
+door opened in the workings, the water rising.  Since the breach, the
+stone's water drives that gas, so the Candle carries what the stone's
+water touches, and the uncanny with it.  It is the one place the
+worlds speak to each other: the sky above, the pit and the stone
+below, the living and the dead.
+
+**The grotto** keeps a mark from every age: the herders' rags on the
+thorns, a well-keeper mark cut in the rock, the settlers' coins in the
+pool and oaths scratched beside them, and the names of the firedamp
+shift, scratched by their widows.  The well-keeper mark is a jagged
+line over a flame over waves: sky, fire, water.  It is half a message;
+the mark at the fourth stair is the other half.  Read together: what
+was given from above is kept below.
 
 It is the same gas as the pit's gas motes and the blast that killed the
 firedamp shift: the mercantile age's danger is the animistic age's
 holy flame.
+
+### The air
+
+The air lies in layers, as the rock does.  From below:
+
+- **The pit's damps.**  Firedamp gathers in the roof; it is light, and
+  it burns.  Blackdamp pools in low workings; it is heavy, and puts a
+  lamp out before it kills a man, so a lamp going dim is the warning.
+  Afterdamp is what a firing leaves, and it killed most of the firedamp
+  shift.  With the furnace shaft cold, all three are gathering below.
+- **The kettle's air.**  Cold pools on the floor at night, fog rises off
+  the wet ground in the morning, and in a working winter smoke lies
+  under the cold.
+- **The tops' wind**: the westerlies off the sea, and the rain they
+  carry.
+- **The sky**: lightning, sun, moon and stars.
 
 ### Weather and sun
 
@@ -400,9 +445,10 @@ charter.
    steam pumping engine on credit from a League bank, and the pit goes
    deeper.  The mine's drainage pulls down the spring's head, so the
    Guild puts a pump on the well-head: the town now draws its common
-   water through the Guild's iron.  One spring the Candle burns tall
-   and the fire-boss does not stop the shift; firedamp kills it in the
-   lower galleries, and the town buries what it can find.
+   water through the Guild's iron.  One spring, the sky falling before a
+   storm, the Candle stands up tall and the fire-boss does not stop the
+   shift; firedamp kills it in the lower galleries, and the town buries
+   what it can find.
 7. **The seam fails** (the last few years).  The Guild owes the League
    more than the pit will ever pay.  It keeps the miners on with talk
    of a new seam and drives the lower drift deeper.
@@ -483,9 +529,10 @@ pumps stopped.
 - **The pit**: drowned from the lower galleries down.  The stair shafts
   run with water.
 - **Below**: the lamp-keeper dead on the second level and not lying
-  still; the surveyor alive on the fifth; the bailiff and two miners
-  drowned; Tam dead at the fourth stair; the foreman and Hollis alive,
-  or not, on the ninth.
+  still; the surveyor alive on the fifth, working a door to make the
+  Candle pulse, which nobody above has read yet; the bailiff and two
+  miners drowned; Tam dead at the fourth stair; the foreman and Hollis
+  alive, or not, on the ninth.
 - **The rim**: the Guild's men in the old vaults, digging down, and the
   shepherds' bothies empty.
 
@@ -593,12 +640,102 @@ Older than both churches, and kept under both:
   reasons lost.
 - **Kettle** goes to the Candle: lovers to promise, the newly widowed to
   leave a rag.
-- **The miners** do not whistle below, leave a crust for the knocker,
-  touch the Well Stone on the way to a shift, and never take a dead
-  man's tally off its nail.
+- **The miners** do not whistle below, since whistling calls the wind
+  down the shaft; they leave a crust for the knocker, touch the Well
+  Stone on the way to a shift, and never take a dead man's tally off
+  its nail.
 
 The White Church preaches against the old ways, and the chapel looks
 the other way.
+
+### The Listeners
+
+An animistic practice, not a church, kept by hill folk and by the
+poor end of Kettle, who come down from the tribal herders.  A Listener
+carries a flame into one of the rim's side caves, which do not reach
+the stair, where water falls in the dark, and sits with it through the
+night, watching how it leans.  The caves' ceilings are black with
+centuries of their fires.  Their flames
+do move, but with the cave's own breath, which follows the weather and
+not the stone.  The Listeners know it: the Candle is the one that
+speaks, and theirs only listen.  They are trying to make again the
+night the sky lit the fall, and they know a flame lit by hand cannot.
+
+The White Church calls them the Rot's worshippers.  The Guild's dig has
+driven them out of the rim's caves, and the Rot-hunters come for them
+as well as for the Candle.  They are the first to read the Candle for
+what it is.
+
+### Speaking with what is unseen
+
+The Candle is the true form: a fire no hand lit, which carries what
+moves below to the sky above.  Everything else is an attempt at it, a
+flame someone carried in and lit:
+
+- **The cathedral.**  The White Church's chapels carved in the Hall at
+  Halmere: fire kindled inside the rock, lamps of salt crystal, figures
+  cut where nothing lives.  It is the Plain building a Candle by craft.
+  But salt is dead rock: the Hall's air is dry and still, nothing
+  breathes through it, and its lamps answer nothing.  It is the
+  grandest of the attempts and the emptiest.
+- **The Listeners' fires**, in the rim's caves: close, but answering
+  only the weather.
+- **The chapel's river lights**, set on the Seethe for the dead: an
+  attempt that sends and never receives.
+
+### The sky
+
+What each people makes of the weather, the lightning and the stars.
+
+- **The tribal herders**: the sky gives the rain and the stone keeps
+  it, and the Candle is what passed between them.  Storms are the sky
+  come to see its fire.  The bog lights are sparks that fell short of
+  the clough and never found it.
+- **The well-keepers**: fire given from above, water drawn from below,
+  and the stone between them.  Their mark in the grotto says so.
+- **The hill folk, now**: the Candle is their glass.  They cut peat and
+  coppice on the waning moon, and walk the wall at midsummer.
+- **The miners**: the Candle tells them when the sky is falling, and the
+  firedamp shift died on such a day.
+- **The chapel**: the water goes home to the sea, rises as cloud, and
+  the Giver sends it back as rain.  A drought is the Giver holding back
+  for a wrong done, and the chapel preaches this summer's as judgment.
+- **The settlers**: coast people still, who name the stars as the sea
+  taught them and steer by them.
+- **The White Church**: the old sea went up into heaven, so rain is
+  heaven's water, pure until it lands and stands, when it is the Rot's.
+  Lightning is heaven's judgment.  That heaven's own fire lit the Candle
+  is the White Church's embarrassment: it calls that strike a false
+  fire, the Rot's, and the Rot-hunters would put the Candle out.
+
+### Signs
+
+What is in the sky now, and what it means.  Each is real, and each
+people reads it its own way.  None is settled.
+
+- **The Brand**: a tailed star in the west.  It rose the month of the
+  breach and grows each night.  The hill folk say the sky's fire has
+  come looking; the Listeners, that the night the sky lit the fall is
+  coming again; the White Church, that heaven has drawn a brand against
+  the Rot; the chapel, that the Giver is warning; the miners, that it
+  is bad.  In the Old Works a well-keeper mark shows a tailed star over
+  a procession carrying the stone east.  The Brand has come before, the
+  last time the stone was moved.  Nobody knows how often it comes.
+- **The Sparks**: falling stars out of the north-east, every late
+  summer, so they are falling now.  They are the herders' sparks that
+  fell short of the clough, and the hill folk say each one is a bog
+  light born.
+- **The stones on the rim**: the standing stones line up on where the
+  sun rises at midsummer, which is why the hill folk walk the wall
+  then.  One row points elsewhere, low in the west, where the Brand
+  rose.
+- **The sky-fires**: in hard winters the northern sky burns green.  The
+  chapel calls them the drowned going home; the hill folk, the old
+  people walking the wall in the sky.
+- **The darkening**: the White Church keeps the only reckoning of the
+  heavens, at Halmere, and foretells the sun darkened at noon this
+  midwinter.  It preaches it as the end of the Rot.  Its knowing the
+  day ahead is part of its power over the Plain.
 
 ### What each people reveres
 
@@ -693,7 +830,7 @@ breach:
 | salvagers | men stripping the drowned pit's upper galleries of rails, chains and tools, to sell over the Nick |
 | distrainers | the Guild's bailiffs, taking goods in Kettle against debts at its shop |
 | the League's agents | the buyers' men, come over the Nick to take the holdwater from whoever brings it up; they wait at the pithead and follow a level or two down |
-| Rot-hunters | White Church zealots from the Plain, come to cut the rag-trees and put out the Candle |
+| Rot-hunters | White Church zealots from the Plain, come to cut the rag-trees, drive out the Listeners and put out the Candle |
 | salt-runners | with salt short, packhorse robbers on the Salters' Road take what comes over |
 
 **The archaic age**, only where the stone's water runs: deep in the
@@ -1196,6 +1333,14 @@ Proposals, not decided.
 - The Hall's oldest brine lakes are older than the mine, and nobody on
   the Plain can say what dissolved them.  Did the well-keepers' bargain
   lay the stone near Halmere's beds?
+- The Brand's return, the long arc's question: does it come each time
+  the stone is moved, or is the stone moved each time it comes?  The
+  well-keepers carried it east under the Brand; the Guild means to sell
+  it east under the Brand again.  Other dales' marks may show the same
+  star over their own stones.
+- The darkening at midwinter: the White Church's foretold day, after the
+  first snow has closed the Nick, when the Plain will be listening for
+  what heaven says about the Rot.
 - The High Moss keeps its dead.  Cutting deeper for fuel, the
   peat-cutters are finding bodies the moss has kept since the tribal
   herders, whole and brown.  The chapel will not bury them.  They
