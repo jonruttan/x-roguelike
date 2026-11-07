@@ -1,5 +1,6 @@
-; tiles.xon -- the delve set drawn, for a windowed front-end: a lamp-lit
-; coal pit, wet rock, timber and iron.
+; tiles.xon -- the delve set drawn, for a windowed front-end: a worked
+; coal pit, stopped three weeks, its water rising.  Soot, wet rock,
+; old timber and rust; what the men left lying where they left it.
 ;
 ; Read by the graphical front-end only: the set itself is the .xon files
 ; one directory up, and this directory is not one of them.
@@ -9,102 +10,204 @@
 ; (tile NAME . PROPS) draws NAME: a glyph name (wall, player, potion, ...)
 ; or a creature's name.  (rows "..." ...) is the picture, one string a
 ; row, one character a pixel; (as OTHER) draws NAME as OTHER; (band
-; "BAND") makes it that band's, in front of the set's.  Anything with no
-; tile is drawn as its glyph in the font.
+; "BAND") makes it that band's, in front of the set's.  Several tiles of
+; one name are its variants: a cell takes one by its place, the same
+; every time, (weight N) of them for each 1 of a tile without one.
+; Anything with no tile is drawn as its glyph in the font.
 
 (size 16 16)
 
 (colour "." 0 0 0 0)
-(colour "k" 20 16 15)
+(colour "k" 16 13 12)
 ; rock: sandstone beds, shale, a coal seam
-(colour "d" 46 38 34)
-(colour "r" 78 64 54)
-(colour "R" 108 90 74)
-(colour "h" 146 124 100)
-(colour "n" 30 28 32)
-(colour "N" 70 68 78)
-; the floor, and the floor where light falls from above
-(colour "s" 52 46 42)
-(colour "f" 66 58 52)
-(colour "F" 86 76 66)
-(colour "z" 118 104 78)
-; timber, iron, leather, cloth
-(colour "t" 92 62 38)
-(colour "T" 136 96 58)
-(colour "i" 70 72 80)
-(colour "I" 138 142 150)
-(colour "u" 104 74 52)
-(colour "U" 150 110 74)
-(colour "c" 52 56 76)
-(colour "C" 88 94 122)
-(colour "O" 132 70 34)
-(colour "o" 176 98 46)
-; water, lamp light, coin
-(colour "w" 32 52 70)
-(colour "W" 64 104 132)
-(colour "v" 150 196 214)
-(colour "l" 232 184 92)
-(colour "L" 255 238 176)
-(colour "y" 214 170 52)
-(colour "Y" 255 234 128)
-; skin, bone and paper
-(colour "p" 224 176 146)
-(colour "P" 168 118 96)
-(colour "b" 176 170 150)
-(colour "B" 232 226 206)
-; creatures: rat fur, toad, firedamp, the dead
-(colour "q" 116 98 88)
-(colour "Q" 156 136 120)
-(colour "g" 76 112 58)
-(colour "G" 130 168 90)
-(colour "m" 150 210 200)
-(colour "M" 228 255 246)
-(colour "j" 150 210 200 90)
-(colour "K" 28 38 48 190)
-(colour "a" 118 138 150 150)
-(colour "A" 200 216 224 190)
+(colour "d" 38 32 29)
+(colour "r" 62 53 47)
+(colour "R" 84 73 63)
+(colour "h" 108 95 80)
+(colour "n" 24 23 26)
+(colour "N" 52 52 58)
+; the floor: grit, stones, damp, standing water; light from above
+(colour "s" 44 39 35)
+(colour "f" 54 48 43)
+(colour "F" 68 61 54)
+(colour "e" 34 30 28)
+(colour "w" 28 36 42)
+(colour "W" 50 62 70)
+(colour "z" 92 83 66)
+; timber, iron, rust, leather, cloth
+(colour "t" 66 47 32)
+(colour "T" 98 74 50)
+(colour "V" 122 94 64)
+(colour "i" 50 52 56)
+(colour "I" 92 94 98)
+(colour "J" 128 124 116)
+(colour "O" 100 58 34)
+(colour "o" 134 84 46)
+(colour "u" 72 55 42)
+(colour "U" 102 80 60)
+(colour "c" 40 42 50)
+(colour "C" 62 64 74)
+; skin, grey hair, bone and paper
+(colour "p" 168 132 108)
+(colour "P" 120 90 76)
+(colour "b" 132 126 112)
+(colour "B" 180 172 150)
+; lamp light, coin
+(colour "l" 214 164 86)
+(colour "L" 246 220 156)
+(colour "y" 156 126 58)
+(colour "Y" 204 176 100)
+; creatures: rat, toad, firedamp, the dead
+(colour "q" 74 65 58)
+(colour "Q" 104 92 80)
+(colour "g" 62 62 44)
+(colour "G" 94 92 62)
+(colour "H" 128 120 86)
+(colour "m" 120 160 172 110)
+(colour "M" 186 216 220 160)
+(colour "j" 120 160 172 45)
+(colour "K" 22 28 34 170)
+(colour "a" 88 100 106 120)
+(colour "A" 144 156 160 150)
 ; the Lodestar's cold light; a panel's ground
-(colour "x" 110 150 190 110)
-(colour "Z" 22 18 16 228)
+(colour "x" 90 120 150 90)
+(colour "Z" 18 15 13 232)
+(colour "S" 0 0 0 110)
 
 ; --- the ground -------------------------------------------------------------
 
 ; The Galleries' rock: sandstone over shale over a coal seam.
-(tile wall (rows
-  "hhRhhhRRhhhRhhRh"
-  "RRRRhRRRRRRRRhRR"
-  "RRrRRRRRkRRRRRRR"
-  "rRRRRrRRkRRRrRRr"
-  "rrrrrrrrkrrrrrrr"
-  "dddrdddddddrdddd"
-  "kddddkdddddddkdd"
-  "dddrrddddrddddrd"
-  "nnnnnNnnnnnnNNnn"
-  "nNNnnnnnnNnnnnnn"
-  "knnnnnnkknnnnnkn"
-  "ddddddrddddddddd"
-  "hRRhhhRRRhRRhhhR"
-  "RRRRRRkRRRRRRRRR"
-  "rRRrRRkRrRRRrRRr"
-  "rrrrrrkrrrrrrrrr"))
+(tile wall (weight 4) (rows
+  "RhRRRhRRRRhRRRhR"
+  "RRRrRRRRRRRRrRRR"
+  "rRRRRRkrRRRRRRrR"
+  "rrRrrrkrrrRrrrrr"
+  "drrrrrdrrrrrrdrr"
+  "ddrdddddddrddddd"
+  "dkdddddkddddddkd"
+  "ddddrddddddrdddd"
+  "nnNnnnnnnnnnNnnn"
+  "nnnnnnNnnnnnnnNn"
+  "knnnnnnknnnnnnnk"
+  "ddddddddrdddddrd"
+  "RRhRRRRRRRRhRRRR"
+  "RRRRRrRRkRRRRRrR"
+  "rRrRRRRrkrRRrRRr"
+  "rrrrrrrrkrrrdrrr"))
 
+; ... propped with a post where the roof was bad.
+(tile wall (rows
+  "RhRRRkTVtkRRRhRR"
+  "RRRrRkTVtkRRrRRR"
+  "rRRRRkTTtkRRRRrR"
+  "rrRrrkTVtkrrrrrr"
+  "drrrrkTVtkrrrdrr"
+  "ddrddktTtkdddddd"
+  "dkdddkTVtkdddkdd"
+  "ddddrkTVtkdrdddd"
+  "nnNnnkTVtknnNnnn"
+  "nnnnnkTTtknnnnNn"
+  "knnnnkTVtknnnnnk"
+  "dddddkTVtkdddrdd"
+  "RRhRRkTVtkRhRRRR"
+  "RRRRRktTtkRRRrRR"
+  "rRrRRkTVtkrRRrRr"
+  "rrrrrkTVtkrrdrrr"))
+
+; ... and scored by the picks.
+(tile wall (weight 2) (rows
+  "RhRRRhRRRRhRRRhR"
+  "RRkRRRRRRkRRrRRR"
+  "rRRkRRkrRRkRRRrR"
+  "rrRrkrkrrrRkrrrr"
+  "drrrrkdrrrrrkdrr"
+  "ddrdddddddrddddd"
+  "dkdddddkddddddkd"
+  "ddddrddddddrdddd"
+  "nnNnnnnnnnnnNnnn"
+  "nNnnnnnnnnnNnnnn"
+  "knnnnnnknnnnnnnk"
+  "ddddddddrdddddrd"
+  "RRhRRRRRRRRhRRRR"
+  "RRRkRrRRRRkRRRrR"
+  "rRrRkRRrRRRkrRRr"
+  "rrrrrkrrrdrrrkrr"))
+
+; Grit and coal dust.
+(tile floor (weight 14) (rows
+  "sssfssssessssfss"
+  "ssssssfsssssssss"
+  "sfssssssssssfsss"
+  "sssssessssssssse"
+  "ssssssssfsssssss"
+  "sesssssssssessss"
+  "sssssFssssssssss"
+  "ssfssssssssfssss"
+  "sssssssssessssss"
+  "ssssfssssssssfss"
+  "sessssssFsssssss"
+  "ssssssssssssssss"
+  "ssfssesssssfssss"
+  "ssssssssssssssss"
+  "ssssssfssssesssf"
+  "sessssssssssssss"))
+
+; ... coal fallen from the tubs, and stones.
+(tile floor (weight 3) (rows
+  "ssssssssssssssss"
+  "ssssssssssfsssss"
+  "sssnnsssssssssss"
+  "ssnNnksssssssess"
+  "sssnkssssssFssss"
+  "ssssssssssFfksss"
+  "sfssssssssskssss"
+  "ssssssssssssssss"
+  "ssssssesssssssss"
+  "sssssssssssnssss"
+  "ssFfsssssssNkfss"
+  "ssskssssssssssss"
+  "ssssssssssssssss"
+  "sssssssfssssssss"
+  "ssssssssssssesss"
+  "ssssssssssssssss"))
+
+; ... water standing where it seeps.
 (tile floor (rows
   "ssssssssssssssss"
-  "sssfssssssssssss"
-  "ssssssssssssdsss"
-  "ssssssssfsssssss"
+  "ssssfsssssssssss"
   "ssssssssssssssss"
-  "sdssssssssssssfs"
-  "ssssssFsssssssss"
+  "ssssseeeeessssss"
+  "sssseewwwweessss"
+  "sssewwWWwwweesss"
+  "ssewwwwwWwwwesss"
+  "ssewwwwwwwwwesss"
+  "sssewwwwwwweesss"
+  "ssssseewweesssss"
+  "sssssseeesssssss"
+  "ssssssssssssfsss"
+  "sfssssssssssssss"
   "ssssssssssssssss"
-  "sssssssssssdssss"
-  "ssfsssssssssssss"
-  "ssssssssssssssss"
-  "sssssdssssfsssss"
-  "ssssssssssssssss"
-  "sFssssssssssssss"
-  "sssssssssssssdss"
+  "sssssssssfssssss"
   "ssssssssssssssss"))
+
+; ... a sleeper off the haulage road, a rusted spike.
+(tile floor (rows
+  "ssssssssssssssss"
+  "ssfsssssssssssss"
+  "sssktttttttkssss"
+  "ssskTTTTTVTksfss"
+  "sssktTtttttkssss"
+  "sssskkkkkkksssss"
+  "ssssssssssssssss"
+  "sssssssssfssssss"
+  "ssssssssssssssss"
+  "ssssssssssIissss"
+  "sssssssssIisssss"
+  "ssssssesssssssss"
+  "ssssssssssssssss"
+  "sfsssssssssssess"
+  "ssssssssssssssss"
+  "ssssssssfsssssss"))
 
 (tile passage (as floor))
 
@@ -113,17 +216,17 @@
   "TTTTTTTTTTTTTTTT"
   "tttttttttttttttt"
   "TtkUUuUUuUUuUktT"
+  "TtkUUuUuuUUuUktT"
+  "TtkiiiiOiiiiiktT"
   "TtkUUuUUuUUuUktT"
-  "TtkiiiiiiiiiiktT"
+  "TtkUuuUUuUUuuktT"
   "TtkUUuUUuUUuUktT"
+  "TtkUUuUUuUJuUktT"
   "TtkUUuUUuUUuUktT"
+  "TtkuUuUUuuUuUktT"
+  "TtkiiiiiiOiiiktT"
   "TtkUUuUUuUUuUktT"
-  "TtkUUuUUuUIuUktT"
-  "TtkUUuUUuUUuUktT"
-  "TtkUUuUUuUUuUktT"
-  "TtkiiiiiiiiiiktT"
-  "TtkUUuUUuUUuUktT"
-  "TtkUUuUUuUUuUktT"
+  "TtkUUuUuuUUuUktT"
   "TtkuuuuuuuuuuktT"
   "TtkkkkkkkkkkkktT"))
 
@@ -137,11 +240,11 @@
   "sTtkIIIIIIIIktTs"
   "sTtkIkkkkkkIktTs"
   "sTtkIkkkkkkIktTs"
-  "sTtkIIIIIIIIktTs"
-  "sTtkIkkkkkkIktTs"
-  "sTtkikkkkkkiktTs"
   "sTtkiiiiiiiiktTs"
   "sTtkikkkkkkiktTs"
+  "sTtkikkkkkkiktTs"
+  "sTtkiiiiiiiiktTs"
+  "sTtkkkkkkkkkktTs"
   "sTtkkkkkkkkkktTs"
   "sTttttttttttttTs"
   "ssTTTTTTTTTTTTss"))
@@ -149,20 +252,20 @@
 ; A ladder up, in the light from the level above.
 (tile up (rows
   "ssssssssssssssss"
-  "sssssszzzzssssss"
-  "ssszzTzzzzTzzsss"
+  "sssssszzzsssssss"
+  "ssszzTzzzzTzssss"
+  "sszzzTTTTTTzzsss"
+  "sszzzTzzzzTzzzss"
+  "ssszzTzzzzTzzzzs"
   "sszzzTTTTTTzzzss"
-  "sszzzTzzzzTzzzss"
-  "szzzzTzzzzTzzzzs"
-  "szzzzTTTTTTzzzzs"
-  "szzzzTzzzzTzzzzs"
-  "szzzzTzzzzTzzzzs"
-  "szzzzTTTTTTzzzzs"
-  "sszzzTzzzzTzzzss"
-  "sszzzTzzzzTzzzss"
-  "ssszzTTTTTTzzsss"
-  "sssssTssssTsssss"
-  "ssssstsssstsssss"
+  "szzzzTzzzzTzzzss"
+  "sszzzTzzzzTzzzzs"
+  "sszzzTTTTTTzzzss"
+  "ssszzTzzzzTzzsss"
+  "sssszTzzzzTzssss"
+  "ssssstttttttssss"
+  "ssssskssssksssss"
+  "ssssssssssssssss"
   "ssssssssssssssss"))
 
 ; A drop shaft under broken boards.
@@ -170,15 +273,15 @@
   "................"
   "................"
   "....dkkkkkkd...."
-  "...dkTTTkkkkd..."
-  "..dkkttTkkTTkd.."
+  "...dkTTtkkkkd..."
+  "..dkkttTkkTtkd.."
   "..dkkkkkkkttkd.."
   ".dkkkkkkkkkkkkd."
-  ".dkTTTTkkkkkkkd."
-  ".dkttttkkkTTkkd."
+  ".dkTTtTkkkkkkkd."
+  ".dkttttkkkTtkkd."
   ".dkkkkkkkkttkkd."
   "..dkkkkkkkkkkd.."
-  "..dkkTTTTkkkkd.."
+  "..dkkTTtTkkkkd.."
   "...dkttttkkkd..."
   "....dkkkkkkd...."
   "................"
@@ -186,24 +289,25 @@
 
 ; --- who walks there --------------------------------------------------------
 
-; A delver: leather cap, Guild jacket, a lamp in the right hand.
+; A delver: leather cap, a Guild jacket gone black, a pick on the
+; shoulder and the lamp low in the other hand.
 (tile player (rows
   "................"
-  "......kkkk......"
-  ".....kUUUUk....."
-  "....kuUUUUuk...."
-  "....kkkkkkkk...."
-  "....kpkppkpk...."
-  "....kppppPPk...."
-  ".....kPPPPk....."
-  "....kCCCCCCk...."
-  "...kCCcCCcCCk..."
-  "..ikCCcCCcCCkpk."
-  ".klLkCcCCcCkkk.."
-  ".kLLkuuuuuuk...."
-  "..kk.kCCkCCk...."
-  ".....kCCkCCk...."
-  ".....kkk.kkk...."))
+  ".......kkk......"
+  "......kuUuk.kk.."
+  ".....kkkkkkkIIk."
+  "......kpPPk..Tk."
+  "......kPpPk..Tk."
+  ".......kPk...Tk."
+  ".....kcCCCckTk.."
+  "....kcCCcCCTk..."
+  "....kcCCcCPk...."
+  "...kPkcCcCck...."
+  "...kikuuuuuk...."
+  "..klLkcCkCck...."
+  "..kLlkcCkCck...."
+  "...kk.kCkCk....."
+  "......kk.kk....."))
 
 (tile "mine rat" (rows
   "................"
@@ -214,13 +318,13 @@
   "................"
   "................"
   "................"
-  "....kk.........."
-  "...kQQkkkkkk...."
-  "..kQQqqqqqqqqk.."
-  ".kQkQqqqqqqqqqk."
-  "kPQQqqqqqqqqqqdk"
-  ".kkkdddddddddkkk"
-  "...kk.k...k.kk.."
+  "................"
+  "................"
+  "................"
+  "....kkQQQQQk...."
+  "..kkQqQQQQqqk..."
+  "kPQqkqqqqqqqqkk."
+  ".kkkqkkkkkqkkPPk"
   "................"))
 
 (tile "drip toad" (rows
@@ -230,72 +334,72 @@
   "................"
   "................"
   "................"
-  "....kkk..kkk...."
-  "...kGyGkkGyGk..."
-  "..kGGGGGGGGGGk.."
-  ".kgGGGGGGGGGGgk."
-  ".kgGgGGGGGGgGgk."
+  "................"
+  "................"
+  "................"
+  ".....kkkkkk....."
+  "...kHkGGGGkHk..."
+  "..kGGGHGGGHGGGk."
+  ".kgGHGGGGGGHGGgk"
   "kggggGGGGGGggggk"
-  "kggggggggggggggk"
-  ".kGGkggggggkGGk."
-  "..kkk.kkkk.kkk.."
-  "................"))
+  "kgkkggggggggkkgk"
+  ".kk..kkkkkk..kk."))
 
-; Firedamp pooled in the roof, lit.
+; Firedamp pooled in the roof, a lamp's breath from burning.
 (tile "gas mote" (rows
   "................"
   "................"
-  "..........m....."
   "................"
-  "......jjjj......"
-  "....jjmmmmjj...."
-  "...jjmmMMmmjj..."
-  "...jmmMMMMmmj..."
-  "...jmMMLLMMmj..."
-  "...jmmMMMMmmj..."
-  "...jjmmMMmmjj..."
-  "....jjmmmmjj...."
-  "......jjjj......"
-  "....m..........."
+  "................"
+  "........j......."
+  ".....jjjmj......"
+  "...jjjmmmmjjj..."
+  "..jjmmmMmmmmjj.."
+  ".jjmmMMMMmmmmjj."
+  ".jmmmMMMmmMmmmj."
+  "..jjmmmmmmmmjj.."
+  "...jjjjmmjjjj..."
+  ".....jj..jj....."
+  "................"
   "................"
   "................"))
 
-; One of the firedamp shift, forty years dead.
+; One of the firedamp shift, forty years dead, his lamp out.
 (tile "gallery shade" (rows
   "................"
-  "......KKKK......"
-  ".....KAAAAK....."
-  "....KAAAAAAK...."
-  "....KKKKKKKK...."
-  "....KaKaaKaK...."
-  "....KaaaaaaK...."
-  ".....KaaaaK....."
-  "....KAAAAAAK...."
-  "...KAaAAAAaAK..."
-  "..KAaaAAAAaaAK.."
-  "..KaaaAAAAaaaK.."
-  "...KaaaaaaaaK..."
-  "...KaaKaaKaaK..."
-  "....Ka.Ka.aK...."
-  "................"))
+  "................"
+  ".......KKK......"
+  "......KaAaK....."
+  ".....KKKKKKK...."
+  "......KaaaK....."
+  ".......KaK......"
+  ".....KaAAAaK...."
+  "....KaAAaAAaK..."
+  "....KaAAaAAaK..."
+  "...KaKaAaAaKK..."
+  "...KiKaaaaaK...."
+  "...KKKaAKAaK...."
+  "......aAKAa....."
+  "......Ka.aK....."
+  "......K...K....."))
 
 (tile "lamp-keeper" (rows
   "................"
-  "......kkkk......"
-  ".....kbbbbk....."
-  "....kbbbbbbk...."
-  "....kbpppPbk...."
-  "....kpkppkpk...."
-  "....kppppPPk...."
-  ".....kOOOOk....."
-  "....kOOoOOOk...."
-  "...kOOOOoOOOk..."
-  "...kOoOOOOoOkpk."
-  "..kcOOOOOOOOkLLk"
-  "..kccccccccckLLk"
-  "..kccccccccck.kk"
-  "..kccccccccck..."
-  "...kkkkkkkkk...."))
+  "................"
+  ".......kkk......"
+  "......kbbbk....."
+  "......kpPbk....."
+  "......kPpPk..kk."
+  ".....kOOOOOk.lLk"
+  "....kOoOOOoOkPk."
+  "....kOOOoOOk...."
+  "....kcOOOOck...."
+  "....kccccccck..."
+  "...kccCcccCcck.."
+  "...kcccCccccck.."
+  "...kccccCcccck.."
+  "..kccccccccccck."
+  "..kkkkkkkkkkkkk."))
 
 ; --- what lies about --------------------------------------------------------
 
@@ -308,32 +412,32 @@
   "......kttk......"
   "......kTtk......"
   ".....kkbbkk....."
-  "......kbBk......"
+  "......kbbk......"
   ".....kbWWbk....."
-  "....kbWvWWWk...."
-  "....kWvWWWWk...."
+  "....kbWBWWWk...."
+  "....kWWWWWWk...."
   "....kWWWWWwk...."
   "....kWWWWwwk...."
   ".....kwwwwk....."
   "......kkkk......"
   "................"))
 
-; A well-keeper mark copied on cloth, on two rods.
+; A well-keeper mark copied on cloth, frayed at the foot.
 (tile scroll (rows
   "................"
   "................"
   "................"
   "................"
   "................"
-  "..kkkkkkkkkkkk.."
+  "...kkkkkkkkkk..."
   "..kTTTTTTTTTTk.."
-  "..kbBBBBBBBBbk.."
-  "..kbOBOOBBOBbk.."
-  "..kbBBBBBBBBbk.."
-  "..kbBOOBOBOBbk.."
-  "..kbBBBBBBBBbk.."
-  "..kTTTTTTTTTTk.."
-  "..kkkkkkkkkkkk.."
+  "...kbBBBBBBbk..."
+  "...kBOBBOOBBk..."
+  "...kbBBBBBBBk..."
+  "...kBBOOBOBbk..."
+  "...kbBBBBBBBk..."
+  "...kBbBkBBbBk..."
+  "....kk.kk.kk...."
   "................"
   "................"))
 
@@ -362,7 +466,7 @@
   "................"
   "................"
   "......kkkk......"
-  ".....kWvvWk....."
+  ".....kWBWWk....."
   "......kWWk......"
   ".....kIkkIk....."
   "....kIk..kIk...."
@@ -379,12 +483,12 @@
   "................"
   ".kk..........kk."
   "kIIkk......kkIik"
-  ".kiIIkkkkkkIIik."
+  ".kiIJkkkkkkJIik."
   "..kkiiIIIIiikk.."
   "....kkkTTkkk...."
   "......ktTk......"
   "......ktTk......"
-  "......ktTk......"
+  "......ktVk......"
   "......ktTk......"
   "......ktTk......"
   "......ktTk......"
@@ -392,7 +496,7 @@
   "......kkkk......"
   "................"))
 
-; An oilskin coat.
+; An oilskin coat, patched.
 (tile armour (rows
   "................"
   "................"
@@ -401,8 +505,8 @@
   "...kuUkUUkUuk..."
   "..kuUUUkkUUUuk.."
   ".kuUUUUUUUUUUuk."
-  ".kuukUUUUUUkuuk."
-  ".kuk.kUUUUk.kuk."
+  ".kuukUUUUuuUkuuk"
+  ".kuk.kUUUuuk.kuk"
   ".kk..kUUUUk..kk."
   ".....kUuUUk....."
   ".....kUUuUk....."
@@ -411,7 +515,7 @@
   ".....kkkkkk....."
   "................"))
 
-; A miner's tin.
+; A miner's tin, dented.
 (tile food (rows
   "................"
   "................"
@@ -420,11 +524,11 @@
   "................"
   "................"
   "....kkkkkkkk...."
-  "...kIIIIIIIIk..."
+  "...kIJIIIIIIk..."
   "...kiiiiiiiik..."
   "...kIIIIIIIIk..."
-  "...kIiIIIIIIk..."
-  "...kIIIIIIiIk..."
+  "...kIiIIkIIIk..."
+  "...kIIIIIIOIk..."
   "...kiiiiiiiik..."
   "....kkkkkkkk...."
   "................"
@@ -461,9 +565,9 @@
   "....kBcBccBcBk.."
   "....kBBBBBBBBk.."
   "....kBccBcccBk.."
-  "....kBBBBBBBBk.."
-  "....kBcBccBBBk.."
-  "....kBBBBBBBBk.."
+  "....kBBBBBBBbk.."
+  "....kBcBccBBbk.."
+  "....kbBBBBBbbk.."
   "....kkkkkkkkkk.."
   "................"
   "................"))
@@ -476,18 +580,37 @@
   "......xxxx......"
   ".....xkkkkx....."
   "...xkknNNnkkx..."
-  "..xknnNvNnnnkx.."
-  ".xknnNNnnnvnnkx."
+  "..xknnNWNnnnkx.."
+  ".xknnNNnnnWnnkx."
   ".xknNnnnnnnnnkx."
-  "xknnnvnnnnNnnnkx"
-  "xknnnnnnnnnnvnkx"
+  "xknnnWnnnnNnnnkx"
+  "xknnnnnnnnnnWnkx"
   "xknNnnnnnnnnnnkx"
-  ".xknnnnvnnnnnkx."
+  ".xknnnnWnnnnnkx."
   "..xkknnnnnnkkx.."
   "...xxkkkkkkxx..."
   "................"))
 
 ; --- the screen's own -------------------------------------------------------
+
+; Under the player and every creature, so they stand on the ground.
+(tile shadow (rows
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  ".....SSSSSS....."
+  "...SSSSSSSSSS..."
+  ".....SSSSSS....."))
 
 ; A panel, drawn in nine pieces: the corners as they are, the edges
 ; and the middle stretched.  (cut L T R B) are the edges' widths.

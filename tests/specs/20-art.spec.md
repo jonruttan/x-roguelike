@@ -4,7 +4,7 @@
 A set's pictures for the windowed front-end, in `data/SET/art/*.xon`
 (see `docs/graphics.md`): each tile is the art's size, unless it is
 cut in nine; each pixel names a colour of the file; each tile names a
-glyph or a creature of the set, or the panel; a band tile names a band
+glyph or a creature of the set, or the panel or the shadow; a band tile names a band
 of the set, and `(as OTHER)` a tile of the art.
 
 
@@ -42,8 +42,8 @@ of the set, and `(as OTHER)` a tile of the art.
     (def size (data-one art 'size (list 16 16)))
     (def chars (List map (fn (_ c) (first c)) (data-all art 'colour)))
     (def tiles (data-all art 'tile))
-    (def known (pair 'panel (List append (List map (fn (_ g) (first g)) (data-all set 'glyph))
-                                         (List map (fn (_ c) (first c)) (data-all set 'creature)))))
+    (def known (pair 'panel (pair 'shadow (List append (List map (fn (_ g) (first g)) (data-all set 'glyph))
+                                         (List map (fn (_ c) (first c)) (data-all set 'creature))))))
     (List flat-map (fn (_ t) (%art-tile t size chars known tiles (data-all set 'band))) tiles)))
 (write (art-problems (spec-set-named "delve")
   (list '(size 2 2) '(colour "a" 1 2 3)
@@ -64,4 +64,4 @@ of the set, and `(as OTHER)` a tile of the art.
 (write (list (art-problems (spec-set-named "delve") art) (List length (data-all art 'tile))))
 ```
 ---
-    (() 24)
+    (() 30)

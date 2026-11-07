@@ -45,7 +45,7 @@ name for a creature.
 | items | `potion` `scroll` `wand` `ring` `weapon` `armour` `food` `gold` `goal`, and `page` `token` where the set has them | 9 to 11 |
 | creatures | every `(creature NAME ...)` of the set, talkers each their own | classic 17, delve 23, kettle 28 |
 | bands | a band's own `wall` and `floor`, where its place differs | delve 3, kettle 3 |
-| the screen | `panel` (a nine-piece frame) | 1 |
+| the screen | `panel` (a nine-piece frame), `shadow` | 2 |
 
 Shared by every set, in `art/` at the top of the bundle: the font (the
 95 printable letters), and the standing's icons.
@@ -74,11 +74,22 @@ files of `data/SET` alone, so the terminal game never reads these.
 - `(band "BAND")`: the band's, in front of the set's.
 - `(cut L T R B)`: a nine-piece picture; the corners kept, the edges
   and the middle stretched.
+- Several tiles of one name are its variants: a cell takes one by its
+  place, the same every frame, so a level looks worked and lived in
+  (coal fallen from the tubs, a dropped sleeper, standing water, a pit
+  prop, pick marks).  `(weight N)`: N chances to each 1 of a variant
+  without one.
+- `shadow` is drawn under the player and every creature, so they stand
+  on the ground.
 
 Text, so it is read with `x/codec/xon`, diffed, and drawn by hand; no
 image tools.  Turned into RGBA once when the set is loaded.
 
 ## Each set's look
+
+Gritty and worked, a little toward the real: muted, sooty colours;
+figures with a person's proportions, small heads and no cartoon eyes;
+things worn, patched, rusted and dropped.  A world people live in.
 
 - **classic**: an old dungeon, grey stone and torchlight.
 - **delve**: the drowned mine.  The Galleries: sandstone, shale and a
