@@ -9,7 +9,7 @@ descents, and their specs stand.
 
 ## the set
 
-### the kettle set loads: seven by five screens, open ground, a goal with no level, hunger as a store, three rings
+### the kettle set loads: seven by five screens, open ground, a goal with no level, hunger as a store, four bands from the square
 
 ```roguelike
 (def set (spec-set-named "kettle"))
@@ -19,7 +19,7 @@ descents, and their specs stand.
              (List map (fn (_ b) (List ref 1 b)) (data-all set 'band))))
 ```
 ---
-    ("kettle" 'screens 7 5 'open 2 1200 28 (1 3 5))
+    ("kettle" 'screens 7 5 'open 2 1200 28 (0 1 3 5))
 
 ## open ground
 
@@ -189,13 +189,14 @@ descents, and their specs stand.
 (File unlink path)
 (def q (game-player h))
 (def hub (game-kept-level h "3,2"))
+(def same-at? (fn (_ a b) (if (null? a) (null? b) (if (null? b) #f (if (= (first a) (first b)) (= (rest a) (rest b)) #f)))))
 (write (list (not (null? h)) (first (game-screen h)) (rest (game-screen h)) (game-depth h) (player-r q) (player-c q)
              (List length (game-kept h)) (List any? (fn (_ it) (str=? (item-name it) "hatchet")) (List ref 2 hub))
              (= (spec-count-seen (List ref 0 hub)) (spec-count-seen (List ref 0 (game-kept-level g "3,2"))))
-             (same? (game-map h) (List ref 0 (game-kept-level h "4,2"))) (map-down (game-map h)) (game-messages h)))
+             (same? (game-map h) (List ref 0 (game-kept-level h "4,2"))) (same-at? (map-down (game-map h)) (map-down (game-map g))) (game-messages h)))
 ```
 ---
-    (#t 4 2 1 11 0 2 #t #t #t () ("Welcome back."))
+    (#t 4 2 1 11 0 2 #t #t #t #t ("Welcome back."))
 
 ## random play
 

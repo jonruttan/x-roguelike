@@ -72,10 +72,16 @@
 (glyph token "'")
 (glyph trap "^")
 
-; The rings out from the square as bands, (band NAME TO . PROPS), each
-; from the ring after the one before to TO: its word on first arrival,
-; its colour, and its caches, (cache CLASS LO HI), that many things of
-; CLASS a screen, each laid with a keeper beside it.
+; The rings out from the square as bands, (band NAME TO . PROPS), the
+; first from the hub, each after it from the ring after the one before
+; to TO: its word on first arrival, its colour, and its caches, (cache
+; CLASS LO HI), that many things of CLASS a screen, each laid with a
+; keeper beside it.  Any other form a band names is in front of the
+; set's on its screens: Kettle itself is a town, (level-style town),
+; its streets round the square and its houses walled in stone.
+(band "Kettle" 0
+  (level-style town) (square 14 4)
+  (glyph wall "#"))
 (band "The Farms" 1 (colour 70)
   (enter "The farms: hedged fields and the road, the town at your back.")
   (cache potion 1 2) (cache food 1 1) (cache weapon 0 1))
