@@ -43,7 +43,7 @@
 (import x/core/doors int/)
 (import roguelike/state
   game-rng game-set game-depth game-depth! game-map game-map! game-player game-creatures game-creatures!
-  game-floor game-floor! game-pack game-turn game-turn! game-ask game-ask! game-over game-over! game-traps game-traps!
+  game-floor game-floor! game-pack game-turn game-turn! game-ask game-ask! game-over game-over! game-traps game-traps! game-told game-told!
   game-exploring game-exploring! game-below? game-go-below! game-go-above! game-top-set
   game-screen game-screen! game-kept-level game-keep! game-screens? game-world-cols game-world-rows game-hub
   game-screen-distance game-screen-in? game-screen-key game-door game-inside game-inside! game-level-key
@@ -53,7 +53,7 @@
   player-condition player-tick! player-armour player-rings player-gold
   state-say! state-tell! state-text state-clear-messages! state-clear-log! state-roll state-chance? state-dir state-dirs
   state-creature-at state-creature-named state-items-at state-free? state-ring? item-class? item-class-in? item-class
-  item-name creature-name creature-trait?)
+  item-name creature-name creature-trait? creature-prop creature-kind state-a-kind)
 (import roguelike/combat combat-player-attacks! combat-hurt-player!)
 (import roguelike/creatures
   creatures-spawn! creatures-guardian! creatures-wander! creatures-act! creatures-door-diagonal? creatures-shown?)
@@ -81,7 +81,23 @@
     (def view (game-param1 g (lit view) 0))
     (match ((< 0 (player-condition p (lit blind))) (map-light! (game-map g) -9 -9))
            ((< 0 view) (map-light-radius! (game-map g) (player-r p) (player-c p) view))
-           (#t (map-light! (game-map g) (player-r p) (player-c p))))))
+           (#t (map-light! (game-map g) (player-r p) (player-c p))))
+    (%gm-tales! g)))
+
+; The (tale "LINE" ...) of each kind come into view for the first time
+; this game, a line a message: what it is, and what has changed it.
+(def %gm-tales!
+  (fn (_ g)
+    (List for-each
+      (fn (_ cr)
+        (when (creatures-shown? g cr)
+          (unless (List any? (fn (_ n) (str=? n (creature-name cr))) (game-told g))
+            ((fn (_ lines)
+               (unless (null? lines)
+                 (do (List for-each (fn (_ line) (state-say! g line)) lines)
+                     (game-told! g (pair (creature-name cr) (game-told g))))))
+             (creature-prop cr (lit tale) ())))))
+      (game-creatures g))))
 
 ; The band's guardian's name, on the band's last level, else "".
 (def %gm-guardian-name
@@ -319,6 +335,8 @@
     (state-clear-messages! g)
     (state-clear-log! g)
     (state-tell! g (lit welcome) "You enter the dungeon." ())
+    (game-told! g ())
+    (%gm-tales! g)
     (%gm-enter-band! g)
     (Heap collect)
     g))
@@ -475,7 +493,7 @@
       ((not (null? (game-over g))) (stop))
       ((not (null? (game-ask g))) (stop))
       ((not (null? shown))
-        (do (when (= n 0) (state-tell! g (lit creature-near) "You see a {name}." (list (pair "name" (creature-name shown))))) (stop)))
+        (do (when (= n 0) (state-tell! g (lit creature-near) "You see {a-name}." (list (pair "name" (creature-name shown)) (pair "a-name" (state-a-kind (creature-kind shown)))))) (stop)))
       ((= n 100) (stop))
       (#t ((fn (_ d)
              (if (null? d) (do (when (= n 0) (state-tell! g (lit explored) "Nothing left to explore." ())) (stop))

@@ -8,5 +8,5 @@
 (message no-stairs "There is no shaft here.")
 (message barred "The {name} stands over the shaft down.")
 (message found-goal "The Lodestar is yours!  Climb, before the water rises.")
-(message creature-near "You see a {name}.")
+(message creature-near "You see {a-name}.")
 (message explored "Nothing left to explore here.")

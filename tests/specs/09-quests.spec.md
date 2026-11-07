@@ -7,22 +7,22 @@ them, what each asks, and what it pays.  On the delve set.
 
 ## meeting
 
-### the lamp-keeper stands on level 2, and a knocker there carries the lamp
+### the lampman stands on level 2, and a knocker there carries the lamp
 
 ```roguelike
 (def g (spec-game-on (spec-set-named "delve") 4 ()))
 (player-hp! (game-player g) 1000)
 (def down! (fn (_) (def m (game-map g)) (player-at! (game-player g) (first (map-down m)) (rest (map-down m))) (game-key! g ">")))
-(def none (List any? (fn (_ cr) (str=? (creature-name cr) "lamp-keeper")) (game-creatures g)))
+(def none (List any? (fn (_ cr) (str=? (creature-name cr) "lampman")) (game-creatures g)))
 (down!)
-(def keeper (List find (fn (_ cr) (str=? (creature-name cr) "lamp-keeper")) (game-creatures g)))
+(def keeper (List find (fn (_ cr) (str=? (creature-name cr) "lampman")) (game-creatures g)))
 (def carrier (List find (fn (_ cr) (not (null? (creature-carried cr)))) (game-creatures g)))
 (write (list none (not (null? keeper)) (creature-trait? keeper 'talks) (creature-name carrier) (item-name (creature-carried carrier)) (game-placed g)))
 ```
 ---
     (#f #t #t "knocker" "the foreman's lamp" ("the foreman's lamp" "giver the lamp"))
 
-### walking into the lamp-keeper opens the quest and shows what it asks, for a turn; again, it presses
+### walking into the lampman opens the quest and shows what it asks, for a turn; again, it presses
 
 ```roguelike
 (def g (spec-game-on (spec-set-named "delve") 4 ()))
@@ -41,7 +41,7 @@ them, what each asks, and what it pays.  On the delve set.
 (write (list before asked (Str8 starts? " No lamp yet." (spec-row g 1)) (state-adjacent? (creature-r keeper) (creature-c keeper) (player-r (game-player g)) (player-c (game-player g)))))
 ```
 ---
-    (() ("lamp-keeper  --any key--" #t 1 'open) #t #t)
+    (() ("lampman  --any key--" #t 1 'open) #t #t)
 
 ### the lamp brought, the keeper offers two things; a takes the first, the lamp is gone, and there is no more to ask
 
@@ -66,7 +66,7 @@ them, what each asks, and what it pays.  On the delve set.
 (write (list held offered got (game-quest-state g "the lamp") (game-messages g)))
 ```
 ---
-    (("the foreman's lamp") ("Which will you take?" #t 'reward) ("a miner's blade (str 14)") 'done ("The lamp-keeper has nothing more to ask."))
+    (("the foreman's lamp") ("Which will you take?" #t 'reward) ("a miner's blade (str 14)") 'done ("The lampman has nothing more to ask."))
 
 ### the surveyor on level 5 wants the level seen whole: a survey read, it pays
 
@@ -124,4 +124,4 @@ row: the --More-- is answered before the next step down.
 (write (list (game-quest-state h "the lamp") (game-placed h) (List map creature-name (game-creatures h))))
 ```
 ---
-    ('open ("the foreman's lamp" "giver the lamp") ("lamp-keeper"))
+    ('open ("the foreman's lamp" "giver the lamp") ("lampman"))

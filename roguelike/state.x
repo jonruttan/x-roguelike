@@ -38,7 +38,8 @@
 ; the interior stood in, its name, or nil outside, 31 the marks of what
 ; the set has made sure of: "stocked N" for each level stocked, and one
 ; "band NAME: ITEM" for each item a band has laid, 32 the region stood
-; in, its name, or nil above, 33 the set the game began on, while below.
+; in, its name, or nil above, 33 the set the game began on, while below,
+; 34 the names of the kinds whose tale has been told.
 ; Every slot here is read through the object doors, not the class: a
 ; class send costs some two hundred objects, and a turn reads thousands.
 (def %st-ref (fn (_ v k) (obj-ref v (int+ k 1))))
@@ -69,6 +70,8 @@
 (def game-guises (fn (_ g) (%st-get g 12)))
 (def game-known (fn (_ g) (%st-get g 13)))
 (def game-known! (fn (_ g l) (%st-put! g 13 l)))
+(def game-told (fn (_ g) (%st-get g 34)))
+(def game-told! (fn (_ g l) (%st-put! g 34 l)))
 (def game-deepest (fn (_ g) (%st-get g 14)))
 (def game-deepest! (fn (_ g n) (%st-put! g 14 n)))
 (def game-log (fn (_ g) (%st-get g 15)))
@@ -306,6 +309,17 @@
 (def creature-prop (fn (_ cr key default) (data-prop (creature-kind cr) key default)))
 (def creature-prop1 (fn (_ cr key default) (data-prop1 (creature-kind cr) key default)))
 (def creature-trait? (fn (_ cr flag) (data-trait? (creature-kind cr) flag)))
+; The name of KIND, a creature's (NAME GLYPH . PROPS), after its
+; article: its (article "WORD"), else "an" before a vowel, "a" before
+; the rest.
+(def state-a-kind
+  (fn (_ kind)
+    (def name (first kind))
+    (def word (data-prop1 kind (lit article) ""))
+    (Str8 append (match ((not (str=? word "")) word)
+                        ((List any? (fn (_ v) (Str8 starts? v name)) (list "a" "e" "i" "o" "u" "A" "E" "I" "O" "U")) "an")
+                        (#t "a"))
+                 " " name)))
 (def creature-condition (fn (_ cr name) (%st-cond-turns (%st-ref cr 5) name)))
 (def creature-condition! (fn (_ cr name turns) (%st-set! cr 5 (%st-cond-set (%st-ref cr 5) name turns))))
 (def creature-tick! (fn (_ cr) (%st-set! cr 5 (%st-cond-tick (%st-ref cr 5)))))
@@ -356,7 +370,7 @@
 
 (def game-new
   (fn (_ set seed rows cols)
-    (def g (Vector make 34 ()))
+    (def g (Vector make 35 ()))
     (def rng (Random sw seed))
     (%st-put! g 0 rng)
     (%st-put! g 1 set)
@@ -382,6 +396,7 @@
     (%st-put! g 30 ())
     (%st-put! g 32 ())
     (%st-put! g 33 ())
+    (%st-put! g 34 ())
     g))
 
 ; --- messages ----------------------------------------------------------------
@@ -496,7 +511,7 @@
 (provide roguelike/state
   game-rng game-set game-depth game-depth! game-map game-map! game-player game-creatures game-creatures!
   game-floor game-floor! game-pack game-pack! game-messages game-messages! game-turn game-turn!
-  game-ask game-ask! game-over game-over! game-guises game-known game-known! game-deepest game-deepest!
+  game-ask game-ask! game-over game-over! game-guises game-known game-known! game-told game-told! game-deepest game-deepest!
   game-log game-rows game-cols game-epitaph game-epitaph! game-seed game-goal-placed? game-goal-placed!
   game-pages-placed game-page-placed! game-quests game-quest-state game-quest-state! game-placed game-placed?
   game-region game-below? game-top-set game-world-all game-go-below! game-go-above!
@@ -511,7 +526,7 @@
   player-armour player-armour! player-weapon player-weapon! player-rings player-rings! player-food player-food!
   player-conditions player-conditions! player-condition player-condition! player-tick!
   creature-make creature-kind creature-r creature-c creature-at! creature-hp creature-hp! creature-state
-  creature-state! creature-carried creature-carried! creature-target creature-target! creature-name creature-glyph creature-prop creature-prop1
+  creature-state! creature-carried creature-carried! creature-target creature-target! creature-name creature-glyph creature-prop creature-prop1 state-a-kind
   creature-trait? creature-condition creature-condition! creature-tick!
   item-make item-form item-class item-name item-prop item-prop1 item-count item-count! item-charges
   item-charges! item-enchant item-enchant! item-letter item-letter! item-r item-c item-at! item-class? item-class-in?

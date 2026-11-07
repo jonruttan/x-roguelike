@@ -6,7 +6,7 @@
 (message world-map "The valley:")
 (message found-goal "The Guild ledger!  Bring it back to the square.")
 (message no-stairs "There are no stairs in the open air.")
-(message creature-near "You see a {name}.")
+(message creature-near "You see {a-name}.")
 (message explored "Nothing more to see on this screen.")
 
 ; The score's lines at the end, one for each the set's (score ...) counts.

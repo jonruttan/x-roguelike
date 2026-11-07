@@ -46,9 +46,9 @@ adversaries.
 | Way | Who | When | What it left | Where it is now | Its adversaries |
 |---|---|---|---|---|---|
 | **Tribal** | the herders who first came for the rim's grazing | before the city | rags on thorns, the old numbers | the hills and the High Moss; the hill folk are what is left of it | none of its own yet (see **Ideas**) |
-| **Communal** | the well-keepers, keeping the stone in common as kin | the long keeping | the stair, the channels, the well mouth, the ossuary | the Well-House and the Old Works | bone heaps, the ossuary priest |
-| **City-state** | the well-keepers' city on the rim | its height, to the procession | walls and vaults, and the keepers built at its end | the rim and the Old Works' vaults; the Plain's towns keep the form | rust golems, the doorkeeper, the glass keeper, the well keeper |
-| **Mercantile** | Kettle's settlers up the Seethe, the Guild, and the League's towns and banks | three hundred years ago, to now | the drained floor, the charter cut into the old people's stone, the market, the pit, the terraces, the Tip, the White Church | Kettle, its farms and the Galleries; the Plain's towns | the fire-boss, gallery shades, salvagers, the Guild's bailiffs, distrainers, the League's agents, Rot-hunters, salt-runners |
+| **Communal** | the well-keepers, keeping the stone in common as kin | the long keeping | the stair, the channels, the well mouth, the ossuary | the Well-House and the Old Works | old 'uns, the ossuary priest |
+| **City-state** | the well-keepers' city on the rim | its height, to the procession | walls and vaults, and the keepers built at its end | the rim and the Old Works' vaults; the Plain's towns keep the form | rust golems, the warder, glisters, the Old Man |
+| **Mercantile** | Kettle's settlers up the Seethe, the Guild, and the League's towns and banks | three hundred years ago, to now | the drained floor, the charter cut into the old people's stone, the market, the pit, the terraces, the Tip, the White Church | Kettle, its farms and the Galleries; the Plain's towns | the fireman, gallery shades, salvagers, the Guild's bailiffs, distrainers, the League's agents, Rot-hunters, salt-runners |
 | **Colonial** | nobody yet | coming | its first sign: the League buying sweet water from the dales | the Plain, reaching | none yet |
 | **Industrial** | nobody yet | coming | its first signs: the engine house, the furnace, the brickfield | the Plain first, where the League has the powder and the money | none yet |
 
@@ -76,8 +76,12 @@ Two ways are coming, and the holdwater would bring both:
 
 ### What each way left in words
 
-The dale speaks the settlers' tongue, but each way of living left words
-in it, and traditions kept by people who have forgotten the reasons.
+The dale speaks the settlers' tongue, and only that: the speech of a
+northern dale and its pit, never another country's.  A trade or a
+thing the pits and dales have a word for goes by that word: the
+fireman who tests for gas, the lampman in the lamp room, the
+furnaceman, the banksman.  Each way of living left words in it, and
+traditions kept by people who have forgotten the reasons.
 The oldest words are on the oldest things: water and heights.
 
 - **Tribal**: names nobody can explain, on waters and heights.  The
@@ -102,7 +106,7 @@ The oldest words are on the oldest things: water and heights.
   church: guild, ledger, bailiff, credit, distraint; the Rot; salt
   oaths, and bread and salt for a guest.
 - **The pit**: the newest words: firedamp, gin, banksman, hewer, putter,
-  the Beam, the Tip, the Tally.  The fire-boss and his craft came from
+  the Beam, the Tip, the Tally.  The fireman and his craft came from
   Halmere's salt miners.
 
 ### Three questions
@@ -168,7 +172,7 @@ miners call their mine.
   are the White Church's holiest places (see **Faith**).  Brine lakes
   stand in old chambers and are crossed by boat.  Horses live their
   whole lives below, walking the treadwheels that wind the salt up.
-  There is gas in the salt too.  Halmere's fire-bosses burn it off
+  There is gas in the salt too.  Halmere's firemen burn it off
   before each shift, and Kettle learned that craft from them when the
   Guild took the Plain's form.  The sick are brought down to breathe the
   Hall's dry air.
@@ -284,21 +288,21 @@ long ago and never out since: **the Candle**.
    rags by it as by their springs.  Kettle's folk keep the custom
    without the reason; lovers and the newly widowed go there.  Miners
    read it: when the Candle burns tall, the seams are gassy, and a
-   careful fire-boss stops a shift.
+   careful fireman stops a shift.
 3. **How it is used now**: it has burned taller than anyone remembers
    since the pumps stopped.  The drowning pit's water rises in the
    workings and drives their gas out through the rock, and the Candle
    shows it.  Nobody in Kettle doubts what that means.  The Guild says
    it is the drought.
 
-**How the Candle is read.**  The fire-boss walked up Candle Clough
+**How the Candle is read.**  The fireman walked up Candle Clough
 every morning before the shift, and the town still goes up to look.
 Two things stand it up tall:
 
 - **The sky.**  When the air's weight falls before a storm, more gas
   comes out of the coal, and the Candle stands up.  The hill folk say
   "when the Candle stands up, bring the sheep down", and a careful
-  fire-boss stops a shift.  It is the dale's glass.
+  fireman stops a shift.  It is the dale's glass.
 - **The water.**  Water rising in the workings drives their gas out to
   it.
 
@@ -464,7 +468,7 @@ charter.
    deeper.  The mine's drainage pulls down the spring's head, so the
    Guild puts a pump on the well-head: the town now draws its common
    water through the Guild's iron.  One spring, the sky falling before a
-   storm, the Candle stands up tall and the fire-boss does not stop the
+   storm, the Candle stands up tall and the fireman does not stop the
    shift; firedamp kills it in the lower galleries, and the town buries
    what it can find.
 7. **The seam fails** (the last few years).  The Guild owes the League
@@ -485,7 +489,7 @@ charter.
    yards begin to fall.
 10. **The first order.**  The Guild sends six down past the breach to
     find where the water goes: Hollis from the engine house, the
-    Guild's surveyor, the lamp-keeper, Tam and two miners.  The foreman
+    Guild's surveyor, the lampman, Tam and two miners.  The foreman
     goes with them.
 11. **The report.**  The surveyor levels the stair and finds the water
     going down it.  At the fourth stair he finds the mark and reads its
@@ -524,7 +528,7 @@ charter.
 16. **Nobody comes up.**  The men climb into the Flood.  The miner who
     carried the report up comes back down with the bailiff and drowns
     with him on the sixth level, on the way back up; the other is lost
-    in the Flood.  The lamp-keeper gets as far as the second level and
+    in the Flood.  The lampman gets as far as the second level and
     falls.  The surveyor is cut off on the fifth, with the miners' tins
     and his own lamp.  The town has no witnesses: only the ledger.
 17. **The Guild's other way.**  Its council can read the charter as
@@ -548,7 +552,7 @@ pumps stopped.
   off.
 - **The pit**: drowned from the lower galleries down.  The stair shafts
   run with water.
-- **Below**: the lamp-keeper dead on the second level and not lying
+- **Below**: the lampman dead on the second level and not lying
   still; the surveyor alive on the fifth, working a door to make the
   Candle pulse, which nobody above has read yet; the bailiff and two
   miners drowned; Tam dead at the fourth stair; the foreman and Hollis
@@ -627,7 +631,7 @@ leaves it worse.
 - **The Guild's surveyor.**  Levelled the stair, read the mark, sent
   the report; cut off on the fifth level.  Turned against the Guild
   once he heard the order.
-- **The lamp-keeper**, who kept the lamps at the breach.  Went down
+- **The lampman**, who kept the lamps at the breach.  Went down
   with the crew, fell on the way up.
 - **Tam**, a miner, lost at the fourth stair.  Two more miners,
   drowned.
@@ -834,7 +838,7 @@ people reads it its own way.  None is settled.
 | Below | The White Church | The chapel | The miners |
 |---|---|---|---|
 | keepers of stone | the Rot's works | idols | the old people's men |
-| bones from the ossuary | the Rot's harvest | the unburied | the old people |
+| bones from the ossuary | the Rot's harvest | the unburied | old 'uns |
 | the gallery shades | the unsalted | the dead who cannot go down | the Long Row walking |
 | the drowned shades | the unsalted | the dead who cannot go down | the Flood's |
 | the knocker | the Rot | a tale | the knocker |
@@ -855,6 +859,14 @@ stone's water runs.  Current names are given where they change, with
 the reason for the new one.  Rows marked *(to come)* are not in the
 game yet.
 
+A creature below is named in the miners' mouths, since miners are who
+goes down there: the knocker and the undertow are theirs, and so are
+the names they give the well-keepers' things.  The miners call the
+well-keepers the old people, their dead old 'uns, and the keepers of
+stone the old people's men; and a man who breaks into old workings
+says the Old Man was there before him.  The game says each creature's
+tale the first time it is seen.
+
 ### The pit: the Galleries, levels 1 to 3
 
 | Creature | What it is |
@@ -866,7 +878,7 @@ game yet.
 | **pit ferret** (cave crawler) | feral, bred from the miners' ratters; hunts in packs |
 | gallery shade | the firedamp shift, forty years dead, walking since the breach |
 | pit pony *(to come)* | worked the haulage roads from stables underground, and was left below when the pumps stopped; three weeks in the dark have made it half-blind, frightened and quick to kick |
-| **fire-boss** (pit foreman) | guardian; that shift's gas-tester, who saw the Candle burn tall and sent them down anyway |
+| **fireman** (pit foreman, then fire-boss: the American coal fields' word, not the dale's) | guardian; that shift's fireman, who tested for gas, saw the Candle burn tall and sent them down anyway |
 
 ### The breach: the Flood, levels 4 to 6
 
@@ -883,19 +895,19 @@ game yet.
 
 | Creature | What it is |
 |---|---|
-| **bone heap** (bone husk) | the well-keepers' dead from the ossuary, risen |
+| **old 'un** (bone husk, then bone heap: a lump, not a creature) | the well-keepers' dead from the ossuary, risen |
 | **cave bat** (tunnel shrike) | come in through the rim's caves |
 | ossuary priest | a well-keeper priest still at his office, who raises the bones |
 | rust golem | a keeper of the walls' stone bound with bog iron: sound for a thousand years while the works were dry, rusting since the breach let the water through |
-| **doorkeeper** (hollow mason) | guardian; the keeper set over the Well-House door |
+| **warder** (hollow mason, then doorkeeper: one keeper of four) | guardian; the old people's man set over the Well-House door |
 
 ### The stone's pool: the Well-House, levels 10 to 12 (now "the Heart")
 
 | Creature | What it is |
 |---|---|
-| **glass keeper** (deep warden) | a keeper cut from the stone's own glassy rock, throwing shards of its light |
+| **glister** (deep warden, then glass keeper: one keeper of four) | an old people's man cut from the stone's own glassy rock, throwing shards of its light |
 | **glow-midge** (lode spark) | swarms lit by the stone's water |
-| **well keeper** (lodestar keeper) | guardian; the last keeper, by the pool, who calls the bats |
+| **the Old Man** (lodestar keeper, then well keeper: one keeper of four) | guardian; the last of the old people's men, by the pool, who calls the bats |
 
 ### The dale (Kettle)
 
@@ -1020,7 +1032,7 @@ trade.
 | What | For | Who | From |
 |---|---|---|---|
 | Timber | props, roof bars, tub frames, the gin | woodcutters, sawyers | the oak wood on the valley sides, sawn at the pithead |
-| Light | the miners' candles, the lamps at the shafts | the chandler, the lamp-keeper | tallow from the farms' sheep and cattle |
+| Light | the miners' candles, the lamps at the shafts | the chandler, the lampman | tallow from the farms' sheep and cattle |
 | Iron | picks, wedges, rails, tub wheels, chains, the engine's bolts | the smith, the furnacemen | the Guild's furnace, on the coal measures' own ironstone |
 | Rope | the winding rope, the shaft ladders' lashings | the ropemaker | hemp from the Plain, laid on the ropewalk by the river |
 | Horses | the gin that winds the coal up, the carts, the packhorse trains | horse-keepers, carters, the smith as farrier | oats and hay from the farms |
@@ -1029,7 +1041,7 @@ trade.
 | Stone | the engine house, the Guild hall, the pithead walls | quarrymen, masons | the gritstone edge above the town |
 | Lime | mortar for all of it, and to sweeten the clay fields | the limeburners | the rim's limestone, burned in kilns along the rim |
 | Fuel | the engine, the furnace, the forge, every hearth | the pit | its own coal; before the pit, peat and charcoal |
-| Air | fresh air through the workings | the furnace-keeper | a fire at the foot of the upcast shaft, which draws the air round |
+| Air | fresh air through the workings | the furnaceman | a fire at the foot of the upcast shaft, which draws the air round |
 | Food | the miners, the horses | farmers, the miller, the baker | oats and barley ground at the mill, mutton off the hills, dried fish up from the coast |
 | Money | wages, the engine, the debt | the Guild's clerks | the League's banks, on credit |
 
@@ -1037,7 +1049,7 @@ The engine only pumps.  The coal comes up the winding shaft in baskets
 on the rope, wound by horses walking the gin at the shaft-head.  There
 is no powder, so the hewers win coal with pick and wedge, and the
 quarrymen split gritstone with wedges and feathers.  Before each shift
-the fire-boss went in alone, lying flat under wet sacking, with a
+the fireman went in alone, lying flat under wet sacking, with a
 candle on a long pole to burn off the gas gathered in the roof.
 
 ### The town
@@ -1101,7 +1113,7 @@ At the top of the main street, the pit's own ground:
   its foot went out with the coal, and the air below is going bad.
 - **The pit office**, with the daybook, the pay lists and the foreman's
   room.
-- **The lamp room**, where the lamp-keeper gave out every light and
+- **The lamp room**, where the lampman gave out every light and
   took every light back, and counted them: a light not given back was
   a man not up.
 - **The sawpit and the timber yard.**
@@ -1191,7 +1203,7 @@ Who the dale's people are, by what they do.
 
 | Work | Trades |
 |---|---|
-| The pit | hewers, putters, the banksman, horse-keepers, the fire-boss, the lamp-keeper, the furnace-keeper, sawyers |
+| The pit | hewers, putters, the banksman, horse-keepers, the fireman, the lampman, the furnaceman, sawyers |
 | Water | the engine-wright, pumpmen, drainers, the millwright |
 | Stone and earth | quarrymen, masons, brickmakers, limeburners |
 | Wood | woodcutters, charcoal burners, bark-peelers |
@@ -1419,7 +1431,7 @@ Working back from the history to the game.  **(r)** is a rename.
   and its parts carried down by the water.  His note: "Kettle keeps
   its wells either way, so long as it stays in the dale; it is the pit
   that is lost."
-- **The lamp-keeper's token** is "the breach lamp", his own.
+- **The lampman's token** is "the breach lamp", his own.
 - No exclamation marks: "The holdwater is yours.  Climb."
 
 ### Kettle
