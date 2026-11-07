@@ -1,0 +1,1214 @@
+; tiles.xon -- the classic set drawn, for a windowed front-end: the
+; Sunken Vault, an old underground of grey dressed stone, damp and long
+; used.  Torchlight in iron brackets, worn flags, beaten-earth passages;
+; straw, bones and spent torches where the last ones left them.
+;
+; Read by the graphical front-end only: the set itself is the .xon files
+; one directory up, and this directory is not one of them.  The form is
+; as data/delve/art/tiles.xon gives it.
+
+(size 16 16)
+
+(colour "." 0 0 0 0)
+(colour "k" 14 13 14)
+; stone: dressed grey blocks, the joints between, the moss of the damp
+(colour "n" 30 30 33)
+(colour "d" 40 40 43)
+(colour "j" 33 32 33)
+(colour "r" 64 63 64)
+(colour "R" 86 85 84)
+(colour "h" 118 116 110)
+(colour "g" 44 56 46)
+(colour "G" 66 82 60)
+; the floor: flags and their joints; the passages' beaten earth
+(colour "e" 36 35 36)
+(colour "s" 52 51 51)
+(colour "f" 62 61 60)
+(colour "F" 76 74 70)
+(colour "c" 38 32 27)
+(colour "a" 52 44 36)
+(colour "A" 66 56 45)
+(colour "C" 84 74 62)
+; straw, timber, iron, rust, leather, wool
+(colour "y" 142 120 66)
+(colour "Y" 182 160 96)
+(colour "t" 64 45 32)
+(colour "T" 96 70 47)
+(colour "V" 122 92 60)
+(colour "i" 48 50 54)
+(colour "I" 90 92 96)
+(colour "J" 132 130 124)
+(colour "O" 102 54 32)
+(colour "o" 136 82 44)
+(colour "u" 72 55 42)
+(colour "U" 102 80 60)
+(colour "w" 44 50 62)
+(colour "W" 72 82 98)
+(colour "D" 122 40 34)
+; skin, bone and parchment
+(colour "p" 166 130 106)
+(colour "P" 118 88 74)
+(colour "b" 132 126 112)
+(colour "B" 198 188 162)
+; flame and coin
+(colour "x" 186 88 34)
+(colour "l" 222 152 72)
+(colour "L" 250 226 160)
+(colour "q" 172 134 56)
+(colour "Q" 226 194 108)
+; creatures: rat, moth, grub, scuttler, magpie, the hollow man
+(colour "v" 80 72 66)
+(colour "X" 158 108 102)
+(colour "z" 146 136 108)
+(colour "M" 230 238 188 200)
+(colour "Z" 190 206 140 90)
+(colour "H" 196 186 164)
+(colour "K" 156 146 126)
+(colour "E" 56 42 48)
+(colour "N" 92 70 74)
+(colour "1" 56 92 104)
+(colour "2" 112 104 90)
+(colour "3" 80 74 64)
+; the wisp, the brute's hide, the hulk's mud, the worm, the shade, the
+; stalker, the drake
+(colour "4" 150 200 230 130)
+(colour "5" 224 242 255 210)
+(colour "6" 100 150 190 55)
+(colour "7" 92 74 56)
+(colour "8" 66 56 38)
+(colour "9" 118 94 90)
+(colour "0" 148 122 114)
+(colour "!" 36 36 50 190)
+(colour "#" 88 94 118 160)
+(colour "%" 18 20 28 190)
+(colour "$" 206 214 140)
+(colour "&" 74 36 30)
+(colour "*" 128 60 34)
+; a panel's ground; the shadow
+(colour "=" 16 15 16 232)
+(colour "S" 0 0 0 110)
+(colour "-" 0 0 0 55)
+
+; --- the ground -------------------------------------------------------------
+
+; The wall in pieces, by its neighbours, as data/delve/art/tiles.xon has
+; it: face, top, rims and corners.
+
+; The top: rubble fill behind the dressed face, seen from above.
+(tile wall (part top) (rows
+  "dndddnddddndddnd"
+  "ddddrdddnddddddd"
+  "ndddddddddddrddn"
+  "dddnddddrddddddd"
+  "ddddddndddddnddd"
+  "drdddddddddddddr"
+  "dddddnddddrddddd"
+  "nddddddddddddndd"
+  "ddddrddndddddddd"
+  "dddddddddddrdddd"
+  "dnddddrddddddddn"
+  "dddddddddndddddd"
+  "ddrdddddddddrddd"
+  "ddddddnddddddddd"
+  "ndddddddddddddnd"
+  "dddrddddnddddddd"))
+
+(tile wall (part n) (rows
+  "hRhhRhhhRhhRhhhR"
+  "RrRRrRRrRRRrRRrR"
+  ".r..r...r.r...r."
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"))
+
+(tile wall (part e) (rows
+  ".............rRh"
+  "..............Rh"
+  ".............rRh"
+  "..............Rh"
+  "..............rR"
+  ".............rRh"
+  "..............Rh"
+  "..............Rh"
+  ".............rRh"
+  "..............rh"
+  "..............Rh"
+  ".............rRh"
+  "..............Rh"
+  "..............RR"
+  ".............rRh"
+  "..............Rh"))
+
+(tile wall (part w) (rows
+  "hRr............."
+  "hR.............."
+  "hRr............."
+  "hR.............."
+  "Rr.............."
+  "hRr............."
+  "hR.............."
+  "hR.............."
+  "hRr............."
+  "hr.............."
+  "hR.............."
+  "hRr............."
+  "hR.............."
+  "RR.............."
+  "hRr............."
+  "hR.............."))
+
+(tile wall (part ne) (rows
+  ".............Rhh"
+  "..............Rh"
+  "...............R"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"))
+
+(tile wall (part nw) (rows
+  "hhR............."
+  "hR.............."
+  "R..............."
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"))
+
+(tile wall (part se) (rows
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "...............R"
+  "..............Rh"
+  ".............Rhh"))
+
+(tile wall (part sw) (rows
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "R..............."
+  "hR.............."
+  "hhR............."))
+
+; The face: three courses of dressed grey block, the joints dark, the
+; foot gone green with the damp.
+(tile wall (part face) (weight 10) (rows
+  "dddnddddddnddddd"
+  "hhhhRhhhhhhhRhhh"
+  "jjjjjjjjjjjjjjjj"
+  "RhRRRRjRRhRRjRhR"
+  "RRRrRRjRRRRrjRRR"
+  "rrrrrrjrrrrrjrrr"
+  "jjjjjjjjjjjjjjjj"
+  "RRjRRhRRRjRRRhRR"
+  "RRjRRRRrRjRRRRRr"
+  "rrjrrrrrrjrrrrrr"
+  "jjjjjjjjjjjjjjjj"
+  "RhRRRjRRRRhRRjRR"
+  "RRRrRjRRRRRRrjRR"
+  "rrrrrjrrrrrrrjrr"
+  "ddddgdddddgddddd"
+  "kkkkkkkkkkkkkkkk"))
+
+; ... wet through, moss in the joints where the water runs down.
+(tile wall (part face) (weight 3) (rows
+  "dddnddddddnddddd"
+  "hhhhRhhhhhhhRhhh"
+  "jjjjjjjjgjjjjjjj"
+  "RhRRRRjRrGRRjRhR"
+  "RRRrRRjRrGrrjRRR"
+  "rrrrrrjrrgGrjrrr"
+  "jjjjjjjjgGgjjjjj"
+  "RRjRRhRRrGgRRhRR"
+  "RRjRRRRrrgGrRRRr"
+  "rrjrrrrrrgGrrrrr"
+  "jjjjjjgjgGgjjjjj"
+  "RhRRRjGrrgGrRjRR"
+  "RRRrRgGrrGgrrjRR"
+  "rrrrrgGgrgGgrjrr"
+  "ddddgGgGgGgGgddd"
+  "kkkkkkkkkkkkkkkk"))
+
+; ... a block cracked through, a corner of it fallen.
+(tile wall (part face) (weight 2) (rows
+  "dddnddddddnddddd"
+  "hhhhRhhhhhhhRhhh"
+  "jjjjjjjjjjjjjjjj"
+  "RhRRRRjRRhRRjRhR"
+  "RRRrRRjRRRkrjRRR"
+  "rrrrrrjrrrkrjrrr"
+  "jjjjjjjjjkjjjjjj"
+  "RRjRRhRRRkRRRhRR"
+  "RRjRRRRrkjRRRRRr"
+  "rrjrrrrrkjrrrrrr"
+  "jjjjjjjjjkjjjjjj"
+  "RhRRRjRRRkkkkjRR"
+  "RRRrRjRRRkddnjRR"
+  "rrrrrjrrrkdnnjrr"
+  "ddddgddddkkkkddd"
+  "kkkkkkkkkkkkkkkk"))
+
+; ... an iron ring leaded into a block, for a chain no one remembers;
+; rust run down the stone beneath.
+(tile wall (part face) (rows
+  "dddnddddddnddddd"
+  "hhhhRhhhhhhhRhhh"
+  "jjjjjjjjjjjjjjjj"
+  "RhRRRRjRRhRRjRhR"
+  "RRRrRRjRRRRrjRRR"
+  "rrrrrrjrrrrrjrrr"
+  "jjjjjjjjjjjjjjjj"
+  "RRjRRhRkkRRRRhRR"
+  "RRjRRRkIikRRRRRr"
+  "rrjrrkIkkikrrrrr"
+  "jjjjjkIjjikjjjjj"
+  "RhRRRjkiikRRRjRR"
+  "RRRrRjRkOkRRrjRR"
+  "rrrrrjrrOrrrrjrr"
+  "ddddgdddOdddgddd"
+  "kkkkkkkkkkkkkkkk"))
+
+; ... a torch in an iron bracket, the stone sooted black above it.
+(tile wall (part face) (weight 2) (light 255 170 90 4) (flicker 25) (rows
+  "dddnddnnnnnnnddd"
+  "hhhhRhnnnnnhRhhh"
+  "jjjjjjjxjjjjjjjj"
+  "RhRRRRxlxRhRjRhR"
+  "RRRrRxlLlxRrjRRR"
+  "rrrrrxlLlxrrjrrr"
+  "jjjjjjuxujjjjjjj"
+  "RRjRRiuTuiRRRhRR"
+  "RRjRRiIIIiRRRRRr"
+  "rrjrrrrTrrrrrrrr"
+  "jjjjjjjTjjjjjjjj"
+  "RhRRRjkIIkhRRjRR"
+  "RRRrRjkiIkRRrjRR"
+  "rrrrrjrkkrrrrjrr"
+  "ddddgdddddgddddd"
+  "kkkkkkkkkkkkkkkk"))
+
+; The face's ends, where the floor turns round it.
+(tile wall (part face-w) (rows
+  "................"
+  "kh.............."
+  "kj.............."
+  "kh.............."
+  "kR.............."
+  "kr.............."
+  "kj.............."
+  "kR.............."
+  "kR.............."
+  "kr.............."
+  "kj.............."
+  "kh.............."
+  "kR.............."
+  "kr.............."
+  "kd.............."
+  "kk.............."))
+
+(tile wall (part face-e) (rows
+  "................"
+  ".............hdk"
+  ".............jdk"
+  ".............Rdk"
+  ".............Rdk"
+  ".............rdk"
+  ".............jdk"
+  "..............dk"
+  "..............dk"
+  ".............rdk"
+  ".............jdk"
+  ".............Rdk"
+  "..............dk"
+  ".............rdk"
+  "..............dk"
+  "..............kk"))
+
+; Flagstones, worn smooth in the middle.
+(tile floor (weight 20) (rows
+  "fFffffsefffFffse"
+  "fssssssefsssfsse"
+  "fsfssssefsssssse"
+  "fssssssefssssfse"
+  "fsssfssefsssssse"
+  "fssssssefsfsssse"
+  "sssssssessssssse"
+  "eeeeeeeeeeeeeeee"
+  "ffseFffffffseFfs"
+  "sssefssssfsefsss"
+  "sfsefssssssefsss"
+  "ssseFssfsssefssf"
+  "fssefsssfssefsss"
+  "sssefssssssefsss"
+  "sssessssssssesss"
+  "eeeeeeeeeeeeeeee"))
+
+; ... a flag cracked across, a chip out of its edge.
+(tile floor (weight 3) (rows
+  "fFffffsefffFffse"
+  "fssssssefsssfsse"
+  "fsfssssefsssssse"
+  "fssssssefssssfse"
+  "fsssfssefsssssse"
+  "fssssssefsfsssse"
+  "sssssssessssssse"
+  "eeeeeeeeeeeeeeee"
+  "ffseFffffffseFfs"
+  "sssefkssssfsefss"
+  "sfsefskksssefsss"
+  "ssseFssskkkefssf"
+  "fssefssssfkeesss"
+  "sssefsssssskeess"
+  "sssessssssssesss"
+  "eeeeeeeeeeeeeeee"))
+
+; ... straw, kicked about from someone's bedding.
+(tile floor (weight 1) (rows
+  "fFffffsefffFffse"
+  "fssssssefsssfsse"
+  "fsfsysseYssssyse"
+  "fsssyYyefsysssYe"
+  "fsYsssyeysYyysse"
+  "fssyYyyYfsysYsse"
+  "sssysYyesyyYssse"
+  "eeeyYeyYyyeyeeee"
+  "ffseyYyfYfysyFfs"
+  "sssefyYyyfsefsss"
+  "sfsefsyYsysefsss"
+  "ssseFssfyssefssf"
+  "fssefsssfssefsss"
+  "sssefssssssefsss"
+  "sssessssssssesss"
+  "eeeeeeeeeeeeeeee"))
+
+; ... water standing where a flag has sunk.
+(tile floor (weight 2) (rows
+  "fFffffsefffFffse"
+  "fssssssefsssfsse"
+  "fsfssssefsssssse"
+  "fssssseeeeessfse"
+  "fsssseewwwweesse"
+  "fsssewwWWwwwesse"
+  "ssseewwwwWwwwese"
+  "eeeewwwwwwwwweee"
+  "ffseewwwwwwwefss"
+  "sssefewwwwweefss"
+  "sfsefseeeeesefss"
+  "ssseFssfsssefssf"
+  "fssefsssfssefsss"
+  "sssefssssssefsss"
+  "sssessssssssesss"
+  "eeeeeeeeeeeeeeee"))
+
+; ... a spent torch dropped and trodden, a gnawed bone.
+(tile floor (weight 2) (rows
+  "fFffffsefffFffse"
+  "fssssssefsssfsse"
+  "fsfssssefsssssse"
+  "fssssssefssssfse"
+  "fsssfkkkksssssse"
+  "fsskntTTtkkfssse"
+  "ssssskkkktTtkkse"
+  "eeeeeeeeekkkkeee"
+  "ffseFffffffseFfs"
+  "sssefssssfsefsss"
+  "sfsefsssssbefsss"
+  "ssseFssfsBbbbsBf"
+  "fssefsssfbsbBbBs"
+  "sssefsssssseBsss"
+  "sssessssssssesss"
+  "eeeeeeeeeeeeeeee"))
+
+; The shade a wall's face casts on the floor below it.
+(tile floor (part shade) (rows
+  "SSSSSSSSSSSSSSSS"
+  "SSSSSSSSSSSSSSSS"
+  "----------------"
+  "-.-.-.-.-.-.-.-."
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"))
+
+; A passage: beaten earth between the rooms, never flagged, its edges
+; dark and stony where few feet go.
+(tile passage (weight 12) (rows
+  "caccacccacccacca"
+  "aaaaAaaaaaaaaAac"
+  "caAaaaaaCaaaaaaa"
+  "aaaaaaAaaaaAaaac"
+  "caaCaaaaaaaaaaCa"
+  "aaaaaaAaAaaaaaac"
+  "caAaaaaaaaaaAaaa"
+  "aaaaaaaCcaaaaaac"
+  "caaaAaaaaaaaaaaa"
+  "aaaaaaaaaAaaCaac"
+  "caCaaaaaaaaaaaaa"
+  "aaaaaaAaaaaAaaac"
+  "caaaAaaaaCaaaaaa"
+  "aaaAaaaaaaaaaAac"
+  "caaaaaaCcaaaaaaa"
+  "accaccaccacccaca"))
+
+; ... rutted by a barrow, long ago.
+(tile passage (weight 3) (rows
+  "caccacccacccacca"
+  "aaacAaaaaaacaAac"
+  "caAcaaaaCaacaaaa"
+  "aaacaaAaaaacAaac"
+  "caacaaaaaaacaaCa"
+  "aaacaaAaAaacaaac"
+  "caAcaaaaaaacAaaa"
+  "aaacaaaCcaacaaac"
+  "caacAaaaaaacaaaa"
+  "aaacaaaaaAacCaac"
+  "caccaaaaaaacaaaa"
+  "aaacaaAaaaacaaac"
+  "caacAaaaaCacaaaa"
+  "aaacaaaaaaacaAac"
+  "caacaaaCcaacaaaa"
+  "accaccaccacccaca"))
+
+; ... a stone fallen from the roof, and gravel.
+(tile passage (weight 2) (rows
+  "caccacccacccacca"
+  "aaaaAaaaaaaaaAac"
+  "caAaaaaaCaaaaaaa"
+  "aaaaaakkkkaAaaac"
+  "caaCakrRhrkaaaCa"
+  "aaaakrRRRrrkaaac"
+  "caAakrrRrrdkAaaa"
+  "aaaaakddddkaaaac"
+  "caaaAakkkkaaaaaa"
+  "aaCaaaaaaAaaCaac"
+  "caCaaCaaaaaaaaaa"
+  "aaaaaaAaaCaCaaac"
+  "caaaAaaaaCaaaaaa"
+  "aaaAaaaaaaaaaAac"
+  "caaaaaaCcaaaaaaa"
+  "accaccaccacccaca"))
+
+; ... a puddle in a dip.
+(tile passage (rows
+  "caccacccacccacca"
+  "aaaaAaaaaaaaaAac"
+  "caAaaaaaCaaaaaaa"
+  "aaaaaaAaaaaAaaac"
+  "caaCaaccccccaaCa"
+  "aaaaacwwwwwwcaac"
+  "caAacwwWWwwwwcaa"
+  "aaaaacwwwwWwcaac"
+  "caaaAaccwwwccaaa"
+  "aaaaaaaaccccCaac"
+  "caCaaaaaaaaaaaaa"
+  "aaaaaaAaaaaAaaac"
+  "caaaAaaaaCaaaaaa"
+  "aaaAaaaaaaaaaAac"
+  "caaaaaaCcaaaaaaa"
+  "accaccaccacccaca"))
+
+; An oak door in a dressed-stone jamb, iron-banded, with a ring to pull.
+(tile door (rows
+  "kkkkkkkkkkkkkkkk"
+  "khRRRRRRRRRRRRrk"
+  "kRkkkkkkkkkkkkrk"
+  "kRkTTtTTtTTtTkrk"
+  "kRkiIiiiiiiiikrk"
+  "kRkTTtTTtTVtTkrk"
+  "kRkTVtTTtTTtTkrk"
+  "kRkTTtTTtkkkTkrk"
+  "kRkTTtTTkItkkkrk"
+  "kRkTTtTTkIkIkkrk"
+  "kRkTTtVTtkIkTkrk"
+  "kRkiiiiiiiiiikrk"
+  "kRkTTtTTtTTtTkrk"
+  "kRkTtttTtTtttkrk"
+  "khkkkkkkkkkkkkrk"
+  "kkkkkkkkkkkkkkkk"))
+
+; Stone steps going down into the dark.
+(tile down (rows
+  "eeeeeeeeeeeeeeee"
+  "ekkkkkkkkkkkkkke"
+  "ekhhRhhhhhRhhhke"
+  "ekRRRRrRRRRRRrke"
+  "ekkkkkkkkkkkkkke"
+  "ekrrrrdrrrrrdrke"
+  "ekddddnddddddnke"
+  "ekkkkkkkkkkkkkke"
+  "ekddnddddddnddke"
+  "eknnnnnnnnnnnnke"
+  "ekkkkkkkkkkkkkke"
+  "eknnnnknnnnnnnke"
+  "ekkkkkkkkkkkkkke"
+  "ekkkkkkkkkkkkkke"
+  "ekkkkkkkkkkkkkke"
+  "eeeeeeeeeeeeeeee"))
+
+; Stone steps going up, lit from the room above.
+(tile up (rows
+  "eeeeeeeeeeeeeeee"
+  "ekkkkkkkkkkkkkke"
+  "ekFFyFFFFFFFFyke"
+  "ekFFFFFFFYFFFFke"
+  "ekhhhhhhhhhhhhke"
+  "ekRRRRRRRRRRRRke"
+  "ekhhRhhhhhRhhhke"
+  "ekRRRRrRRRRRrRke"
+  "ekrrrrrrrrrrrrke"
+  "ekRRRRRRhRRRRRke"
+  "ekrrrrdrrrrrrrke"
+  "ekddddddddddddke"
+  "ekrrrrrrrrdrrrke"
+  "ekdddddddddddnke"
+  "ekkkkkkkkkkkkkke"
+  "eeeeeeeeeeeeeeee"))
+
+; A loose flag on a pivot, rusted blades in the gap round it.
+(tile trap (rows
+  "................"
+  "................"
+  "..kkkkkkkkkkkk.."
+  "..kJkkJkkJkkJk.."
+  "..kkfFffffffkk.."
+  "..kJfsssssfskJ.."
+  "..kkfssfsssskk.."
+  "..kJfsssssfskJ.."
+  "..kkfsssssssOk.."
+  "..kJfssfssssoJ.."
+  "..kkfsssssssOk.."
+  "..kJsssssfsskJ.."
+  "..kkkkkkkkkkkk.."
+  "..kJkkJkkOkkJk.."
+  "..kkkkkkkkkkkk.."
+  "................"))
+
+; --- who walks there --------------------------------------------------------
+
+; A vault-delver: a grey wool hood, a red cloak gone brown at the hem,
+; a leather jerkin, a blade at the hip and a torch held high.
+(tile player (light 255 180 100 5) (flicker 15) (rows
+  "................"
+  ".......kkk...x.."
+  "......kwWwk.xLx."
+  ".....kwWwwwkxLlx"
+  ".....kwpPPwk.ux."
+  ".....kwPpPwk.Tk."
+  "......kkPkk..Tk."
+  ".....kDwwwDkkTk."
+  "....kDuUUuuDpk.."
+  "....kDUuUuUDk..."
+  "...kDDiiqiiDDk.."
+  "...kDkuUuUukDk.."
+  "..kIkkuUkUukDk.."
+  "..kJk.kwkwk.kk.."
+  "...k..kwkwk....."
+  "......kk.kk....."))
+
+; A rat of the vault, long and grey-brown, nose to the ground.
+(tile "cave rat" (rows
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "..........kXk..."
+  "....kkkkkkVvvk.."
+  "...kvVVVVvvvBvkk"
+  "kXkvvvvvvvvvvvvX"
+  ".kXkkvkkkkvkkkk."))
+
+; A big dusty moth whose body gives a sickly light; it muddles the eye.
+(tile "glow moth" (light 200 220 140 2) (flicker 20) (rows
+  "................"
+  "......k..k......"
+  ".kk....kk....kk."
+  "kzzkk.ZMMZ.kkzzk"
+  "kzuzzkZMMZkzzuzk"
+  "kzzzzzkMMkzzzzzk"
+  ".kzzuzzMMzzuzzk."
+  "..kzzzkMMkzzzk.."
+  "...kzzkMMkzzk..."
+  "..kzzzkMMkzzzk.."
+  ".kzuzzkZZkzzuzk."
+  ".kzzzk.ZZ.kzzzk."
+  "..kkk......kkk.."
+  "................"
+  "................"
+  "................"))
+
+; A fat pale larva, slow, ringed, its jaws dark.
+(tile "pale grub" (rows
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  ".......kkkk....."
+  "....kkkHHHHkk..."
+  "...kHHKHHHKHHk.."
+  "..kHHHKHHHKHHHkk"
+  "..kKHHKHHHKHHPtk"
+  "...kkkkkkkkkkkk."))
+
+; A flat dark crawler on too many legs, a red mark where the venom is.
+(tile "scuttler" (rows
+  "................"
+  "................"
+  "................"
+  "................"
+  "......k..k......"
+  ".......kk......."
+  "..k..kENNEk..k.."
+  "...kkENDDNEkk..."
+  "..k.kENNNNEk.k.."
+  ".k.kkENNNNEkk.k."
+  "...k.kENNEk.k..."
+  "..k.kkENNEkk.k.."
+  ".....kkENkk....."
+  "......kEEk......"
+  ".......kk......."
+  "................"))
+
+; A leech the length of an arm, black-green and wet, its mouth a red ring.
+(tile "mire leech" (rows
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  ".....kkkkkk....."
+  "...kkgGGgggkk..."
+  "..kgGWGngggnDk.."
+  ".kgggngggnggDBk."
+  "kgggnggggnggDDk."
+  ".kkkkkkkkkkkkk.."))
+
+; A lean hound the grey of cold ash, embers for eyes, at a run.
+(tile "ash hound" (rows
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "...........kk..."
+  "..........krk..."
+  "kk.......krRRk.."
+  ".kk.....krRlRRkk"
+  "..krkkkkrRhRRRRk"
+  "...krRRhRRRRkkk."
+  "...krrRRRRrrk..."
+  "..krk.krk.krk..."
+  ".kr..kr...kr...."
+  ".k...k....kk...."))
+
+; A magpie, black and white with a green sheen, a stolen ring in its beak.
+(tile "magpie" (rows
+  "................"
+  "................"
+  "................"
+  ".........kkk...."
+  "........knnnk..."
+  "........knnnkkk."
+  "........knnnkqQk"
+  ".......knnnk.kk."
+  "......kBBnn1k..."
+  ".....kBBBn11k..."
+  "....kBBBBn11k..."
+  "...k1BBBnn1k...."
+  "..k11knnnnk....."
+  ".k11k.kJkJ......"
+  "k11k...k.k......"
+  "kk.....kkkk....."))
+
+; A man emptied out: grey skin on bone, the eyes gone dark, in rags; he
+; mends as he walks.
+(tile "hollow man" (rows
+  "................"
+  "................"
+  ".......kkk......"
+  "......k232k....."
+  "......kk2kk....."
+  "......k232k....."
+  ".......k3k......"
+  ".....kuu2uuk...."
+  "....k2kuuuk2k..."
+  "....k2kuUukk2k.."
+  "...k2k.kuuk.k2k."
+  "...k3k.kuuk.k3k."
+  "....k.kuuuuk.k.."
+  "......k2kk2k...."
+  "......k2k.k2k..."
+  "......kk..kk...."))
+
+; A carved guard on its plinth, mossed and still, a stone blade grounded.
+(tile "stone sentinel" (rows
+  "......kkkk......"
+  ".....khRRrk....."
+  ".....kRkkrk....."
+  ".....krRRrk....."
+  "....kkkrrkkk...."
+  "...khRRRRRrrk..."
+  "..khRkRRhRkrrk.."
+  "..kRrkRRhRkrrk.."
+  "..kRrkRRhgkrrk.."
+  "..kkkkRRhgkkkk.."
+  "....kRRRhgrk...."
+  "....kRRRhRrk...."
+  "....kRRRRrrk...."
+  "..kkkkkkkkkkkk.."
+  "..khRRRRRRgrrk.."
+  "..kkkkkkkkkkkk.."))
+
+; A drift of cold blue light that numbs what it touches.
+(tile "cold wisp" (light 150 200 240 2) (flicker 30) (rows
+  "................"
+  "................"
+  "................"
+  "......66........"
+  ".....6446.6....."
+  "....644446......"
+  "...6445544666..."
+  "...6455554446..."
+  "..64455554446..."
+  "...6445544466..."
+  "....64444466...."
+  ".....664446....."
+  "......66446....."
+  ".......6646....."
+  "........66......"
+  "................"))
+
+; A great lump of a man, little head, a hide clout and a club; he runs
+; when hurt.
+(tile "brute" (rows
+  "......kkk......."
+  ".....kPpPk......"
+  ".....kPPPk......"
+  "...kkkkPkkkk...."
+  "..kPpPPPPPPpk..."
+  ".kPpPPPPPPPPpkk."
+  ".kPPkPPPPPPkPktk"
+  "kPPkkPpPPPPkPkTk"
+  "kPPk.kPPPPkkPkTk"
+  "kPk..k7777k.kkTk"
+  "kpk..k7O77k..kVk"
+  ".k...k7777k..kTk"
+  ".....kPPkPPk.kTk"
+  ".....kPPkPPk..k."
+  "....kPPk.kPPk..."
+  "....kkkk.kkkk..."))
+
+; A heap of bog that stands and walks, moss and black mud, long-armed;
+; what is torn off it grows back.
+(tile "marsh hulk" (rows
+  "................"
+  "................"
+  "......kkkk......"
+  "....kkgGGgkk...."
+  "...kgGG8GGggk..."
+  "..kgG8gGGg8ggk.."
+  "..kg8ggGgg8ggk.."
+  ".kGgggg8gggggGk."
+  "kgGkgGggggGgkGgk"
+  "kgk.kgg8gggk.kgk"
+  "kgk.kggggg8k.kgk"
+  "k8k.kg8gggggkk8k"
+  ".k.kgggk.kggk.k."
+  "..kg8gk...kg8k.."
+  "..kgggk...kgggk."
+  "..kkkk.....kkkk."))
+
+; A worm as thick as a man, risen from its bore: a ringed maw, teeth in
+; rows.
+(tile "tunnel worm" (rows
+  "................"
+  "................"
+  ".....kkkkkk....."
+  "...kk099990kk..."
+  "..k09kkkkkk90k.."
+  "..k9kBkBkBkk9k.."
+  ".k09kkDDDDkk90k."
+  ".k99kDkkkkDk99k."
+  ".k09kkDDDDkk90k."
+  "..k9kkBkBkBk9k.."
+  "..k09kkkkkk90k.."
+  "...k09999990k..."
+  "..kk00000000kk.."
+  ".k099999999990k."
+  "k09999999999990k"
+  "kkkkkkkkkkkkkkkk"))
+
+; Something hooded that was buried here, half seen, reaching; its touch
+; takes the strength out of you.
+(tile "grave shade" (rows
+  "................"
+  "......!!!!......"
+  ".....!####!....."
+  "....!#!!!!#!...."
+  "....!#!kk!#!...."
+  "....!#!!!!#!...."
+  "...!##!!!!##!..."
+  "..!##!####!##!.."
+  ".!#!.!####!.!#!."
+  ".!b!.!#!##!.!b!."
+  "....!##!##!....."
+  "....!#!##!#!...."
+  "...!#!!#!!#!...."
+  "...!!.!#!.!!...."
+  "......!!!......."
+  "................"))
+
+; A long-limbed thing crouched in the dark, seen only by its eye-shine.
+(tile "night stalker" (rows
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "..........%%%..."
+  ".........%%$%%.."
+  "....%%%%%%%%%%%."
+  "..%%%n%%%%%%%n%."
+  ".%%.%%%%%%%%.%%."
+  "%%..%%n%%%%%..%."
+  "%...%%..%%.%%..."
+  "...%%..%%...%%.."
+  "..%%...%.....%.."
+  "..%.....%....%%."))
+
+; A low drake of black clinker, fire in its cracks, smoke at the mouth.
+(tile "ember drake" (light 255 120 60 3) (flicker 20) (rows
+  "................"
+  "................"
+  "................"
+  "................"
+  "...........kkk.."
+  "..........k&*&k."
+  ".........k&*L*&k"
+  ".........k&&kxlL"
+  "........k&lk.kx."
+  "k.......k&&k...."
+  "&k...kkk&*&k...."
+  "k&kkk&*&l&&*k..."
+  ".k&&*&l&&*&&&k.."
+  "..kk&&&l&&&*&&k."
+  "...k&k.kk&k.k&k."
+  "...kk....kk..kk."))
+
+; The vault's last keeper, in old rusted plate and a red tabard, his
+; keys at his belt and a poleaxe in his fist; he does not sleep.
+(tile "vault warden" (rows
+  ".kk.....kkkk...."
+  "kJIk...kIJJIk..."
+  "kIJk...kkkkkk..."
+  ".kTk...kiIIik..."
+  ".kTk..kkkiikkk.."
+  ".kTk.kIJIiiIJIk."
+  ".kTkkIiDqqqDiIk."
+  ".kTkIikDqDqDkiIk"
+  ".kikIkkDDqDDkkik"
+  ".kTkkk.DDqqDkqk."
+  ".kTk..kDDqDDkQqk"
+  ".kTk..kiDDDOik.."
+  ".kTk..kIi.iOIk.."
+  ".kTk..kIi.kIik.."
+  ".kTk.kIIk.kIIk.."
+  ".kkk.kkkk.kkkk.."))
+
+; --- what lies about --------------------------------------------------------
+
+; A round-bellied bottle, stoppered with wax.
+(tile potion (rows
+  "................"
+  "................"
+  "................"
+  "......kDDk......"
+  "......kbbk......"
+  "......kbbk......"
+  ".....kkbbkk....."
+  "....kbBooook...."
+  "...kbBooooook..."
+  "...kBooooooxk..."
+  "...koooooooxk..."
+  "...koooooxxxk..."
+  "....kxxxxxxk...."
+  ".....kkkkkk....."
+  "................"
+  "................"))
+
+; A roll of parchment tied with cord.
+(tile scroll (rows
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "..........kkk..."
+  "........kkbBbk.."
+  "......kkBBBbBk.."
+  "....kkBBBuBBk..."
+  "...kbBBBBuBk...."
+  "..kbBBBBBubk...."
+  "..kBbBBBBk......"
+  "..kbBbBkk......."
+  "...kkkk........."
+  "................"
+  "................"))
+
+; A slim black rod capped in iron.
+(tile wand (rows
+  "................"
+  "................"
+  "............kk.."
+  "...........kJIk."
+  "..........kIik.."
+  ".........knnk..."
+  "........kndk...."
+  ".......kndk....."
+  "......kndk......"
+  ".....kndk......."
+  "....kndk........"
+  "...kndk........."
+  "..kIik.........."
+  ".kIik..........."
+  "..kk............"
+  "................"))
+
+; A gold band set with a dark red stone.
+(tile ring (rows
+  "................"
+  "................"
+  "................"
+  "................"
+  "......kkkk......"
+  ".....kDxDDk....."
+  "......kDDk......"
+  ".....kQkkqk....."
+  "....kQk..kqk...."
+  "....kQk..kqk...."
+  "....kqk..kOk...."
+  ".....kqkkOk....."
+  "......kkkk......"
+  "................"
+  "................"
+  "................"))
+
+; A short blade, nicked, its grip bound in leather.
+(tile weapon (rows
+  "................"
+  "..............k."
+  ".............kJk"
+  "............kJIk"
+  "...........kJIk."
+  "..........kJIk.."
+  ".........kJIk..."
+  "........kJIk...."
+  "...kk..kJIk....."
+  "...kiikJIk......"
+  "....kiIIk......."
+  "....kuiik......."
+  "...kuUkkik......"
+  "..kuUk..kk......"
+  "..kOk..........."
+  "...k............"))
+
+; A mail shirt, a few rings rusted through.
+(tile armour (rows
+  "................"
+  "................"
+  "....kkk..kkk...."
+  "...kIiIkkIiIk..."
+  "..kIiIiIiIiIiIk."
+  ".kIiIiIiIiIiIiIk"
+  ".kiIiIiIiIiIiIik"
+  ".kIik.iIiIOI.kik"
+  ".kkk.kIiIiOik.kk"
+  ".....kiIiIiIk..."
+  ".....kIiIiIik..."
+  ".....kiIOIiIk..."
+  ".....kIiIiIik..."
+  ".....kuUUuUuk..."
+  ".....kkkkkkkk..."
+  "................"))
+
+; A ration: hard bread and a heel of cheese in a cloth.
+(tile food (rows
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "......kkkkk....."
+  "....kkVTTTTkk..."
+  "...kVTTVTTTTTk.."
+  "...kTTTTTtTTtk.."
+  "..kwkttttttkkYk."
+  ".kwWwkkkkkkkYyk."
+  ".kwWWwwwwwwkkk.."
+  ".kwwWwwwWwwwwk.."
+  "..kwwwwwwwwwk..."
+  "...kkkkkkkkk...."
+  "................"))
+
+; Coins spilled from a torn purse.
+(tile gold (rows
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "......kk........"
+  ".....kuUk......."
+  "....kuUUuk......"
+  "....kuUuuk.kkk.."
+  "....kkuuukkQqk.."
+  "...kQqkkkQqkk..."
+  "..kkkQqkkkkQqk.."
+  ".kQqkkQqQqkkk..."
+  "..kkkkkkkkkk...."
+  "................"))
+
+; The Sunstone: a cut gem holding a warm light of its own.
+(tile goal (light 255 200 110 3) (rows
+  "................"
+  "................"
+  "................"
+  "......kkkk......"
+  ".....kLLlqk....."
+  "....kLLLlqqk...."
+  "...kLLlllqqqk..."
+  "..kLLllllqqqxk.."
+  "..klllllqqqxxk.."
+  "..kqqqqqqqxxxk.."
+  "...kqqqqxxxxk..."
+  "....kqqxxxxk...."
+  ".....kxxxxk....."
+  "......kkkk......"
+  "................"
+  "................"))
+
+; --- the screen's own -------------------------------------------------------
+
+; Under the player and every creature, so they stand on the ground.
+(tile shadow (rows
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  ".....SSSSSS....."
+  "...SSSSSSSSSS..."
+  ".....SSSSSS....."))
+
+; A panel, drawn in nine pieces: a dressed-stone frame round a dark
+; ground.  (cut L T R B) are the edges' widths.
+(tile panel (cut 8 8 8 8) (rows
+  "kkkkkkkkkkkkkkkkkkkkkkkk"
+  "kJhhhhhhhhhhhhhhhhhhhhJk"
+  "khRRRRRRRRRRRRRRRRRRRRdk"
+  "khRkkkkkkkkkkkkkkkkkkRdk"
+  "khRk================kRdk"
+  "khRk================kRdk"
+  "khRk================kRdk"
+  "khRk================kRdk"
+  "khRk================kRdk"
+  "khRk================kRdk"
+  "khRk================kRdk"
+  "khRk================kRdk"
+  "khRk================kRdk"
+  "khRk================kRdk"
+  "khRk================kRdk"
+  "khRk================kRdk"
+  "khRk================kRdk"
+  "khRk================kRdk"
+  "khRk================kRdk"
+  "khRk================kRdk"
+  "khRkkkkkkkkkkkkkkkkkkRdk"
+  "khRRRRRRRRRRRRRRRRRRRRdk"
+  "kJddddddddddddddddddddJk"
+  "kkkkkkkkkkkkkkkkkkkkkkkk"))
