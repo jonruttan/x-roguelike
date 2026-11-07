@@ -28,27 +28,29 @@
 ; --- the Galleries ----------------------------------------------------------
 
 ; The knocker: the pit's own tale, the thing that knocks and throws stones,
-; walking since the breach; a stone up to throw.
-(tile "sling imp" (rows
+; walking since the breach: small, hunched, rock-grey, a long arm hanging,
+; the other up with a stone.
+(tile "knocker" (rows
   "................"
   "................"
-  "................"
-  "...........kk..."
-  "..........kRhk.."
-  "..........krRk.."
-  "......kkk..kQk.."
-  ".....kqQQk.kQk.."
-  ".....kQlqk.kQk.."
-  "....kkqqQkkQk..."
-  "...kQqqqqqQk...."
-  "..kQkqtqqqk....."
-  "..kk.kttqqk....."
-  ".....kqkkqk....."
+  "..........kkk..."
+  ".........khhRk.."
+  ".........kRRrk.."
+  ".....kkk..kQk..."
+  "....kqQQk.kQk..."
+  "....kQqqk.kQk..."
+  "....kqqQkkQk...."
+  "...kkkqQQQQk...."
+  "..kQqkqQQqk....."
+  ".kQkkuuuuuk....."
+  ".kQkkuuuuuk....."
+  ".kk.kqkkkqk....."
   "....kqk..kqk...."
-  "....kk....kk...."))
+  "...kkk...kkk...."))
 
-; A pit ferret: feral, bred from the miners' ratters, hunting in packs.
-(tile "cave crawler" (rows
+; A pit ferret: feral, bred from the miners' ratters, hunting in packs;
+; long and low, head up on a long neck, dark mask, legs and tail.
+(tile "pit ferret" (rows
   "................"
   "................"
   "................"
@@ -57,34 +59,35 @@
   "................"
   "................"
   "................"
-  "................"
-  "................"
-  "........kkkk...."
-  ".kk...kk&&&&kk.."
-  "kuuukk&&&&&&&&k."
-  "PlUuu&&&&&&&&uuk"
-  ".kkkuukkkkkuukuu"
-  "....kk.....kk.kk"))
+  "...........kkk.."
+  "..........kuBuk."
+  "..........kBuBBP"
+  ".....kkkkkk&BBk."
+  "...kk&&&&&&&&k.."
+  "kkk&&&&&&&&&&k.."
+  "uuuk&uukkkuu&k.."
+  "kkk.kkk...kkkk.."))
 
-; The fire-boss: the shift's gas-tester, who saw the Candle burn tall and
-; sent them down anyway; wet sacking on him, his pole candle long out.
-(tile "pit foreman" (rows
-  "..kk............"
-  "..kBk..........."
-  "..kTk...kkkk...."
-  "..kTk..kuUUuk..."
-  "..kTk.kuUUUUuk.."
-  "..kTk.kukbPbk..."
-  ".kkTkkkkPbbkkk.."
-  "kUUTUUuUkbbkUUk."
-  "kUupPuUUUuuUUuuk"
-  "kuuTkcCCcCCcukuk"
-  "kukTkcCCcCCCkkuk"
-  ".kkTkcCcCcCCk.kk"
-  "...TkcCCkCCck..."
-  "...TkcCCkcCck..."
-  "...TkcCck.cCck.."
-  "...kkkkk..kkkk.."))
+; The fireman: the shift's gas-tester, who saw the Candle burn tall and
+; sent them down anyway; dead-pale under his cap, his stick in one hand
+; and his flame lamp low in the other, still lit.
+(tile "fireman" (light 240 180 100 2) (flicker 12) (rows
+  "................"
+  "................"
+  "......kkkk......"
+  ".....kciCck....."
+  "....kkkkkkkk...."
+  "......kPbPk....."
+  "......kbPbk....."
+  ".......kbk......"
+  ".....kcCcCck...."
+  "....kcCCcCCck..."
+  "...kckCCcCCkck.."
+  "...kCkcCcCCkCk.."
+  "...kbkuuuuukbk.."
+  "....TkcCkCckyk.."
+  "....TkcCkCckLlk."
+  "...kTkkk.kkkyyk."))
 
 ; --- the Flood --------------------------------------------------------------
 
@@ -107,62 +110,65 @@
   "....kk22kkk....."
   "................"))
 
-; A silt crayfish: blind and white, up from the stone's pool.
-(tile "silt crab" (rows
+; A silt crayfish: blind and white, up from the stone's pool; a claw up,
+; a jointed tail and fan, a feeler swept back over its shell.
+(tile "silt crayfish" (rows
   "................"
   "................"
   "................"
   "................"
+  ".....99........."
+  ".......99......."
+  ".........99.kkk."
+  "...........9k88k"
+  ".......kkkkkk89k"
+  "..kkkkk8888898k."
+  "kk8989k88889888k"
+  "k9k898988888889k"
+  ".kkkkkk9kk9kk9k."
+  "......k.k..k.k.."
   "................"
-  "................"
-  "................"
-  "................"
-  "..k............."
-  "kk.k...kkkkk...."
-  "k8k.kkk88888kk.."
-  "k898kk888989988k"
-  "k88kk8898898898k"
-  ".kk.k9kk9kk99kk."
-  "....k.k..k.kk..."
   "................"))
 
-; A great leech: lies in the standing water and holds on.
-(tile "pit lurker" (rows
+; A great leech: lies in the standing water and holds on; humped over the
+; surface, the tail sucker down, the head up and open.
+(tile "great leech" (rows
   "................"
   "................"
   "................"
   "................"
   "................"
-  "..........kkk..."
-  ".........k33Dk.."
-  "........k333Dk.."
-  "........k3U3k..."
-  ".......k33U3k..."
-  "...kkkkk3U33k..."
-  "..k3333UU33k...."
-  ".ewk3UU3333kwe.."
-  "ewWwkkkkkkkwWwwe"
-  ".ewwwWwwwwwwwwe."
-  "..eeeeeeeeeeee.."))
+  "...........kkk.."
+  "..........k3D3k."
+  "..........k333k."
+  "...........k3Gk."
+  "...........k33k."
+  "....kkkk...k3G3k"
+  "..kk33G3kkk33G3k"
+  ".k3G3333G333G33k"
+  "k333kkkk3333G3k."
+  "wWwkWwwwkkkkkkWw"
+  ".wwwwWwwwwWwwww."))
 
-; A drowned shade: the Flood's dead, hair lank over the face, running water.
-(tile "flood wraith" (light 110 150 170 2) (flicker 10) (rows
-  "................"
-  "................"
-  "......KKKK......"
-  ".....K5aa5K....."
-  ".....K5AA5K....."
-  ".....K55a5K....."
-  "......K5aK......"
-  "....KK5aaa5KK..."
-  "...K5aAaa5aa5K.."
-  "...K5KaAAa5K5K.."
-  "...K5K5aaa5K5K.."
-  "...KaKaAa5aKaK.."
-  "....j.K5aa5K.j.."
-  ".....j5aj5aj...."
-  "......j.5j.j...."
-  ".....j...j......"))
+; A drowned shade: the Flood's dead, hair lank over the face, one arm up
+; for air that is not there, running away to water below the waist.
+(tile "drowned shade" (light 110 150 170 2) (flicker 10) (rows
+  "..........j....."
+  ".........KaK...."
+  ".........K5K...."
+  "......KKKKaK...."
+  ".....K5KKK5K...."
+  ".....KK5aK5K...."
+  "......K5aKaK...."
+  ".....KK5aa5K...."
+  "....K5aAaa5K...."
+  "....K5aAAa5K...."
+  "...K5KaAaa5K...."
+  "...KaK5aAa5K...."
+  "...j.K5aaa5K...."
+  ".....Ka5a5aKj..."
+  "....j.5Ka.5....."
+  "......j..j..j..."))
 
 ; The undertow: the Flood's current, given a will by the stone's water.
 (tile "undertow" (rows
@@ -185,38 +191,40 @@
 
 ; --- the Old Works ----------------------------------------------------------
 
-; A bone heap: the well-keepers' dead out of the ossuary, risen.
-(tile "bone husk" (rows
+; An old 'un: one of the well-keepers' dead up out of the ossuary, bare
+; bone in a rag of its robe, one hand out before it.
+(tile "old 'un" (rows
   "................"
   "................"
-  "................"
-  "................"
-  "................"
-  "................"
-  "................"
-  "......kkkk......"
-  ".....kBBBbk....."
-  ".....kBkkBk....."
-  ".kk..kbBBbk..kk."
-  "kBBk.kkBkBk.kBbk"
-  "kbkBkkBBBbkkBkbk"
-  ".kBbBkbkBkBbBkk."
-  "kBbkBBbBkBbBkbBk"
-  ".kkkkkkkkkkkkkk."))
+  "......kkk......."
+  ".....kBBbk......"
+  ".....kBbbk......"
+  "......kbk......."
+  "....kkBBBkk....."
+  "...kBkbkbkBkk..."
+  "...kbkBBBkbBBk.."
+  "...kBkbkbkkkBk.."
+  "...kbk6B6k..kk.."
+  "...kBk666k......"
+  "....k66k66k....."
+  "....kBk.kBk....."
+  "....kbk.kbk....."
+  "...kkk..kkkk...."))
 
-; A cave bat, come in through the rim's caves.
-(tile "tunnel shrike" (rows
+; A cave bat, come in through the rim's caves: wings spread on their
+; finger bones, a furred body, ears up.
+(tile "cave bat" (rows
   "................"
   "................"
   "................"
-  ".k............k."
-  "k7k...k..k...k7k"
-  "k77k..kqqk..k77k"
-  "k777kkqQQqkk777k"
-  "k7777kqllqk7777k"
-  "k77k77kqqk77k77k"
-  ".kk.k7kqqk7k.kk."
-  "....kk.kk.kk...."
+  "......k..k......"
+  ".k...kUkkUk...k."
+  "k7k..kUuuUk..k7k"
+  "k77k.kuUUuk.k77k"
+  "k777kkuUUukk777k"
+  "k7k77kuUUuk77k7k"
+  "k7kk77kuuk77kk7k"
+  ".kk.kk7kk7kk.kk."
   "................"
   "................"
   "................"
@@ -263,25 +271,26 @@
   "....k%bk.k%bk..."
   "...kkkkk.kkkkk.."))
 
-; The doorkeeper: the keeper set over the Well-House door, a door of its own
-; in its breast, bound with bog iron.
-(tile "hollow mason" (rows
-  "....kkkkkkkk...."
-  "...k%%%b%%%bk..."
-  "...k%kk%%kkbk..."
-  "...kb%%%%%%bk..."
-  "kkkkkiiOoiIikkkk"
-  "k%%bk%%%%%%bk%%k"
-  "k%b%k%%kkb%bkb%k"
-  "k%%bk%knnk%bk%%k"
-  "kOoik%knNk%bkiOk"
-  "k%b%kbknnkbbk%bk"
-  "kb%%k%knnk%%kb%k"
-  "k%%bkkkkkkkkk%%k"
-  "kkkkk%%bkb%%kkkk"
-  "...k%%%bkk%%%bk."
-  "...kiOoikkiOoik."
-  "..kkkkkkkkkkkkkk"))
+; The warder: the old people's man of stone set over the Well-House door;
+; dressed limestone laid in courses, a small head on great shoulders,
+; fists down at its sides, feet planted.
+(tile "warder" (rows
+  "......kkkk......"
+  ".....k%%%bk....."
+  ".....k%%bbk....."
+  "......k%bk......"
+  ".kkkkkk%bkkkkkk."
+  ".k%%%%%%%%%%%bk."
+  ".k%%bk%%%bk%%bk."
+  ".k%%bkbbbbk%%bk."
+  ".kbbbk%%%bkbbbk."
+  ".k%%bk%%%bk%%bk."
+  ".k%%bkbbbbk%%bk."
+  ".kbbbk%%%bkbbbk."
+  ".kkk%%bkk%%bkkk."
+  "...k%%bkk%%bk..."
+  "...kbbbkkbbbk..."
+  "..kkkkkkkkkkkk.."))
 
 ; --- the people ---------------------------------------------------------------
 
@@ -326,61 +335,64 @@
 
 ; --- the Heart ----------------------------------------------------------------
 
-; A glass keeper: cut from the stone's own glassy rock, throwing shards of
-; its light.
-(tile "deep warden" (light 120 160 220 3) (flicker 8) (rows
-  "...........k...."
-  "......kk..k4k..."
-  ".....kN4k.k4k..."
-  ".....knNnkkWk..."
-  "......knNknNk..."
-  "....kknNNnNk...."
-  "...knNnnn4nk...."
-  "..knNknn4Nnnk..."
-  "..kNk.knNnNknk.."
-  ".kWk..kn4nnk.kk."
-  ".k4k..knnNnk...."
-  "..k..knNnnNnk..."
-  ".....knnk.knk..."
-  "....knNk...knk.."
-  "...knnNk...kNnk."
-  "...kkkk.....kkk."))
+; A glister: one of the old people's men, cut from the stone's own glassy
+; rock; in stride, its arm flung out, shards of the stone's light leaving
+; the hand.
+(tile "glister" (light 120 160 220 3) (flicker 8) (rows
+  "................"
+  ".......kkk......"
+  "......kN$4k....."
+  "......knNnk....."
+  ".......knk....4."
+  ".....kkNnNkkkk.."
+  "....knNn$4NnNNk4"
+  "...knNknNnnkkkk."
+  "..knk.kN$4Nk..M."
+  "..k4k.knNnnk...."
+  "...k..knn$nk...."
+  ".....knNnnNk...."
+  ".....knNkknNk..."
+  "....knNk..knNk.."
+  "....kNnk...kNnk."
+  "...kkkk....kkkk."))
 
-; Glow-midges: a swarm lit by the stone's water.
-(tile "lode spark" (light 130 190 220 2) (flicker 40) (rows
+; Glow-midges: a swarm lit by the stone's water, dancing in a column that
+; spreads at the top; each midge a point of light.
+(tile "glow-midge" (light 130 190 220 2) (flicker 40) (rows
   "................"
-  "................"
-  "................"
-  ".........j......"
-  "...j....jMj....."
-  "..jMj....j...j.."
-  "...j..j.....jMj."
-  ".....jMj..j..j.."
-  "......j..jMj...."
-  "..j.......j..j.."
-  ".jMj..j.....jMj."
-  "..j..jMj.....j.."
-  "......j..j......"
-  ".........m......"
-  "................"
+  "......j....j...."
+  "...j.jMj.j......"
+  ".jMj..j.jMj..j.."
+  "..j.m.....j.jMj."
+  "....jMj.m...j..."
+  ".m...j..jMj...m."
+  "...m..jMj.j.j..."
+  "......j.m.jMj..."
+  "....m..jMj..j..."
+  ".......mj...m..."
+  ".....m..jMj....."
+  "........mj......"
+  "......m...m....."
+  "........m......."
   "................"))
 
-; The well keeper: the last keeper, by the pool, its arms up to call the
-; bats; the stone's water running down it.
-(tile "lodestar keeper" (rows
-  "kk...k7kk7k...kk"
-  "k%k...kkkk...k%k"
-  ".k%k.k%%%bk.k%k."
-  ".k%bkk%nnbkkb%k."
-  "..k%%k%nn%k%%k.."
-  "..kbk%%%%%%kbk.."
-  "...kkiOoIiOkk..."
-  "..k%%%%W%%%%bk.."
-  "..k%b%%W%b%%bk.."
-  ".k%%b%WW%%b%%bk."
-  ".k%%%b%W%b%%%bk."
-  ".kiOoiiOiioOiik."
-  ".k%b%%%W%%b%%bk."
-  "k%%%b%%W%%%b%%bk"
-  "k%b%%%%%W%b%%%bk"
-  "kW%%b%%%W%%%b%Wk"))
+; The Old Man: the last and oldest of the old people's men, by the pool;
+; weathered grey stone, head sunk between its raised arms as it calls the
+; bats, the stone's water running down it into the pool at its feet.
+(tile "Old Man" (rows
+  "......k7.7k....."
+  ".k.....kkk....k."
+  "k]k..........k]k"
+  "k[]k...kkk..k[]k"
+  ".k[]k.k[[]k.k[]k"
+  "..k[]kk[]]kk[]k."
+  "...k[[[]]][[]k.."
+  "...k[W[[]][]]k.."
+  "....k[W[[]]]k..."
+  "....k[W[]]]]k..."
+  "....k[[W[]]]k..."
+  "...k[[[W[]]]]k.."
+  "...k[[]W[]][]k.."
+  "..k[[]]]W[]]]]k."
+  "!?kkkkkkWkkkkk?!"
+  "?!??!?W!??!??!??"))
