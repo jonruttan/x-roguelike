@@ -19,9 +19,13 @@
 (module roguelike/frame)
 
 (import x/type/vector)
-(import x/core/doors int/ int%)
+(import x/core/doors int+ int- int* int/ int% int< int= str-make str->ptr ptr-set! ptr-ref str-byte-ref char->int)
 (import roguelike/data data-all)
-(import roguelike/map map-terrain map-kinds map-rows map-cols map-tile map-seen? map-in? map-opaque? tile-rock)
+(import roguelike/map map-terrain map-kinds map-rows map-cols map-tile map-seen? map-visible? map-in? map-opaque? tile-rock)
+(import roguelike/state game-map game-player game-floor game-creatures game-traps
+  player-r player-c item-r item-c item-class creature-r creature-c creature-name)
+(import roguelike/creatures creatures-shown?)
+(import roguelike/traps trap-r trap-c trap-found?)
 
 (def frame-tile-size 16)
 (def frame-view-rows 19)
@@ -35,11 +39,18 @@
 (def %fr-same? (fn (_ a b) (if (str? a) (if (str? b) (str=? a b) #f) (eq? a b))))
 (def %fr-weight (fn (_ t) ((fn (_ w) (if (null? w) 1 w)) (%fr-prop1 t (lit weight)))))
 
-; The tiles of ART named NAME with part PART (nil for none), the band's
+; The art's tiles by name, ((NAME . TILES) ...), read in one pass.
+(def %fr-group
+  (fn (_ tiles)
+    (def names (List fold (fn (_ ns t) (if (List any? (fn (_ n) (%fr-same? n (first t))) ns) ns (pair (first t) ns))) () tiles))
+    (List map (fn (_ n) (pair n (List filter (fn (_ t) (%fr-same? (first t) n)) tiles))) names)))
+(def %fr-named (fn (_ groups name) ((fn (_ g) (if (null? g) () (rest g))) (List find (fn (_ g) (%fr-same? (first g) name)) groups))))
+
+; Of TILES, one name's, those with part PART (nil for none), the band's
 ; own when it has any, else the set's: (TOTAL-WEIGHT . TILES), or nil.
 (def %fr-variants
-  (fn (_ tiles name part band)
-    (def mine (List filter (fn (_ t) (if (%fr-same? (first t) name) (eq? (%fr-prop1 t (lit part)) part) #f)) tiles))
+  (fn (_ tiles part band)
+    (def mine (List filter (fn (_ t) (eq? (%fr-prop1 t (lit part)) part)) tiles))
     (def own (if (null? band) () (List filter (fn (_ t) ((fn (_ b) (if (null? b) #f (str=? b band))) (%fr-prop1 t (lit band)))) mine)))
     (def vs (if (null? own) (List filter (fn (_ t) (null? (%fr-prop t (lit band)))) mine) own))
     (if (null? vs) () (pair (List fold (fn (_ n t) (+ n (%fr-weight t))) 0 vs) vs))))
@@ -49,9 +60,11 @@
 
 ; A kind's pictures: ((PART . VARIANTS) ...) for each part it has.
 (def %fr-kind
-  (fn (_ tiles name band)
-    (List filter (fn (_ p) (not (null? (rest p))))
-      (List map (fn (_ part) (pair part (%fr-variants tiles name part band))) %fr-parts))))
+  (fn (_ groups name band)
+    (def tiles (%fr-named groups name))
+    (if (null? tiles) ()
+      (List filter (fn (_ p) (not (null? (rest p))))
+        (List map (fn (_ part) (pair part (%fr-variants tiles part band))) %fr-parts)))))
 
 ; The art of ART-FORMS for band BAND (a name, or nil): a vector by
 ; terrain code of each kind's pictures, the kind it is a sort of
@@ -59,15 +72,15 @@
 ; are not terrain.
 (def frame-art
   (fn (_ art-forms band)
-    (def tiles (data-all art-forms (lit tile)))
+    (def groups (%fr-group (data-all art-forms (lit tile))))
     (def kinds (Vector make map-kinds ()))
     (def named (fn (self name) (List find (fn (_ t) (eq? (List ref 1 t) name)) map-terrain)))
     (def own
       (fn (self t)
         ((fn (_ k) (match ((not (null? k)) k) ((null? (List ref 2 t)) ()) (#t (self (named (List ref 2 t))))))
-         (%fr-kind tiles (List ref 1 t) band))))
+         (%fr-kind groups (List ref 1 t) band))))
     (List for-each (fn (_ t) (Vector set! (first t) (own t) kinds)) map-terrain)
-    (list kinds tiles band)))
+    (list kinds groups band)))
 (def frame-art-band (fn (_ a) (List ref 2 a)))
 
 ; The picture for a cell at SEED of a kind's pictures PICS, part PART,
@@ -87,7 +100,7 @@
 (def frame-named
   (fn (_ a name seed)
     ((fn (_ vs) (if (null? vs) () (%fr-pick (list (pair () vs)) () seed)))
-     (%fr-variants (List ref 1 a) name () (List ref 2 a)))))
+     ((fn (_ tiles) (if (null? tiles) () (%fr-variants tiles () (List ref 2 a)))) (%fr-named (List ref 1 a) name)))))
 
 ; --- the walls --------------------------------------------------------------
 
@@ -155,6 +168,197 @@
         (frame-cell a m r c (* frame-tile-size (- c c0)) (+ frame-level-y (* frame-tile-size (- r r0)))))
       (List range 0 (* frame-view-rows frame-view-cols)))))
 
+; --- what stands on it --------------------------------------------------------
+
+; The pixel place of the cell at R C under camera CAM, (X . Y), or nil
+; when it is out of view.
+(def frame-place
+  (fn (_ cam r c)
+    (def vr (- r (first cam)))
+    (def vc (- c (rest cam)))
+    (if (if (< vr 0) #t (if (< vc 0) #t (if (< vr frame-view-rows) (not (< vc frame-view-cols)) #t))) ()
+      (pair (* frame-tile-size vc) (+ frame-level-y (* frame-tile-size vr))))))
+
+; The picture named NAME put at R C, over its shadow when SHADOW, or
+; nothing when it has no picture or is out of view.
+(def %fr-put
+  (fn (_ a cam r c name shadow)
+    (def at (frame-place cam r c))
+    (def p (frame-named a name (+ (* r 80) c)))
+    (def s (if shadow (frame-named a (lit shadow) 0) ()))
+    (if (if (null? at) #t (null? p)) ()
+      (List append (if (null? s) () (list (list (lit tile) (first at) (rest at) s)))
+                   (list (list (lit tile) (first at) (rest at) p))))))
+
+; What stands on G's level under camera CAM with art A, in the order
+; the terminal draws it: found traps and items where they were seen,
+; creatures in view over their shadows, the player last.
+(def frame-things
+  (fn (_ g a cam)
+    (def m (game-map g))
+    (def p (game-player g))
+    (List append
+      (List flat-map (fn (_ t) (if (if (trap-found? t) (map-seen? m (trap-r t) (trap-c t)) #f)
+                                 (%fr-put a cam (trap-r t) (trap-c t) (lit trap) #f) ()))
+        (game-traps g))
+      (List flat-map (fn (_ it) (if (map-seen? m (item-r it) (item-c it))
+                                  (%fr-put a cam (item-r it) (item-c it) (item-class it) #f) ()))
+        (game-floor g))
+      (List flat-map (fn (_ cr) (if (creatures-shown? g cr)
+                                  (%fr-put a cam (creature-r cr) (creature-c cr) (creature-name cr) #t) ()))
+        (game-creatures g))
+      (%fr-put a cam (player-r p) (player-c p) (lit player) #t))))
+
+; --- what is lit ----------------------------------------------------------------
+
+; The view of M under camera CAM as one op, (view X Y COLS ROWS
+; BYTES): a byte a cell, row by row, 0 dark, 1 seen before, 2 in view.
+(def frame-view
+  (fn (_ m cam)
+    (def bytes (str-make (* frame-view-rows frame-view-cols)))
+    (def bp (str->ptr bytes))
+    (List for-each
+      (fn (_ i)
+        (def r (+ (first cam) (int/ i frame-view-cols)))
+        (def c (+ (rest cam) (int% i frame-view-cols)))
+        (ptr-set! bp i (match ((map-visible? m r c) 2) ((map-seen? m r c) 1) (#t 0)) 1))
+      (List range 0 (* frame-view-rows frame-view-cols)))
+    (list (lit view) 0 frame-level-y frame-view-cols frame-view-rows bytes)))
+
+; The lights of OPS, the tiles drawn, whose cells are in view on M
+; under camera CAM: (light X Y R G B REACH FLICKER), X Y the cell's
+; middle, REACH in cells, FLICKER the waver in percent (0 for none).
+(def frame-lights
+  (fn (_ m cam ops)
+    (List flat-map
+      (fn (_ op)
+        (def l (if (eq? (first op) (lit tile)) (%fr-prop (List ref 3 op) (lit light)) ()))
+        (def r (+ (first cam) (int/ (- (List ref 2 op) frame-level-y) frame-tile-size)))
+        (def c (+ (rest cam) (int/ (List ref 1 op) frame-tile-size)))
+        (if (if (null? l) #t (not (map-visible? m r c))) ()
+          (list (List append (list (lit light) (+ (List ref 1 op) 8) (+ (List ref 2 op) 8)) (rest l)
+                  (list ((fn (_ f) (if (null? f) 0 f)) (%fr-prop1 (List ref 3 op) (lit flicker))))))))
+      ops)))
+
+; --- the light map ---------------------------------------------------------------
+
+; A flame's waver: one wave of sixteen steps, out of a hundred.
+(def %fr-wave (Vector of 0 38 70 92 100 92 70 38 0 -38 -70 -92 -100 -92 -70 -38))
+(def %fr-wave-at (fn (_ i) (Vector ref (int% (if (int< i 0) (int- 0 i) i) 16) %fr-wave)))
+
+; A light's strength at TICK, out of a hundred: three waves, slow and
+; quick, each light out of step with the rest by its place.
+(def frame-flicker
+  (fn (_ l tick)
+    (def f (List ref 7 l))
+    (def s (int/ (int+ (int* (List ref 1 l) 37) (int* (List ref 2 l) 71)) 16))
+    (if (int= f 0) 100
+      (int+ 100 (int/ (int* f (int/ (int+ (int* 45 (%fr-wave-at (int+ (int* tick 3) s)))
+                                         (int+ (int* 30 (%fr-wave-at (int+ (int* tick 7) (int* s 2))))
+                                               (int* 25 (%fr-wave-at (int+ tick (int/ s 3))))))
+                                    100))
+                      100)))))
+
+; The light map is worked in a region of four words a cell: the dark
+; left and each channel's tint, out of 256.  Each light touches only
+; the cells within its reach.
+(def %fr-get (fn (_ w i k) (ptr-ref w (int+ (int* i 16) (int* k 4)) 4)))
+(def %fr-put! (fn (_ w i k v) (ptr-set! w (int+ (int* i 16) (int* k 4)) (if (int< v 0) 0 v) 4)))
+
+; Cell I of the map, COLS wide, lit by a light at LX LY reaching RAD
+; pixels, its colour R G B at tint weight W0: the dark lifted by the
+; square of the distance, the tint taken toward its colour.
+(def %fr-light-cell!
+  (fn (_ w i cols ox oy lx ly r2 r g b w0)
+    (def dx (int- (int+ ox (int+ (int* (int% i cols) 16) 8)) lx))
+    (def dy (int- (int+ oy (int+ (int* (int/ i cols) 16) 8)) ly))
+    (def d2 (int+ (int* dx dx) (int* dy dy)))
+    (when (int< d2 r2)
+      (do (def c (int- 256 (int/ (int* d2 256) r2)))
+          (def wt (int/ (int* w0 c) 256))
+          (%fr-put! w i 0 (int/ (int* (%fr-get w i 0) (int- 256 c)) 256))
+          (%fr-put! w i 1 (int- (%fr-get w i 1) (int/ (int* wt (int- 255 r)) 255)))
+          (%fr-put! w i 2 (int- (%fr-get w i 2) (int/ (int* wt (int- 255 g)) 255)))
+          (%fr-put! w i 3 (int- (%fr-get w i 3) (int/ (int* wt (int- 255 b)) 255)))))))
+
+; Light L at strength K over the cells of its reach.
+(def %fr-light!
+  (fn (_ w cols rows ox oy l k)
+    (def lx (List ref 1 l))
+    (def ly (List ref 2 l))
+    (def rad (int/ (int* (int* (List ref 6 l) 16) k) 100))
+    (def r2 (int* rad rad))
+    (def w0 (int/ (int* 56 k) 100))
+    (def c0 (int/ (int- (int- lx ox) rad) 16))
+    (def c1 (int/ (int+ (int- lx ox) rad) 16))
+    (def r0 (int/ (int- (int- ly oy) rad) 16))
+    (def r1 (int/ (int+ (int- ly oy) rad) 16))
+    (def lo (fn (_ v) (if (int< v 0) 0 v)))
+    (def hi (fn (_ v n) (if (int< v n) v (int- n 1))))
+    (def cl (lo c0))
+    (def ch (hi c1 cols))
+    (def rl (lo r0))
+    (def rh (hi r1 rows))
+    (def r (List ref 3 l))
+    (def g (List ref 4 l))
+    (def b (List ref 5 l))
+    ((fn (self y x)
+       (if (int< rh y) #t
+         (if (int< ch x) (self (int+ y 1) cl)
+           (do (%fr-light-cell! w (int+ (int* y cols) x) cols ox oy lx ly r2 r g b w0)
+               (self y (int+ x 1))))))
+     rl cl)))
+
+; The light map of VIEW, the view op, and LIGHTS, the light ops, at
+; TICK: a canvas, (COLS ROWS REGION), a pixel a cell, its R G B what
+; the cell's pixels are multiplied by out of 255.  The level is dark
+; but for the lights: each lifts the dark round it and tints it its
+; colour; a cell seen before and out of view is dimmer still; a cell
+; never seen is black.
+(def frame-light-map
+  (fn (_ view lights tick)
+    (def ox (List ref 1 view))
+    (def oy (List ref 2 view))
+    (def cols (List ref 3 view))
+    (def rows (List ref 4 view))
+    (def seen (List ref 5 view))
+    (def n (int* cols rows))
+    (def work (str-make (int* n 16)))
+    (def w (str->ptr work))
+    (def region (str-make (int* n 4)))
+    (def rp (str->ptr region))
+    ((fn (self i) (when (int< i n) (do (%fr-put! w i 0 256) (%fr-put! w i 1 256) (%fr-put! w i 2 256) (%fr-put! w i 3 256) (self (int+ i 1))))) 0)
+    (List for-each (fn (_ l) (%fr-light! w cols rows ox oy l (frame-flicker l tick))) lights)
+    ((fn (self i)
+       (when (int< i n)
+         (do (def v (char->int (str-byte-ref seen i)))
+             (def m (int- 256 (int/ (int* 205 (%fr-get w i 0)) 256)))
+             (def m2 (if (int= v 2) m (if (int= v 1) (int/ (int* m 97) 256) 0)))
+             (def o (int* i 4))
+             (ptr-set! rp o (%fr-byte (int/ (int* m2 (%fr-get w i 1)) 256)) 1)
+             (ptr-set! rp (int+ o 1) (%fr-byte (int/ (int* m2 (%fr-get w i 2)) 256)) 1)
+             (ptr-set! rp (int+ o 2) (%fr-byte (int/ (int* m2 (%fr-get w i 3)) 256)) 1)
+             (ptr-set! rp (int+ o 3) 255 1)
+             (self (int+ i 1)))))
+     0)
+    (list cols rows region)))
+(def %fr-byte (fn (_ x) (if (int< 255 x) 255 (if (int< x 0) 0 x))))
+
+; G's level with art A, the camera on the player, as (CAM LEVEL .
+; OVER): the ground's ops, which change only when the camera or the
+; map does and so are drawn once into a layer of their own; then what
+; stands on it, the view and the lights, drawn over that every frame.
+(def frame-scene
+  (fn (_ g a)
+    (def m (game-map g))
+    (def p (game-player g))
+    (def cam (frame-camera (map-rows m) (map-cols m) (player-r p) (player-c p)))
+    (def level (frame-level a m cam))
+    (def things (frame-things g a cam))
+    (pair cam (pair level
+      (List append things (list (frame-view m cam)) (frame-lights m cam (List append level things)))))))
+
 (provide roguelike/frame
   frame-tile-size frame-view-rows frame-view-cols frame-level-y
-  frame-art frame-art-band frame-named frame-seed frame-wall-parts frame-camera frame-cell frame-level)
+  frame-art frame-art-band frame-named frame-seed frame-wall-parts frame-camera frame-cell frame-level
+  frame-place frame-things frame-view frame-lights frame-flicker frame-light-map frame-scene)
