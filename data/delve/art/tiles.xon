@@ -1,0 +1,518 @@
+; tiles.xon -- the delve set drawn, for a windowed front-end: a lamp-lit
+; coal pit, wet rock, timber and iron.
+;
+; Read by the graphical front-end only: the set itself is the .xon files
+; one directory up, and this directory is not one of them.
+;
+; (size W H) is every tile's size in pixels.  (colour "C" R G B [A]) names
+; a colour by one character; A is 255 unless given, and 0 is clear.
+; (tile NAME . PROPS) draws NAME: a glyph name (wall, player, potion, ...)
+; or a creature's name.  (rows "..." ...) is the picture, one string a
+; row, one character a pixel; (as OTHER) draws NAME as OTHER; (band
+; "BAND") makes it that band's, in front of the set's.  Anything with no
+; tile is drawn as its glyph in the font.
+
+(size 16 16)
+
+(colour "." 0 0 0 0)
+(colour "k" 20 16 15)
+; rock: sandstone beds, shale, a coal seam
+(colour "d" 46 38 34)
+(colour "r" 78 64 54)
+(colour "R" 108 90 74)
+(colour "h" 146 124 100)
+(colour "n" 30 28 32)
+(colour "N" 70 68 78)
+; the floor, and the floor where light falls from above
+(colour "s" 52 46 42)
+(colour "f" 66 58 52)
+(colour "F" 86 76 66)
+(colour "z" 118 104 78)
+; timber, iron, leather, cloth
+(colour "t" 92 62 38)
+(colour "T" 136 96 58)
+(colour "i" 70 72 80)
+(colour "I" 138 142 150)
+(colour "u" 104 74 52)
+(colour "U" 150 110 74)
+(colour "c" 52 56 76)
+(colour "C" 88 94 122)
+(colour "O" 132 70 34)
+(colour "o" 176 98 46)
+; water, lamp light, coin
+(colour "w" 32 52 70)
+(colour "W" 64 104 132)
+(colour "v" 150 196 214)
+(colour "l" 232 184 92)
+(colour "L" 255 238 176)
+(colour "y" 214 170 52)
+(colour "Y" 255 234 128)
+; skin, bone and paper
+(colour "p" 224 176 146)
+(colour "P" 168 118 96)
+(colour "b" 176 170 150)
+(colour "B" 232 226 206)
+; creatures: rat fur, toad, firedamp, the dead
+(colour "q" 116 98 88)
+(colour "Q" 156 136 120)
+(colour "g" 76 112 58)
+(colour "G" 130 168 90)
+(colour "m" 150 210 200)
+(colour "M" 228 255 246)
+(colour "j" 150 210 200 90)
+(colour "K" 28 38 48 190)
+(colour "a" 118 138 150 150)
+(colour "A" 200 216 224 190)
+; the Lodestar's cold light; a panel's ground
+(colour "x" 110 150 190 110)
+(colour "Z" 22 18 16 228)
+
+; --- the ground -------------------------------------------------------------
+
+; The Galleries' rock: sandstone over shale over a coal seam.
+(tile wall (rows
+  "hhRhhhRRhhhRhhRh"
+  "RRRRhRRRRRRRRhRR"
+  "RRrRRRRRkRRRRRRR"
+  "rRRRRrRRkRRRrRRr"
+  "rrrrrrrrkrrrrrrr"
+  "dddrdddddddrdddd"
+  "kddddkdddddddkdd"
+  "dddrrddddrddddrd"
+  "nnnnnNnnnnnnNNnn"
+  "nNNnnnnnnNnnnnnn"
+  "knnnnnnkknnnnnkn"
+  "ddddddrddddddddd"
+  "hRRhhhRRRhRRhhhR"
+  "RRRRRRkRRRRRRRRR"
+  "rRRrRRkRrRRRrRRr"
+  "rrrrrrkrrrrrrrrr"))
+
+(tile floor (rows
+  "ssssssssssssssss"
+  "sssfssssssssssss"
+  "ssssssssssssdsss"
+  "ssssssssfsssssss"
+  "ssssssssssssssss"
+  "sdssssssssssssfs"
+  "ssssssFsssssssss"
+  "ssssssssssssssss"
+  "sssssssssssdssss"
+  "ssfsssssssssssss"
+  "ssssssssssssssss"
+  "sssssdssssfsssss"
+  "ssssssssssssssss"
+  "sFssssssssssssss"
+  "sssssssssssssdss"
+  "ssssssssssssssss"))
+
+(tile passage (as floor))
+
+; An air door: planks in a timber frame, strapped with iron.
+(tile door (rows
+  "TTTTTTTTTTTTTTTT"
+  "tttttttttttttttt"
+  "TtkUUuUUuUUuUktT"
+  "TtkUUuUUuUUuUktT"
+  "TtkiiiiiiiiiiktT"
+  "TtkUUuUUuUUuUktT"
+  "TtkUUuUUuUUuUktT"
+  "TtkUUuUUuUUuUktT"
+  "TtkUUuUUuUIuUktT"
+  "TtkUUuUUuUUuUktT"
+  "TtkUUuUUuUUuUktT"
+  "TtkiiiiiiiiiiktT"
+  "TtkUUuUUuUUuUktT"
+  "TtkUUuUUuUUuUktT"
+  "TtkuuuuuuuuuuktT"
+  "TtkkkkkkkkkkkktT"))
+
+; A shaft down: a timber collar, a ladder into the dark.
+(tile down (rows
+  "ssssssssssssssss"
+  "ssTTTTTTTTTTTTss"
+  "sTttttttttttttTs"
+  "sTtkkkkkkkkkktTs"
+  "sTtkIkkkkkkIktTs"
+  "sTtkIIIIIIIIktTs"
+  "sTtkIkkkkkkIktTs"
+  "sTtkIkkkkkkIktTs"
+  "sTtkIIIIIIIIktTs"
+  "sTtkIkkkkkkIktTs"
+  "sTtkikkkkkkiktTs"
+  "sTtkiiiiiiiiktTs"
+  "sTtkikkkkkkiktTs"
+  "sTtkkkkkkkkkktTs"
+  "sTttttttttttttTs"
+  "ssTTTTTTTTTTTTss"))
+
+; A ladder up, in the light from the level above.
+(tile up (rows
+  "ssssssssssssssss"
+  "sssssszzzzssssss"
+  "ssszzTzzzzTzzsss"
+  "sszzzTTTTTTzzzss"
+  "sszzzTzzzzTzzzss"
+  "szzzzTzzzzTzzzzs"
+  "szzzzTTTTTTzzzzs"
+  "szzzzTzzzzTzzzzs"
+  "szzzzTzzzzTzzzzs"
+  "szzzzTTTTTTzzzzs"
+  "sszzzTzzzzTzzzss"
+  "sszzzTzzzzTzzzss"
+  "ssszzTTTTTTzzsss"
+  "sssssTssssTsssss"
+  "ssssstsssstsssss"
+  "ssssssssssssssss"))
+
+; A drop shaft under broken boards.
+(tile trap (rows
+  "................"
+  "................"
+  "....dkkkkkkd...."
+  "...dkTTTkkkkd..."
+  "..dkkttTkkTTkd.."
+  "..dkkkkkkkttkd.."
+  ".dkkkkkkkkkkkkd."
+  ".dkTTTTkkkkkkkd."
+  ".dkttttkkkTTkkd."
+  ".dkkkkkkkkttkkd."
+  "..dkkkkkkkkkkd.."
+  "..dkkTTTTkkkkd.."
+  "...dkttttkkkd..."
+  "....dkkkkkkd...."
+  "................"
+  "................"))
+
+; --- who walks there --------------------------------------------------------
+
+; A delver: leather cap, Guild jacket, a lamp in the right hand.
+(tile player (rows
+  "................"
+  "......kkkk......"
+  ".....kUUUUk....."
+  "....kuUUUUuk...."
+  "....kkkkkkkk...."
+  "....kpkppkpk...."
+  "....kppppPPk...."
+  ".....kPPPPk....."
+  "....kCCCCCCk...."
+  "...kCCcCCcCCk..."
+  "..ikCCcCCcCCkpk."
+  ".klLkCcCCcCkkk.."
+  ".kLLkuuuuuuk...."
+  "..kk.kCCkCCk...."
+  ".....kCCkCCk...."
+  ".....kkk.kkk...."))
+
+(tile "mine rat" (rows
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "....kk.........."
+  "...kQQkkkkkk...."
+  "..kQQqqqqqqqqk.."
+  ".kQkQqqqqqqqqqk."
+  "kPQQqqqqqqqqqqdk"
+  ".kkkdddddddddkkk"
+  "...kk.k...k.kk.."
+  "................"))
+
+(tile "drip toad" (rows
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "....kkk..kkk...."
+  "...kGyGkkGyGk..."
+  "..kGGGGGGGGGGk.."
+  ".kgGGGGGGGGGGgk."
+  ".kgGgGGGGGGgGgk."
+  "kggggGGGGGGggggk"
+  "kggggggggggggggk"
+  ".kGGkggggggkGGk."
+  "..kkk.kkkk.kkk.."
+  "................"))
+
+; Firedamp pooled in the roof, lit.
+(tile "gas mote" (rows
+  "................"
+  "................"
+  "..........m....."
+  "................"
+  "......jjjj......"
+  "....jjmmmmjj...."
+  "...jjmmMMmmjj..."
+  "...jmmMMMMmmj..."
+  "...jmMMLLMMmj..."
+  "...jmmMMMMmmj..."
+  "...jjmmMMmmjj..."
+  "....jjmmmmjj...."
+  "......jjjj......"
+  "....m..........."
+  "................"
+  "................"))
+
+; One of the firedamp shift, forty years dead.
+(tile "gallery shade" (rows
+  "................"
+  "......KKKK......"
+  ".....KAAAAK....."
+  "....KAAAAAAK...."
+  "....KKKKKKKK...."
+  "....KaKaaKaK...."
+  "....KaaaaaaK...."
+  ".....KaaaaK....."
+  "....KAAAAAAK...."
+  "...KAaAAAAaAK..."
+  "..KAaaAAAAaaAK.."
+  "..KaaaAAAAaaaK.."
+  "...KaaaaaaaaK..."
+  "...KaaKaaKaaK..."
+  "....Ka.Ka.aK...."
+  "................"))
+
+(tile "lamp-keeper" (rows
+  "................"
+  "......kkkk......"
+  ".....kbbbbk....."
+  "....kbbbbbbk...."
+  "....kbpppPbk...."
+  "....kpkppkpk...."
+  "....kppppPPk...."
+  ".....kOOOOk....."
+  "....kOOoOOOk...."
+  "...kOOOOoOOOk..."
+  "...kOoOOOOoOkpk."
+  "..kcOOOOOOOOkLLk"
+  "..kccccccccckLLk"
+  "..kccccccccck.kk"
+  "..kccccccccck..."
+  "...kkkkkkkkk...."))
+
+; --- what lies about --------------------------------------------------------
+
+; Water in a stoppered flask.
+(tile potion (rows
+  "................"
+  "................"
+  "................"
+  "................"
+  "......kttk......"
+  "......kTtk......"
+  ".....kkbbkk....."
+  "......kbBk......"
+  ".....kbWWbk....."
+  "....kbWvWWWk...."
+  "....kWvWWWWk...."
+  "....kWWWWWwk...."
+  "....kWWWWwwk...."
+  ".....kwwwwk....."
+  "......kkkk......"
+  "................"))
+
+; A well-keeper mark copied on cloth, on two rods.
+(tile scroll (rows
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "..kkkkkkkkkkkk.."
+  "..kTTTTTTTTTTk.."
+  "..kbBBBBBBBBbk.."
+  "..kbOBOOBBOBbk.."
+  "..kbBBBBBBBBbk.."
+  "..kbBOOBOBOBbk.."
+  "..kbBBBBBBBBbk.."
+  "..kTTTTTTTTTTk.."
+  "..kkkkkkkkkkkk.."
+  "................"
+  "................"))
+
+; A well-keeper's rod, bound at the foot.
+(tile wand (rows
+  "................"
+  "................"
+  "............kk.."
+  "...........kBbk."
+  "..........kbbk.."
+  ".........ktTk..."
+  "........ktTk...."
+  ".......ktTk....."
+  "......ktTk......"
+  ".....ktTk......."
+  "....ktTk........"
+  "...ktTk........."
+  "..kOOk.........."
+  ".kOOk..........."
+  "..kk............"
+  "................"))
+
+(tile ring (rows
+  "................"
+  "................"
+  "................"
+  "................"
+  "......kkkk......"
+  ".....kWvvWk....."
+  "......kWWk......"
+  ".....kIkkIk....."
+  "....kIk..kIk...."
+  "....kIk..kIk...."
+  "....kik..kik...."
+  ".....kikkik....."
+  "......kkkk......"
+  "................"
+  "................"
+  "................"))
+
+(tile weapon (rows
+  "................"
+  "................"
+  ".kk..........kk."
+  "kIIkk......kkIik"
+  ".kiIIkkkkkkIIik."
+  "..kkiiIIIIiikk.."
+  "....kkkTTkkk...."
+  "......ktTk......"
+  "......ktTk......"
+  "......ktTk......"
+  "......ktTk......"
+  "......ktTk......"
+  "......ktTk......"
+  "......ktTk......"
+  "......kkkk......"
+  "................"))
+
+; An oilskin coat.
+(tile armour (rows
+  "................"
+  "................"
+  "................"
+  "....kkkkkkkk...."
+  "...kuUkUUkUuk..."
+  "..kuUUUkkUUUuk.."
+  ".kuUUUUUUUUUUuk."
+  ".kuukUUUUUUkuuk."
+  ".kuk.kUUUUk.kuk."
+  ".kk..kUUUUk..kk."
+  ".....kUuUUk....."
+  ".....kUUuUk....."
+  ".....kUUUUk....."
+  ".....kuuuuk....."
+  ".....kkkkkk....."
+  "................"))
+
+; A miner's tin.
+(tile food (rows
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "....kkkkkkkk...."
+  "...kIIIIIIIIk..."
+  "...kiiiiiiiik..."
+  "...kIIIIIIIIk..."
+  "...kIiIIIIIIk..."
+  "...kIIIIIIiIk..."
+  "...kiiiiiiiik..."
+  "....kkkkkkkk...."
+  "................"
+  "................"))
+
+; The League's coin.
+(tile gold (rows
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "......kkkk......"
+  ".....kYYyyk....."
+  ".....kyyyOk....."
+  "...kkkkkkkkkk..."
+  "..kYYyykYYyyk..."
+  "..kyyyOkyyyOk..."
+  "...kkkkkkkkk...."))
+
+; A leaf from a ledger.
+(tile page (rows
+  "................"
+  "................"
+  "................"
+  "....kkkkkkk....."
+  "....kBBBBBkbk..."
+  "....kBccBcBkbk.."
+  "....kBBBBBBBBk.."
+  "....kBcBccBcBk.."
+  "....kBBBBBBBBk.."
+  "....kBccBcccBk.."
+  "....kBBBBBBBBk.."
+  "....kBcBccBBBk.."
+  "....kBBBBBBBBk.."
+  "....kkkkkkkkkk.."
+  "................"
+  "................"))
+
+; The Lodestar: dark, glassy, beaded with water, cold light round it.
+(tile goal (rows
+  "................"
+  "................"
+  "................"
+  "......xxxx......"
+  ".....xkkkkx....."
+  "...xkknNNnkkx..."
+  "..xknnNvNnnnkx.."
+  ".xknnNNnnnvnnkx."
+  ".xknNnnnnnnnnkx."
+  "xknnnvnnnnNnnnkx"
+  "xknnnnnnnnnnvnkx"
+  "xknNnnnnnnnnnnkx"
+  ".xknnnnvnnnnnkx."
+  "..xkknnnnnnkkx.."
+  "...xxkkkkkkxx..."
+  "................"))
+
+; --- the screen's own -------------------------------------------------------
+
+; A panel, drawn in nine pieces: the corners as they are, the edges
+; and the middle stretched.  (cut L T R B) are the edges' widths.
+(tile panel (cut 8 8 8 8) (rows
+  "kkkkkkkkkkkkkkkkkkkkkkkk"
+  "kITTTTTTTTTTTTTTTTTTTTIk"
+  "kTttttttttttttttttttttdk"
+  "kTtkkkkkkkkkkkkkkkkkktdk"
+  "kTtkZZZZZZZZZZZZZZZZktdk"
+  "kTtkZZZZZZZZZZZZZZZZktdk"
+  "kTtkZZZZZZZZZZZZZZZZktdk"
+  "kTtkZZZZZZZZZZZZZZZZktdk"
+  "kTtkZZZZZZZZZZZZZZZZktdk"
+  "kTtkZZZZZZZZZZZZZZZZktdk"
+  "kTtkZZZZZZZZZZZZZZZZktdk"
+  "kTtkZZZZZZZZZZZZZZZZktdk"
+  "kTtkZZZZZZZZZZZZZZZZktdk"
+  "kTtkZZZZZZZZZZZZZZZZktdk"
+  "kTtkZZZZZZZZZZZZZZZZktdk"
+  "kTtkZZZZZZZZZZZZZZZZktdk"
+  "kTtkZZZZZZZZZZZZZZZZktdk"
+  "kTtkZZZZZZZZZZZZZZZZktdk"
+  "kTtkZZZZZZZZZZZZZZZZktdk"
+  "kTtkZZZZZZZZZZZZZZZZktdk"
+  "kTtkkkkkkkkkkkkkkkkkktdk"
+  "kTttttttttttttttttttttdk"
+  "kIddddddddddddddddddddIk"
+  "kkkkkkkkkkkkkkkkkkkkkkkk"))

@@ -1,0 +1,89 @@
+# The game in a window
+
+The windowed front-end draws the same game as the terminal one, from
+the same state, with pictures in place of letters.  The terminal
+front-end stays, and it is the reference: anything the window shows,
+the terminal shows too.
+
+## The screen
+
+A screen 640 by 360 pixels, drawn in x as one RGBA buffer and scaled
+whole to the window: 2x at 1280 by 720, 3x at 1920 by 1080, 4x at
+2560 by 1440.  Tiles are 16 by 16; text is an 8 by 8 font, so a line
+holds 80 letters, as the terminal does.
+
+| Rows (pixels) | What | The terminal's |
+|---|---|---|
+| 0 to 23 | messages, two lines; a question asks here | the top row |
+| 24 to 327 | the level, 40 tiles by 19 | the rows between |
+| 328 to 359 | the standing: band and level (or screen), hit points as a bar, strength, armour, experience, gold, hunger and conditions | the last row |
+
+- **The level** is 80 by 22, as in the terminal.  The window shows 40 by
+  19 of it; the camera keeps the player in the middle, held inside the
+  map, so it scrolls only when the player walks.
+- **In view and seen**: cells in view drawn whole, cells seen before
+  dimmed, rock black.  Found traps and items where they were seen;
+  creatures only in view; the player last.  A warm glow round the
+  player stands for the lamp.
+- **Overlays**: a list looked at, the items a question can take, a
+  choice, a page read, a talker's words, the world map and the end of
+  the game lie over the level on a panel, as the terminal lays them
+  over the rows.
+- **More**: a message that runs past the strip waits on a marker at the
+  strip's end, as `--More--` does.
+
+## What every set needs
+
+Every picture is keyed by the name the set already uses: the glyph's
+name for the ground, the player and the item classes, the creature's
+name for a creature.
+
+| Group | Names | Count |
+|---|---|---|
+| ground | `floor` `wall` `door` `passage` `down` `up` `trap` | 7 |
+| the player | `player` | 1 |
+| items | `potion` `scroll` `wand` `ring` `weapon` `armour` `food` `gold` `goal`, and `page` `token` where the set has them | 9 to 11 |
+| creatures | every `(creature NAME ...)` of the set, talkers each their own | classic 17, delve 23, kettle 28 |
+| bands | a band's own `wall` and `floor`, where its place differs | delve 3, kettle 3 |
+| the screen | `panel` (a nine-piece frame) | 1 |
+
+Shared by every set, in `art/` at the top of the bundle: the font (the
+95 printable letters), and the standing's icons.
+
+Anything with no picture is drawn as its glyph in the font, in the
+colour the terminal gives it.  A set with no art at all still plays in
+the window.
+
+## The form
+
+A set's pictures are in `data/SET/art/*.xon`.  The set is the `.xon`
+files of `data/SET` alone, so the terminal game never reads these.
+
+    (size 16 16)
+    (colour "k" 20 16 15)          ; a colour named by one character
+    (colour "j" 150 210 200 90)    ; with alpha; 255 unless given
+    (tile wall (rows "hhRh..." ...))
+    (tile "mine rat" (rows ...))
+    (tile passage (as floor))
+    (tile wall (band "The Flood") (rows ...))
+    (tile panel (cut 8 8 8 8) (rows ...))
+
+- `(rows ...)`: one string a row, one character a pixel, each a
+  colour of the file.
+- `(as OTHER)`: drawn as OTHER.
+- `(band "BAND")`: the band's, in front of the set's.
+- `(cut L T R B)`: a nine-piece picture; the corners kept, the edges
+  and the middle stretched.
+
+Text, so it is read with `x/codec/xon`, diffed, and drawn by hand; no
+image tools.  Turned into RGBA once when the set is loaded.
+
+## Each set's look
+
+- **classic**: an old dungeon, grey stone and torchlight.
+- **delve**: the drowned mine.  The Galleries: sandstone, shale and a
+  coal seam, timber and iron.  The Flood: wet rock streaked with ochre,
+  standing water.  The Old Works: dressed limestone laid without
+  mortar.  The Heart: the stone's dark glassy rock and its pool.
+- **kettle**: the dale above.  The town: soot-dark stone, slate.  The
+  farms: hedges and hay.  The hills: heather, gritstone and bog.
