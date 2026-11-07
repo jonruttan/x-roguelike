@@ -412,15 +412,19 @@ charter.
    in the mire.  They keep the Candle lit.  Their city stands on the
    rim.  They bury their dead under yews there, and in time carry the
    bones down to the ossuary beside the pool, to lie near the stone.
-3. **The bargain.**  In a great drought their kin over the pass are
-   dying of thirst.  The well-keepers do what kin do: they carry the
-   stone over the pass in procession, as one carries a god to visit.
-   The water follows it.  Their own spring fails, their wells fail, and
-   the city scatters.  Its last keepers fetch the stone home and lay it
-   back in its pool.  They wall the Well-House, build keepers of stone
-   that walks to stand in it, and cut the mark at the fourth stair:
+3. **The bargain.**  The Brand stands in the west.  In a great drought
+   their kin over the pass are dying of thirst.  The well-keepers do
+   what kin do: they carry the stone over the pass in procession, as
+   one carries a god to visit.  The water follows it.  Their own spring
+   fails, their wells fail, and the city scatters.  Its last keepers
+   fetch the stone home and lay it back in its pool.  They know the
+   Brand comes back, some three hundred years apart, and that someone
+   will be tempted under it again; what they build is for that.  They
+   wall the Well-House, build keepers of stone that walks to stand in
+   it against the next Brand, and cut the mark at the fourth stair:
    while the stone lies here the dale has wells; lift it and the water
-   follows.  The water comes back; the city does not.  Its people are
+   follows.  Beside the mark they begin a count, a tailed star for each
+   return.  The water comes back; the city does not.  Its people are
    the scattered hill folk whose shepherds still tie rags on thorns by
    springs, not knowing why.
 4. **Kettle** (some three hundred years ago).  Settlers come up the
@@ -433,7 +437,12 @@ charter.
    clay, stone and peat.  Disputes over the wells are judged at the
    well-head before the town.  The charter calls the old marks on the
    stone "the holdwater's marks", from a tale the settlers had off the
-   hill folk; no one believes the tale.
+   hill folk; no one believes the tale.  The Brand stood over the dale
+   the year the settlers came, and the hill folk told the tale under it.
+   That is why the charter's first line makes the well's water common
+   to all, cut into the stone's own mouth: the settlers did not believe
+   the tale, and cut the line anyway.  The charter is the town's answer
+   to the last Brand.
 5. **Coal** (some hundred and twenty years ago).  Digging the drains
    turns up coal.  The drainers read "what lies beneath" as the coal,
    and the town lets them, because only the drainers can keep a pit dry
@@ -720,7 +729,14 @@ people reads it its own way.  None is settled.
   the Rot; the chapel, that the Giver is warning; the miners, that it
   is bad.  In the Old Works a well-keeper mark shows a tailed star over
   a procession carrying the stone east.  The Brand has come before, the
-  last time the stone was moved.  Nobody knows how often it comes.
+  last time the stone was moved.  Nobody above knows how often it comes;
+  the fourth stair does.  Beside the mark there, a row of tailed stars
+  counts its returns, one for each, some three hundred years apart, and
+  under each a picture of who was tempted under it and what became of
+  them.  The well-keepers cut the first, the procession; the keepers
+  have cut each since.  Between are people turned back on the stair.
+  The last is the well-mouth with new lines cut round it: the charter.
+  There is room for the next.
 
   The Brand does not move the stone; it tempts.  Each time it comes,
   whoever knows of the stone is tempted to move it.  The well-keepers
@@ -1338,9 +1354,12 @@ Proposals, not decided.
 - The Hall's oldest brine lakes are older than the mine, and nobody on
   the Plain can say what dissolved them.  Did the well-keepers' bargain
   lay the stone near Halmere's beds?
-- The Brand's returns, the long arc: each return a temptation, and
-  each set perhaps at a different one.  Other dales' marks may show the
-  same star over their own stones.
+- The Brand's returns, the long arc: each return a temptation, and a
+  set at each, its pictures at the fourth stair its pages: the
+  well-keepers' bargain, a turning-back by the keepers, the settlers'
+  coming, now, and the next, when the colonial and industrial ways
+  arrive.  Other dales' marks may show the same star over their own
+  stones.
 - The darkening at midwinter: the White Church's foretold day, after the
   first snow has closed the Nick, when the Plain will be listening for
   what heaven says about the Rot.
