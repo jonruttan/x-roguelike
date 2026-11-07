@@ -148,4 +148,4 @@ of it and the win at the hub.
              (game-quest-state h (List ref 1 (first (game-chain g))))))
 ```
 ---
-    (#t #t ("the clerk" "the surveyor" "the scrap-picker") #t #t 'open)
+    (#t #t ("the clerk" "the town surveyor" "the scrap-picker") #t #t 'open)

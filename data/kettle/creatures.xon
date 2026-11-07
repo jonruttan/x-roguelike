@@ -29,7 +29,7 @@
 (creature "ferryman" "&" (depth 0 0) (level 1) (hp 1 1) (attack 0 0) (defence 0) (exp 0) (traits talks))
 (creature "innkeeper" "&" (depth 0 0) (level 1) (hp 1 1) (attack 0 0) (defence 0) (exp 0) (traits talks))
 (creature "miller" "&" (depth 0 0) (level 1) (hp 1 1) (attack 0 0) (defence 0) (exp 0) (traits talks))
-(creature "surveyor" "&" (depth 0 0) (level 1) (hp 1 1) (attack 0 0) (defence 0) (exp 0) (traits talks))
+(creature "town surveyor" "&" (depth 0 0) (level 1) (hp 1 1) (attack 0 0) (defence 0) (exp 0) (traits talks))
 (creature "councillor" "&" (depth 0 0) (level 1) (hp 1 1) (attack 0 0) (defence 0) (exp 0) (traits talks))
 (creature "carter" "&" (depth 0 0) (level 1) (hp 1 1) (attack 0 0) (defence 0) (exp 0) (traits talks))
 (creature "eel-catcher" "&" (depth 0 0) (level 1) (hp 1 1) (attack 0 0) (defence 0) (exp 0) (traits talks))
