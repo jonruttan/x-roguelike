@@ -721,6 +721,11 @@ people reads it its own way.  None is settled.
   is bad.  In the Old Works a well-keeper mark shows a tailed star over
   a procession carrying the stone east.  The Brand has come before, the
   last time the stone was moved.  Nobody knows how often it comes.
+
+  The Brand does not move the stone; it tempts.  Each time it comes,
+  whoever knows of the stone is tempted to move it.  The well-keepers
+  carried it east under the Brand, and the Guild means to sell it east
+  under the Brand again.
 - **The Sparks**: falling stars out of the north-east, every late
   summer, so they are falling now.  They are the herders' sparks that
   fell short of the clough, and the hill folk say each one is a bog
@@ -1333,11 +1338,9 @@ Proposals, not decided.
 - The Hall's oldest brine lakes are older than the mine, and nobody on
   the Plain can say what dissolved them.  Did the well-keepers' bargain
   lay the stone near Halmere's beds?
-- The Brand's return, the long arc's question: does it come each time
-  the stone is moved, or is the stone moved each time it comes?  The
-  well-keepers carried it east under the Brand; the Guild means to sell
-  it east under the Brand again.  Other dales' marks may show the same
-  star over their own stones.
+- The Brand's returns, the long arc: each return a temptation, and
+  each set perhaps at a different one.  Other dales' marks may show the
+  same star over their own stones.
 - The darkening at midwinter: the White Church's foretold day, after the
   first snow has closed the Nick, when the Plain will be listening for
   what heaven says about the Rot.
