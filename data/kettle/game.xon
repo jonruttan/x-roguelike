@@ -52,42 +52,24 @@
 ; Classes known without being tried.
 (known potion scroll)
 
-(glyph floor ".")
-(glyph wall "T")
-(glyph door "+")
-(glyph passage ".")
-(glyph down ">")
-(glyph up "<")
-(glyph player "@")
-(glyph potion "!")
-(glyph scroll "?")
-(glyph wand "/")
-(glyph ring "=")
-(glyph weapon ")")
-(glyph armour "[")
-(glyph food ":")
-(glyph gold "$")
-(glyph goal "*")
-(glyph page "%")
-(glyph token "'")
-(glyph trap "^")
-
 ; The rings out from the square as bands, (band NAME TO . PROPS), the
 ; first from the hub, each after it from the ring after the one before
 ; to TO: its word on first arrival, its colour, and its caches, (cache
 ; CLASS LO HI), that many things of CLASS a screen, each laid with a
 ; keeper beside it.  Any other form a band names is in front of the
-; set's on its screens: Kettle itself is a town, (level-style town),
-; its streets round the square and its houses walled in stone.
+; set's on its screens, and each band carves its screens in its own
+; shape, (level-style STYLE): Kettle itself is a town, its streets round
+; the square and its houses walled in stone; the farms are hedged fields
+; either side of the road; the hills gritstone edges and bog; the rim
+; limestone scars, shakeholes and the well-keepers' ruins.
 (band "Kettle" 0
-  (level-style town) (square 14 4)
-  (glyph wall "#"))
-(band "The Farms" 1 (colour 70)
+  (level-style town) (square 14 4))
+(band "The Farms" 1 (colour 70) (level-style fields)
   (enter "The farms: hedged fields and the road, the town at your back.")
   (cache potion 1 2) (cache food 1 1) (cache weapon 0 1))
-(band "The Hills" 3 (colour 64)
+(band "The Hills" 3 (colour 64) (level-style hills)
   (enter "The hills: sheep tracks through the gorse, and the bog in the low ground.")
   (cache potion 1 2) (cache food 0 1) (cache scroll 0 1) (cache armour 0 1) (cache wand 0 1))
-(band "The Far Valley" 5 (colour 94)
+(band "The Far Valley" 5 (colour 94) (level-style rim)
   (enter "The far valley: the old city's stones, and the Guild's men about them.")
   (cache potion 1 2) (cache wand 0 1) (cache ring 0 1) (cache armour 0 1))

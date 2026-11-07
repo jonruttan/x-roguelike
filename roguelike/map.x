@@ -18,6 +18,14 @@
 (import x/type/vector)
 (import x/core/doors str-make ptr-set! ptr-ref str->ptr int* int+ int< int/ obj-make obj-ref obj-set!)
 
+; --- terrain -----------------------------------------------------------------
+
+; A cell's byte is its terrain: what the cell is, never how it looks.
+; Each kind has a name; the kind it is a sort of, or nil; whether a
+; creature can stand on it; and whether it stops sight.  How a kind
+; looks is a front-end's business: one with no look for a kind gives it
+; the look of the kind it is a sort of (roguelike/draw, for the
+; terminal).
 (def tile-rock 0)
 (def tile-floor 1)
 (def tile-wall 2)
@@ -25,6 +33,56 @@
 (def tile-passage 4)
 (def tile-down 5)
 (def tile-up 6)
+(def tile-water 7)
+(def tile-pillar 8)
+(def tile-fall 9)
+(def tile-dressed 10)
+(def tile-hedge 11)
+(def tile-gate 12)
+(def tile-thicket 13)
+(def tile-edge 14)
+(def tile-bog 15)
+(def tile-scar 16)
+
+; (CODE NAME SORT-OF PASSABLE? OPAQUE?) for every kind.
+(def map-terrain
+  (list (list tile-rock (lit rock) () #f #t)
+        (list tile-floor (lit floor) () #t #f)
+        (list tile-wall (lit wall) () #f #t)
+        (list tile-door (lit door) () #t #f)
+        (list tile-passage (lit passage) () #t #f)
+        (list tile-down (lit down) () #t #f)
+        (list tile-up (lit up) () #t #f)
+        ; Deep water: a pool, a river, a channel.  Seen across, not
+        ; crossed.
+        (list tile-water (lit water) () #f #f)
+        ; Coal left standing to hold the roof, and a roof come down.
+        (list tile-pillar (lit pillar) (lit wall) #f #t)
+        (list tile-fall (lit fall) (lit wall) #f #t)
+        ; Stone dressed and laid without mortar: the well-keepers' work.
+        (list tile-dressed (lit dressed) (lit wall) #f #t)
+        ; A field's hedge, and the gate in it.
+        (list tile-hedge (lit hedge) (lit wall) #f #t)
+        (list tile-gate (lit gate) (lit door) #t #f)
+        ; Trees and scrub grown thick.
+        (list tile-thicket (lit thicket) (lit wall) #f #t)
+        ; A gritstone edge or a boulder off it.
+        (list tile-edge (lit edge) (lit wall) #f #t)
+        ; Wet ground that bears a foot.
+        (list tile-bog (lit bog) (lit floor) #t #f)
+        ; A limestone scar: a cliff of bare rock.
+        (list tile-scar (lit scar) (lit wall) #f #t)))
+(def map-kinds 17)
+
+; Each kind's passable and opaque flags in a vector by code, read through
+; the object doors: sight asks a cell thousands of times a turn.
+(def %mp-flags
+  (fn (_ k)
+    (def v (Vector make map-kinds #f))
+    (List for-each (fn (_ t) (Vector set! (first t) (List ref k t) v)) map-terrain)
+    v))
+(def %mp-passable (%mp-flags 3))
+(def %mp-opaque (%mp-flags 4))
 
 ; A level is a vector: 0 rows, 1 columns, 2 the tiles, 3 the seen flags,
 ; 4 the visible flags, 5 the rooms, 6 the stairs down (R . C), 7 the
@@ -75,7 +133,7 @@
 (def map-visible? (fn (_ m r c) (%mp-flag m 4 r c)))
 
 ; Whether a creature can stand on tile T.
-(def map-passable? (fn (_ t) (match ((= t tile-rock) #f) ((= t tile-wall) #f) (#t #t))))
+(def map-passable? (fn (_ t) (obj-ref %mp-passable (int+ t 1))))
 (def map-walkable? (fn (_ m r c) (map-passable? (map-tile m r c))))
 
 ; --- rooms -------------------------------------------------------------------
@@ -122,7 +180,7 @@
       (map-each! (room-r0 room) (room-c0 room) (room-r1 room) (room-c1 room) (fn (_ rr cc) (%mp-mark! m rr cc))))))
 
 ; Whether tile T stops sight.
-(def map-opaque? (fn (_ t) (match ((= t tile-rock) #t) ((= t tile-wall) #t) (#t #f))))
+(def map-opaque? (fn (_ t) (obj-ref %mp-opaque (int+ t 1))))
 
 (def %mp-abs (fn (_ n) (if (< n 0) (- 0 n) n)))
 (def %mp-max (fn (_ a b) (if (< a b) b a)))
@@ -186,6 +244,33 @@
     (def base (int* r cols))
     ((fn (self c) (if (if (int< c cols) (= (ptr-ref vis (int+ base c) 1) 1) #f) (self (int+ c 1)) c)) c)))
 
+; A cell's look, for a front-end that gives some kinds a look of their
+; own: -1 if not seen, else twice its kind's class in CLASSES, a vector
+; by tile code, and one more if in view.
+(def map-look
+  (fn (_ m r c classes)
+    (def i (int+ (int* r (map-cols m)) c))
+    (if (= (ptr-ref (str->ptr (%mp-get m 3)) i 1) 1)
+      (int+ (int* 2 (obj-ref classes (int+ (ptr-ref (str->ptr (%mp-get m 2)) i 1) 1)))
+            (ptr-ref (str->ptr (%mp-get m 4)) i 1))
+      -1)))
+
+; The column after the run of cells from C on row R with C's look.
+(def map-look-run
+  (fn (_ m r c classes)
+    (def cols (map-cols m))
+    (def t (str->ptr (%mp-get m 2)))
+    (def seen (str->ptr (%mp-get m 3)))
+    (def vis (str->ptr (%mp-get m 4)))
+    (def base (int* r cols))
+    (def look
+      (fn (_ i)
+        (if (= (ptr-ref seen i 1) 1)
+          (int+ (int* 2 (obj-ref classes (int+ (ptr-ref t i 1) 1))) (ptr-ref vis i 1))
+          -1)))
+    (def k (look (int+ base c)))
+    ((fn (self c) (if (if (int< c cols) (= (look (int+ base c)) k) #f) (self (int+ c 1)) c)) (int+ c 1))))
+
 ; Every cell seen: a map scroll's doing.
 (def map-reveal!
   (fn (_ m)
@@ -194,6 +279,8 @@
 
 (provide roguelike/map
   tile-rock tile-floor tile-wall tile-door tile-passage tile-down tile-up
+  tile-water tile-pillar tile-fall tile-dressed tile-hedge tile-gate tile-thicket tile-edge tile-bog tile-scar
+  map-terrain map-kinds map-look map-look-run
   map-make map-rows map-cols map-rooms map-rooms! map-down map-down! map-up map-up!
   map-in? map-tile map-set! map-seen? map-seen! map-visible? map-passable? map-walkable?
   room-r0 room-c0 room-r1 room-c1 room-lit? room-covers? room-inside? room-centre map-room-at

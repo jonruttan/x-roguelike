@@ -17,7 +17,7 @@ a hundred, so a screen of the first ring always has a door.
 (write (List map (fn (_ f) (list (first f) (prop f 'depth) (first (prop f 'level-style)))) (data-all set 'interior)))
 ```
 ---
-    (("farmhouse cellar" (1 2) 'rooms) ("shepherd's bothy" (3 3) 'rooms) ("old city vault" (4 5) 'caves))
+    (("farmhouse cellar" (1 2) 'rooms) ("shepherd's bothy" (3 3) 'rooms) ("old city vault" (4 5) 'works))
 
 ## doors
 
