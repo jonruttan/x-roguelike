@@ -24,7 +24,7 @@
 ; well-keepers' works, and the well-house round the stone's pool.
 (band "The Galleries" 3 (colour 94)
   (enter "The Galleries: the worked mine, propped and railed, its lamps long out.")
-  (guardian "pit foreman")
+  (guardian "fireman")
   (level-style pit))
 (band "The Flood" 6 (colour 67)
   (enter "The Flood: the water stands here, and runs one way.")
@@ -32,11 +32,11 @@
   (level-style flood))
 (band "The Old Works" 9 (colour 65)
   (enter "The Old Works: dressed stone, set without mortar, older than the mine.")
-  (guardian "hollow mason")
+  (guardian "warder")
   (level-style works))
 (band "The Heart" 12 (colour 96)
   (enter "The Heart: the stone moves here, and the water is quiet.")
-  (guardian "lodestar keeper")
+  (guardian "Old Man")
   (level-style well))
 
 (player 14 16)

@@ -8,7 +8,8 @@
 ;
 ; A save is xon, a form a line: the game's numbers, the player, each
 ; item by its class and name, each creature by its name, the pages
-; placed, the quests and what they placed, what the set made sure of,
+; placed, the kinds whose tale was told, the quests and what they
+; placed, what the set made sure of,
 ; the chain, the choices it was played with, the level's traps by
 ; their kind's name, its tiles and seen flags as strings of digits, its
 ; rooms and stairs; then, in a world of screens, the doors laid, the
@@ -34,7 +35,7 @@
   map-up map-up! map-each! map-light!)
 (import roguelike/state
   game-set game-depth game-depth! game-map game-map! game-player game-creatures game-creatures!
-  game-floor game-floor! game-pack game-pack! game-turn game-turn! game-known game-known! game-deepest
+  game-floor game-floor! game-pack game-pack! game-turn game-turn! game-known game-known! game-told game-told! game-deepest
   game-deepest! game-seed game-guises game-goal-placed? game-goal-placed! game-pages-placed game-page-placed!
   game-quests game-quest-state! game-placed game-placed! game-sure game-sure! game-traps game-traps! game-new
   game-screen game-screen! game-kept game-keep! game-screens? game-screen-key game-chain game-chain!
@@ -135,6 +136,7 @@
                   (player-level p) (player-exp p) (player-gold p) (player-food p))
             (pair (lit conditions) (List flat-map (fn (_ c) (list (symbol->str (first c)) (rest c))) (player-conditions p)))
             (pair (lit known) (game-known g))
+            (pair (lit told) (game-told g))
             (pair (lit pages) (game-pages-placed g))
             (pair (lit quests) (List flat-map (fn (_ q) (list (first q) (symbol->str (rest q)))) (game-quests g)))
             (pair (lit placed) (game-placed g))
@@ -307,6 +309,7 @@
             (game-deepest! g (List ref 3 head))
             (when (= 1 (List ref 4 head)) (game-goal-placed! g))
             (game-known! g (%sv-one forms (lit known)))
+            (game-told! g (%sv-one forms (lit told)))
             (List for-each (fn (_ name) (game-page-placed! g name)) (List reverse (%sv-one forms (lit pages))))
             (%sv-quests! g (%sv-one forms (lit quests)))
             (List for-each (fn (_ name) (game-placed! g name)) (List reverse (%sv-one forms (lit placed))))
