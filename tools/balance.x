@@ -8,44 +8,50 @@
 ;
 ;   BALANCE_SEEDS=50 BALANCE_SET=delve x -l roguelike -f tools/balance.x
 ;
-; A bot plays a game a seed: it fights what is beside it, drinks mending
-; under a third of its hit points, eats when hungry, rests by searching
-; under two thirds with nothing in view, wields and wears the best it
-; can lift, picks up what it sees with nothing hostile in view, talks
-; to whoever it meets, explores the level, takes
-; the stairs down, and with the goal in hand climbs.  It is not clever,
-; so what it reaches is a floor under a player's reach.  The report:
+; A bot plays a game a seed, its attributes rolled from the seed in the
+; ranges of tools/bots/attributes.xon, or of the archetype
+; BALANCE_ARCHETYPE names: they say when it drinks, steps back, rests
+; and goes for a foe, how far it chases and walks for an item, and how
+; much of a level it sees before the stairs.  Each turn it does the first of: answer what is
+; asked; drink; fight or step back from what is beside it; eat; rest;
+; wield and wear the best it can lift; then pick up, walk to an item, go
+; for a foe, run the errand on a world of screens, talk to a giver,
+; walk to the edge of the unseen, and take the stairs.  Every walk is
+; its own, over what it has seen; a creature it cannot reach is passed
+; by, and it rests a turn only with nowhere at all to go.  The report:
 ; where games end, what ends them by band, the standing on arrival at
 ; each level, and what each game used.  BALANCE_TURNS caps a game, 6000
-; unless given.  BALANCE_TRACE, set to anything, writes a line a key:
-; the turn, level, hit points, place and what was said.  BALANCE_STYLE
-; picks the player: plain, the above; cautious, which drinks at half,
-; rests to full and waits where it stands for what comes; greedy, which
-; walks to items with hostiles in view; brawler, which rests only under
-; a third and goes for whatever it sees; sneak, which steps away from
-; what comes.  The spread between styles is the room skill has; what
-; tools/model.x says a fight costs is what they are measured against.
-; An instrument, not a gate: nothing here is a spec.
+; unless given.  BALANCE_FIRST is the first seed, 1 unless given, so a
+; game too long to share a run can have one to itself.  BALANCE_TRACE,
+; set to anything, writes a line a key: the turn, level, hit points,
+; place and what was said.  The spread between attributes is the room
+; skill has; what tools/model.x says a fight costs is what they
+; are measured against.  An instrument, not a gate: nothing here is a
+; spec.
 ;
 ; lint-known: %lang-root
 
 (import x/type/vector)
 (import x/sys/posix)
 (import x/sys/gc)
+(import x/num/random)
 (import x/core/doors int/)
-(import roguelike/data data-load data-one data-prop)
+(import roguelike/data data-load data-one data-prop data-all)
 (import roguelike/map map-rows map-cols map-in? map-walkable? map-seen? map-down map-up map-tile tile-down tile-up)
 (import roguelike/state
   game-set game-depth game-deepest game-map game-player game-creatures game-pack game-over game-epitaph game-turn
-  game-ask game-exploring? game-messages game-band band-name game-param
-  player-r player-c player-hp player-hpmax player-str player-food player-weapon player-armour
+  game-ask game-messages game-band band-name game-param
+  player-r player-c player-hp player-hpmax player-str player-food player-weapon player-armour player-condition
   item-class item-name item-prop item-prop1 item-enchant item-letter item-r item-c game-floor
-  creature-r creature-c creature-state creature-trait? state-adjacent? state-dist state-shortfall state-creature-at state-items-at
-  game-quest-state game-screens? game-screen game-screen-key game-hub game-chain game-inside state-creature-named)
+  creature-r creature-c creature-state creature-trait? creature-hp creature-prop creature-prop1 state-defence state-adjacent? state-dist state-shortfall state-creature-at state-items-at
+  game-quest-state game-screens? game-screen game-screen-key game-hub game-chain game-inside state-creature-named
+  game-top-set game-home game-place game-below?)
 (import roguelike/creatures creatures-shown? creatures-door-diagonal?)
 (import roguelike/items items-goal-held?)
 (import roguelike/traps traps-found-at)
-(import roguelike/game game-make game-key! game-explore! game-frontier?)
+(import roguelike/game game-make game-key! game-frontier?)
+(import roguelike/combat combat-player-dice combat-player-level)
+(import roguelike/odds odds-hit odds-swings odds-regen odds-hurt)
 
 (def %bl-say (fn (_ text) (Sys fd-write 1 text)))
 (def %bl-env
@@ -64,9 +70,11 @@
 
 ; The first step, (DR . DC), of the shortest walk over seen, walkable
 ; cells, clear of creatures and found traps, from the player to a cell
-; GOAL? allows, or nil: a breadth-first search.
-(def %bl-step-toward
-  (fn (_ g goal?)
+; GOAL? allows no more than MOST steps away, or nil: a breadth-first
+; search, a layer a step.
+(def %bl-step-toward (fn (_ g goal?) (%bl-step-within g goal? 9999)))
+(def %bl-step-within
+  (fn (_ g goal? most)
     (def m (game-map g))
     (def p (game-player g))
     (def cols (map-cols m))
@@ -88,16 +96,16 @@
                              (#t (do (Vector set! (at rr cc) (if (null? step) (rest d) step) came) (pair rr cc)))))
                     %bl-dirs))))
     (def search
-      (fn (self front back)
+      (fn (self front back n)
         (match
-          ((null? front) (if (null? back) () (self (List reverse back) ())))
+          ((null? front) (if (if (null? back) #t (< most (+ n 1))) () (self (List reverse back) () (+ n 1))))
           (#t (do (def r (first (first front)))
                   (def c (rest (first front)))
                   (def step (Vector ref (at r c) came))
                   (if (if (eq? step #t) #f (goal? r c)) step
-                    (self (rest front) (List append (reach r c (if (eq? step #t) () step)) back))))))))
+                    (self (rest front) (List append (reach r c (if (eq? step #t) () step)) back) n)))))))
     (Vector set! (at (player-r p) (player-c p)) #t came)
-    (search (list (pair (player-r p) (player-c p))) ())))
+    (search (list (pair (player-r p) (player-c p))) () 0)))
 
 (def %bl-walk!
   (fn (_ g goal?)
@@ -134,25 +142,26 @@
     (List fold (fn (_ best it) (if (if (null? best) #t (< (worth g best) (worth g it))) it best))
       () (List filter (%bl-of-class group) (game-pack g)))))
 
-; --- one turn of the bot -----------------------------------------------------
+; --- the bot's state ---------------------------------------------------------
 
 ; S, the bot's own state for a game: 0 whether the level is explored, 1
 ; the place that was for, 2 potions drunk, 3 foods eaten, 4 whether the
 ; giver here has been talked to since the level was explored, 5 the
 ; hostile creatures met, 6 the turn a weapon was first held, 7 the count
-; met by then, 8 the items left lying because they would not come up.
+; met by then, 8 the items left lying because they would not come up, 9
+; the cells beside the unseen already stood on here, a vector by cell.
 
 ; Where the player stands, as text: the depth, or on a world of screens
 ; the screen and any interior.
 (def %bl-place
   (fn (_ g)
     (if (game-screens? g)
-      (Str8 append (game-screen-key (first (game-screen g)) (rest (game-screen g))) "/" (if (null? (game-inside g)) "" (game-inside g)))
+      (Str8 append (game-screen-key g (first (game-screen g)) (rest (game-screen g))) "/" (if (null? (game-inside g)) "" (game-inside g)))
       (Str8 str (game-depth g)))))
 (def %bl-here? (fn (_ g s) (str=? (Vector ref 1 s) (%bl-place g))))
 (def %bl-explored? (fn (_ g s) (if (%bl-here? g s) (Vector ref 0 s) #f)))
 (def %bl-explored! (fn (_ g s) (Vector set! 0 #t s) (Vector set! 1 (%bl-place g) s) (Vector set! 4 #f s)))
-(def %bl-new-level! (fn (_ g s) (Vector set! 0 #f s) (Vector set! 1 (%bl-place g) s) (Vector set! 4 #f s)))
+(def %bl-new-level! (fn (_ g s) (Vector set! 0 #f s) (Vector set! 1 (%bl-place g) s) (Vector set! 4 #f s) (Vector set! 9 () s)))
 
 (def %bl-answer!
   (fn (_ g q)
@@ -187,46 +196,57 @@
 (def %bl-at-stairs?(fn (_ g t) (= (map-tile (game-map g) (player-r (game-player g)) (player-c (game-player g))) t)))
 (def %bl-stairs-goal (fn (_ g t) (fn (_ r c) (= (map-tile (game-map g) r c) t))))
 
-(def %bl-explore!
+; A step toward the nearest seen cell beside the unseen that the player
+; has not yet stood on here, or #f with none to reach.  Standing on one
+; spends it: some edges never show what lies past them, and a walk back
+; to one would go to and fro for good.
+(def %bl-to-frontier!
   (fn (_ g s)
-    (game-key! g "o")
-    (when (if (game-exploring? g) #f (List any? (fn (_ m) (Str8 starts? "Nothing left" m)) (game-messages g)))
-      (%bl-explored! g s))))
+    (def m (game-map g))
+    (def p (game-player g))
+    (def cols (map-cols m))
+    (when (null? (Vector ref 9 s)) (Vector set! 9 (Vector make (* (map-rows m) cols) #f) s))
+    (def spent (Vector ref 9 s))
+    (Vector set! (+ (* (player-r p) cols) (player-c p)) #t spent)
+    (%bl-walk! g (fn (_ r c) (if (Vector ref (+ (* r cols) c) spent) #f (game-frontier? m r c))))))
 
-; Toward the stairs, and down or up them; waiting when barred.
-(def %bl-descend!
-  (fn (_ g s)
-    (def up? (items-goal-held? g))
-    (def t (if up? tile-up tile-down))
-    (if (%bl-at-stairs? g t)
-      (do (game-key! g (if up? "<" ">"))
-          (when (List any? (fn (_ m) (Str8 includes? "shaft" m)) (game-messages g))
-            (do (def cr (%bl-shown-hostile g)) (if (null? cr) (game-key! g ".") (%bl-toward-creature! g cr)))))
-      (unless (%bl-walk! g (%bl-stairs-goal g t)) (game-key! g ".")))))
+; --- who the bot is ----------------------------------------------------------
 
-; --- styles ------------------------------------------------------------------
+; The bots' make, tools/bots/attributes.xon: the attributes and their
+; ranges, and the archetypes that narrow them.  The ranges a run rolls
+; in: each attribute's, or the archetype's BALANCE_ARCHETYPE names.
+(def %bl-make (fn (_) (data-load (Str8 append %lang-root "/tools/bots"))))
+(def %bl-ranges
+  (fn (_ make)
+    (def name (%bl-env "BALANCE_ARCHETYPE" ""))
+    (def kind (List find (fn (_ f) (str=? (first f) name)) (data-all make (lit archetype))))
+    (when (if (str=? name "") #f (null? kind)) (Err raise (lit value) "no such archetype" name))
+    (List map (fn (_ a)
+                (def narrowed (if (null? kind) () (data-prop kind (first a) ())))
+                (list (first a) (if (null? narrowed) (List ref 1 a) (first narrowed))
+                      (if (null? narrowed) (List ref 2 a) (List ref 1 narrowed))))
+      (data-all make (lit attribute)))))
 
-; A style, BALANCE_STYLE: (NAME QUAFF REST GREEDY? SIGHT DIVE?).  QUAFF
-; and REST are fractions (N . D) of full hit points under which it
-; drinks mending and rests; GREEDY? walks to items with hostiles in
-; view; SIGHT is what it does when a hostile is in view but not beside
-; it: nil as plain, `chase` before anything else, `wait` where it
-; stands for one coming, `flee` a step away from one coming within
-; three; DIVE? takes the stairs once seen rather than explore.
-(def %bl-styles
-  (list (list "plain" (pair 1 3) (pair 2 3) #f () #f)
-        (list "cautious" (pair 1 2) (pair 1 1) #f (lit wait) #f)
-        (list "greedy" (pair 1 3) (pair 2 3) #t () #f)
-        (list "brawler" (pair 1 3) (pair 1 3) #f (lit chase) #f)
-        (list "sneak" (pair 1 3) (pair 2 3) #f (lit flee) #t)))
-(def %bl-style
-  (fn (_)
-    (def name (%bl-env "BALANCE_STYLE" "plain"))
-    (def hit (List find (fn (_ st) (str=? (first st) name)) %bl-styles))
-    (if (null? hit) (Err raise (lit value) "no such style" name) hit)))
-(def %bl-under? (fn (_ p frac) (< (* (rest frac) (player-hp p)) (* (first frac) (player-hpmax p)))))
+; The bot for SEED: (ARCHETYPE (ATTRIBUTE . N) ...), each N rolled in its
+; range from a random source of its own, made from the seed so the
+; game's is untouched, unless BALANCE_ATTRIBUTE fixes it.
+(def %bl-who
+  (fn (_ ranges seed)
+    (def rng (Random sw (+ 7919 seed)))
+    (pair (%bl-env "BALANCE_ARCHETYPE" "anyone")
+      (List map (fn (_ a)
+                  (def n (rng between (List ref 1 a) (List ref 2 a)))
+                  (def given (%bl-env (Str8 append "BALANCE_" (Str8 upcase (symbol->str (first a)))) ""))
+                  (pair (first a) (if (str=? given "") n (%bl-int given))))
+        ranges))))
+(def %bl-who-text
+  (fn (_ who) (Str8 join " " (List map (fn (_ kv) (Str8 append (symbol->str (first kv)) " " (Str8 str (rest kv)))) (rest who)))))
+(def %bl-at (fn (_ who key) (rest (List find (fn (_ kv) (eq? (first kv) key)) (rest who)))))
 
-; A step that takes the player furthest from CR, or nil when none gains.
+; Whether the player has under PCT % of full hit points.
+(def %bl-under? (fn (_ p pct) (< (* 100 (player-hp p)) (* pct (player-hpmax p)))))
+
+; A step that takes the player furthest from CR, or #f when none gains.
 (def %bl-away!
   (fn (_ g cr)
     (def p (game-player g))
@@ -245,33 +265,86 @@
         (pair (far (player-r p) (player-c p)) ()) %bl-dirs))
     (if (null? (rest best)) #f (do (game-key! g (rest best)) #t))))
 
-; Whether CR will come to the player: awake and able to move.
-(def %bl-coming?
-  (fn (_ cr) (if (eq? (creature-state cr) (lit awake)) (not (creature-trait? cr (lit stationary))) #f)))
-
-; Whether the style's SIGHT acts on SHOWN this turn.
-(def %bl-sight?
-  (fn (_ g sight shown)
-    (def p (game-player g))
-    (match ((null? sight) #f) ((null? shown) #f) ((eq? sight (lit chase)) #t)
-           ((not (%bl-coming? shown)) #f)
-           ((eq? sight (lit flee)) (< (state-dist (player-r p) (player-c p) (creature-r shown) (creature-c shown)) 4))
-           (#t #t))))
-
-; Whether the stairs down have been seen.
-(def %bl-stairs-seen?
+; The percentage of the level's open ground the player has seen.
+(def %bl-seen-pct
   (fn (_ g)
-    (def down (map-down (game-map g)))
-    (if (null? down) #f (map-seen? (game-map g) (first down) (rest down)))))
+    (def m (game-map g))
+    (def cols (map-cols m))
+    (def count
+      (fn (self i open seen)
+        (if (< i (* (map-rows m) cols))
+          (do (def r (int/ i cols))
+              (def c (- i (* r cols)))
+              (if (map-walkable? m r c) (self (+ i 1) (+ open 1) (if (map-seen? m r c) (+ seen 1) seen)) (self (+ i 1) open seen)))
+          (if (= open 0) 100 (int/ (* 100 seen) open)))))
+    (count 0 0 0)))
 
-(def %bl-sight!
-  (fn (_ g s how cr)
-    (match ((eq? how (lit chase)) (unless (%bl-toward-creature! g cr) (%bl-explore! g s)))
-           ((eq? how (lit flee)) (unless (%bl-away! g cr) (game-key! g "s")))
-           (#t (game-key! g "s")))))
+; --- weighing a fight --------------------------------------------------------
+
+; The hit points a fight with CR is likely to cost the player: the swings
+; to take what CR has left, by the game's odds (odds.x), its regeneration
+; counted, times what it does a turn at its speed.
+(def %bl-cost
+  (fn (_ g cr)
+    (def hp (creature-hp cr))
+    (def t (odds-swings (odds-hit (combat-player-level g) (creature-prop1 cr (lit defence) 3)) (combat-player-dice g) 0 hp))
+    (def speed (match ((creature-trait? cr (lit fast)) (lit fast)) ((creature-trait? cr (lit slow)) (lit slow)) (#t ())))
+    (* (if (creature-trait? cr (lit regen)) (odds-regen t hp) t)
+       (odds-hurt (creature-prop1 cr (lit level) 1) (creature-prop cr (lit attack) (list 1 2)) (state-defence g) speed))))
+; Whether the fight with CR is likely lost: it costs all the player has.
+(def %bl-losing? (fn (_ g cr) (not (< (%bl-cost g cr) (player-hp (game-player g))))))
+; Whether WHO would start the fight with CR: it costs no more than
+; COURAGE % of what the player has.
+(def %bl-worth?
+  (fn (_ g who cr) (not (< (* (player-hp (game-player g)) (%bl-at who (lit courage))) (* 100 (%bl-cost g cr))))))
+; Whether POTION's least mending fits in what the player has lost.
+(def %bl-mends?
+  (fn (_ g potion)
+    (def p (game-player g))
+    (def e (item-prop potion (lit effect) (list (lit heal) 1 1)))
+    (not (< (- (player-hpmax p) (player-hp p)) (List ref 1 e)))))
+; Whether to drink POTION with FOE beside: the fight lost without it, and
+; the potion's least mending all of use.
+(def %bl-drink-now?
+  (fn (_ g foe potion)
+    (match ((null? foe) #f) ((null? potion) #f) ((%bl-losing? g foe) (%bl-mends? g potion)) (#t #f))))
+; Whether a step away from CR gains a turn: not when the player is slowed
+; or held, nor from one that is fast, as it then strikes for each step.
+(def %bl-free?
+  (fn (_ g cr)
+    (def p (game-player g))
+    (match ((< 0 (player-condition p (lit slowed))) #f)
+           ((< 0 (player-condition p (lit held))) #f)
+           (#t (not (creature-trait? cr (lit fast)))))))
+
+; --- the turn ----------------------------------------------------------------
+
+; To the stairs and down them, or up with the goal: rested to READY first
+; with nothing hostile in view; a guardian barring the shaft is fought,
+; after a rest to full when the fight is likely lost.
+; With no way to the stairs yet, toward what is unseen; with nowhere at
+; all to go, toward any hostile in view, and only then rests a turn.
+(def %bl-descend!
+  (fn (_ g s who shown)
+    (def p (game-player g))
+    (def up? (items-goal-held? g))
+    (def t (if up? tile-up tile-down))
+    (match
+      ((if (null? shown) (%bl-under? p (%bl-at who (lit ready))) #f) (game-key! g "s"))
+      ((%bl-at-stairs? g t)
+        (do (game-key! g (if up? "<" ">"))
+            (when (List any? (fn (_ m) (Str8 includes? "shaft" m)) (game-messages g))
+              (do (def cr (%bl-shown-hostile g))
+                  (match ((null? cr) (game-key! g "s"))
+                         ((if (%bl-losing? g cr) (< (player-hp p) (player-hpmax p)) #f) (game-key! g "s"))
+                         (#t (%bl-toward-creature! g cr)))))))
+      ((%bl-walk! g (%bl-stairs-goal g t)) ())
+      ((%bl-to-frontier! g s) ())
+      ((if (null? shown) #f (%bl-toward-creature! g shown)) ())
+      (#t (game-key! g "s")))))
 
 (def %bl-turn!
-  (fn (_ g s style)
+  (fn (_ g s who)
     (def p (game-player g))
     (def q (game-ask g))
     (def foe (%bl-beside g %bl-hostile?))
@@ -281,57 +354,58 @@
     (def weapon (%bl-best g (lit weapon) %bl-weapon-worth))
     (def armour (%bl-best g (lit armour) %bl-armour-worth))
     (def shown (%bl-shown-hostile g))
-    (def sight (List ref 4 style))
     (unless (%bl-here? g s) (%bl-new-level! g s))
     (match
       ((not (null? q)) (%bl-answer! g q))
-      ((if (null? potion) #f (%bl-under? p (List ref 1 style)))
+      ((if (null? potion) #f (%bl-under? p (%bl-at who (lit quaff))))
         (do (%bl-use! g "q" potion) (Vector set! 2 (+ 1 (Vector ref 2 s)) s)))
-      ((not (null? foe)) (%bl-toward-creature! g foe))
+      ((%bl-drink-now? g foe potion)
+        (do (%bl-use! g "q" potion) (Vector set! 2 (+ 1 (Vector ref 2 s)) s)))
+      ((not (null? foe))
+        (unless (if (if (< 0 (%bl-at who (lit retreat))) (%bl-free? g foe) #f)
+                  (if (if (%bl-losing? g foe) #t (%bl-under? p (%bl-at who (lit retreat)))) (%bl-away! g foe) #f) #f)
+          (%bl-toward-creature! g foe)))
       ((if (null? food) #f (< (player-food p) hungry))
         (do (%bl-use! g "e" food) (Vector set! 3 (+ 1 (Vector ref 3 s)) s)))
-      ((if (null? shown) (%bl-under? p (List ref 2 style)) #f) (game-key! g "s"))
-      ((%bl-sight? g sight shown)
-        (%bl-sight! g s sight shown))
+      ((if (null? shown) (%bl-under? p (%bl-at who (lit rest))) #f) (game-key! g "s"))
       ((if (null? weapon) #f (if (same? weapon (player-weapon p)) #f (< 0 (%bl-weapon-worth g weapon))))
         (%bl-use! g "w" weapon))
       ((if (null? armour) #f (if (null? (player-armour p)) #t (< (%bl-armour-worth g (player-armour p)) (%bl-armour-worth g armour))))
         (if (null? (player-armour p)) (%bl-use! g "W" armour) (game-key! g "T")))
-      (#t (%bl-onward! g s style shown)))))
+      (#t (%bl-onward! g s who shown)))))
 
 ; --- a world of screens ------------------------------------------------------
 
 ; The errand on a world of screens, in a player's order, or nil with no
-; chain: (KIND (X . Y) GIVER).  Outward, talk to each giver not yet
+; chain: (KIND (X . Y) GIVER PLACE), PLACE the region the screen is in,
+; or "".  Outward, talk to each giver not yet
 ; spoken to, which is when a player learns where the next stands; then
 ; fetch the last want where it lies; then inward, talk again to each
-; giver whose want is held; and with the goal held, home to the hub.
+; giver whose want is held; and with the goal held, home.
 (def %bl-errand
   (fn (_ g)
     (def links (game-chain g))
     (def state (fn (_ f) (game-quest-state g (List ref 1 f))))
     (def at (fn (_ f key) (def v (data-prop f key (list 0 0))) (pair (first v) (List ref 1 v))))
     (def want (fn (_ f) (List ref 1 (data-prop f (lit wants) (list (lit bring) "")))))
+    (def place (fn (_ f) (first (data-prop f (lit region) (list "")))))
     (def held? (fn (_ name) (not (null? (%bl-in-pack g (fn (_ it) (%bl-named? it name)))))))
     (def unopened (List find (fn (_ f) (null? (state f))) links))
     (def back (List find (fn (_ f) (if (eq? (state f) (lit done)) #f (held? (want f)))) (List reverse links)))
     (match ((null? links) ())
-           ((items-goal-held? g) (list (lit home) (game-hub g) ""))
-           ((not (null? unopened)) (list (lit talk) (at unopened (lit screen)) (List ref 2 unopened)))
-           ((not (null? back)) (list (lit talk) (at back (lit screen)) (List ref 2 back)))
-           (#t (list (lit fetch) (at (List ref (- (List length links) 1) links) (lit lies)) "")))))
+           ((%bl-goal-held? g) (list (lit home) (rest (game-home g)) "" (first (game-home g))))
+           ((not (null? unopened)) (list (lit talk) (at unopened (lit screen)) (List ref 2 unopened) (place unopened)))
+           ((not (null? back)) (list (lit talk) (at back (lit screen)) (List ref 2 back) (place back)))
+           (#t (list (lit fetch) (at (List ref (- (List length links) 1) links) (lit lies)) "" "")))))
 
 (def %bl-sign (fn (_ n) (match ((< n 0) -1) ((< 0 n) 1) (#t 0))))
 
-; Explore what is left of the screen, or wait a turn with none left.
-; With a hostile in view explore will not walk, and one the bot cannot
-; reach would hold it there: it walks to the edge of the unseen itself.
+; Toward what is left unseen here, or a turn's rest with none left.
 (def %bl-look!
   (fn (_ g s)
-    (match ((%bl-explored? g s) (game-key! g "."))
-           ((null? (%bl-shown-hostile g)) (%bl-explore! g s))
-           ((%bl-walk! g (fn (_ r c) (game-frontier? (game-map g) r c))) ())
-           (#t (%bl-explored! g s)))))
+    (match ((%bl-explored? g s) (game-key! g "s"))
+           ((%bl-to-frontier! g s) ())
+           (#t (do (%bl-explored! g s) (game-key! g "s"))))))
 
 ; A step toward screen TO: along the row first, then the column, to the
 ; edge on that side, and off it.
@@ -354,38 +428,69 @@
     (def cr (state-creature-named g name))
     (unless (if (null? cr) #f (if (creatures-shown? g cr) (%bl-toward-creature! g cr) #f)) (%bl-look! g s))))
 
-; The errand's step: across to its screen, then the talk, the fetch, or
-; home, where the win comes at the end of the turn.
+; Whether the game's goal is in the pack, the set it began on's, in a
+; region or not.
+(def %bl-goal-held?
+  (fn (_ g)
+    (def name (first (data-one (game-top-set g) (lit goal) (list "the prize"))))
+    (not (null? (%bl-in-pack g (fn (_ it) (if (eq? (item-class it) (lit goal)) (str=? (item-name it) name) #f)))))))
+
+; A step toward the place PLACE: out of a region off any edge of its
+; world, the way to its door's world; or into the region, across to the
+; hub, to its door, and in.
+(def %bl-to-place!
+  (fn (_ g s place)
+    (def p (game-player g))
+    (def door (map-down (game-map g)))
+    (def hub (game-hub g))
+    (match ((game-below? g) (%bl-cross! g s (pair -1 (rest (game-screen g)))))
+           ((not (if (= (first (game-screen g)) (first hub)) (= (rest (game-screen g)) (rest hub)) #f)) (%bl-cross! g s hub))
+           ((null? door) (%bl-look! g s))
+           ((if (= (player-r p) (first door)) (= (player-c p) (rest door)) #f) (game-key! g ">"))
+           ((%bl-walk! g (fn (_ r c) (if (= r (first door)) (= c (rest door)) #f))) ())
+           (#t (%bl-look! g s)))))
+
+; The errand's step: into its place, across to its screen, then the
+; talk, the fetch, or home, where the win comes at the end of the turn.
 (def %bl-errand!
   (fn (_ g s errand shown)
     (def to (List ref 1 errand))
     (def there? (if (= (first (game-screen g)) (first to)) (= (rest (game-screen g)) (rest to)) #f))
-    (match ((not there?) (%bl-cross! g s to))
+    (match ((not (str=? (game-place g) (List ref 3 errand))) (%bl-to-place! g s (List ref 3 errand)))
+           ((not there?) (%bl-cross! g s to))
            ((eq? (first errand) (lit talk)) (%bl-talk-to! g s (List ref 2 errand)))
            ((eq? (first errand) (lit home)) (game-key! g "."))
            ((not (null? shown)) (unless (%bl-toward-creature! g shown) (%bl-look! g s)))
            (#t (%bl-look! g s)))))
 
-; With nothing pressing: what lies here or in reach, the errand on a
-; world of screens, the giver, the level, the stairs.
+; With nothing pressing: what lies here, an item within reach (within
+; GREED with a hostile in view), a foe in view within CHASE whose fight
+; is worth it to COURAGE, the errand on a world of screens, the giver, the level
+; until CURIOSITY of it is seen, the stairs.  A foe it cannot reach is
+; passed by.
 (def %bl-onward!
-  (fn (_ g s style shown)
+  (fn (_ g s who shown)
     (def p (game-player g))
     (def giver (%bl-beside g (fn (_ cr) (creature-trait? cr (lit talks)))))
     (def here (%bl-wanted-at g s (player-r p) (player-c p)))
-    (def to-item (if (if (if (null? shown) #t (List ref 3 style)) (%bl-any-wanted? g s) #f) (%bl-step-toward g (fn (_ r c) (not (null? (%bl-wanted-at g s r c))))) ()))
+    (def reach (if (null? shown) 9999 (%bl-at who (lit greed))))
+    (def to-item (if (if (< 0 reach) (%bl-any-wanted? g s) #f)
+                   (%bl-step-within g (fn (_ r c) (not (null? (%bl-wanted-at g s r c)))) reach) ()))
+    (def to-foe (if (if (null? shown) #t (not (%bl-worth? g who shown))) ()
+                  (%bl-step-within g (fn (_ r c) (if (= r (creature-r shown)) (= c (creature-c shown)) #f)) (%bl-at who (lit chase)))))
     (def errand (if (game-screens? g) (%bl-errand g) ()))
+    (def curious? (if (%bl-explored? g s) #f
+                    (if (< 99 (%bl-at who (lit curiosity))) #t (< (%bl-seen-pct g) (%bl-at who (lit curiosity))))))
     (match
       ((not (null? here)) (%bl-pick-up! g s))
       ((not (null? to-item)) (game-key! g (%bl-key-for (first to-item) (rest to-item))))
+      ((not (null? to-foe)) (game-key! g (%bl-key-for (first to-foe) (rest to-foe))))
       ((not (null? errand)) (%bl-errand! g s errand shown))
-      ((if (List ref 5 style) (%bl-stairs-seen? g) #f) (%bl-descend! g s))
       ((if (null? giver) #f (%bl-talk? g s giver))
         (do (%bl-toward-creature! g giver) (Vector set! 4 #t s)))
-      ((game-exploring? g) (game-explore! g))
-      ((not (null? shown)) (unless (%bl-toward-creature! g shown) (if (%bl-explored? g s) (%bl-descend! g s) (%bl-explored! g s))))
-      ((not (%bl-explored? g s)) (%bl-explore! g s))
-      (#t (%bl-descend! g s)))))
+      ((if curious? (%bl-to-frontier! g s) #f) ())
+      (curious? (do (%bl-explored! g s) (%bl-descend! g s who shown)))
+      (#t (%bl-descend! g s who shown)))))
 
 ; --- a game ------------------------------------------------------------------
 
@@ -424,17 +529,17 @@
       (do (Vector set! 6 (game-turn g) s) (Vector set! 7 (List length (Vector ref 5 s)) s)))))
 
 (def %bl-game
-  (fn (_ set seed cap style)
+  (fn (_ set seed cap who)
     (def trace? (not (str=? (%bl-env "BALANCE_TRACE" "") "")))
     (Heap collect)
     (def g (game-make set seed 24 80))
-    (def s (Vector of #f "" 0 0 #f () () 0 ()))
+    (def s (Vector of #f "" 0 0 #f () () 0 () ()))
     (def arrivals (Vector of (list (%bl-arrival g))))
     (def loop
       (fn (self turn stalled)
         (def depth (game-depth g))
         (unless (if (null? (game-over g)) (< cap (game-turn g)) #t)
-          (do (if (< 30 stalled) (game-key! g ".") (%bl-turn! g s style))
+          (do (if (< 30 stalled) (game-key! g ".") (%bl-turn! g s who))
               (%bl-met! g s)
               (when trace? (%bl-trace g))
               (Heap collect)
@@ -551,20 +656,23 @@
 (def %bl-main
   (fn (_)
     (def seeds (%bl-int (%bl-env "BALANCE_SEEDS" "10")))
+    (def from (%bl-int (%bl-env "BALANCE_FIRST" "1")))
     (def cap (%bl-int (%bl-env "BALANCE_TURNS" "6000")))
     (def name (%bl-env "BALANCE_SET" "delve"))
-    (def style (%bl-style))
+    (def ranges (%bl-ranges (%bl-make)))
     (def set (data-load (Str8 append %lang-root "/data/" name)))
     (def games
       (List map (fn (_ seed)
-                  (def r (%bl-game set seed cap style))
+                  (def who (%bl-who ranges seed))
+                  (def r (%bl-game set seed cap who))
                   (%bl-say (Str8 append "seed " (Str8 str seed) ": " (symbol->str (List ref 1 r)) " at level " (Str8 str (List ref 3 r))
                                        " after " (Str8 str (List ref 4 r)) " turns"
-                                       (if (eq? (List ref 1 r) (lit dead)) (Str8 append ", " (List ref 2 r)) "") "\n"))
+                                       (if (eq? (List ref 1 r) (lit dead)) (Str8 append ", " (List ref 2 r)) "") "\n"
+                                       "  " (%bl-who-text who) "\n"))
                   r)
-        (List range 1 (+ 1 seeds))))
+        (List range from (+ from seeds))))
     (%bl-line "")
-    (%bl-line "Style: " (first style))
+    (%bl-line "Archetype: " (%bl-env "BALANCE_ARCHETYPE" "anyone"))
     (%bl-report set games)))
 
 (%bl-main)

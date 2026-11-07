@@ -31,15 +31,17 @@ round it is not.
 
 ## a band's forms
 
-### Kettle's square is a town, its houses with doors; a screen out in the farms is hedged fields
+### Kettle's square is a town, its houses with doors; the valley's hub round the town's door, and a screen out in the farms, are hedged fields
 
 ```roguelike
 (def g (spec-game-on (spec-set-named "kettle") 4 ()))
 (def doors-at (fn (_ m) (List fold + 0 (List map (fn (_ r) (List count-if (fn (_ c) (= (map-tile m r c) tile-door)) (List range 0 80))) (List range 0 22)))))
 (def square (list (band-name (game-band g)) (< 3 (doors-at (game-map g))) (data-get (game-forms g) 'level-style ())))
-(player-at! (game-player g) 11 79)
-(game-key! g "l")
-(write (list square (game-screen g) (band-name (game-band g)) (data-get (game-forms g) 'level-style ())))
+(def h (spec-game-on (spec-valley) 4 ()))
+(def hub (list (band-name (game-band h)) (data-get (game-forms h) 'level-style ())))
+(player-at! (game-player h) 11 79)
+(game-key! h "l")
+(write (list square hub (game-screen h) (band-name (game-band h)) (data-get (game-forms h) 'level-style ())))
 ```
 ---
-    (("Kettle" #t 'town) (4 . 2) "The Farms" 'fields)
+    (("Kettle" #t 'town) ("Kettle" 'fields) (4 . 2) "The Farms" 'fields)

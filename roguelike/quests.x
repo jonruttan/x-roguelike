@@ -28,25 +28,29 @@
 (import roguelike/dungeon dungeon-spot)
 (import roguelike/state
   game-rng game-set game-depth game-map game-player game-creatures game-creatures! game-floor game-floor!
-  game-pack game-ask! game-quest-state game-quest-state! game-placed? game-placed! game-chain game-screen game-below?
+  game-pack game-ask! game-quest-state game-quest-state! game-placed? game-placed! game-chain game-screen game-below? game-region game-world-all
   player-r player-c creature-make creature-name creature-carried!
   item-make item-name item-class? item-at! item-letter!
   state-tell! state-roll state-free? state-items-at state-remove-pack!)
 (import roguelike/items items-new items-pickup! items-name)
 
-; The set's quests, then the game's chain.
-; The quests of the set in force, and above, the chain's, which belong to the
-; screens.
-(def %qs-quests (fn (_ g) (List append (data-all (game-set g) (lit quest)) (if (game-below? g) () (List map rest (game-chain g))))))
+; The quests of the set in force, then the chain's, which belong to the
+; screens of the world.
+(def %qs-quests (fn (_ g) (List append (data-all (game-set g) (lit quest)) (List map rest (game-chain g)))))
 (def %qs-name (fn (_ q) (first q)))
 (def %qs-giver (fn (_ q) (List ref 1 q)))
 (def %qs-level (fn (_ q) (data-prop1 q (lit level) 0)))
-; Whether the screen stood on is (X . Y) of PROP's (PROP X Y) in Q.
+; Whether the screen stood on is (X . Y) of PROP's (PROP X Y) in Q: a
+; (screen X Y) in the region Q's (region NAME) names, or above with
+; none; a (lies X Y) above.
 (def %qs-on-screen?
   (fn (_ g q prop)
     (def at (data-prop q prop ()))
     (def here (game-screen g))
-    (match ((null? at) #f) ((null? here) #f) ((= (first at) (first here)) (= (List ref 1 at) (rest here))) (#t #f))))
+    (def region (if (eq? prop (lit screen)) (data-prop1 q (lit region) "") ""))
+    (match ((null? at) #f) ((null? here) #f)
+           ((not (str=? region ((fn (_ r) (if (null? r) "" r)) (game-region g)))) #f)
+           ((= (first at) (first here)) (= (List ref 1 at) (rest here))) (#t #f))))
 ; Whether Q's giver belongs on the level in hand: its (screen X Y), or
 ; its (level N) the depth.
 (def %qs-here? (fn (_ g q) (if (null? (data-prop q (lit screen) ())) (= (game-depth g) (%qs-level q)) (%qs-on-screen? g q (lit screen)))))
@@ -54,11 +58,11 @@
 (def %qs-items (fn (_ q) (def w (%qs-wants q)) (if (if (null? w) #f (eq? (first w) (lit bring))) (rest w) ())))
 
 ; The set's creature kind, or item form of CLASS, named NAME, or nil.
-(def %qs-kind (fn (_ g name) (List find (fn (_ k) (str=? (first k) name)) (data-all (game-set g) (lit creature)))))
+(def %qs-kind (fn (_ g name) (List find (fn (_ k) (str=? (first k) name)) (game-world-all g (lit creature)))))
 (def %qs-item-form
   (fn (_ g class name)
     (if (eq? class (lit goal)) (list (lit goal) name)
-      (List find (fn (_ f) (if (eq? (first f) class) (str=? (List ref 1 f) name) #f)) (data-all (game-set g) (lit item))))))
+      (List find (fn (_ f) (if (eq? (first f) class) (str=? (List ref 1 f) name) #f)) (game-world-all g (lit item))))))
 ; A token's form: the set's, or a bare one.
 (def %qs-token (fn (_ g name) (def f (%qs-item-form g (lit token) name)) (if (null? f) (list (lit token) name) f)))
 

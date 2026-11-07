@@ -12,7 +12,7 @@ descents, and their specs stand.
 ### the kettle set loads: seven by five screens, open ground, a goal with no level, hunger as a store, four bands from the square
 
 ```roguelike
-(def set (spec-set-named "kettle"))
+(def set (spec-valley))
 (def world (data-one set 'world ()))
 (write (list (data-get set 'set "") (first world) (List ref 1 world) (List ref 2 world) (data-get set 'level-style 'rooms)
              (List length (data-one set 'goal ())) (data-get set 'hunger 1) (List length (data-all set 'creature))
@@ -26,7 +26,7 @@ descents, and their specs stand.
 ### no rooms and no stairs, the outer ring floor, most of it floor with some thicket, and every cell reachable
 
 ```roguelike
-(def set (spec-set-named "kettle"))
+(def set (spec-valley))
 (def m (spec-level-on set 4 1))
 (def count (fn (_ t) (List fold (fn (_ a b) (+ a b)) 0 (List map (fn (_ r) (List count-if (fn (_ c) (= (map-tile m r c) t)) (List range 0 80))) (List range 0 22)))))
 (def floor (count tile-floor))
@@ -44,7 +44,7 @@ descents, and their specs stand.
 ### a new game starts on the hub screen, in its middle, at depth 0, nobody about but the chain's giver, and says so
 
 ```roguelike
-(def g (spec-game-on (spec-set-named "kettle") 4 ()))
+(def g (spec-game-on (spec-valley) 4 ()))
 (def p (game-player g))
 (write (list (first (game-screen g)) (rest (game-screen g)) (first (game-hub g)) (rest (game-hub g)) (game-depth g) (List map creature-name (game-creatures g))
              (player-r p) (< (state-dist 11 40 (player-r p) (player-c p)) 10) (game-messages g) (List ref 23 (spec-screen g))))
@@ -57,7 +57,7 @@ descents, and their specs stand.
 ### a step off the east edge is a step onto the next screen, landing on its west edge in the same row, a turn
 
 ```roguelike
-(def g (spec-game-on (spec-set-named "kettle") 4 ()))
+(def g (spec-game-on (spec-valley) 4 ()))
 (def p (game-player g))
 (player-at! p 11 79)
 (game-key! g "l")
@@ -70,7 +70,7 @@ descents, and their specs stand.
 ### at the valley's edge the step goes nowhere, says so, and takes no turn
 
 ```roguelike
-(def g (spec-game-on (spec-set-named "kettle") 4 ()))
+(def g (spec-game-on (spec-valley) 4 ()))
 (def p (game-player g))
 (player-at! p 0 40)
 (game-key! g "k")
@@ -92,7 +92,7 @@ descents, and their specs stand.
 ### a screen is kept: what was dropped there is there on return, and what was seen stays seen
 
 ```roguelike
-(def g (spec-game-on (spec-set-named "kettle") 4 ()))
+(def g (spec-game-on (spec-valley) 4 ()))
 (game-creatures! g ())
 (def p (game-player g))
 (spec-drop-here! g "hatchet")
@@ -114,7 +114,7 @@ descents, and their specs stand.
 ### m lays the map of the world over the screen, @ where you stand and . where you have been; a descent has none
 
 ```roguelike
-(def g (spec-game-on (spec-set-named "kettle") 4 ()))
+(def g (spec-game-on (spec-valley) 4 ()))
 (def p (game-player g))
 (player-at! p 11 79)
 (game-key! g "l")
@@ -132,7 +132,7 @@ descents, and their specs stand.
 ### a goal with no level lies on no screen, however far out: it is someone's to give
 
 ```roguelike
-(def g (spec-game-on (spec-set-named "kettle") 4 ()))
+(def g (spec-game-on (spec-valley) 4 ()))
 (def p (game-player g))
 (def goal? (fn (_) (List any? (fn (_ it) (eq? (item-class it) 'goal)) (game-floor g))))
 (def go! (fn (_ r c key) (game-creatures! g ()) (player-at! p r c) (game-key! g key) (spec-settle! g)))
@@ -152,7 +152,7 @@ descents, and their specs stand.
 ### the goal brought back to the square is the win; brought elsewhere, it is not
 
 ```roguelike
-(def g (spec-game-on (spec-set-named "kettle") 4 ()))
+(def g (spec-game-on (spec-valley) 4 ()))
 (game-creatures! g ())
 (def p (game-player g))
 (def goal (item-make (list 'goal "the Guild ledger") 1 0))
@@ -174,7 +174,7 @@ descents, and their specs stand.
 ### a save keeps every screen visited and where you stand, and comes back the same
 
 ```roguelike
-(def g (spec-game-on (spec-set-named "kettle") 4 ()))
+(def g (spec-game-on (spec-valley) 4 ()))
 (game-creatures! g ())
 (def p (game-player g))
 (spec-drop-here! g "hatchet")
@@ -185,7 +185,7 @@ descents, and their specs stand.
 (File close (first tmp))
 (def path (rest tmp))
 (save-write! g path)
-(def h (save-read path (spec-set-named "kettle") 24 80))
+(def h (save-read path (spec-valley) 24 80))
 (File unlink path)
 (def q (game-player h))
 (def hub (game-kept-level h "3,2"))
@@ -203,7 +203,7 @@ descents, and their specs stand.
 ### two games of a thousand keys raise nothing and keep every invariant
 
 ```roguelike
-(def runs (List map (fn (_ seed) (spec-random-play (spec-set-named "kettle") seed 1000)) (List range 1 3)))
+(def runs (List map (fn (_ seed) (spec-random-play (spec-valley) seed 1000)) (List range 1 3)))
 (write (list (List filter (fn (_ r) (not (null? (List ref 4 r)))) runs)
              (< 40 (List fold (fn (_ a r) (+ a (List ref 2 r))) 0 runs))))
 ```

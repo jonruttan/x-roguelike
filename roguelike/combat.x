@@ -30,24 +30,31 @@
 
 (def %cb-clamp (fn (_ n lo hi) (match ((< n lo) lo) ((< hi n) hi) (#t n))))
 
-; Whether a blow by one of LEVEL lands on a defence of DEFENCE.
-(def combat-hit?
-  (fn (_ rng level defence)
-    (< (rng int 100) (%cb-clamp (+ 70 (- (* 5 level) (* 5 defence))) 5 95))))
+; The percentage by which a blow by one of LEVEL lands on a defence of
+; DEFENCE; whether one does.
+(def combat-chance (fn (_ level defence) (%cb-clamp (+ 70 (- (* 5 level) (* 5 defence))) 5 95)))
+(def combat-hit? (fn (_ rng level defence) (< (rng int 100) (combat-chance level defence))))
 
 (def %cb-dice (fn (_ rng dice) (state-roll rng (List ref 0 dice) (List ref 1 dice))))
 
 ; The strength bonus to damage: one at 17, two at 19.
-(def %cb-str-bonus (fn (_ str) (match ((< str 17) 0) ((< str 19) 1) (#t 2))))
+(def combat-str-bonus (fn (_ str) (match ((< str 17) 0) ((< str 19) 1) (#t 2))))
 
-; What the player's blow does: the weapon's dice and enchantment, or
-; the set's unarmed dice, and the strength bonus.
-(def %cb-player-damage
+; The player's blow as (LO HI): the weapon's dice and enchantment, or the
+; set's unarmed dice, and the strength bonus; and the level it strikes
+; at, less a level a point of strength the weapon asks beyond theirs.
+(def combat-player-dice
   (fn (_ g)
     (def w (player-weapon (game-player g)))
-    (+ (if (null? w) (%cb-dice (game-rng g) (game-param g (lit unarmed) (list 1 2)))
-         (+ (%cb-dice (game-rng g) (item-prop w (lit damage) (list 1 2))) (item-enchant w)))
-       (%cb-str-bonus (state-strength g)))))
+    (def dice (if (null? w) (game-param g (lit unarmed) (list 1 2)) (item-prop w (lit damage) (list 1 2))))
+    (def add (+ (if (null? w) 0 (item-enchant w)) (combat-str-bonus (state-strength g))))
+    (list (+ (List ref 0 dice) add) (+ (List ref 1 dice) add))))
+(def combat-player-level
+  (fn (_ g)
+    (def p (game-player g))
+    (def w (player-weapon p))
+    (- (player-level p) (if (null? w) 0 (state-shortfall g w)))))
+(def %cb-player-damage (fn (_ g) (%cb-dice (game-rng g) (combat-player-dice g))))
 
 (def %cb-pow2 (fn (self n) (if (< n 1) 1 (* 2 (self (- n 1))))))
 ; Experience LEVEL needs: the set's first threshold, doubling a level.
@@ -86,12 +93,9 @@
 (def combat-player-attacks!
   (fn (_ g cr)
     (def subs (list (pair "name" (creature-name cr))))
-    (def p (game-player g))
-    (def w (player-weapon p))
-    (def short (if (null? w) 0 (state-shortfall g w)))
     (def unaware? (match ((eq? (creature-state cr) (lit asleep)) #t) ((eq? (creature-state cr) (lit wandering)) #t) (#t #f)))
     (def surprise (if unaware? (game-param1 g (lit surprise) 1) 1))
-    (if (if (< 1 surprise) #f (not (combat-hit? (game-rng g) (- (player-level p) short) (creature-prop1 cr (lit defence) 3))))
+    (if (if (< 1 surprise) #f (not (combat-hit? (game-rng g) (combat-player-level g) (creature-prop1 cr (lit defence) 3))))
       (state-tell! g (lit miss) "You miss the {name}." subs)
       (do (creature-hp! cr (- (creature-hp cr) (* surprise (%cb-player-damage g))))
           (creature-state! cr (lit awake))
@@ -157,4 +161,4 @@
             (Str8 append "killed by a " (creature-name cr)))))))
 
 (provide roguelike/combat
-  combat-hit? combat-exp-for combat-kill! combat-player-attacks! combat-hurt-player! combat-creature-attacks!)
+  combat-chance combat-hit? combat-str-bonus combat-player-dice combat-player-level combat-exp-for combat-kill! combat-player-attacks! combat-hurt-player! combat-creature-attacks!)

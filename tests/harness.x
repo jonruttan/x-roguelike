@@ -26,7 +26,7 @@
   game-screen game-screens? game-kept game-kept-level game-hub game-screen-key game-screen-distance game-chain
   game-band band-name game-forms
   game-door game-inside game-level-key game-turn! game-over! game-deepest! game-quest-state!
-  game-below? game-region game-top-set
+  game-below? game-region game-regions game-top-set game-screen-name
   player-r player-c player-at! player-hp player-hp! player-hpmax player-str player-level player-exp player-gold player-gold!
   player-food player-food! player-condition player-weapon player-armour player-rings
   creature-make creature-r creature-c creature-at! creature-hp creature-hp! creature-state creature-state!
@@ -56,6 +56,21 @@
       ((fn (_ set) (Vector set! 0 (pair (pair name set) (Vector ref 0 %spec-sets)) %spec-sets) set)
        (data-load (Str8 append "data/" name)))
       (rest hit))))
+
+; The kettle set without its (start ...): a game on it begins on the
+; valley's hub, by the town's door, for the cases about the valley.
+(def spec-valley
+  (fn (_) (List reject (fn (_ f) (if (pair? f) (eq? (first f) 'start) #f)) (spec-set-named "kettle"))))
+
+; G, a game of kettle on the square, walked north onto the pithead,
+; every creature of both gone.
+(def spec-to-pithead!
+  (fn (_ g)
+    (game-creatures! g ())
+    (player-at! (game-player g) 0 40)
+    (game-key! g "k")
+    (game-creatures! g ())
+    g))
 
 ; A 24 by 80 game on SET from SEED, each of KEYS taken.
 (def spec-game-on

@@ -87,15 +87,29 @@
              (first (rest (rest (first set)))))
            (#t (self (rest set) what default)))))
 
+; The regions joined by FORMS, and by each region joined, each once and
+; none named in HAD: (region NAME . FORMS) each, read beside DIR.
+(def %dt-regions
+  (fn (self dir forms had)
+    (List fold
+      (fn (_ acc args)
+        (def name (first args))
+        (if (List any? (fn (_ r) (str=? (List ref 1 r) name)) acc) acc
+          (if (List includes? name had) acc
+            ((fn (_ more)
+               (List append acc (pair (pair (lit region) (pair name more))
+                                      (self dir more (List append had (pair name (List map (fn (_ r) (List ref 1 r)) acc)))))))
+             (%dt-load (Str8 append dir "/../" name))))))
+      () (data-all forms (lit join)))))
+
 ; The set at DIR, and after its forms, for each (join NAME) among them,
 ; the set NAME beside it, as one (region NAME . FORMS): a place in the
-; same world made by its own forms (see state.x).
+; same world made by its own forms (see state.x).  A region's own joins
+; are regions of the same world, so every region is the set's.
 (def data-load
   (fn (_ dir)
     (def forms (%dt-load dir))
-    (List append forms
-      (List map (fn (_ args) (pair (lit region) (pair (first args) (%dt-load (Str8 append dir "/../" (first args))))))
-        (data-all forms (lit join))))))
+    (List append forms (%dt-regions dir forms (list (data-get forms (lit set) ""))))))
 
 ; The forms of the region NAME of SET, or nil.
 (def data-region

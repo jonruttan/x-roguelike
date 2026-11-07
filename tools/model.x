@@ -47,6 +47,8 @@
 (import x/num/float)
 (import roguelike/data data-load data-all data-one data-prop data-prop1 data-trait?)
 (import roguelike/state state-covers?)
+(import roguelike/odds odds-hit odds-mid odds-kill odds-hurt)
+(import roguelike/combat combat-str-bonus)
 
 (def %md-env
   (fn (_ name default)
@@ -69,32 +71,16 @@
 (def %md-span (fn (_ l) (Str8 join "-" (List map (fn (_ n) (Str8 str n)) l))))
 
 (def %md-clamp (fn (_ n lo hi) (match ((< n lo) lo) ((< hi n) hi) (#t n))))
-; The chance of a hit, as a fraction.
-(def %md-hit (fn (_ level defence) (/ (%md-f (%md-clamp (+ 70 (- (* 5 level) (* 5 defence))) 5 95)) 100)))
-(def %md-mid (fn (_ d) (/ (%md-f (+ (first d) (List ref 1 d))) 2)))
+(def %md-hit odds-hit)
+(def %md-mid odds-mid)
 (def %md-sum (fn (_ l) (List fold (fn (_ a b) (+ a b)) (%md-f 0) l)))
 (def %md-mean (fn (_ l) (if (null? l) (%md-f 0) (/ (%md-sum l) (List length l)))))
 (def %md-upto (fn (_ d) (List range (first d) (+ 1 (List ref 1 d)))))
 
-; The strength bonus to damage, as combat.x gives it.
-(def %md-str-bonus (fn (_ str) (match ((< str 17) 0) ((< str 19) 1) (#t 2))))
-
 ; --- a fight -----------------------------------------------------------------
 
-; The mean swings to take HP hit points at chance P a swing, a hit
-; doing DICE plus BONUS.  The list is built from E(0) up, newest first.
-(def %md-swings
-  (fn (_ p dice bonus hp)
-    (def faces (%md-upto dice))
-    (def es (fn (self h)
-              (if (< h 1) (list (%md-f 0))
-                (do (def known (self (- h 1)))
-                    (def at (fn (_ k) (if (< k 1) (%md-f 0) (List ref (- (- h 1) k) known))))
-                    (pair (+ (/ (%md-f 1) p) (%md-mean (List map (fn (_ x) (at (- h (+ x bonus)))) faces))) known)))))
-    (first (es hp))))
-
-; T: the mean over the creature's hit points.
-(def %md-kill (fn (_ p dice bonus hp) (%md-mean (List map (fn (_ h) (%md-swings p dice bonus h)) (%md-upto hp)))))
+; T: the mean swings to kill, over the creature's hit points (odds.x).
+(def %md-kill odds-kill)
 
 ; The largest K, to twenty, whose cost (COST K) stays under HP.
 (def %md-most
@@ -110,8 +96,8 @@
 ; Hurt a turn from KIND beside a player of DEFENCE.
 (def %md-hurt
   (fn (_ kind defence)
-    (def whole (* (%md-hit (data-prop1 kind (lit level) 1) defence) (%md-mid (data-prop kind (lit attack) (list 1 2)))))
-    (match ((data-trait? kind (lit fast)) (* 2 whole)) ((data-trait? kind (lit slow)) (/ whole 2)) (#t whole))))
+    (odds-hurt (data-prop1 kind (lit level) 1) (data-prop kind (lit attack) (list 1 2)) defence
+               (match ((data-trait? kind (lit fast)) (lit fast)) ((data-trait? kind (lit slow)) (lit slow)) (#t ())))))
 
 ; --- a level's creatures and items ----------------------------------------------
 
@@ -234,7 +220,7 @@
 ; KIND's row against WHO bare and with GEAR.
 (def %md-kind-row
   (fn (_ set depth kind who gear)
-    (def bonus (%md-str-bonus (List ref 1 who)))
+    (def bonus (combat-str-bonus (List ref 1 who)))
     (def hp (first who))
     (def kh (data-prop kind (lit hp) (list 1 6)))
     (def you (%md-hit (List ref 2 who) (data-prop1 kind (lit defence) 3)))
