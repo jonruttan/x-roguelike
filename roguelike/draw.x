@@ -10,7 +10,8 @@
 ; being asked; the level fills the rows between; the last row is the
 ; player's standing, headed by the level, or the screen in a world of
 ; screens.  Cells seen are drawn dim, cells in view plain, in
-; the band's (colour N) where the set has bands; found traps and items
+; the band's (colour N) where the set has bands, or in the colour the
+; set gives the cell's kind of terrain; found traps and items
 ; where they were seen, creatures only in view, the player last.
 ; A list being looked at -- the pack, the keys, what someone says --
 ; lies over the level, and so do the items a question for one can take
@@ -22,10 +23,10 @@
 (import x/tui/style)
 (import x/tui/screen Screen screen-put!)
 (import roguelike/data data-glyph)
-(import x/core/doors str-make)
+(import x/core/doors str-make int& int>>)
 (import roguelike/map
   map-rows map-cols map-tile map-seen? map-visible? map-down map-up map-row-glyphs! map-visible-next map-visible-run
-  tile-rock tile-floor tile-wall tile-door tile-passage tile-down tile-up)
+  map-terrain map-kinds map-look map-look-run tile-down tile-up)
 (import roguelike/state
   game-set game-depth game-map game-player game-creatures game-floor game-pack game-messages game-ask
   game-over game-epitaph game-turn game-traps game-param1 game-screens? game-screen
@@ -50,23 +51,73 @@
 (def %dr-trap (Style make (list (lit bold)) 1 ()))
 (def %dr-ask (Style make (list (lit bold)) () ()))
 
-; The set's glyph of each tile code, as a byte, in a vector by code:
-; rock is a blank.
-(def %dr-tile-names
-  (list (pair tile-floor (lit floor)) (pair tile-wall (lit wall)) (pair tile-door (lit door))
-        (pair tile-passage (lit passage)) (pair tile-down (lit down)) (pair tile-up (lit up))))
+; --- terrain's look -----------------------------------------------------------
+
+; The terminal's look for a kind of terrain: the set's (glyph KIND "g")
+; and (colour KIND N), each from the band's forms before the set's.  A
+; kind the set gives no glyph has the glyph here, and failing that the
+; glyph of the kind it is a sort of; rock is a blank.
+(def %dr-glyphs
+  (list (pair (lit water) "~") (pair (lit fall) ";") (pair (lit hedge) "\"") (pair (lit gate) "+")
+        (pair (lit thicket) "T") (pair (lit bog) ",")))
+(def %dr-named (fn (self name l) (if (eq? (List ref 1 (first l)) name) (first l) (self name (rest l)))))
+(def %dr-glyph
+  (fn (self forms t)
+    (def name (List ref 1 t))
+    (def given (data-glyph forms name ()))
+    (def mine (List find (fn (_ p) (eq? (first p) name)) %dr-glyphs))
+    (match ((eq? name (lit rock)) " ")
+           ((not (null? given)) given)
+           ((not (null? mine)) (rest mine))
+           ((null? (List ref 2 t)) "?")
+           (#t (self forms (%dr-named (List ref 2 t) map-terrain))))))
+; Each kind's glyph, as a byte, in a vector by code.
 (def %dr-tile-bytes
-  (fn (_ set)
-    (def v (Vector make 7 32))
-    (List for-each (fn (_ p) (Vector set! (first p) (Char ->int (Str8 ref 0 (data-glyph set (rest p) "?"))) v)) %dr-tile-names)
+  (fn (_ forms)
+    (def v (Vector make map-kinds 32))
+    (List for-each (fn (_ t) (Vector set! (first t) (Char ->int (Str8 ref 0 (%dr-glyph forms t))) v)) map-terrain)
     v))
+; The colour FORMS give a kind NAME, (colour NAME N), or nil; a band's
+; own (colour N) is not one.
+(def %dr-colour
+  (fn (self forms name)
+    (match ((null? forms) ())
+           ((if (pair? (first forms))
+              (if (eq? (first (first forms)) (lit colour))
+                (if (pair? (rest (rest (first forms)))) (eq? (List ref 1 (first forms)) name) #f)
+                #f)
+              #f)
+             (List ref 2 (first forms)))
+           (#t (self (rest forms) name)))))
+; The kinds' looks: (CLASSES . STYLES), CLASSES a vector by code of
+; each kind's class, 0 for none of its own; STYLES a vector by class of
+; its (DIM . PLAIN).  A kind with no colour takes the colour of the kind
+; it is a sort of.
+(def %dr-classes
+  (fn (_ forms)
+    (def colour-of
+      (fn (self t)
+        (def given (%dr-colour forms (List ref 1 t)))
+        (match ((not (null? given)) given) ((null? (List ref 2 t)) ()) (#t (self (%dr-named (List ref 2 t) map-terrain))))))
+    (def classes (Vector make map-kinds 0))
+    (def styles (Vector make (+ map-kinds 1) ()))
+    (List for-each
+      (fn (_ t)
+        (def colour (colour-of t))
+        (unless (null? colour)
+          (do (Vector set! (first t) (+ (first t) 1) classes)
+              (Vector set! (+ (first t) 1) (pair (Style make (list (lit dim)) colour ()) (Style make () colour ())) styles))))
+      map-terrain)
+    (pair classes styles)))
 
 ; Row R drawn: every seen cell's glyph as one dim text, a blank for the
 ; rest, so the row is written whole even with nothing seen and nothing
 ; laid over it last time stays; each run of cells in view put again
-; plain.  DIM and PLAIN are the level's styles.
+; plain.  DIM and PLAIN are the level's styles.  LOOKS, (CLASSES .
+; STYLES) or nil, are the kinds with colours of their own: each run of
+; cells of one of those put again in its colour, dim or plain.
 (def %dr-row!
-  (fn (_ s m r bytes buf dim plain)
+  (fn (_ s m r bytes buf dim plain looks)
     (def cols (map-cols m))
     (map-row-glyphs! m r bytes buf)
     (screen-put! s (+ r 1) 0 buf dim)
@@ -74,13 +125,23 @@
        (when (< c cols)
          ((fn (_ e) (screen-put! s (+ r 1) c (Str8 sub c (- e c) buf) plain) (self (map-visible-next m r e)))
           (map-visible-run m r c))))
-     (map-visible-next m r 0))))
+     (map-visible-next m r 0))
+    (unless (null? looks)
+      ((fn (self c)
+         (when (< c cols)
+           (do (def k (map-look m r c (first looks)))
+               (def e (map-look-run m r c (first looks)))
+               (when (< 1 k)
+                 ((fn (_ st) (screen-put! s (+ r 1) c (Str8 sub c (- e c) buf) (if (= (int& k 1) 1) (rest st) (first st))))
+                  (Vector ref (int>> k 1) (rest looks))))
+               (self e))))
+       0))))
 
-; The tile bytes and the item glyphs of the level's forms, its band's
-; in front of the set's, made once and kept against the set and the
-; band they were made from; the band's styles, (COLOUR DIM . PLAIN),
-; kept against its colour.
-(def %dr-cache (Vector of () () () () ()))
+; The tile bytes, the item glyphs and the terrain's looks of the
+; level's forms, its band's in front of the set's, made once and kept
+; against the set and the band they were made from; the band's styles,
+; (COLOUR DIM . PLAIN), kept against its colour.
+(def %dr-cache (Vector of () () () () () ()))
 (def %dr-band-styles
   (fn (_ g)
     (def b (game-band g))
@@ -98,6 +159,9 @@
           (Vector set! 0 (game-set g) %dr-cache)
           (Vector set! 4 b %dr-cache)
           (Vector set! 1 (%dr-tile-bytes forms) %dr-cache)
+          (Vector set! 5 ((fn (_ looks) (if (List any? (fn (_ t) (< 0 (Vector ref (first t) (first looks)))) map-terrain) looks ()))
+                          (%dr-classes forms))
+                       %dr-cache)
           (Vector set! 2 (List map (fn (_ c) (pair c (data-glyph forms c "?")))
                                    (list (lit potion) (lit scroll) (lit wand) (lit ring) (lit weapon) (lit armour)
                                          (lit food) (lit gold) (lit goal) (lit page) (lit token)))
@@ -115,7 +179,8 @@
     (def bytes (Vector ref 1 %dr-cache))
     (def buf (str-make (map-cols m)))
     (def styles (%dr-band-styles g))
-    ((fn (self r) (when (< r (map-rows m)) (do (%dr-row! s m r bytes buf (first styles) (rest styles)) (self (+ r 1))))) 0)
+    (def looks (Vector ref 5 %dr-cache))
+    ((fn (self r) (when (< r (map-rows m)) (do (%dr-row! s m r bytes buf (first styles) (rest styles) looks) (self (+ r 1))))) 0)
     (%dr-stairs! s m (map-down m) bytes tile-down)
     (%dr-stairs! s m (map-up m) bytes tile-up)))
 

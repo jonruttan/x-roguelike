@@ -45,7 +45,8 @@ A set is a directory of `.xon` files, every form in them read in
 file-name order.  `data/classic/` is the one shipped and documents each
 form: `game.xon` the tuning, `creatures.xon` what lives there and the
 traits it may have, `items.xon` what lies about and the effects an
-item may carry, `messages.xon` what the game says.  Another set is
+item may carry, `messages.xon` what the game says, `tui.xon` how the
+terminal draws it.  Another set is
 another directory: `-s NAME`, `--set NAME`, under the bundle's `data/`, or `-d
 DIR`, `--data DIR`, for any directory; `-S N`, `--seed N`, replays a dungeon.
 The engine reads a closed vocabulary of traits
@@ -103,9 +104,9 @@ between, its houses `(house-width LO HI)` each with a door onto the
 street; two cells round the edge are street, and the `(square W H)` in
 the middle is left clear.  In a world of screens the bands run from
 the hub, ring 0, and any form a band names besides its own -- a level
-knob, a glyph -- is in front of the set's on its screens, so `kettle`'s
-first band, "Kettle", makes the square a town of stone walls in a
-valley of thickets.
+knob, a level style -- is in front of the set's on its screens, so
+`kettle`'s first band, "Kettle", makes the square a town, and the rings
+out from it are fields, hills and the rim.
 
 Each game of `kettle` is an errand drawn from the set's scenes: `(scene
 NAME GIVER . PROPS)` is a link, the GIVER a creature that talks, who
@@ -134,6 +135,28 @@ it has a way out and none on, and its `(enter "TEXT")` is said the
 first time in.  `(stairs up)` gives any level that shape.  `kettle`
 has a farmhouse cellar in the farms, a shepherd's bothy in the hills
 and an old city vault in the far valley.
+
+A level is carved in the shape of where it is.  Besides `rooms`,
+`caves`, `open` and `town`, `(level-style STYLE)` is one of `pit`, bord
+and pillar off a haulage road; `flood`, a channel across the level with
+deep water along it; `works`, paired vaults of dressed stone off a
+stair; `well`, a cave round a walled court with a pool; `fields`,
+hedged closes either side of a road; `hills`, gritstone edges, bog and
+gorse; or `rim`, limestone scars, shakeholes and fallen walls.  Each
+style's knobs, and what each defaults to, are in its comment in
+`roguelike/dungeon.x`.  `delve`'s four bands are a pit, a flooded
+reach, the works and the well-house; `kettle`'s rings are the town,
+fields, hills and the rim.
+
+What a cell is and how it is drawn are kept apart.  `roguelike/map`
+reports each cell's kind of terrain -- floor, wall, door, water,
+pillar, hedge, gate, bog and the rest, `map-terrain` listing each with
+whether it can be walked on and whether it can be seen through -- and
+the game turns on nothing else.  How a kind looks is the front-end's:
+the terminal's, `roguelike/draw`, reads `(glyph KIND "g")` and `(colour
+KIND N)`, a 256-colour index, from the set's `tui.xon`, and a kind the
+set does not name is drawn as the kind it is a sort of.  Another
+front-end reads its own file and the same terrain.
 
 Sets can share one world.  `(join NAME)` brings the set NAME in beside
 this one as a region: its forms are read with the set's and kept
