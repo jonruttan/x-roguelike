@@ -1,8 +1,9 @@
 ; messages.xon -- the classic set: what the game says.
 ;
-; (message KEY "TEXT"): a {name}, {n}, {letter}, {level} or {what} in the
-; text is filled in.  A key the set leaves out is said in the engine's
-; own words; these are the ones this set puts its own way.
+; (message KEY "TEXT"): a {name}, {n}, {letter}, {level} or {what} in
+; the text is filled in, and {a-name} or {a-what} is the creature's
+; name after its article.  A key the set leaves out is said in the
+; engine's own words; these are the ones this set puts its own way.
 
 (message welcome "You descend into the Sunken Vault.  Find the Sunstone, and bring it back up.")
 (message won "You climb into daylight with the Sunstone.  The vault is behind you.")

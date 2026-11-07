@@ -80,7 +80,11 @@ tokens laid on the levels up to its own, or carried by a `(carrier
 "kind")`, or `(wants explore)`, its `(ask ...)`, `(again ...)` and `(done
 ...)` lines, and `(rewards (CLASS NAME) (CLASS NAME))` to choose from;
 and on a creature, `(pack LO HI)`, `ranged` with `(ranged LO HI)` and
-`(shot "what")`, `summon` with `(summon "name")`, `talks`.
+`(shot "what")`, `summon` with `(summon "name")`, `talks`, `(tale
+"LINE" ...)`, said a line a message the first time one of its kind
+comes into view in a game: what it is, and what has changed it; and
+`(article "WORD")`, said before its name where one is met, in place of
+"a" or "an".
 
 `kettle` is the third set shipped, `--set kettle`: the valley above the
 Delve, a world of screens rather than a descent.  `(world screens W

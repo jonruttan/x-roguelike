@@ -38,7 +38,7 @@
   game-rng game-set game-depth game-map game-player game-creatures game-creatures! game-turn game-param game-param1
   player-r player-c player-condition state-covers?
   creature-make creature-r creature-c creature-at! creature-hp creature-hp! creature-state creature-state!
-  creature-carried creature-name creature-prop creature-prop1 creature-trait? creature-condition creature-tick!
+  creature-carried creature-name creature-prop creature-prop1 creature-trait? creature-condition creature-tick! state-a-kind
   creature-target creature-target!
   state-say! state-tell! state-roll state-chance? state-dirs state-dist state-adjacent? state-sign state-free?
   state-ring? state-ring-bonus state-gentle?)
@@ -294,8 +294,8 @@
       (do (game-creatures! g (pair (creature-make kind (+ (creature-r cr) (first spot)) (+ (creature-c cr) (rest spot))
                                                   (%cr-hp g kind) (lit awake))
                                    (game-creatures g)))
-          (state-tell! g (lit summoned) "The {name} calls, and a {what} answers."
-            (list (pair "name" (creature-name cr)) (pair "what" name)))))))
+          (state-tell! g (lit summoned) "The {name} calls, and {a-what} answers."
+            (list (pair "name" (creature-name cr)) (pair "what" name) (pair "a-what" (state-a-kind kind))))))))
 
 ; A skittish creature runs when down to a quarter of its hit points, and
 ; comes back once over half; one that stole something keeps running.
