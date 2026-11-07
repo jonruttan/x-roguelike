@@ -86,6 +86,38 @@ hired men.
   sweet water is.  Salt for water is the oldest bargain between hill
   and plain.
 
+### The salt under the Plain: Halmere
+
+Halmere is the League's oldest salt town, over the shallowest of the
+beds; the League began there.  Under it is **the Hall**, as its
+miners call their mine.
+
+- **The Hall** is older than Kettle.  Its galleries are timbered with
+  hill oak, carried east over the passes.  Its chambers are the
+  rooms the salt was cut from.  In some of them the miners have carved
+  chapels in the salt, with figures and lamps of salt crystal, and these
+  are the White Church's holiest places (see **Faith**).  Brine lakes
+  stand in old chambers and are crossed by boat.  Horses live their
+  whole lives below, walking the treadwheels that wind the salt up.
+  There is gas in the salt too.  Halmere's fire-bosses burn it off
+  before each shift, and Kettle learned that craft from them when the
+  Guild took the Plain's form.  The sick are brought down to breathe the
+  Hall's dry air.
+- **Why it is there**: the beds lie nearest the surface at Halmere, and
+  a salt spring rose there.  **What it became**: a mine, then a town's
+  wealth, then the League's, then the White Church's holy ground.  **How
+  it is used now**: it is still worked, while the town above it goes dry.
+  Halmere's wells have turned salt, and the League's buyers, who would
+  pay anything for sweet water, are Halmere's.
+- **The stone in the Hall.**  Laid under Halmere, the holdwater would
+  draw a country's water to it through the salt beds, and water
+  dissolves salt.  Where the town's wells draw, the Hall already weeps:
+  brine runs down its walls, and its miners fear water above all
+  things.  Nobody on the Plain has yet put the two together.
+- **Salt for coal.**  The dale buys its salt with its coal.  No coal has
+  gone east since the pumps stopped, so little salt is coming west, and
+  a dale without salt cannot cure its meat or its hides for the winter.
+
 Kettle is one dale among several, the first a set visits.  Every dale
 had its well-keepers once; their stones, rag-trees and marks are
 everywhere in the hills.  Whether every dale has a stone of its own is
@@ -181,6 +213,12 @@ long ago and kept lit: **the Candle**.
    workings and drives their gas out through the rock, and the Candle
    shows it.  Nobody in Kettle doubts what that means.  The Guild says
    it is the drought.
+
+The Candle is how the dale reads the pit.  The fire-boss walked up
+Candle Clough every morning before the shift, and the town still goes
+up to look: tall means the water is rising below, and lower means it
+is going down.  Each faith reads it in its own way (see **Faith**).
+The hill folk say the dale ends the day it goes out.
 
 It is the same gas as the pit's gas motes and the blast that killed the
 firedamp shift: the industrial age's danger is the animistic age's
@@ -428,6 +466,91 @@ whose water is it, when the Plain is dry because the dale is wet?
   chandler, the knife-grinder, the woodcutter, the cobbler and the
   tanner.
 
+## Faith
+
+Two established churches, and the old ways under both.  Each people
+reveres what keeps it alive, and each church has made adversaries of
+what the earlier ages revered.  So every adversary deep below the dale
+is of an earlier age, and each faith has its own name for it.  The
+industrial age's adversaries are people: the Guild, its bailiffs and
+hired men, road thieves, and the League's buyers (see **From time to
+time**).
+
+### The White Church
+
+The League's church, established on the Plain and paid by its towns.
+It teaches that the Plain was a sea; the water went up and the salt
+stayed.  Water passes and salt endures, and what is salted does not
+rot: meat, hides, souls.  A pinch of salt goes on the tongue at a
+birth, at a marriage and at a death.  Oaths are sworn on salt, and a
+guest is given bread and salt.  Its holiest places are the chapels
+carved in the Hall at Halmere, and pilgrims go down to them.
+
+Its adversary is **the Rot**: standing water, springs that will not
+stay put, anything that drinks.  To the White Church the well-keepers'
+marks are the Rot's writing, the rag-trees its altars, and the Candle
+a heathen fire.  A stone that draws a country's water would be the
+Rot itself, and the League's own banks mean to buy it.
+
+In Kettle it is the Guild's church.
+
+### The chapel
+
+The settlers' faith, older in Kettle than the Guild.  The settlers came
+up the Seethe from the coast, and their faith is the coast's: the sea
+is the Giver's, all water runs home to it, and the dead go down the
+water to the Giver.  Graves face west.  For each death a light is set
+on the river at dusk.  The miners, the farms and the river end go to
+chapel.  The chapel reads the Candle as the light of the dead: tall,
+it is the drowned below asking to go down.
+
+Its adversary is what keeps water from going home: drowned ground,
+still pools, a thing that holds water back.  The drowned below are
+**the dead who cannot go down**.  If the holdwater is real, the chapel
+holds it a thief of the Giver's water, though it is also the town's
+water.  The chapel has not settled that, and it is the town's question
+too.
+
+### The old ways
+
+Older than both churches, and kept under both:
+
+- **The hill folk** tie rags on thorns by springs, leave coin at the
+  Candle, plant yews by graves, and count their sheep in old numbers
+  nobody can explain.  These are the well-keepers' customs, with the
+  reasons lost.
+- **Kettle** goes to the Candle: lovers to promise, the newly widowed to
+  leave a rag.
+- **The miners** do not whistle below, leave a crust for the knocker,
+  touch the Well Stone on the way to a shift, and never take a dead
+  man's tally off its nail.
+
+The White Church preaches against the old ways, and the chapel looks
+the other way.
+
+### What each people reveres
+
+| People | Reveres | Because | Its adversary |
+|---|---|---|---|
+| the well-keepers | the stone, as kin | it gives the dale its water | whoever would move it; they bargained, they did not fight |
+| the hill folk | springs, the Candle, yews | custom, its reason lost | the Guild's men on the rim |
+| the chapel | the river and the sea | the water goes home and takes the dead | what holds water back |
+| the miners | light: the Candle, the lamp, the Tally | in the dark the light is the life | the gas, and the knocker |
+| the farms | the drains | a dry floor is the farm | the mire |
+| the White Church | salt | what is salted keeps | the Rot |
+| the Guild | the ledger | debt is its scripture | the charter |
+
+### Names for the adversaries
+
+| Below | The White Church | The chapel | The miners |
+|---|---|---|---|
+| keepers of stone | the Rot's works | idols | the old people's men |
+| bones from the ossuary | the Rot's harvest | the unburied | the old people |
+| the gallery shades | the unsalted | the dead who cannot go down | the Long Row walking |
+| the drowned shades | the unsalted | the dead who cannot go down | the Flood's |
+| the knocker | the Rot | a tale | the knocker |
+| the undertow | the Rot | the water that will not go home | the undertow |
+
 ## What lives where
 
 Each creature fits its rock and its age, or is the uncanny where the
@@ -483,6 +606,33 @@ the reason for the new one.
 | adder, hornet nest, boar, hill wolf | the wild hills and woods |
 | bog light | marsh gas over the bog, kin to the Candle; uncanny only to the shepherds |
 | Guild bailiff | the Guild's hired men, with bolts, about its dig on the rim |
+
+### From time to time
+
+The deep levels belong to the earlier ages.  The industrial age and the
+archaic age turn up now and then, each for a reason in the world:
+wanderers and happenings, never a level's own.
+
+**The industrial age**, in the dale and the Galleries, never below the
+breach:
+
+| Adversary | Why now |
+|---|---|
+| salvagers | men stripping the drowned pit's upper galleries of rails, chains and tools, to sell over the Nick |
+| distrainers | the Guild's bailiffs, taking goods in Kettle against debts at its shop |
+| the League's agents | the buyers' men, come over the Nick to take the holdwater from whoever brings it up; they wait at the pithead and follow a level or two down |
+| Rot-hunters | White Church zealots from the Plain, come to cut the rag-trees and put out the Candle |
+| salt-runners | with salt short, packhorse robbers on the Salters' Road take what comes over |
+
+**The archaic age**, only where the stone's water runs: deep in the
+Well-House, and since the breach up the stair into the Flood and the
+lowest Galleries, now and then:
+
+| Adversary | What it is |
+|---|---|
+| dripstone | the cave's own growth, columns and curtains the stone's water laid down over ages, moving where the water runs |
+| the old bear | the bones of a bear that denned in the stone's cave before anyone came, quickened by its water |
+| pool-born | blind white things of the stone's pool, older and larger than the crayfish, come up the stair with the water |
 
 ## What lies about
 
@@ -591,8 +741,12 @@ well-head are in the middle, and the river is at the bottom.
 - **The bakehouse** is the town's common oven, where the terraces bake
   their bread.  It burned coal; now it burns what wood it can get, one
   day in three.
-- **The chapel and its graveyard.**  A long row of stones there marks
-  the firedamp shift, every one with the same day on it.
+- **The chapel and its graveyard.**  This is the miners' chapel, plain
+  stone near the terraces.  A long row of stones there marks the
+  firedamp shift, every one with the same day on it: the Long Row.
+- **The White Church**, beside the Guild hall.  The Guild built it of
+  gritstone when it took the Plain's form, and the Guild's families
+  worship there.
 - **The terraces** are the miners' rows below the pithead: brick under
   stone-slate, a yard behind each with a shallow well and kale.  Doors
   are shuttered where families have gone over the pass to look for
@@ -716,6 +870,27 @@ Who the dale's people are, by what they do.
 | The town | the council, the town surveyor, the watchman, the ferryman, the herb-wife, the knife-grinder, the scrap-picker |
 | The Guild | the council of the Guild, its clerks, its shopkeeper, its bailiffs and hired men |
 
+### What the dale calls things
+
+The names people use, and why.
+
+| Thing | Its name | Why |
+|---|---|---|
+| the river | the Seethe | the kettle steams off it on cold mornings |
+| the gap west | Seethe Gap | the river leaves by it |
+| the pass east | the Nick, and its road the Salters' Road | the salt comes over it |
+| the beck over the Candle | Candle Beck, in Candle Clough | |
+| the oak wood | Hagg Wood | a hagg is a coppice's yearly cut |
+| the gritstone edge with the quarry | Quern Edge | querns were cut there before millstones |
+| the peat moss | the High Moss | |
+| the rim | the Lime | the limeburners' word, and now everyone's |
+| the well-head | the Well Stone | "going to the Stone" is going to law |
+| the engine | the Beam | Kettle says "since the Beam stopped" |
+| the spoil heap | the Tip | |
+| the firedamp shift's graves | the Long Row | |
+| the lamp room's board | the Tally | each man's brass tally hangs on a nail while he is down; a man "left on the nail" is dead below |
+| the well-keepers | the old people | Kettle has no other name for them; the hill folk will not say one |
+
 ### What the town needs now
 
 Three weeks without the pit, the town is short of:
@@ -773,6 +948,10 @@ does for the town.
 - **Its state tells the story.**  Shuttered doors, a spoil heap, the
   engine house with a cold chimney, no smoke over a cold town, and the
   Candle tall.
+
+- **The Candle is a place.**  It has a screen of its own: the clough,
+  the fall, rags on the thorns, coin in the pool, and the flame, which
+  shows how the water stands below.
 
 What the engine needs for these, most effect first: roads that meet at
 the screens' edges; features, single things such as the well-head, a
@@ -869,12 +1048,17 @@ Proposals, not decided.
 - Whether Ada barred the pump-house door: the letter never reached her.
 - A set on the rim: the Guild's dig down the old stair, the other way
   to the stone.
-- The Candle as a place: a screen with the clough and the fall, rags on
-  the thorns, coin in the pool, and the flame.
-- A salt mine under a Plain town: the League's own descent, the mirror
-  of the Delve.  Centuries of galleries; chapels the miners carved in
-  the salt; brine lakes; horse-driven winding gear; and at the bottom,
-  the beds turning to brine as the town above draws its wells deeper.
+- The Hall as a set: Halmere's mine, the League's own descent and the
+  mirror of the Delve, its chapels carved in salt and its lakes of
+  brine.
+- The Hall's oldest brine lakes are older than the mine, and nobody on
+  the Plain can say what dissolved them.  Did the well-keepers' bargain
+  lay the stone near Halmere's beds?
+- The High Moss keeps its dead.  Cutting deeper for fuel, the
+  peat-cutters are finding bodies the moss has kept since before the
+  well-keepers, whole and brown.  The chapel will not bury them.  They
+  lie still, unless someone carries one down to where the stone's water
+  runs.
 - A pit chapel at the foot of the Galleries: a niche the Kettle miners
   cut in the sandstone for the firedamp shift, where the gallery shades
   gather.  The well-keepers' keepers are the same impulse, a thousand
