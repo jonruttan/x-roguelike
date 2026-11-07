@@ -47,7 +47,7 @@ adversaries.
 |---|---|---|---|---|---|
 | **Tribal** | the herders who first came for the rim's grazing | before the city | rags on thorns, the old numbers | the hills and the High Moss; the hill folk are what is left of it | none of its own yet (see **Ideas**) |
 | **Communal** | the well-keepers, keeping the stone in common as kin | the long keeping | the stair, the channels, the well mouth, the ossuary | the Well-House and the Old Works | bone heaps, the ossuary priest |
-| **City-state** | the well-keepers' city on the rim | its height, to the procession | walls and vaults, and the keepers built at its end | the rim and the Old Works' vaults; the Plain's towns keep the form | wall keepers, the doorkeeper, the glass keeper, the well keeper |
+| **City-state** | the well-keepers' city on the rim | its height, to the procession | walls and vaults, and the keepers built at its end | the rim and the Old Works' vaults; the Plain's towns keep the form | rust golems, the doorkeeper, the glass keeper, the well keeper |
 | **Mercantile** | Kettle's settlers up the Seethe, the Guild, and the League's towns and banks | three hundred years ago, to now | the drained floor, the charter cut into the old people's stone, the market, the pit, the terraces, the Tip, the White Church | Kettle, its farms and the Galleries; the Plain's towns | the fire-boss, gallery shades, salvagers, the Guild's bailiffs, distrainers, the League's agents, Rot-hunters, salt-runners |
 | **Colonial** | nobody yet | coming | its first sign: the League buying sweet water from the dales | the Plain, reaching | none yet |
 | **Industrial** | nobody yet | coming | its first signs: the engine house, the furnace, the brickfield | the Plain first, where the League has the powder and the money | none yet |
@@ -396,7 +396,8 @@ The air lies in layers, as the rock does.  From below:
   vaults; channels cut to lead rain down to the stone; carved well
   mouths; graves under yews; marks cut in stone, mostly pictures.  Their
   craft was water and stone: rods and rings steeped in the stone's
-  water, and keepers built of stone that the water moves.
+  water, bog iron from the moss, and keepers built of stone that the
+  water moves, bound with that iron.
 - **Mercantile**: gritstone for the engine house and the Guild hall,
   fireclay brick and stone-slate roofs for the terraces, iron smelted
   from the coal measures' own ironstone, black shale spoil heaps,
@@ -874,7 +875,7 @@ the reason for the new one.
 | **bone heap** (bone husk) | the well-keepers' dead from the ossuary, risen |
 | **cave bat** (tunnel shrike) | come in through the rim's caves |
 | ossuary priest | a well-keeper priest still at his office, who raises the bones |
-| **wall keeper** (rust golem) | a keeper built of the walls' own stone |
+| rust golem | a keeper of the walls' stone bound with bog iron: sound for a thousand years while the works were dry, rusting since the breach let the water through |
 | **doorkeeper** (hollow mason) | guardian; the keeper set over the Well-House door |
 
 ### The stone's pool: the Well-House, levels 10 to 12 (now "the Heart")
