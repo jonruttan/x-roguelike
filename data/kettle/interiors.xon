@@ -5,6 +5,8 @@
 ; a screen.  Its level is made by its own forms before the set's, with
 ; a way out and no way further down; (enter "TEXT") is said the first
 ; time in.  The band's caches are laid inside as they are out of doors.
+; One that is (below SET) has no level of its own: its door goes down
+; into the region SET of this world.
 
 (interior "farmhouse cellar" (depth 1 2) (chance 40)
   (enter "Stone steps down into the dark, and something shifting among the barrels.")
@@ -20,3 +22,9 @@
   (enter "The Guild's lamps have been here before you, and the vault runs on past where they dug.")
   (level-style caves) (cave-fill 35)
   (creatures 2 4) (items 2 3))
+
+; The pit, on the square: (below SET) makes its door the way down into
+; the region SET of this world, the Delve, in place of a place of its
+; own; the way up out of the Delve's first level comes back onto it.
+(interior "pit" (depth 0 0) (chance 100) (below "delve")
+  (enter "The winding shaft: the cage gone, ladders down into the dark, and water loud below."))

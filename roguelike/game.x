@@ -26,8 +26,11 @@
 ; and taken up again, m shows the screens visited, and the hub with
 ; the goal in hand is the win; a door on a screen, > on it, goes into
 ; the interior behind it (see interiors.x), kept the same way, and its
-; way out, <, comes back onto the door.  Nothing here touches a
-; terminal: a spec gives keys and reads the state.
+; way out, <, comes back onto the door.  An interior that is (below
+; NAME) goes down into the region NAME instead, a descent by that set's
+; own forms, whose way up out of its first level, never sealed, comes
+; back onto the door.  Nothing here touches a terminal: a spec gives
+; keys and reads the state.
 
 (module roguelike/game)
 
@@ -41,7 +44,7 @@
 (import roguelike/state
   game-rng game-set game-depth game-depth! game-map game-map! game-player game-creatures game-creatures!
   game-floor game-floor! game-pack game-turn game-turn! game-ask game-ask! game-over game-over! game-traps game-traps!
-  game-exploring game-exploring!
+  game-exploring game-exploring! game-below? game-go-below! game-go-above! game-top-set
   game-screen game-screen! game-kept-level game-keep! game-screens? game-world-cols game-world-rows game-hub
   game-screen-distance game-screen-in? game-screen-key game-door game-inside game-inside! game-level-key
   game-deepest game-deepest! game-rows game-cols game-param game-param1 game-new game-epitaph! game-kept game-quests
@@ -64,7 +67,7 @@
 (import roguelike/chain chain-build!)
 (import roguelike/traps traps-found-at traps-place! traps-step! traps-search!)
 (import roguelike/interiors interiors-door! interiors-params interiors-prop1)
-(import roguelike/data data-one)
+(import roguelike/data data-one data-region)
 
 (def %gm-roll2 (fn (_ g spec) (state-roll (game-rng g) (List ref 0 spec) (List ref 1 spec))))
 
@@ -155,11 +158,15 @@
 (def %gm-ascend!
   (fn (_ g)
     (game-depth! g (- (game-depth g) 1))
-    (if (= (game-depth g) 0)
-      (do (game-over! g (lit won))
-          (state-tell! g (lit won) "You climb into daylight.  You have won." ()))
-      (do (%gm-level! g (game-forms g) #t (lit down))
-          (state-tell! g (lit stairs-up) "You climb to level {level}." (list (pair "level" (Str8 str (game-depth g)))))))))
+    (match
+      ((game-below? g) (if (= (game-depth g) 0) (%gm-come-up! g)
+                         (do (%gm-level! g (game-forms g) (items-goal-held? g) (lit down))
+                             (state-tell! g (lit stairs-up) "You climb to level {level}." (list (pair "level" (Str8 str (game-depth g))))))))
+      ((= (game-depth g) 0)
+        (do (game-over! g (lit won))
+            (state-tell! g (lit won) "You climb into daylight.  You have won." ())))
+      (#t (do (%gm-level! g (game-forms g) #t (lit down))
+              (state-tell! g (lit stairs-up) "You climb to level {level}." (list (pair "level" (Str8 str (game-depth g))))))))))
 
 ; --- the world of screens ----------------------------------------------------
 
@@ -220,6 +227,36 @@
     (player-at! (game-player g) (first (map-down (game-map g))) (rest (map-down (game-map g))))
     (%gm-light! g)
     (state-tell! g (lit go-out) "You come out of the {name}." subs)
+    (%gm-keep! g)))
+
+; Through the door of the screen stood on, down into the region REGION
+; behind the interior NAME: the region's forms in force, its first
+; level made, the player on its stairs up, the interior's (enter
+; "TEXT") said and the band's word after it.  The screen is kept, to
+; come back to.
+(def %gm-go-below!
+  (fn (_ g name region)
+    (def text (interiors-prop1 g name (lit enter) ""))
+    (def went (state-text g (lit go-below) "You go down the {name}." (list (pair "name" name))))
+    (%gm-keep! g)
+    (game-go-below! g region (data-region (game-set g) region))
+    (game-depth! g 1)
+    (%gm-level! g (game-forms g) #f (lit up))
+    (state-say! g went)
+    (unless (str=? text "") (state-say! g text))
+    (%gm-enter-band! g)))
+
+; Up out of the region's first level onto the door of the screen it
+; lies under, the set the game began on in force again.
+(def %gm-come-up!
+  (fn (_ g)
+    (game-go-above! g)
+    (def name (game-door g (game-level-key g)))
+    (game-depth! g (game-screen-distance g (first (game-screen g)) (rest (game-screen g))))
+    (%gm-restore! g (game-kept-level g (game-level-key g)))
+    (player-at! (game-player g) (first (map-down (game-map g))) (rest (map-down (game-map g))))
+    (%gm-light! g)
+    (state-tell! g (lit come-up) "You climb out of the {name}." (list (pair "name" name)))
     (%gm-keep! g)))
 
 ; With the goal in hand on the hub screen, out of doors, the win: by a
@@ -457,8 +494,10 @@
       ((not (= (map-tile (game-map g) (player-r p) (player-c p)) tile-down))
         (do (state-tell! g (lit no-stairs) "There are no stairs here." ()) #f))
       ((game-screens? g)
-        ((fn (_ name) (if (null? name) (do (state-tell! g (lit no-stairs) "There are no stairs here." ()) #f)
-                        (do (%gm-go-in! g name) #t)))
+        ((fn (_ name)
+           (match ((null? name) (do (state-tell! g (lit no-stairs) "There are no stairs here." ()) #f))
+                  ((str=? (interiors-prop1 g name (lit below) "") "") (do (%gm-go-in! g name) #t))
+                  (#t (do (%gm-go-below! g name (interiors-prop1 g name (lit below) "")) #t))))
          (game-door g (game-level-key g))))
       ((not (null? guardian))
         (do (state-tell! g (lit barred) "The {name} bars the way down." (list (pair "name" (creature-name guardian)))) #f))
@@ -471,6 +510,7 @@
         (do (state-tell! g (lit no-stairs) "There are no stairs here." ()) #f))
       ((not (null? (game-inside g)))
         (do (%gm-go-out! g) #t))
+      ((game-below? g) (do (%gm-ascend! g) #t))
       ((not (items-goal-held? g))
         (do (state-tell! g (lit no-way-up) "The way up is sealed." ()) #f))
       (#t (do (%gm-ascend! g) #t)))))
@@ -600,9 +640,9 @@
 
 ; --- the score -----------------------------------------------------------------
 
-; A set's (score (NAME POINTS) ...) is what a game is worth: POINTS for
-; each of NAME, among gold, deepest (the level, or the screens out from
-; the hub), won, quests (done), screens (visited) and places (gone
+; A set's (score (NAME POINTS) ...), the set the game began on, below
+; or not, is what a game is worth: POINTS for each of NAME, among gold,
+; deepest (the level, or the screens out from the hub), won, quests (done), screens (visited) and places (gone
 ; into); and (par TURNS POINTS), POINTS a turn under TURNS on a win.
 ; What it does not name counts nothing.  A set without one scores
 ; gold, fifty a level and a thousand for the win.
@@ -634,7 +674,7 @@
             (if (if (eq? (game-over g) (lit won)) (< 0 under) #f) under 0)
             (%gm-count g name)))
         (list name count (* count (List ref (if (eq? name (lit par)) 2 1) w)))))
-    (List filter (fn (_ l) (not (= 0 (List ref 2 l)))) (List map line (game-param g (lit score) %gm-score-default)))))
+    (List filter (fn (_ l) (not (= 0 (List ref 2 l)))) (List map line (data-one (game-top-set g) (lit score) %gm-score-default)))))
 
 ; What game G is worth.
 (def game-score (fn (_ g) (List fold (fn (_ a l) (+ a (List ref 2 l))) 0 (game-score-lines g))))

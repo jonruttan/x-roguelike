@@ -14,8 +14,9 @@
 ; knob it names -- (level-style ...), rooms when it names none, (rooms
 ; LO HI), (lit ...), (creatures LO HI), (items LO HI) -- is its own,
 ; and it has a way out, < on it, and no way further down.  Its (enter
-; "TEXT") is said the first time in.  What goes in and out, and what is
-; kept, is the game's (see game.x).
+; "TEXT") is said the first time in.  One with (below NAME) has no level
+; of its own: its door goes down into the set's region NAME.  What goes
+; in and out, and what is kept, is the game's (see game.x).
 
 (module roguelike/interiors)
 
