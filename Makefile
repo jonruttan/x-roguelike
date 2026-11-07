@@ -10,8 +10,8 @@ SHARE := $(if $(PREFIX),$(PREFIX)/share/x,$(shell $(X) --share-dir))
 DEST  := $(SHARE)/langs/roguelike
 
 # What a consumer needs to run the lang: the declaration, the entry, the
-# modules.  Not the suite, not the tooling, not CI.
-PAYLOAD := lang.xon run.x roguelike data
+# modules, the data and the art.  Not the suite, not the tooling, not CI.
+PAYLOAD := lang.xon run.x roguelike data art
 
 .PHONY: install
 install: ## Install into <share>/langs/roguelike
