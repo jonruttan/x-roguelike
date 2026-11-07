@@ -121,6 +121,12 @@ makes it waver by P percent, as a flame does.
 Text, so it is read with `x/codec/xon`, diffed, and drawn by hand; no
 image tools.  Turned into RGBA once when the set is loaded.
 
+The font, `art/font.xon`, is every set's: `(size 8 8)`, then `(letter
+CODE (rows ...))` for each printable character, "#" ink and "."
+clear, tinted by the front-end to the colour the terminal would give
+the text.  A letter sits in columns 1 to 5, capitals on rows 0 to 6,
+descenders on row 7.
+
 ## Each set's look
 
 Gritty and worked, a little toward the real: muted, sooty colours;

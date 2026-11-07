@@ -74,3 +74,18 @@ front-end puts together, and `(as OTHER)` a tile of the art.
 ```
 ---
     (() 46)
+
+
+## the font
+
+### every printable letter, each eight rows of eight
+
+```roguelike
+(def letters (data-all (data-load "art") 'letter))
+(write (list (List length letters)
+             (List all? (fn (_ c) (List any? (fn (_ l) (= (first l) c)) letters)) (List range 32 127))
+             (List all? (fn (_ l) (= 9 (List length (List ref 1 l)))) letters)
+             (List all? (fn (_ l) (List all? (fn (_ r) (= 8 (Str8 length r))) (rest (List ref 1 l)))) letters)))
+```
+---
+    (95 #t #t #t)
