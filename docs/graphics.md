@@ -112,7 +112,7 @@ makes it waver by P percent, as a flame does.
 - A flicker moves the light's reach and strength together, by a few
   slow and quick waves, each light out of step with the rest; the
   window redraws about twelve times a second while a light flickers.
-- Delve's lights: the player's lamp, the lamp-keeper's, the firedamp's
+- Delve's lights: the player's lamp, the lampman's, the firedamp's
   cold glow, the Lodestar's, and a salvager's candle stub on a face
   here and there.  The Galleries' own lamps are long out (the band's
   word on arrival), so no torch burns in a bracket there.  Deeper, the

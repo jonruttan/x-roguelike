@@ -693,7 +693,7 @@
   "......Ka.aK....."
   "......K...K....."))
 
-(tile "lamp-keeper" (light 255 186 108 3) (flicker 10) (rows
+(tile "lampman" (light 255 186 108 3) (flicker 10) (rows
   "................"
   "................"
   ".......kkk......"
