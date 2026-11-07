@@ -41,15 +41,17 @@
 (import roguelike/state
   game-set game-depth game-deepest game-map game-player game-creatures game-pack game-over game-epitaph game-turn
   game-ask game-messages game-band band-name game-param
-  player-r player-c player-hp player-hpmax player-str player-food player-weapon player-armour
+  player-r player-c player-hp player-hpmax player-str player-food player-weapon player-armour player-condition
   item-class item-name item-prop item-prop1 item-enchant item-letter item-r item-c game-floor
-  creature-r creature-c creature-state creature-trait? state-adjacent? state-dist state-shortfall state-creature-at state-items-at
+  creature-r creature-c creature-state creature-trait? creature-hp creature-prop creature-prop1 state-defence state-adjacent? state-dist state-shortfall state-creature-at state-items-at
   game-quest-state game-screens? game-screen game-screen-key game-hub game-chain game-inside state-creature-named
   game-top-set game-home game-place game-below?)
 (import roguelike/creatures creatures-shown? creatures-door-diagonal?)
 (import roguelike/items items-goal-held?)
 (import roguelike/traps traps-found-at)
 (import roguelike/game game-make game-key! game-frontier?)
+(import roguelike/combat combat-player-dice combat-player-level)
+(import roguelike/odds odds-hit odds-swings odds-regen odds-hurt)
 
 (def %bl-say (fn (_ text) (Sys fd-write 1 text)))
 (def %bl-env
@@ -277,10 +279,49 @@
           (if (= open 0) 100 (int/ (* 100 seen) open)))))
     (count 0 0 0)))
 
+; --- weighing a fight --------------------------------------------------------
+
+; The hit points a fight with CR is likely to cost the player: the swings
+; to take what CR has left, by the game's odds (odds.x), its regeneration
+; counted, times what it does a turn at its speed.
+(def %bl-cost
+  (fn (_ g cr)
+    (def hp (creature-hp cr))
+    (def t (odds-swings (odds-hit (combat-player-level g) (creature-prop1 cr (lit defence) 3)) (combat-player-dice g) 0 hp))
+    (def speed (match ((creature-trait? cr (lit fast)) (lit fast)) ((creature-trait? cr (lit slow)) (lit slow)) (#t ())))
+    (* (if (creature-trait? cr (lit regen)) (odds-regen t hp) t)
+       (odds-hurt (creature-prop1 cr (lit level) 1) (creature-prop cr (lit attack) (list 1 2)) (state-defence g) speed))))
+; Whether the fight with CR is likely lost: it costs all the player has.
+(def %bl-losing? (fn (_ g cr) (not (< (%bl-cost g cr) (player-hp (game-player g))))))
+; Whether WHO would start the fight with CR: it costs no more than
+; COURAGE % of what the player has.
+(def %bl-worth?
+  (fn (_ g who cr) (not (< (* (player-hp (game-player g)) (%bl-at who (lit courage))) (* 100 (%bl-cost g cr))))))
+; Whether POTION's least mending fits in what the player has lost.
+(def %bl-mends?
+  (fn (_ g potion)
+    (def p (game-player g))
+    (def e (item-prop potion (lit effect) (list (lit heal) 1 1)))
+    (not (< (- (player-hpmax p) (player-hp p)) (List ref 1 e)))))
+; Whether to drink POTION with FOE beside: the fight lost without it, and
+; the potion's least mending all of use.
+(def %bl-drink-now?
+  (fn (_ g foe potion)
+    (match ((null? foe) #f) ((null? potion) #f) ((%bl-losing? g foe) (%bl-mends? g potion)) (#t #f))))
+; Whether a step away from CR gains a turn: not when the player is slowed
+; or held, nor from one that is fast, as it then strikes for each step.
+(def %bl-free?
+  (fn (_ g cr)
+    (def p (game-player g))
+    (match ((< 0 (player-condition p (lit slowed))) #f)
+           ((< 0 (player-condition p (lit held))) #f)
+           (#t (not (creature-trait? cr (lit fast)))))))
+
 ; --- the turn ----------------------------------------------------------------
 
 ; To the stairs and down them, or up with the goal: rested to READY first
-; with nothing hostile in view; a guardian barring the shaft is fought.
+; with nothing hostile in view; a guardian barring the shaft is fought,
+; after a rest to full when the fight is likely lost.
 ; With no way to the stairs yet, toward what is unseen; with nowhere at
 ; all to go, toward any hostile in view, and only then rests a turn.
 (def %bl-descend!
@@ -293,7 +334,10 @@
       ((%bl-at-stairs? g t)
         (do (game-key! g (if up? "<" ">"))
             (when (List any? (fn (_ m) (Str8 includes? "shaft" m)) (game-messages g))
-              (do (def cr (%bl-shown-hostile g)) (if (null? cr) (game-key! g "s") (%bl-toward-creature! g cr))))))
+              (do (def cr (%bl-shown-hostile g))
+                  (match ((null? cr) (game-key! g "s"))
+                         ((if (%bl-losing? g cr) (< (player-hp p) (player-hpmax p)) #f) (game-key! g "s"))
+                         (#t (%bl-toward-creature! g cr)))))))
       ((%bl-walk! g (%bl-stairs-goal g t)) ())
       ((%bl-to-frontier! g s) ())
       ((if (null? shown) #f (%bl-toward-creature! g shown)) ())
@@ -315,8 +359,12 @@
       ((not (null? q)) (%bl-answer! g q))
       ((if (null? potion) #f (%bl-under? p (%bl-at who (lit quaff))))
         (do (%bl-use! g "q" potion) (Vector set! 2 (+ 1 (Vector ref 2 s)) s)))
+      ((%bl-drink-now? g foe potion)
+        (do (%bl-use! g "q" potion) (Vector set! 2 (+ 1 (Vector ref 2 s)) s)))
       ((not (null? foe))
-        (unless (if (%bl-under? p (%bl-at who (lit retreat))) (%bl-away! g foe) #f) (%bl-toward-creature! g foe)))
+        (unless (if (if (< 0 (%bl-at who (lit retreat))) (%bl-free? g foe) #f)
+                  (if (if (%bl-losing? g foe) #t (%bl-under? p (%bl-at who (lit retreat)))) (%bl-away! g foe) #f) #f)
+          (%bl-toward-creature! g foe)))
       ((if (null? food) #f (< (player-food p) hungry))
         (do (%bl-use! g "e" food) (Vector set! 3 (+ 1 (Vector ref 3 s)) s)))
       ((if (null? shown) (%bl-under? p (%bl-at who (lit rest))) #f) (game-key! g "s"))
@@ -416,8 +464,8 @@
            (#t (%bl-look! g s)))))
 
 ; With nothing pressing: what lies here, an item within reach (within
-; GREED with a hostile in view), a foe in view within CHASE when at or
-; above COURAGE, the errand on a world of screens, the giver, the level
+; GREED with a hostile in view), a foe in view within CHASE whose fight
+; is worth it to COURAGE, the errand on a world of screens, the giver, the level
 ; until CURIOSITY of it is seen, the stairs.  A foe it cannot reach is
 ; passed by.
 (def %bl-onward!
@@ -428,7 +476,7 @@
     (def reach (if (null? shown) 9999 (%bl-at who (lit greed))))
     (def to-item (if (if (< 0 reach) (%bl-any-wanted? g s) #f)
                    (%bl-step-within g (fn (_ r c) (not (null? (%bl-wanted-at g s r c)))) reach) ()))
-    (def to-foe (if (if (null? shown) #t (%bl-under? p (%bl-at who (lit courage)))) ()
+    (def to-foe (if (if (null? shown) #t (not (%bl-worth? g who shown))) ()
                   (%bl-step-within g (fn (_ r c) (if (= r (creature-r shown)) (= c (creature-c shown)) #f)) (%bl-at who (lit chase)))))
     (def errand (if (game-screens? g) (%bl-errand g) ()))
     (def curious? (if (%bl-explored? g s) #f
