@@ -18,7 +18,7 @@
   room-r0 room-c0 room-r1 room-c1 room-centre
   map-room-at map-light-radius! tile-rock tile-floor tile-wall tile-door tile-passage tile-down tile-up
   tile-water tile-pillar tile-fall tile-dressed tile-hedge tile-gate tile-thicket tile-edge tile-bog tile-scar map-passable?
-  dungeon-generate
+  dungeon-generate scale-rung scale-across scale-down scale-area scale-check!
   game-make game-key! game-explore! game-more! game-score game-score-lines game-score-text game-help game-draw!
   game-set game-depth game-map game-player game-creatures game-creatures! game-floor game-floor! game-pack game-pack!
   game-messages game-turn game-ask game-over game-epitaph game-known game-deepest game-log game-pages-placed
