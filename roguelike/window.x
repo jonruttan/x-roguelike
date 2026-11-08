@@ -83,19 +83,22 @@
       ((not (null? (game-over g))) ())
       ((if (null? e) #f (if (eq? (first e) (lit quit)) #t (eq? (first e) (lit close))))
         (game-over! g (lit saved)))
+      ; The frame goes on screen before the heap is collected: the
+      ; collect's cost comes after the key's answer, not before it.
       ((not (null? key))
         (do (if (game-exploring? g) (game-exploring! g ()) (game-key! g key))
-            (Heap collect)
             (paint-turn! p g (%wn-art a g))
             (Sdl show! win (List ref 2 (paint-frame! p g tick)))
+            (Heap collect)
             (self g a p win tick)))
       ; Any other event -- a resize, the window shown again -- may have
       ; lost what was presented: the frame is presented again.
       ((not (null? e)) (do (Sdl show! win (List ref 2 (paint-screen p))) (self g a p win tick)))
       ((game-exploring? g)
-        (do (game-explore! g) (Heap collect)
+        (do (game-explore! g)
             (paint-turn! p g (%wn-art a g))
             (Sdl show! win (List ref 2 (paint-frame! p g tick)))
+            (Heap collect)
             (Sys usleep 30000)
             (self g a p win tick)))
       ((paint-flickers? p)

@@ -12,7 +12,7 @@ each frame that layer, what stands on it, the light and the text.
 
 ```roguelike
 (import roguelike/paint paint-art paint-font paint-make paint-screen paint-turn! paint-frame! paint-flickers? paint-width paint-height)
-(import roguelike/frame frame-art frame-camera frame-place frame-tile-size)
+(import roguelike/frame frame-art frame-camera frame-place frame-tile-size frame-level-y)
 (import x/gfx/canvas)
 (def spec-art (paint-art (data-load "data/delve/art")))
 (def spec-pic (fn (_ f) ((fn (_ p) (if (null? p) () (rest p))) (List find (fn (_ p) (if (pair? p) (eq? (first p) 'picture) #f)) (rest (rest f))))))
@@ -28,6 +28,19 @@ each frame that layer, what stands on it, the light and the text.
 ```
 ---
     (#t #t #t #t #f)
+
+### a tile that moves has its pictures: its own rows' first, then each frame's
+
+```roguelike
+(def moving (paint-art (list '(colour "a" 10 20 30) '(colour "b" 200 100 50)
+                             '(tile lamp (rows "ab" "ba") (frames 3 (rows "bb" "aa") (rows "aa" "aa"))))))
+(def ps (List find (fn (_ p) (if (pair? p) (eq? (first p) 'pictures) #f)) (rest (rest (first (rest (rest moving)))))))
+(write (list (List ref 1 ps) (List length (rest (rest ps)))
+             (eq? (List ref 1 (List ref 2 ps)) (first (spec-pic (List ref 2 moving))))
+             (List map (fn (_ p) (Canvas pixel (List ref 1 p) 0 0)) (rest (rest ps)))))
+```
+---
+    (3 3 #t ((10 20 30 255) (200 100 50 255) (10 20 30 255)))
 
 ### the font: a letter's cell eight wide
 
@@ -54,9 +67,9 @@ each frame that layer, what stands on it, the light and the text.
 (def at (frame-place (frame-camera (map-rows m) (map-cols m) (player-r pl) (player-c pl)) (player-r pl) (player-c pl)))
 (def lit? (fn (_ px) (< 0 (+ (first px) (List ref 1 px) (List ref 2 px)))))
 (write (list (first s) (List ref 1 s)
-             (lit? (Canvas pixel s (+ 8 (first at)) (+ 8 (rest at))))
+             (lit? (Canvas pixel s (+ 16 (* 2 (first at))) (+ 16 (+ frame-level-y (* 2 (- (rest at) frame-level-y))))))
              (Canvas pixel s 0 0)
-             (List any? (fn (_ x) (lit? (Canvas pixel s x 343))) (List range 0 80))
+             (List any? (fn (_ x) (lit? (Canvas pixel s x 351))) (List range 0 80))
              (paint-flickers? p)))
 ```
 ---

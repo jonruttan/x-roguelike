@@ -38,7 +38,7 @@ takes, a wall in parts by its neighbours, and the camera on the player.
 (write (list (frame-camera 22 80 0 0) (frame-camera 22 80 11 40) (frame-camera 22 80 21 79) (frame-camera 10 30 5 5)))
 ```
 ---
-    ((0 . 0) (2 . 20) (3 . 40) (0 . 0))
+    ((0 . 0) (6 . 30) (12 . 60) (0 . 0))
 
 
 ## the art
@@ -88,8 +88,8 @@ takes, a wall in parts by its neighbours, and the camera on the player.
 (write (list (<= (* frame-view-rows frame-view-cols) (List length ops))
              (List all? (fn (_ op) (if (eq? (first op) 'tile) #t (eq? (first op) 'fill))) ops)
              (List all? (fn (_ op) (if (eq? (first op) 'tile) (pair? (List ref 3 op)) #t)) ops)
-             (List all? (fn (_ op) (if (<= 0 (List ref 1 op)) (< (List ref 1 op) 640) #f)) ops)
-             (List all? (fn (_ op) (if (<= frame-level-y (List ref 2 op)) (< (List ref 2 op) (+ frame-level-y (* 19 16))) #f)) ops)
+             (List all? (fn (_ op) (if (<= 0 (List ref 1 op)) (< (List ref 1 op) (* frame-view-cols 16)) #f)) ops)
+             (List all? (fn (_ op) (if (<= frame-level-y (List ref 2 op)) (< (List ref 2 op) (+ frame-level-y (* frame-view-rows 16))) #f)) ops)
              (List any? (fn (_ op) (if (eq? (first op) 'tile)
                                      (if (= (List ref 1 op) (* 16 (- (player-c p) (rest cam))))
                                        (= (List ref 2 op) (+ frame-level-y (* 16 (- (player-r p) (first cam))))) #f) #f)) ops)))
@@ -115,7 +115,7 @@ takes, a wall in parts by its neighbours, and the camera on the player.
              (List find (fn (_ op) (if (eq? (first op) 'light) (= (List ref 1 op) (+ 8 (first at))) #f)) scene)))
 ```
 ---
-    ('shadow 'player (0 24 40 19) 2 ('light 600 176 255 196 118 5 10))
+    ('shadow 'player (0 24 20 10) 2 ('light 280 112 255 196 118 5 10))
 
 ### the light map: the player's cell lit and warm, a seen cell dimmer, a dark one black
 
@@ -124,7 +124,7 @@ takes, a wall in parts by its neighbours, and the camera on the player.
 (import x/core/doors ptr-ref str->ptr)
 (def lmap (frame-light-map view (List filter (fn (_ op) (eq? (first op) 'light)) scene) 0))
 (def px (fn (_ i) (if (null? i) () (List map (fn (_ k) (ptr-ref (str->ptr (List ref 2 lmap)) (+ (* i 4) k) 1)) '(0 1 2 3)))))
-(def first-of (fn (_ v) (List find (fn (_ i) (= v (char->int (str-byte-ref (List ref 5 view) i)))) (List range 0 760))))
+(def first-of (fn (_ v) (List find (fn (_ i) (= v (char->int (str-byte-ref (List ref 5 view) i)))) (List range 0 (* frame-view-rows frame-view-cols)))))
 (def lit-beside (px (- cell 1)))
 (import x/core/doors ptr-set!)
 (ptr-set! (str->ptr (List ref 5 view)) (- cell 1) 1 1)
@@ -134,7 +134,7 @@ takes, a wall in parts by its neighbours, and the camera on the player.
              ))
 ```
 ---
-    ((40 19) (255 244 226 255) (251 239 223 255) (137 130 122 255) (0 0 0 255) (117 105 108 89))
+    ((20 10) (255 237 209 255) (255 239 212 255) (111 117 124 255) (0 0 0 255) (117 105 108 89))
 
 ### a set with no art: what stands on the level is its glyph
 
