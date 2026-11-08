@@ -98,7 +98,7 @@ picture.
 (write (list (art-problems (spec-set-named "delve") art) (List length (data-all art 'tile))))
 ```
 ---
-    (() 135)
+    (() 136)
 
 ### classic's art is whole
 
@@ -116,7 +116,7 @@ picture.
 (write (list (art-problems (spec-set-named "kettle") art) (List length (data-all art 'tile))))
 ```
 ---
-    (() 145)
+    (() 146)
 
 ### town's art is whole, the town's walls and setts with it
 

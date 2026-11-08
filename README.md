@@ -30,6 +30,7 @@ Scores keep in `~/.x-roguelike/scores`.
     z                 zap a wand               e         eat
     w                 wield a weapon           W  T      wear armour, take it off
     P  R              put on a ring, take it off
+    f                 fill the lamp from a flask
     S                 save and leave           Q         quit
     ?                 the keys                 Esc       stop asking
     Ctrl-L            draw the screen again
@@ -57,11 +58,12 @@ town of Kettle, twelve levels carved as caves in four bands, lit by
 sight to a radius rather than by the room, with creatures that come in
 packs, shoot along a line and call for company, potions and scrolls
 known on sight, hunger as a store of food that costs hit points when
-it runs out, gear that asks for strength and grows by a scroll of
-upgrade, traps found by searching, a blow on a sleeper that always
-lands, a guardian at the foot of each band, pages on the floor that
-tell, read in order, why the pumps stopped, and three people down
-there who ask for something and pay for it.
+it runs out, a lamp whose oil burns by the minute, gear that asks for
+strength and grows by a scroll of upgrade, traps found by searching,
+a blow on a sleeper that always lands, a guardian at the foot of each
+band, pages on the floor that tell, read in order, why the pumps
+stopped, and three people down there who ask for something and pay
+for it.
 What a set may turn on, each off unless named: `(view N)` sight to N
 cells, `(level-style caves)` with `(cave-fill PERCENT)`, `(known CLASS
 ...)`, a first `(hunger ...)` value under one, or `(starve N)` for a hit
@@ -182,6 +184,14 @@ whose levels are at 1 plays a second a turn.  `(hunger STORE HUNGRY
 WEAK MOST DEATH)` gives MOST, what eating fills to (2000), and DEATH,
 the seconds under nothing a set with no `(starve N)` dies at (150);
 `kettle` begins with half a day's food and holds a day's.
+
+`(lamp FULL LOW)` gives the player a lamp holding FULL seconds of oil,
+lit full at the start, or the first turn in the set when come from one
+without.  It burns on the clock, says when LOW seconds are left and
+when it goes out, and out, sight is the cells beside.  An `(item oil
+NAME (oil N))` is N seconds of it, poured in with `f` to FULL at the
+most.  `delve` holds half an hour, and its flasks ten minutes each:
+under it the lamp is what runs out, and food lasts the day.
 
 What a cell is and how it is drawn are kept apart.  `roguelike/map`
 reports each cell's kind of terrain -- floor, wall, door, water,

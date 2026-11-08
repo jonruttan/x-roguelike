@@ -31,7 +31,7 @@
   game-set game-depth game-map game-player game-creatures game-floor game-pack game-messages game-ask
   game-over game-epitaph game-turn game-traps game-param1 game-screens? game-screen
   player-r player-c player-hp player-hpmax player-str player-strmax player-level player-exp player-gold
-  player-food player-condition item-r item-c item-class? item-class creature-r creature-c creature-glyph
+  player-food player-lamp player-condition item-r item-c item-class? item-class creature-r creature-c creature-glyph
   creature-trait? game-param game-band band-prop1 game-forms state-defence)
 (import roguelike/combat combat-exp-for)
 (import roguelike/creatures creatures-shown?)
@@ -164,7 +164,7 @@
                        %dr-cache)
           (Vector set! 2 (List map (fn (_ c) (pair c (data-glyph forms c "?")))
                                    (list (lit potion) (lit scroll) (lit wand) (lit ring) (lit weapon) (lit armour)
-                                         (lit food) (lit gold) (lit goal) (lit page) (lit token)))
+                                         (lit food) (lit oil) (lit gold) (lit goal) (lit page) (lit token)))
                        %dr-cache)))))
 (def %dr-item-glyph
   (fn (self it l)
@@ -225,6 +225,16 @@
            ((< f (+ (List ref 2 spec) 1)) "Weak")
            ((< f (+ (List ref 1 spec) 1)) "Hungry")
            (#t ""))))
+; The lamp under the set's (lamp FULL LOW): "Dark" when out, "Lamp low"
+; at LOW or under.
+(def %dr-lamp
+  (fn (_ g)
+    (def spec (game-param g (lit lamp) ()))
+    (def n (player-lamp (game-player g)))
+    (match ((null? spec) "")
+           ((= n 0) "Dark")
+           ((if (< 0 n) (not (< (List ref 1 spec) n)) #f) "Lamp low")
+           (#t ""))))
 (def %dr-conditions
   (fn (_ g)
     (def p (game-player g))
@@ -244,7 +254,7 @@
       "  Str:" (Str8 str (player-str p)) "(" (Str8 str (player-strmax p)) ")"
       "  Arm:" (Str8 str (state-defence g))
       "  Exp:" (Str8 str (player-level p)) "/" (Str8 str (player-exp p))
-      "  " (%dr-hunger g) " " (%dr-conditions g))))
+      "  " (%dr-hunger g) ((fn (_ s) (if (str=? s "") "" (Str8 append " " s))) (%dr-lamp g)) " " (%dr-conditions g))))
 
 (def %dr-top
   (fn (_ g)

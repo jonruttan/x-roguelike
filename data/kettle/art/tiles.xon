@@ -2189,6 +2189,25 @@
   "..kHyHHk........"
   "..kkkkkk........"))
 
+; A tin flask of tallow oil, corked.
+(tile oil (rows
+  "................"
+  "................"
+  "................"
+  "......kkkk......"
+  "......kOOk......"
+  "......kkkk......"
+  ".......kk......."
+  "......kIJk......"
+  ".....kIJIIk....."
+  "....kIJIIIik...."
+  "....kIIIIIik...."
+  "....kIYyIIik...."
+  "....kIyyIIik...."
+  "....kiiiiiik...."
+  ".....kkkkkk....."
+  "................"))
+
 ; The League's coin, dropped by a spring for luck.
 (tile gold (rows
   "................"
