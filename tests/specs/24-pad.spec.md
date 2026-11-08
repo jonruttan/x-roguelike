@@ -60,3 +60,16 @@ step it.
 ```
 ---
     ("b" 'right)
+
+## other events
+
+### the window's quit and close, which carry nothing more, are no key and leave the pad as it was
+
+```roguelike
+(import roguelike/pad pad-make pad-key)
+(def s (pad-make))
+(write (list (pad-key s '(quit) 0) (pad-key s '(close) 0) (pad-key s '(other 771) 0)
+             (pad-key s '(pad-down south 1) 0)))
+```
+---
+    (() () () ",")
