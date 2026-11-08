@@ -36,8 +36,13 @@ Each set keeps its own save and scores, in `~/.x-roguelike/NAME/`.
     Enter  Space      go on past --More--, put away what you look at
     Ctrl-L            draw the screen again
 
-In a window (`-w`), F11 or Alt-Enter switches to fullscreen and back,
-and a gamepad plays too:
+In a window (`-w`), the game opens on the set's title screen: continue
+the saved game, start a new one, set the options, or quit.  The options
+are the zoom, fullscreen, and how loud the music and the sounds are;
+they are kept in `~/.x-roguelike/options` for every set.  Esc, when the
+game is not asking anything, pauses it: back to the game, the options,
+the keys, or save and quit.  F11 or Alt-Enter switches to fullscreen
+and back, and a gamepad plays too:
 
     left stick, d-pad  move, in eight directions; held, it keeps moving
     A  pick up, or go on past a message (Enter)
@@ -45,7 +50,7 @@ and a gamepad plays too:
     X  your pack       Y  explore
     LB go up (<)       RB go down (>)
     left stick click   rest           right stick click  search
-    Start  the keys    Back  the map of the world
+    Start  pause       Back  the map of the world
 
 A command that asks for a thing, such as quaff or wear, takes its
 answer from the keyboard.

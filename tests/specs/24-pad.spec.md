@@ -18,7 +18,7 @@ step it.
              (pad-event? '(pad-axis left-x 0 1)) (pad-event? '(key-down 97 0 #f)) (pad-event? ())))
 ```
 ---
-    ("," () 'escape ">" "?" () #t #f #f)
+    ("," () 'escape ">" 'pause () #t #f #f)
 
 ### an event with nothing after its name, a quit or a close, is no key
 
