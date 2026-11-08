@@ -21,19 +21,23 @@
 (import x/gfx/canvas)
 (import x/core/doors int+ int- int* int/ int% int< int= str-make str->ptr ptr-ref ptr-set!)
 (import roguelike/data data-load data-all)
-(import roguelike/frame frame-tile-size frame-view-rows frame-view-cols frame-level-y
+(import roguelike/frame frame-tile-size frame-view-rows frame-view-cols frame-view! frame-level-y
   frame-scene frame-light-map frame-named)
 (import roguelike/draw draw-top draw-status draw-overlay)
 
 (def paint-width 640)
 (def paint-height 360)
-(def %pt-level-w (* frame-view-cols frame-tile-size))
-(def %pt-level-h (* frame-view-rows frame-tile-size))
-; The level is drawn at the tile's size and shown twice that.
-(def %pt-zoom 2)
-(def %pt-shown-w (* %pt-zoom %pt-level-w))
-(def %pt-shown-h (* %pt-zoom %pt-level-h))
-(def %pt-status-y (+ frame-level-y (+ %pt-shown-h 3)))
+; The screen's part the level is shown in, below the two lines of
+; messages and above the standing.
+(def %pt-area-w paint-width)
+(def %pt-area-h 320)
+(def %pt-status-y (+ frame-level-y (+ %pt-area-h 3)))
+; The zooms the level can be shown at: the view as many cells as fill
+; the area at the zoom, the last cell cut where it does not divide.
+(def paint-zoom-least 1)
+(def paint-zoom-most 4)
+(def paint-zoom-first 2)
+(def %pt-cells (fn (_ px zoom) (int/ (int+ px (int- (int* frame-tile-size zoom) 1)) (int* frame-tile-size zoom))))
 (def %pt-black (list 0 0 0))
 (def %pt-ink (list 206 198 184))
 (def %pt-glyph (list 236 228 204))
@@ -189,16 +193,31 @@
       (do (when (eq? (first (first ops)) (lit glint)) (%pt-glint! c (first ops) dy tick))
           (self c (rest ops) dy tick)))))
 
-; A painter: [SCREEN LAYER FONT SCENE PANEL WORK], the scene the last
-; turn's, the panel the art's nine-piece picture (a tile form) or nil,
-; and WORK the level drawn and lit at the tile's size before it is
-; shown at the zoom.
+; A painter: [SCREEN LAYER FONT SCENE PANEL WORK ZOOM], the scene the
+; last turn's, the panel the art's nine-piece picture (a tile form) or
+; nil, WORK the level drawn and lit at the tile's size before it is
+; shown at ZOOM, LAYER and WORK the view's size.
 (def paint-make
   (fn (_ font)
-    (Vector of (Canvas make paint-width paint-height) (Canvas make %pt-level-w %pt-level-h) font () ()
-               (Canvas make %pt-level-w %pt-level-h))))
+    (paint-zoom! (Vector of (Canvas make paint-width paint-height) () font () () () 0) paint-zoom-first)))
 (def paint-screen (fn (_ p) (Vector ref 0 p)))
 (def %pt-over (fn (_ p) (rest (rest (Vector ref 3 p)))))
+(def paint-zoom (fn (_ p) (Vector ref 6 p)))
+
+; Painter P set to show the level at ZOOM, held to the zooms there are:
+; the view, the frame's, made as many cells as fill the area, and the
+; layer and work made its size.  The next turn painted draws the level
+; anew.  P.
+(def paint-zoom!
+  (fn (_ p zoom)
+    (def z (if (int< zoom paint-zoom-least) paint-zoom-least (if (int< paint-zoom-most zoom) paint-zoom-most zoom)))
+    (frame-view! (%pt-cells %pt-area-h z) (%pt-cells %pt-area-w z))
+    (Vector set! 1 (Canvas make (%pt-level-w) (%pt-level-h)) p)
+    (Vector set! 5 (Canvas make (%pt-level-w) (%pt-level-h)) p)
+    (Vector set! 6 z p)
+    p))
+(def %pt-level-w (fn (_) (int* (frame-view-cols) frame-tile-size)))
+(def %pt-level-h (fn (_) (int* (frame-view-rows) frame-tile-size)))
 
 ; The turn's scene of game G with art A taken, and its level drawn into
 ; the layer: once a turn, not a frame.
@@ -206,7 +225,7 @@
   (fn (_ p g a)
     (def scene (frame-scene g a))
     (def layer (Vector ref 1 p))
-    (Canvas fill! layer 0 0 %pt-level-w %pt-level-h %pt-black)
+    (Canvas fill! layer 0 0 (%pt-level-w) (%pt-level-h) %pt-black)
     (%pt-ops! layer (first (rest scene)) frame-level-y (Vector ref 2 p) 0)
     (Vector set! 3 scene p)
     (Vector set! 4 (frame-named a (lit panel) 0) p)
@@ -230,7 +249,7 @@
 (def %pt-overlay!
   (fn (_ s panel font lines)
     (unless (null? lines)
-      (do (def shown (List take (int/ (- %pt-shown-h 16) 9) lines))
+      (do (def shown (List take (int/ (- %pt-area-h 16) 9) lines))
           (def w (+ 16 (* 8 (List fold (fn (_ n l) (if (< n (Str8 length l)) (Str8 length l) n)) 0 shown))))
           (def w2 (if (< paint-width w) paint-width w))
           (def h (+ 16 (* 9 (List length shown))))
@@ -254,16 +273,19 @@
     (def font (Vector ref 2 p))
     (def over (%pt-over p))
     (def work (Vector ref 5 p))
-    (Canvas copy! work 0 0 (Vector ref 1 p) 0 0 %pt-level-w %pt-level-h)
+    (def lw (first work))
+    (def lh (first (rest work)))
+    (def zoom (Vector ref 6 p))
+    (Canvas copy! work 0 0 (Vector ref 1 p) 0 0 lw lh)
     (%pt-ops! work over frame-level-y font tick)
-    (Canvas light! work 0 0 %pt-level-w %pt-level-h
+    (Canvas light! work 0 0 lw lh
       (frame-light-map (List find (fn (_ op) (eq? (first op) (lit view))) over)
                        (List filter (fn (_ op) (eq? (first op) (lit light))) over) tick)
       frame-tile-size)
     (%pt-glints! work over frame-level-y tick)
-    (Canvas nine! s 0 frame-level-y %pt-shown-w %pt-shown-h work 0 0 0 0)
+    (Canvas nine! s 0 frame-level-y (int* zoom lw) (int* zoom lh) work 0 0 0 0)
     (Canvas fill! s 0 0 paint-width frame-level-y %pt-black)
-    (Canvas fill! s 0 (+ frame-level-y %pt-shown-h) paint-width (- paint-height (+ frame-level-y %pt-shown-h)) %pt-black)
+    (Canvas fill! s 0 (+ frame-level-y %pt-area-h) paint-width (- paint-height (+ frame-level-y %pt-area-h)) %pt-black)
     (def lines (%pt-lines (draw-top g)))
     (Canvas text! s 0 4 (first lines) %pt-ink font)
     (unless (null? (rest lines)) (Canvas text! s 0 13 (%pt-fit (first (rest lines))) %pt-ink font))
@@ -281,4 +303,5 @@
       (%pt-over p))))
 
 (provide roguelike/paint
-  paint-width paint-height paint-art paint-font paint-make paint-screen paint-turn! paint-frame! paint-flickers?)
+  paint-width paint-height paint-art paint-font paint-make paint-screen paint-turn! paint-frame! paint-flickers?
+  paint-zoom paint-zoom! paint-zoom-least paint-zoom-most paint-zoom-first)

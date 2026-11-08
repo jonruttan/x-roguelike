@@ -88,3 +88,15 @@ each frame that layer, what stands on it, the light and the text.
 ```
 ---
     (1 #f #t)
+
+### the zoom: the view as many cells as fill the screen at it, held to one to four; a frame drawn at each
+
+```roguelike
+(import roguelike/paint paint-zoom paint-zoom!)
+(import roguelike/frame frame-view-rows frame-view-cols)
+(def at-zoom (fn (_ z) (paint-zoom! p z) (paint-turn! p g fa) (paint-frame! p g 0)
+                       (list (paint-zoom p) (frame-view-rows) (frame-view-cols) (first (Vector ref 5 p)))))
+(write (list (at-zoom 1) (at-zoom 3) (at-zoom 4) (at-zoom 9) (at-zoom 0) (at-zoom 2)))
+```
+---
+    ((1 20 40 640) (3 7 14 224) (4 5 10 160) (4 5 10 160) (1 20 40 640) (2 10 20 320))

@@ -29,10 +29,12 @@
 (import roguelike/traps trap-r trap-c trap-found?)
 
 (def frame-tile-size 16)
-; The view, in cells: drawn at the tile's size and shown twice that
-; (paint.x), so the hero and what is near them read at a glance.
-(def frame-view-rows 10)
-(def frame-view-cols 20)
+; The view, [ROWS COLS] in cells: drawn at the tile's size and shown
+; at the painter's zoom (paint.x), which sets it to fill the screen.
+(def %fr-view (Vector of 10 20))
+(def frame-view-rows (fn (_) (Vector ref 0 %fr-view)))
+(def frame-view-cols (fn (_) (Vector ref 1 %fr-view)))
+(def frame-view! (fn (_ rows cols) (do (Vector set! 0 rows %fr-view) (Vector set! 1 cols %fr-view) ())))
 (def frame-level-y 24)
 
 ; --- the art ----------------------------------------------------------------
@@ -139,8 +141,10 @@
 (def frame-camera
   (fn (_ rows cols r c)
     (def clamp (fn (_ v hi) (match ((< v 0) 0) ((< hi v) (if (< hi 0) 0 hi)) (#t v))))
-    (pair (clamp (- r (int/ frame-view-rows 2)) (- rows frame-view-rows))
-          (clamp (- c (int/ frame-view-cols 2)) (- cols frame-view-cols)))))
+    (def vr (frame-view-rows))
+    (def vc (frame-view-cols))
+    (pair (clamp (- r (int/ vr 2)) (- rows vr))
+          (clamp (- c (int/ vc 2)) (- cols vc)))))
 
 ; --- the level --------------------------------------------------------------
 
@@ -175,13 +179,14 @@
   (fn (_ a m cam)
     (def r0 (first cam))
     (def c0 (rest cam))
+    (def cols (frame-view-cols))
     ((fn (self i acc)
        (if (int< i 0) acc
-         (do (def r (int+ r0 (int/ i frame-view-cols)))
-             (def c (int+ c0 (int% i frame-view-cols)))
+         (do (def r (int+ r0 (int/ i cols)))
+             (def c (int+ c0 (int% i cols)))
              (self (int- i 1)
                (%fr-onto (frame-cell a m r c (int* frame-tile-size (int- c c0)) (int+ frame-level-y (int* frame-tile-size (int- r r0)))) acc)))))
-     (int- (* frame-view-rows frame-view-cols) 1) ())))
+     (int- (* (frame-view-rows) cols) 1) ())))
 
 ; --- what stands on it --------------------------------------------------------
 
@@ -191,7 +196,7 @@
   (fn (_ cam r c)
     (def vr (- r (first cam)))
     (def vc (- c (rest cam)))
-    (if (if (< vr 0) #t (if (< vc 0) #t (if (< vr frame-view-rows) (not (< vc frame-view-cols)) #t))) ()
+    (if (if (< vr 0) #t (if (< vc 0) #t (if (< vr (frame-view-rows)) (not (< vc (frame-view-cols))) #t))) ()
       (pair (* frame-tile-size vc) (+ frame-level-y (* frame-tile-size vr))))))
 
 ; The picture named NAME put at R C, over its shadow when SHADOW; where
@@ -234,17 +239,19 @@
 ; BYTES): a byte a cell, row by row, 0 dark, 1 seen before, 2 in view.
 (def frame-view
   (fn (_ m cam)
-    (def bytes (str-make (* frame-view-rows frame-view-cols)))
+    (def rows (frame-view-rows))
+    (def cols (frame-view-cols))
+    (def n (* rows cols))
+    (def bytes (str-make n))
     (def bp (str->ptr bytes))
-    (def n (* frame-view-rows frame-view-cols))
     ((fn (self i)
        (when (int< i n)
-         (do (def r (int+ (first cam) (int/ i frame-view-cols)))
-             (def c (int+ (rest cam) (int% i frame-view-cols)))
+         (do (def r (int+ (first cam) (int/ i cols)))
+             (def c (int+ (rest cam) (int% i cols)))
              (ptr-set! bp i (match ((map-visible? m r c) 2) ((map-seen? m r c) 1) (#t 0)) 1)
              (self (int+ i 1)))))
      0)
-    (list (lit view) 0 frame-level-y frame-view-cols frame-view-rows bytes)))
+    (list (lit view) 0 frame-level-y cols rows bytes)))
 
 ; The lights of OPS, the tiles drawn, whose cells are in view on M
 ; under camera CAM: (light X Y R G B REACH FLICKER), X Y the cell's
@@ -432,6 +439,6 @@
       (game-floor g))))
 
 (provide roguelike/frame
-  frame-tile-size frame-view-rows frame-view-cols frame-level-y
+  frame-tile-size frame-view-rows frame-view-cols frame-view! frame-level-y
   frame-art frame-art-band frame-named frame-seed frame-wall-parts frame-camera frame-cell frame-level
   frame-place frame-things frame-view frame-lights frame-glints frame-flicker frame-light-map frame-scene)
