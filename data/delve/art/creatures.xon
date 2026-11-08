@@ -46,7 +46,24 @@
   ".kQkkuuuuuk....."
   ".kk.kqkkkqk....."
   "....kqk..kqk...."
-  "...kkk...kkk...."))
+  "...kkk...kkk....")
+  (frames 6 (rows
+  "................"
+  "................"
+  "................"
+  "..........kkk..."
+  ".........khhRk.."
+  ".........kRRrk.."
+  ".....kkk..kQk..."
+  "....kqQQk.kQk..."
+  "....kQqqk.kQk..."
+  "....kqqQkkQk...."
+  "...kkkqQQQQk...."
+  "..kQqkqQQqk....."
+  ".kQkkuuuuuk....."
+  ".kQkkuuuuuk....."
+  "....kqk..kqk...."
+  "...kkk...kkk....")))
 
 ; A pit ferret: feral, bred from the miners' ratters, hunting in packs;
 ; long and low, head up on a long neck, dark mask, legs and tail.
@@ -66,7 +83,24 @@
   "...kk&&&&&&&&k.."
   "kkk&&&&&&&&&&k.."
   "uuuk&uukkkuu&k.."
-  "kkk.kkk...kkkk.."))
+  "kkk.kkk...kkkk..")
+  (frames 4 (rows
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "..........kkk..."
+  ".........kuBuk.."
+  ".........kBuBBP."
+  "....kkkkkk&BBk.."
+  "..kk&&&&&&&&k..."
+  "kk&&&&&&&&&&k..."
+  "uuk&uukkkuu&k..."
+  "kk.kkk...kkkk...")))
 
 ; The fireman: the shift's gas-tester, who saw the Candle burn tall and
 ; sent them down anyway; dead-pale under his cap, his stick in one hand
@@ -87,7 +121,162 @@
   "...kbkuuuuukbk.."
   "....TkcCkCckyk.."
   "....TkcCkCckLlk."
+  "...kTkkk.kkkyyk.")
+  (frames 6 (rows
+  "................"
+  "................"
+  "................"
+  "......kkkk......"
+  ".....kciCck....."
+  "....kkkkkkkk...."
+  "......kPbPk....."
+  "......kbPbk....."
+  ".......kbk......"
+  ".....kcCcCck...."
+  "....kcCCcCCck..."
+  "...kckCCcCCkck.."
+  "...kCkcCcCCkCk.."
+  "...kbkuuuuukbk.."
+  "....TkcCkCckLlk."
   "...kTkkk.kkkyyk."))
+  (walk 1
+   (rows
+  "................"
+  "................"
+  "......kkkk......"
+  ".....kciCck....."
+  "....kkkkkkkk...."
+  "......kPbPk....."
+  "......kbPbk....."
+  ".......kbk......"
+  ".....kcCcCck...."
+  "....kcCCcCCck..."
+  "...kckCCcCCkck.."
+  "...kCkcCcCCkCk.."
+  "...kbkuuuuukbk.."
+  "....TkcCkCckyk.."
+  "....TkcCkCckLlk."
+  "...kTkkk.kkkyyk.")
+   (rows
+  "................"
+  "................"
+  "......kkkk......"
+  ".....kciCck....."
+  "....kkkkkkkk...."
+  "......kPbPk....."
+  "......kbPbk....."
+  ".....kcCcCck...."
+  "....kcCCcCCck..."
+  "...kckCCcCCkck.."
+  "...kCkcCcCCkCk.."
+  "...kbkuuuuukbk.."
+  "....TkcCkCckyk.."
+  "....TkcCkCckyk.."
+  "...kTkkkkCckLlk."
+  ".........kkkyyk.")
+   (rows
+  "................"
+  "......kkkk......"
+  ".....kciCck....."
+  "....kkkkkkkk...."
+  "......kPbPk....."
+  "......kbPbk....."
+  ".......kbk......"
+  ".....kcCcCck...."
+  "....kcCCcCCck..."
+  "...kckCCcCCkck.."
+  "...kCkcCcCCkCk.."
+  "...kbkuuuuukbk.."
+  "....TkcCkCckyk.."
+  "....TkcCkCckyk.."
+  "...kTkkkkCckLlk."
+  ".........kkkyyk.")
+   (rows
+  "................"
+  "................"
+  "......kkkk......"
+  ".....kciCck....."
+  "....kkkkkkkk...."
+  "......kPbPk....."
+  "......kbPbk....."
+  ".......kbk......"
+  ".....kcCcCck...."
+  "....kcCCcCCck..."
+  "...kckCCcCCkck.."
+  "...kCkcCcCCkCk.."
+  "...kbkuuuuukbk.."
+  "....TkcCkCckyk.."
+  "....TkcCkCckLlk."
+  "...kTkkk.kkkyyk.")
+   (rows
+  "................"
+  "................"
+  "......kkkk......"
+  ".....kciCck....."
+  "....kkkkkkkk...."
+  "......kPbPk....."
+  "......kbPbk....."
+  ".......kbk......"
+  ".....kcCcCck...."
+  "....kcCCcCCck..."
+  "...kckCCcCCkck.."
+  "...kCkcCcCCkCk.."
+  "...kbkuuuuukbk.."
+  "....TkcCkCckyk.."
+  "....TkcCkCckLlk."
+  "...kTkkk.kkkyyk.")
+   (rows
+  "................"
+  "................"
+  "......kkkk......"
+  ".....kciCck....."
+  "....kkkkkkkk...."
+  "......kPbPk....."
+  "......kbPbk....."
+  ".....kcCcCck...."
+  "....kcCCcCCck..."
+  "...kckCCcCCkck.."
+  "...kCkcCcCCkCk.."
+  "...kbkuuuuukbk.."
+  "....TkcCkCckyk.."
+  "....TkcCkCckyk.."
+  "....TkcCkkkkyyk."
+  "...kTkkk........")
+   (rows
+  "................"
+  "......kkkk......"
+  ".....kciCck....."
+  "....kkkkkkkk...."
+  "......kPbPk....."
+  "......kbPbk....."
+  ".......kbk......"
+  ".....kcCcCck...."
+  "....kcCCcCCck..."
+  "...kckCCcCCkck.."
+  "...kCkcCcCCkCk.."
+  "...kbkuuuuukbk.."
+  "....TkcCkCckyk.."
+  "....TkcCkCckyk.."
+  "....TkcCkkkkyyk."
+  "...kTkkk........")
+   (rows
+  "................"
+  "................"
+  "......kkkk......"
+  ".....kciCck....."
+  "....kkkkkkkk...."
+  "......kPbPk....."
+  "......kbPbk....."
+  ".......kbk......"
+  ".....kcCcCck...."
+  "....kcCCcCCck..."
+  "...kckCCcCCkck.."
+  "...kCkcCcCCkCk.."
+  "...kbkuuuuukbk.."
+  "....TkcCkCckyk.."
+  "....TkcCkCckLlk."
+  "...kTkkk.kkkyyk."))
+)
 
 ; --- the Flood --------------------------------------------------------------
 
@@ -108,7 +297,24 @@
   "..k122k11122k..."
   "...k1200221k...."
   "....kk22kkk....."
-  "................"))
+  "................")
+  (frames 4 (rows
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "..........kkk..."
+  ".........k1101k."
+  "kk......k1122k.."
+  "11k....k1122k..."
+  "k12k..k1102k...."
+  ".k122k11122k...."
+  "..k1200221k....."
+  "...kk22kkk......"
+  "................")))
 
 ; A silt crayfish: blind and white, up from the stone's pool; a claw up,
 ; a jointed tail and fan, a feeler swept back over its shell.
@@ -128,7 +334,24 @@
   ".kkkkkk9kk9kk9k."
   "......k.k..k.k.."
   "................"
-  "................"))
+  "................")
+  (frames 6 (rows
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  ".....99........."
+  ".......99......."
+  ".........99.kkk."
+  "...........9k88k"
+  ".......kkkkkk89k"
+  "..kkkkk8888898k."
+  "kk8989k88889888k"
+  ".kkkkkk9kk9kk9k."
+  "......k.k..k.k.."
+  "................"
+  "................")))
 
 ; A great leech: lies in the standing water and holds on; humped over the
 ; surface, the tail sucker down, the head up and open.
@@ -148,7 +371,24 @@
   ".k3G3333G333G33k"
   "k333kkkk3333G3k."
   "wWwkWwwwkkkkkkWw"
-  ".wwwwWwwwwWwwww."))
+  ".wwwwWwwwwWwwww.")
+  (frames 4 (rows
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "..........kkk..."
+  ".........k3D3k.."
+  ".........k333k.."
+  "..........k3Gk.."
+  "..........k33k.."
+  "...kkkk...k3G3k."
+  ".kk33G3kkk33G3k."
+  "k3G3333G333G33k."
+  "333kkkk3333G3k.."
+  "WwkWwwwkkkkkkWw."
+  "wwwwWwwwwWwwww..")))
 
 ; A drowned shade: the Flood's dead, hair lank over the face, one arm up
 ; for air that is not there, running away to water below the waist.
@@ -168,7 +408,24 @@
   "...j.K5aaa5K...."
   ".....Ka5a5aKj..."
   "....j.5Ka.5....."
-  "......j..j..j..."))
+  "......j..j..j...")
+  (frames 3 (rows
+  ".........KaK...."
+  ".........K5K...."
+  "......KKKKaK...."
+  ".....K5KKK5K...."
+  ".....KK5aK5K...."
+  "......K5aKaK...."
+  ".....KK5aa5K...."
+  "....K5aAaa5K...."
+  "....K5aAAa5K...."
+  "...K5KaAaa5K...."
+  "...KaK5aAa5K...."
+  "...j.K5aaa5K...."
+  ".....Ka5a5aKj..."
+  "....j.5Ka.5....."
+  "......j..j..j..."
+  "................")))
 
 ; The undertow: the Flood's current, given a will by the stone's water.
 (tile "undertow" (rows
@@ -187,7 +444,94 @@
   "kW!WWW!WWW!WWW!k"
   "k!WW!wWW!WWw!WWk"
   "kwwWwwwwWwwwwWwk"
+  ".kkkkkkkkkkkkkk.")
+  (frames 4 (rows
+  ".....kkkk......."
+  "...kkWW!!kk....."
+  "..kW!!WWw!Wk...."
+  ".kW!wwwwwW!Wk..."
+  "kW!ww????wW!Wk.."
+  "kWw??kkk??wWWk.."
+  "W!w?kwWWk?wW!Wk."
+  "Ww?kw!!Wwk?wWWk."
+  "W!w?kwWWk??wW!k."
+  "WWw??kk???ww!Wk."
+  "kW!wwtTt?wwW!k.."
+  "kWWWwwwwwwW!WWk."
+  "W!WWW!WWW!WWW!k."
+  "!WW!wWW!WWw!WWk."
+  "wwWwwwwWwwwwWwk."
+  "kkkkkkkkkkkkkk.."))
+  (walk 2
+   (rows
+  ".......kkkk....."
+  ".....kkWW!!kk..."
+  "....kW!!WWw!Wk.."
+  "...kW!wwwwwW!Wk."
+  "..kW!ww????wW!Wk"
+  "..kWw??kkk??wWWk"
+  ".kW!w?kwWWk?wW!W"
+  ".kWw?kw!!Wwk?wWW"
+  ".kW!w?kwWWk??wW!"
+  ".kWWw??kk???ww!W"
+  "..kW!wwtTt?wwW!k"
+  "..kWWWwwwwwwW!WW"
+  ".kW!WWW!WWW!WWW!"
+  ".k!WW!wWW!WWw!WW"
+  ".kwwWwwwwWwwwwWw"
+  "..kkkkkkkkkkkkkk")
+   (rows
+  "......kkkk......"
+  "....kkWW!!kk...."
+  "...kW!!WWw!Wk..."
+  "..kW!wwwwwW!Wk.."
+  ".kW!ww????wW!Wk."
+  ".kWw??kkk??wWWk."
+  "kW!w?kwWWk?wW!Wk"
+  "kWw?kw!!Wwk?wWWk"
+  "kW!w?kwWWk??wW!k"
+  "kWWw??kk???ww!Wk"
+  ".kW!wwtTt?wwW!k."
+  ".kWWWwwwwwwW!WWk"
+  "kW!WWW!WWW!WWW!k"
+  "k!WW!wWW!WWw!WWk"
+  "kwwWwwwwWwwwwWwk"
+  ".kkkkkkkkkkkkkk.")
+   (rows
+  ".....kkkk......."
+  "...kkWW!!kk....."
+  "..kW!!WWw!Wk...."
+  ".kW!wwwwwW!Wk..."
+  "kW!ww????wW!Wk.."
+  "kWw??kkk??wWWk.."
+  "W!w?kwWWk?wW!Wk."
+  "Ww?kw!!Wwk?wWWk."
+  "W!w?kwWWk??wW!k."
+  "WWw??kk???ww!Wk."
+  "kW!wwtTt?wwW!k.."
+  "kWWWwwwwwwW!WWk."
+  "W!WWW!WWW!WWW!k."
+  "!WW!wWW!WWw!WWk."
+  "wwWwwwwWwwwwWwk."
+  "kkkkkkkkkkkkkk..")
+   (rows
+  "......kkkk......"
+  "....kkWW!!kk...."
+  "...kW!!WWw!Wk..."
+  "..kW!wwwwwW!Wk.."
+  ".kW!ww????wW!Wk."
+  ".kWw??kkk??wWWk."
+  "kW!w?kwWWk?wW!Wk"
+  "kWw?kw!!Wwk?wWWk"
+  "kW!w?kwWWk??wW!k"
+  "kWWw??kk???ww!Wk"
+  ".kW!wwtTt?wwW!k."
+  ".kWWWwwwwwwW!WWk"
+  "kW!WWW!WWW!WWW!k"
+  "k!WW!wWW!WWw!WWk"
+  "kwwWwwwwWwwwwWwk"
   ".kkkkkkkkkkkkkk."))
+)
 
 ; --- the Old Works ----------------------------------------------------------
 
@@ -209,7 +553,24 @@
   "....k66k66k....."
   "....kBk.kBk....."
   "....kbk.kbk....."
-  "...kkk..kkkk...."))
+  "...kkk..kkkk....")
+  (frames 6 (rows
+  "................"
+  "................"
+  "................"
+  "......kkk......."
+  ".....kBBbk......"
+  ".....kBbbk......"
+  "......kbk......."
+  "....kkBBBkk....."
+  "...kBkbkbkBkk..."
+  "...kbkBBBkbBBk.."
+  "...kBkbkbkkkBk.."
+  "...kbk6B6k..kk.."
+  "...kBk666k......"
+  "....k66k66k....."
+  "....kbk.kbk....."
+  "...kkk..kkkk....")))
 
 ; A cave bat, come in through the rim's caves: wings spread on their
 ; finger bones, a furred body, ears up.
@@ -229,7 +590,24 @@
   "................"
   "................"
   "................"
-  "................"))
+  "................")
+  (frames 3 (rows
+  "................"
+  "................"
+  "................"
+  "................"
+  "......k..k......"
+  ".k...kUkkUk...k."
+  "k7k..kUuuUk..k7k"
+  "k77k.kuUUuk.k77k"
+  "k777kkuUUukk777k"
+  "k7k77kuUUuk77k7k"
+  "k7kk77kuuk77kk7k"
+  ".kk.kk7kk7kk.kk."
+  "................"
+  "................"
+  "................"
+  "................")))
 
 ; An ossuary priest: a well-keeper priest still at his office, his rod
 ; steeped in the stone's water, bones at his neck.
@@ -249,7 +627,24 @@
   "..kTk666z66z66zk"
   "..kTkz66z6z66z6k"
   "..kTk66z666z666k"
-  "..kkkkkkkkkkkkkk"))
+  "..kkkkkkkkkkkkkk")
+  (frames 6 (rows
+  "................"
+  "................"
+  "................"
+  ".kWWk...kkk....."
+  ".kWBk..k666k...."
+  "..kTk.k66zz6k..."
+  "..kTk.k6kbbk6k.."
+  "..kTk.k6kPbk6k.."
+  "..kTkk66kkkz66k."
+  "..kpbk666B66z6k."
+  "..kTkz66B6B666k."
+  "..kTk66z666z66k."
+  "..kTkz66z666z6k."
+  "..kTk666z66z66zk"
+  "..kTk66z666z666k"
+  "..kkkkkkkkkkkkkk")))
 
 ; A rust golem: a keeper of the walls' stone bound with bog iron, sound for
 ; a thousand years while the works were dry, rusting since the breach.
@@ -269,7 +664,24 @@
   "....k%%bkk%bk..."
   "....kiOk.kOik..."
   "....k%bk.k%bk..."
-  "...kkkkk.kkkkk.."))
+  "...kkkkk.kkkkk..")
+  (frames 6 (rows
+  "................"
+  "................"
+  ".....kkkkkk....."
+  ".....k%%%bk....."
+  ".....kOkkOk....."
+  ".....k%b%bk....."
+  "..kkkkiOoikkkk.."
+  ".k%%bkIo%ik%%bk."
+  ".k%b%k%o%bk%b%k."
+  ".kOoikb%o%kiOok."
+  ".k%%bk%%b%k%%bk."
+  ".kb%%kiOoik%b%k."
+  ".kkkkk%%b%kkkkk."
+  "....k%%bkk%bk..."
+  "....k%bk.k%bk..."
+  "...kkkkk.kkkkk..")))
 
 ; The warder: the old people's man of stone set over the Well-House door;
 ; dressed limestone laid in courses, a small head on great shoulders,
@@ -290,7 +702,162 @@
   ".kkk%%bkk%%bkkk."
   "...k%%bkk%%bk..."
   "...kbbbkkbbbk..."
+  "..kkkkkkkkkkkk..")
+  (frames 6 (rows
+  "................"
+  "......kkkk......"
+  ".....k%%%bk....."
+  ".....k%%bbk....."
+  "......k%bk......"
+  ".kkkkkk%bkkkkkk."
+  ".k%%%%%%%%%%%bk."
+  ".k%%bk%%%bk%%bk."
+  ".k%%bkbbbbk%%bk."
+  ".kbbbk%%%bkbbbk."
+  ".k%%bk%%%bk%%bk."
+  ".k%%bkbbbbk%%bk."
+  ".kbbbk%%%bkbbbk."
+  ".kkk%%bkk%%bkkk."
+  "...kbbbkkbbbk..."
   "..kkkkkkkkkkkk.."))
+  (walk 1
+   (rows
+  "......kkkk......"
+  ".....k%%%bk....."
+  ".....k%%bbk....."
+  "......k%bk......"
+  ".kkkkkk%bkkkkkk."
+  ".k%%%%%%%%%%%bk."
+  ".k%%bk%%%bk%%bk."
+  ".k%%bkbbbbk%%bk."
+  ".kbbbk%%%bkbbbk."
+  ".k%%bk%%%bk%%bk."
+  ".k%%bkbbbbk%%bk."
+  ".kbbbk%%%bkbbbk."
+  ".kkk%%bkk%%bkkk."
+  "...k%%bkk%%bk..."
+  "...kbbbkkbbbk..."
+  "..kkkkkkkkkkkk..")
+   (rows
+  "......kkkk......"
+  ".....k%%%bk....."
+  ".....k%%bbk....."
+  "......k%bk......"
+  ".kkkkkk%bkkkkkk."
+  ".k%%%%%%%%%%%bk."
+  ".k%%bk%%%bk%%bk."
+  ".kbbbk%%%bkbbbk."
+  ".k%%bk%%%bk%%bk."
+  ".k%%bkbbbbk%%bk."
+  ".kbk%%bkk%%bkbk."
+  ".kkk%%bkk%%bkkk."
+  "...kbbbkkbbbk..."
+  "...kbbbkkbbbk..."
+  "..kkkkkkkkkkkk.."
+  "................")
+   (rows
+  ".....k%%%bk....."
+  ".....k%%bbk....."
+  "......k%bk......"
+  ".kkkkkk%bkkkkkk."
+  ".k%%%%%%%%%%%bk."
+  ".k%%bk%%%bk%%bk."
+  ".k%%bkbbbbk%%bk."
+  ".kbbbk%%%bkbbbk."
+  ".k%%bk%%%bk%%bk."
+  ".k%%bkbbbbk%%bk."
+  ".kbk%%bkk%%bkbk."
+  ".kkk%%bkk%%bkkk."
+  "...kbbbkkbbbk..."
+  "...kbbbkkbbbk..."
+  "..kkkkkkkkkkkk.."
+  "................")
+   (rows
+  "......kkkk......"
+  ".....k%%%bk....."
+  ".....k%%bbk....."
+  "......k%bk......"
+  ".kkkkkk%bkkkkkk."
+  ".k%%%%%%%%%%%bk."
+  ".k%%bk%%%bk%%bk."
+  ".k%%bkbbbbk%%bk."
+  ".kbbbk%%%bkbbbk."
+  ".k%%bk%%%bk%%bk."
+  ".k%%bkbbbbk%%bk."
+  ".kbbbk%%%bkbbbk."
+  ".kkk%%bkk%%bkkk."
+  "...k%%bkk%%bk..."
+  "...kbbbkkbbbk..."
+  "..kkkkkkkkkkkk..")
+   (rows
+  "......kkkk......"
+  ".....k%%%bk....."
+  ".....k%%bbk....."
+  "......k%bk......"
+  ".kkkkkk%bkkkkkk."
+  ".k%%%%%%%%%%%bk."
+  ".k%%bk%%%bk%%bk."
+  ".k%%bkbbbbk%%bk."
+  ".kbbbk%%%bkbbbk."
+  ".k%%bk%%%bk%%bk."
+  ".k%%bkbbbbk%%bk."
+  ".kbbbk%%%bkbbbk."
+  ".kkk%%bkk%%bkkk."
+  "...k%%bkk%%bk..."
+  "...kbbbkkbbbk..."
+  "..kkkkkkkkkkkk..")
+   (rows
+  "......kkkk......"
+  ".....k%%%bk....."
+  ".....k%%bbk....."
+  "......k%bk......"
+  ".kkkkkk%bkkkkkk."
+  ".k%%%%%%%%%%%bk."
+  ".k%%bk%%%bk%%bk."
+  ".kbbbk%%%bkbbbk."
+  ".k%%bk%%%bk%%bk."
+  ".k%%bkbbbbk%%bk."
+  ".kbk%%bkk%%bkbk."
+  ".kkk%%bkk%%bkkk."
+  "...kbbbkkbbbk..."
+  "...kbbbkkbbbk..."
+  "..kkkkkkkkkkkk.."
+  "................")
+   (rows
+  ".....k%%%bk....."
+  ".....k%%bbk....."
+  "......k%bk......"
+  ".kkkkkk%bkkkkkk."
+  ".k%%%%%%%%%%%bk."
+  ".k%%bk%%%bk%%bk."
+  ".k%%bkbbbbk%%bk."
+  ".kbbbk%%%bkbbbk."
+  ".k%%bk%%%bk%%bk."
+  ".k%%bkbbbbk%%bk."
+  ".kbk%%bkk%%bkbk."
+  ".kkk%%bkk%%bkkk."
+  "...kbbbkkbbbk..."
+  "...kbbbkkbbbk..."
+  "..kkkkkkkkkkkk.."
+  "................")
+   (rows
+  "......kkkk......"
+  ".....k%%%bk....."
+  ".....k%%bbk....."
+  "......k%bk......"
+  ".kkkkkk%bkkkkkk."
+  ".k%%%%%%%%%%%bk."
+  ".k%%bk%%%bk%%bk."
+  ".k%%bkbbbbk%%bk."
+  ".kbbbk%%%bkbbbk."
+  ".k%%bk%%%bk%%bk."
+  ".k%%bkbbbbk%%bk."
+  ".kbbbk%%%bkbbbk."
+  ".kkk%%bkk%%bkkk."
+  "...k%%bkk%%bk..."
+  "...kbbbkkbbbk..."
+  "..kkkkkkkkkkkk.."))
+)
 
 ; --- the people ---------------------------------------------------------------
 
@@ -312,7 +879,24 @@
   "...kTkVVTVVklLk."
   "....kVVVTVVkkk.."
   "....kVTk.kTVk..."
-  "....kik...kik..."))
+  "....kik...kik...")
+  (frames 6 (rows
+  "................"
+  "................"
+  "......kkkk......"
+  ".....kttTtk....."
+  "....kkkkkkkk...."
+  "......kPpPk....."
+  "......kJpJk....."
+  ".......kPk......"
+  ".....kVTkTVk...."
+  "....kVVVTVVVk..."
+  "...kVVkBBBkVVk.."
+  "...kVkpBcBpkVk.."
+  "...kVkkBBBkkVk.."
+  "...kTkVVTVVklLk."
+  "....kVTk.kTVk..."
+  "....kik...kik...")))
 
 ; Hollis, the engine-wright: sleeves rolled, a leather apron, a spanner.
 (tile "pump-wright" (rows
@@ -331,7 +915,24 @@
   "...kIkUuUUUk...."
   "..kIIIkUUuUk...."
   "..kIkIkcckcck..."
-  "...k.kkkk.kkk..."))
+  "...k.kkkk.kkk...")
+  (frames 6 (rows
+  "................"
+  "................"
+  "................"
+  ".......kkk......"
+  "......kdddk....."
+  "......kpPdk....."
+  "......kPpPk....."
+  ".......kPk......"
+  ".....kbbbbbk...."
+  "....kbbUUUbbk..."
+  "...kbkbUUUbkbk.."
+  "...kpkUUuUUkpk.."
+  "...kIkUUuUUkk..."
+  "...kIkUuUUUk...."
+  "..kIkIkcckcck..."
+  "...k.kkkk.kkk...")))
 
 ; --- the Heart ----------------------------------------------------------------
 
@@ -354,7 +955,24 @@
   ".....knNkknNk..."
   "....knNk..knNk.."
   "....kNnk...kNnk."
-  "...kkkk....kkkk."))
+  "...kkkk....kkkk.")
+  (frames 3 (rows
+  ".......kkk......"
+  "......kN$4k....."
+  "......knNnk....."
+  ".......knk....4."
+  ".....kkNnNkkkk.."
+  "....knNn$4NnNNk4"
+  "...knNknNnnkkkk."
+  "..knk.kN$4Nk..M."
+  "..k4k.knNnnk...."
+  "...k..knn$nk...."
+  ".....knNnnNk...."
+  ".....knNkknNk..."
+  "....knNk..knNk.."
+  "....kNnk...kNnk."
+  "...kkkk....kkkk."
+  "................")))
 
 ; Glow-midges: a swarm lit by the stone's water, dancing in a column that
 ; spreads at the top; each midge a point of light.
@@ -374,7 +992,24 @@
   "........mj......"
   "......m...m....."
   "........m......."
-  "................"))
+  "................")
+  (frames 3 (rows
+  "................"
+  "................"
+  "......j....j...."
+  "...j.jMj.j......"
+  ".jMj..j.jMj..j.."
+  "..j.m.....j.jMj."
+  "....jMj.m...j..."
+  ".m...j..jMj...m."
+  "...m..jMj.j.j..."
+  "......j.m.jMj..."
+  "....m..jMj..j..."
+  ".......mj...m..."
+  ".....m..jMj....."
+  "........mj......"
+  "......m...m....."
+  "........m.......")))
 
 ; The Old Man: the last and oldest of the old people's men, by the pool;
 ; weathered grey stone, head sunk between its raised arms as it calls the
@@ -395,4 +1030,91 @@
   "...k[[]W[]][]k.."
   "..k[[]]]W[]]]]k."
   "!?kkkkkkWkkkkk?!"
+  "?!??!?W!??!??!??")
+  (frames 6 (rows
+  "................"
+  "......k7.7k....."
+  ".k.....kkk....k."
+  "k]k..........k]k"
+  "k[]k...kkk..k[]k"
+  ".k[]k.k[[]k.k[]k"
+  "..k[]kk[]]kk[]k."
+  "...k[[[]]][[]k.."
+  "...k[W[[]][]]k.."
+  "....k[W[[]]]k..."
+  "....k[W[]]]]k..."
+  "....k[[W[]]]k..."
+  "...k[[[W[]]]]k.."
+  "...k[[]W[]][]k.."
+  "!?kkkkkkWkkkkk?!"
   "?!??!?W!??!??!??"))
+  (walk 2
+   (rows
+  ".k.....kkk....k."
+  "k]k..........k]k"
+  "k[]k...kkk..k[]k"
+  ".k[]k.k[[]k.k[]k"
+  "..k[]kk[]]kk[]k."
+  "...k[[[]]][[]k.."
+  "...k[W[[]][]]k.."
+  "....k[W[[]]]k..."
+  "....k[W[]]]]k..."
+  "....k[[W[]]]k..."
+  "...k[[[W[]]]]k.."
+  "...k[[]W[]][]k.."
+  "..k[[]]]W[]]]]k."
+  "..k[[]]]W[]]]]k."
+  "!?kkkkkkWkkkkk?!"
+  "?!??!?W!??!??!??")
+   (rows
+  "......k7.7k....."
+  ".k.....kkk....k."
+  "k]k..........k]k"
+  "k[]k...kkk..k[]k"
+  ".k[]k.k[[]k.k[]k"
+  "..k[]kk[]]kk[]k."
+  "...k[[[]]][[]k.."
+  "...k[W[[]][]]k.."
+  "....k[W[[]]]k..."
+  "....k[W[]]]]k..."
+  "....k[[W[]]]k..."
+  "...k[[[W[]]]]k.."
+  "...k[[]W[]][]k.."
+  "..k[[]]]W[]]]]k."
+  "!?kkkkkkWkkkkk?!"
+  "?!??!?W!??!??!??")
+   (rows
+  "......k7.7k....."
+  ".k.....kkk....k."
+  "k]k..........k]k"
+  "k[]k...kkk..k[]k"
+  ".k[]k.k[[]k.k[]k"
+  "..k[]kk[]]kk[]k."
+  "...k[[[]]][[]k.."
+  "...k[W[[]][]]k.."
+  "....k[W[[]]]k..."
+  "....k[W[]]]]k..."
+  "....k[[W[]]]k..."
+  "...k[[[W[]]]]k.."
+  "...k[[]W[]][]k.."
+  "..k[[]]]W[]]]]k."
+  "!?kkkkkkWkkkkk?!"
+  "?!??!?W!??!??!??")
+   (rows
+  "......k7.7k....."
+  ".k.....kkk....k."
+  "k]k..........k]k"
+  "k[]k...kkk..k[]k"
+  ".k[]k.k[[]k.k[]k"
+  "..k[]kk[]]kk[]k."
+  "...k[[[]]][[]k.."
+  "...k[W[[]][]]k.."
+  "....k[W[[]]]k..."
+  "....k[W[]]]]k..."
+  "....k[[W[]]]k..."
+  "...k[[[W[]]]]k.."
+  "...k[[]W[]][]k.."
+  "..k[[]]]W[]]]]k."
+  "!?kkkkkkWkkkkk?!"
+  "?!??!?W!??!??!??"))
+)

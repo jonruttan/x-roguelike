@@ -34,7 +34,7 @@
   game-over game-epitaph game-depth game-deepest game-messages game-ask game-player player-gold game-exploring? game-exploring!)
 (import roguelike/game game-make game-key! game-explore! game-score game-score-text game-help)
 (import roguelike/draw game-draw!)
-(import roguelike/paint paint-art paint-font)
+(import roguelike/paint paint-arts paint-font)
 (import roguelike/window window-play)
 (import roguelike/save save-write! save-read save-path save-score! save-scores)
 
@@ -187,17 +187,16 @@
     (def root (guard (e ()) %lang-root))
     (if (str? root) (Str8 append root "/art") "art")))
 
-; A game in a window: the set's art from its art/ directory, the font
-; from the bundle's; a set with no art plays with its letters.
+; A game in a window: each place's art from its set's art/ directory
+; (paint-arts), the font from the bundle's.
 (def %cl-window
   (fn (_ opts)
     (def dir (Str8 append (%cl-data-dir opts) "/" (Opts value opts "-s" "classic")))
     (def set (data-load dir))
     (def saved (save-read (save-path "save") set 24 80))
     (def g (if (null? saved) (game-make (data-choose set (%cl-picks opts)) (%cl-seed opts) 24 80) saved))
-    (def art (paint-art (guard (e ()) (data-load (Str8 append dir "/art")))))
     (def zoom (if (null? (Opts value opts "-z")) () (%cl-to-int (Opts value opts "-z"))))
-    (def failed (window-play g art (paint-font (%cl-art-dir)) 2 zoom))
+    (def failed (window-play g (paint-arts dir) (paint-font (%cl-art-dir)) 2 zoom))
     (if (null? failed) (%cl-finish! g set)
       (do (%cl-say 2 (Str8 append "x-roguelike: " (%cl-err-text failed) "\n")) 1))))
 

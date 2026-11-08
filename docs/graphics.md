@@ -25,6 +25,11 @@ holds 80 letters, as the terminal does.
   dimmed, rock black.  Found traps and items where they were seen;
   creatures only in view; the player last.  A warm glow round the
   player stands for the lamp.
+- **Blows**: after a turn with a fight, about a third of a second of
+  it: the striker lunges toward its target, a blow that lands flashes
+  the target (white for the player's, red for a creature's), the
+  player's kill bursts where the creature was, and the damage, or
+  "miss", rises from the target.
 - **Overlays**: a list looked at, the items a question can take, a
   choice, a page read, a talker's words, the world map and the end of
   the game lie over the level on a panel, as the terminal lays them
@@ -41,7 +46,8 @@ name for a creature.
 | Group | Names | Count |
 |---|---|---|
 | ground | `floor` `wall` `door` `passage` `down` `up` `trap` | 7 |
-| the player | `player` | 1 |
+| the player | `player`, and its poses `attack` `hit` `dead` | 1 to 4 |
+| marks | `mark-confused` `mark-blind` `mark-held` `mark-hasted` `mark-slowed` `mark-seeing` `mark-hungry` `mark-weak` `mark-fainting` `mark-wounded` | up to 10 |
 | items | `potion` `scroll` `wand` `ring` `weapon` `armour` `food` `gold` `goal`, and `oil` `page` `token` where the set has them | 9 to 12 |
 | creatures | every `(creature NAME ...)` of the set, talkers each their own | classic 17, delve 23, kettle 28 |
 | bands | a band's own `wall` and `floor`, where its place differs | delve 3, kettle 4, town 1 |
@@ -53,6 +59,12 @@ Shared by every set, in `art/` at the top of the bundle: the font (the
 Anything with no picture is drawn as its glyph in the font, in the
 colour the terminal gives it.  A set with no art at all still plays in
 the window.
+
+A region (a set joined to the one the game began on, gone into by a
+door: the town from the valley, the Delve from the town) is drawn with
+its own set's art, and the art of the set the game began on behind it
+for any name it draws nothing of: the region's ground is its own, the
+world's people and things look the same wherever they are carried.
 
 ## The form
 
@@ -89,6 +101,24 @@ files of `data/SET` alone, so the terminal game never reads these.
   a flame, a drip, washing in the wind.  Each cell starts the round at
   its own place, so two flames never move together.  A front-end that
   does not move tiles draws the first picture.
+- The player and a creature move two ways.  On the turn it steps to
+  another cell it walks: its `(walk TICKS (rows ...) ...)`, or its
+  frames where it has no walk, played once round in time, then it
+  stands.  Standing, it fidgets: mostly the first picture, now and then
+  another for a while, at no beat, each out of step with the rest.  A
+  walk is drawn only for a step; a tile with frames and no walk still
+  fidgets.  The players and the Delve's guardians walk; the rest of
+  the living fidget.
+- `(pose P)`: the player struck a blow (`attack`), took one (`hit`)
+  or is `dead`, drawn in place of the player for that moment, its
+  frames played once.  A pose is never a variant.
+- `mark-NAME`: drawn over the player while it is in that state, mostly
+  clear, with frames as any tile; several are drawn at once.  `slowed`
+  is the cold's touch as much as a potion's; `fainting` is starving
+  too, where the set starves; `wounded` is under a third of its hit
+  points.  The marks are in each set's own colours, in `marks.xon`,
+  and the poses in `poses.xon`.  A missing pose or mark is the plain
+  player.
 
 ## Walls
 

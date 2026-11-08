@@ -41,7 +41,9 @@
 ; in, innermost first, each (NAME SET SCREEN DEPTH): the region's name,
 ; and the set, the screen and the depth at its door, 33 the clock, the
 ; seconds the game has taken, each turn the time to walk a cell, 34 the
-; names of the kinds whose tale has been told.
+; names of the kinds whose tale has been told, 35 this turn's blows,
+; newest first, each (blow FROM-R FROM-C TO-R TO-C HOW N): who struck
+; from where at whom, HOW hit, miss or kill, N the damage.
 ; Every slot here is read through the object doors, not the class: a
 ; class send costs some two hundred objects, and a turn reads thousands.
 (def %st-ref (fn (_ v k) (obj-ref v (int+ k 1))))
@@ -423,7 +425,7 @@
 
 (def game-new
   (fn (_ set seed rows cols)
-    (def g (Vector make 35 ()))
+    (def g (Vector make 36 ()))
     (def rng (Random sw seed))
     (%st-put! g 0 rng)
     (%st-put! g 1 set)
@@ -459,7 +461,13 @@
   (fn (_ g text)
     (%st-put! g 8 (pair text (%st-get g 8)))
     (%st-put! g 15 (List take 100 (pair text (%st-get g 15))))))
-(def state-clear-messages! (fn (_ g) (%st-put! g 8 ())))
+; A turn begins with no messages and no blows.
+(def state-clear-messages! (fn (_ g) (do (%st-put! g 8 ()) (%st-put! g 35 ()))))
+(def game-blows (fn (_ g) (%st-get g 35)))
+; A blow struck this turn, for a front end to show: from FR FC at TR TC,
+; HOW hit, miss or kill, N the damage.
+(def state-blow!
+  (fn (_ g fr fc tr tc how n) (%st-put! g 35 (pair (list (lit blow) fr fc tr tc how n) (%st-get g 35)))))
 (def state-clear-log! (fn (_ g) (%st-put! g 15 ())))
 
 ; TEXT with each {KEY} of SUBS, ((KEY . VALUE) ...), put in.
@@ -586,7 +594,7 @@
   creature-trait? creature-condition creature-condition! creature-tick!
   item-make item-form item-class item-name item-prop item-prop1 item-count item-count! item-charges
   item-charges! item-enchant item-enchant! item-letter item-letter! item-r item-c item-at! item-class? item-class-in?
-  state-say! state-clear-messages! state-clear-log! state-fill state-text state-tell!
+  state-say! state-clear-messages! game-blows state-blow! state-clear-log! state-fill state-text state-tell!
   state-roll state-chance? state-dir state-dirs state-dist state-adjacent? state-covers? state-sign
   state-creature-at state-creature-named state-items-at state-player-at? state-free?
   state-remove-creature! state-remove-floor! state-remove-pack!

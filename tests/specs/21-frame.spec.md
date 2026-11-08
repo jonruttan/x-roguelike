@@ -73,6 +73,14 @@ takes, a wall in parts by its neighbours, and the camera on the player.
 ---
     ("mine rat" 'player 'shadow ())
 
+### a pose is never the player's picture at a place
+
+```roguelike
+(write (List any? (fn (_ at) (not (null? (spec-tile-prop (frame-named spec-fa 'player at) 'pose)))) (List range 0 40)))
+```
+---
+    #f
+
 
 ## the level
 

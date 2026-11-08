@@ -100,3 +100,52 @@ each frame that layer, what stands on it, the light and the text.
 ```
 ---
     ((1 20 40 640) (3 7 14 224) (4 5 10 160) (4 5 10 160) (1 20 40 640) (2 10 20 320))
+
+
+## each place's art
+
+### a region is drawn with its own set's art, the world's behind it for what it does not draw; each made once
+
+```roguelike
+(import roguelike/paint paint-arts)
+(def spec-arts (paint-arts "data/kettle"))
+(def spec-tiles-named
+  (fn (_ art n) (List filter (fn (_ f) (if (pair? f) (if (eq? (first f) 'tile) (equal? (List ref 1 f) n) #f) #f)) art)))
+(def spec-own-floors (List length (spec-tiles-named (paint-art (data-load "data/town/art")) 'floor)))
+(def spec-light (fn (_ art) (rest (List find (fn (_ p) (if (pair? p) (eq? (first p) 'light) #f)) (first (spec-tiles-named art 'player))))))
+(def town (spec-arts "town"))
+(write (list (= spec-own-floors (List length (spec-tiles-named town 'floor)))
+             (List length (spec-tiles-named town "farm dog"))
+             (List length (spec-tiles-named (spec-arts "") "farm dog"))
+             (spec-light (spec-arts "delve"))
+             (spec-light (spec-arts ""))
+             (eq? town (spec-arts "town"))))
+```
+---
+    (#t 1 1 (255 196 118 5) (255 200 130 5) #t)
+
+## blows
+
+### a turn's blows are shown for eight frames: the target flashes, its damage written over it
+
+```roguelike
+(import roguelike/paint paint-animating? paint-step! paint-zoom!)
+(import roguelike/state state-blow! state-clear-messages!)
+(paint-zoom! p 2)
+(def pl (game-player g))
+(def m (game-map g))
+(def at (frame-place (frame-camera (map-rows m) (map-cols m) (player-r pl) (player-c pl)) (player-r pl) (player-c pl)))
+(def px (fn (_ s) (Canvas pixel s (+ 16 (* 2 (first at))) (+ 16 (+ frame-level-y (* 2 (- (rest at) frame-level-y)))))))
+(state-clear-messages! g)
+(paint-turn! p g fa)
+(def calm (paint-animating? p))
+(def plain (px (paint-frame! p g 0)))
+(state-blow! g (player-r pl) (+ (player-c pl) 1) (player-r pl) (player-c pl) 'hit 3)
+(paint-turn! p g fa)
+(def struck (paint-animating? p))
+(def flashed (px (paint-frame! p g 0)))
+(def steps ((fn (self n) (if (paint-animating? p) (do (paint-step! p) (self (+ n 1))) n)) 0))
+(write (list calm struck (not (equal? plain flashed)) steps (paint-animating? p)))
+```
+---
+    (#f #t #t 8 #f)

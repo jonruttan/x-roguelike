@@ -24,7 +24,7 @@
 (import roguelike/items items-glyph)
 (import roguelike/map map-terrain map-kinds map-rows map-cols map-tile map-seen? map-visible? map-in? map-opaque? tile-rock)
 (import roguelike/state game-map game-player game-floor game-creatures game-traps
-  player-r player-c item-r item-c item-class creature-r creature-c creature-name creature-glyph game-set)
+  player-r player-c item-r item-c item-class creature-r creature-c creature-name creature-glyph game-set game-blows)
 (import roguelike/creatures creatures-shown?)
 (import roguelike/traps trap-r trap-c trap-found?)
 
@@ -58,11 +58,12 @@
     (List map (fn (_ n) (pair n (List filter (fn (_ t) (%fr-same? (first t) n)) tiles))) names)))
 (def %fr-named (fn (_ groups name) ((fn (_ g) (if (null? g) () (rest g))) (List find (fn (_ g) (%fr-same? (first g) name)) groups))))
 
-; Of TILES, one name's, those with part PART (nil for none), the band's
+; Of TILES, one name's, those with part PART (nil for none) and no pose
+; (a pose is drawn only for its moment, never as a variant), the band's
 ; own when it has any, else the set's: (TOTAL-WEIGHT . TILES), or nil.
 (def %fr-variants
   (fn (_ tiles part band)
-    (def mine (List filter (fn (_ t) (eq? (%fr-prop1 t (lit part)) part)) tiles))
+    (def mine (List filter (fn (_ t) (if (eq? (%fr-prop1 t (lit part)) part) (null? (%fr-prop t (lit pose))) #f)) tiles))
     (def own (if (null? band) () (List filter (fn (_ t) ((fn (_ b) (if (null? b) #f (str=? b band))) (%fr-prop1 t (lit band)))) mine)))
     (def vs (if (null? own) (List filter (fn (_ t) (null? (%fr-prop t (lit band)))) mine) own))
     (if (null? vs) () (pair (List fold (fn (_ n t) (+ n (%fr-weight t))) 0 vs) vs))))
@@ -201,9 +202,11 @@
 
 ; The picture named NAME put at R C, over its shadow when SHADOW; where
 ; the art has no picture of it, its GLYPH, (glyph X Y GLYPH), as the
-; terminal shows it; nothing out of view.
+; terminal shows it; nothing out of view.  A thing that walks, WHO (a
+; creature, or player), has its tile op as (tile X Y PICTURE (WHO R .
+; C)), so the painter can tell whether it moved since the last turn.
 (def %fr-put
-  (fn (_ a cam r c name shadow glyph)
+  (fn (_ a cam r c name shadow glyph who)
     (def at (frame-place cam r c))
     (def p (frame-named a name (+ (* r 80) c)))
     (def s (if shadow (frame-named a (lit shadow) 0) ()))
@@ -211,8 +214,8 @@
       ((null? at) ())
       ((null? p) (list (list (lit glyph) (first at) (rest at) glyph)))
       (#t (List append (if (null? s) () (list (list (lit tile) (first at) (rest at) s)))
-                       (list (list (lit tile) (first at) (rest at) p)))))))
-
+                       (list (if (null? who) (list (lit tile) (first at) (rest at) p)
+                               (list (lit tile) (first at) (rest at) p (pair who (pair r c))))))))))
 ; What stands on G's level under camera CAM with art A, in the order
 ; the terminal draws it: found traps and items where they were seen,
 ; creatures in view over their shadows, the player last.
@@ -223,15 +226,15 @@
     (def set (game-set g))
     (List append
       (List flat-map (fn (_ t) (if (if (trap-found? t) (map-seen? m (trap-r t) (trap-c t)) #f)
-                                 (%fr-put a cam (trap-r t) (trap-c t) (lit trap) #f (data-glyph set (lit trap) "^")) ()))
+                                 (%fr-put a cam (trap-r t) (trap-c t) (lit trap) #f (data-glyph set (lit trap) "^") ()) ()))
         (game-traps g))
       (List flat-map (fn (_ it) (if (map-seen? m (item-r it) (item-c it))
-                                  (%fr-put a cam (item-r it) (item-c it) (item-class it) #f (items-glyph g it)) ()))
+                                  (%fr-put a cam (item-r it) (item-c it) (item-class it) #f (items-glyph g it) ()) ()))
         (game-floor g))
       (List flat-map (fn (_ cr) (if (creatures-shown? g cr)
-                                  (%fr-put a cam (creature-r cr) (creature-c cr) (creature-name cr) #t (creature-glyph cr)) ()))
+                                  (%fr-put a cam (creature-r cr) (creature-c cr) (creature-name cr) #t (creature-glyph cr) cr) ()))
         (game-creatures g))
-      (%fr-put a cam (player-r p) (player-c p) (lit player) #t (data-glyph set (lit player) "@")))))
+      (%fr-put a cam (player-r p) (player-c p) (lit player) #t (data-glyph set (lit player) "@") (lit player)))))
 
 ; --- what is lit ----------------------------------------------------------------
 
@@ -405,7 +408,24 @@
       (List append (if (null? moving) () (List filter in? level))
         things (list (frame-view m cam)) (frame-lights m cam (List append level things))
         (if (null? at) () (list (List append (list (lit light) (int+ (first at) 8) (int+ (rest at) 8)) %fr-lantern)))
-        (frame-glints g cam))))))
+        (frame-glints g cam) (frame-blows g cam))))))
+
+; The turn's blows whose target is in view under camera CAM, oldest
+; first, each (blow FX FY TX TY HOW N BY-PLAYER?): the pixel places of
+; who struck (the target's when the striker is out of view) and of whom,
+; HOW hit, miss or kill, N the damage, and whether the player struck.
+(def frame-blows
+  (fn (_ g cam)
+    (def p (game-player g))
+    (List flat-map
+      (fn (_ b)
+        (def to (frame-place cam (List ref 3 b) (List ref 4 b)))
+        (def from ((fn (_ f) (if (null? f) to f)) (frame-place cam (List ref 1 b) (List ref 2 b))))
+        (if (null? to) ()
+          (list (list (lit blow) (first from) (rest from) (first to) (rest to) (List ref 5 b) (List ref 6 b)
+                      (if (= (List ref 1 b) (player-r p)) (= (List ref 2 b) (player-c p)) #f)))))
+      (List reverse (game-blows g)))))
+
 
 ; The places, (X . Y), of the cells of OPS with a tile that moves.
 (def %fr-moving-cells
@@ -441,4 +461,4 @@
 (provide roguelike/frame
   frame-tile-size frame-view-rows frame-view-cols frame-view! frame-level-y
   frame-art frame-art-band frame-named frame-seed frame-wall-parts frame-camera frame-cell frame-level
-  frame-place frame-things frame-view frame-lights frame-glints frame-flicker frame-light-map frame-scene)
+  frame-place frame-things frame-view frame-lights frame-glints frame-blows frame-flicker frame-light-map frame-scene)

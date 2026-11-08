@@ -757,7 +757,7 @@
   "kkkkkkkkkkkkkkkk"))
 
 ; Cropped grass by the town, worn bare where the children play.
-(tile floor (band "Kettle") (weight 8) (rows
+(tile floor (band "Kettle") (weight 24) (rows
   "GGgGGGaGGgGGGGgG"
   "GgGGaGGGGGGgGaGG"
   "GGGGGgGGaGGGGGGg"
@@ -776,7 +776,7 @@
   "aGGgGGGGGGGgGGgG"))
 
 ; ... a kitchen plot: kale in a row, leeks earthed up, the soil dark.
-(tile floor (band "Kettle") (weight 4) (rows
+(tile floor (band "Kettle") (weight 3) (rows
   "mumumumumumumumu"
   "ukssku.kssk.ksks"
   "ksWsskksWsskksWs"
@@ -795,7 +795,7 @@
   "mumumumumumumumu"))
 
 ; ... onions lifted and laid out on the soil to dry.
-(tile floor (band "Kettle") (weight 2) (rows
+(tile floor (band "Kettle") (rows
   "mumumumumumumumu"
   "umumumumumumumum"
   "mugaumumugamumum"
@@ -814,7 +814,7 @@
   "mumumumumumumumu"))
 
 ; ... the causey: flags laid along the way to the town's door.
-(tile floor (band "Kettle") (weight 3) (rows
+(tile floor (band "Kettle") (weight 2) (rows
   "GGgGGGaGGgGGGGgG"
   "GgGGaGGGGGGgGaGG"
   "eeeeeeeeeeeeeeee"
@@ -2052,7 +2052,196 @@
   ".kLLkkuukuukkTk."
   ".kQLk.kuk.kukT.."
   "..kk..kkk.kkkT.."
-  "......kkk.kkkk..")))
+  "......kkk.kkkk..")
+   (rows
+  "......kkkk...k.."
+  ".....kUUUUk.kVk."
+  "......kpPPk.kTk."
+  "......kPpPk.kTk."
+  ".......kPk..kTk."
+  ".....kHHHHkkpTk."
+  "...kucCCcCCckTk."
+  "...kucCCcCCckTk."
+  "...kuccCcCcckTk."
+  "..kPkcCcCcCckTk."
+  "..kikcCckCcckTk."
+  ".kQLkkuukuukkTk."
+  ".kLLk.kuk.kukT.."
+  "..kk..kuk.kukT.."
+  "......kkk.kkkT.."
+  "......kkk.kkkk..")
+   (rows
+  "................"
+  ".......kkkk...k."
+  "......kUUUUk.kVk"
+  ".......kpPPk.kTk"
+  ".......kPpPk.kTk"
+  "........kPk..kTk"
+  "......kHHHHkkpTk"
+  "....kucCCcCCckTk"
+  "....kucCCcCCckTk"
+  "....kuccCcCcckTk"
+  "...kPkcCcCcCckTk"
+  "...kikcCckCcckTk"
+  "..kQLkkuukuukkTk"
+  "..kLLk.kuk.kukT."
+  "...kk.kkk.kkkT.."
+  "......kkk.kkkk..")
+   (rows
+  "................"
+  ".....kkkk...k..."
+  "....kUUUUk.kVk.."
+  ".....kpPPk.kTk.."
+  ".....kPpPk.kTk.."
+  "......kPk..kTk.."
+  "....kHHHHkkpTk.."
+  "..kucCCcCCckTk.."
+  "..kucCCcCCckTk.."
+  "..kuccCcCcckTk.."
+  ".kPkcCcCcCckTk.."
+  ".kikcCckCcckTk.."
+  "kQLkkuukuukkTk.."
+  "kLLk.kuk.kukT..."
+  ".kk...kkk.kkkT.."
+  "......kkk.kkkk.."))
+  (walk 1
+   (rows
+  "................"
+  "......kkkk...k.."
+  ".....kUUUUk.kVk."
+  "......kpPPk.kTk."
+  "......kPpPk.kTk."
+  ".......kPk..kTk."
+  ".....kHHHHkkpTk."
+  "...kucCCcCCckTk."
+  "...kucCCcCCckTk."
+  "...kuccCcCcckTk."
+  "..kPkcCcCcCckTk."
+  "..kikcCckCcckTk."
+  ".kQLkkuukuukkTk."
+  ".kLLk.kuk.kukT.."
+  "..kk..kkk.kkkT.."
+  "......kkk.kkkk..")
+   (rows
+  "................"
+  "......kkkk...k.."
+  ".....kUUUUk.kVk."
+  "......kpPPk.kTk."
+  "......kPpPk.kTk."
+  ".......kPk..kTk."
+  "...kukHHHHkkpTk."
+  "...kucCCcCCckTk."
+  "...kuccCcCcckTk."
+  "..kPkcCcCcCckTk."
+  "..kikcCckCcckTk."
+  ".kQLkkuukuukkTk."
+  ".kLLk.kuk.kukT.."
+  "..kk..kuk.kukT.."
+  "......kkk.kkkT.."
+  "..........kkkk..")
+   (rows
+  "......kkkk...k.."
+  ".....kUUUUk.kVk."
+  "......kpPPk.kTk."
+  "......kPpPk.kTk."
+  ".......kPk..kTk."
+  ".....kHHHHkkpTk."
+  "...kucCCcCCckTk."
+  "...kucCCcCCckTk."
+  "...kuccCcCcckTk."
+  "..kPkcCcCcCckTk."
+  "..kikcCckCcckTk."
+  ".kQLkkuukuukkTk."
+  ".kLLk.kuk.kukT.."
+  "..kk..kuk.kukT.."
+  "......kkk.kkkT.."
+  "..........kkkk..")
+   (rows
+  "................"
+  "......kkkk...k.."
+  ".....kUUUUk.kVk."
+  "......kpPPk.kTk."
+  "......kPpPk.kTk."
+  ".......kPk..kTk."
+  ".....kHHHHkkpTk."
+  "...kucCCcCCckTk."
+  "...kucCCcCCckTk."
+  "...kuccCcCcckTk."
+  "..kPkcCcCcCckTk."
+  "..kikcCckCcckTk."
+  ".kQLkkuukuukkTk."
+  ".kLLk.kuk.kukT.."
+  "..kk..kkk.kkkT.."
+  "......kkk.kkkk..")
+   (rows
+  "................"
+  "......kkkk...k.."
+  ".....kUUUUk.kVk."
+  "......kpPPk.kTk."
+  "......kPpPk.kTk."
+  ".......kPk..kTk."
+  ".....kHHHHkkpTk."
+  "...kucCCcCCckTk."
+  "...kucCCcCCckTk."
+  "...kuccCcCcckTk."
+  "..kPkcCcCcCckTk."
+  "..kikcCckCcckTk."
+  ".kQLkkuukuukkTk."
+  ".kLLk.kuk.kukT.."
+  "..kk..kkk.kkkT.."
+  "......kkk.kkkk..")
+   (rows
+  "................"
+  "......kkkk...k.."
+  ".....kUUUUk.kVk."
+  "......kpPPk.kTk."
+  "......kPpPk.kTk."
+  ".......kPk..kTk."
+  "...kukHHHHkkpTk."
+  "...kucCCcCCckTk."
+  "...kuccCcCcckTk."
+  "..kPkcCcCcCckTk."
+  "..kikcCckCcckTk."
+  ".kQLkkuukuukkTk."
+  ".kLLk.kuk.kukT.."
+  "..kk..kuk.kukT.."
+  "......kkk.kkkk.."
+  "......kkk.......")
+   (rows
+  "......kkkk...k.."
+  ".....kUUUUk.kVk."
+  "......kpPPk.kTk."
+  "......kPpPk.kTk."
+  ".......kPk..kTk."
+  ".....kHHHHkkpTk."
+  "...kucCCcCCckTk."
+  "...kucCCcCCckTk."
+  "...kuccCcCcckTk."
+  "..kPkcCcCcCckTk."
+  "..kikcCckCcckTk."
+  ".kQLkkuukuukkTk."
+  ".kLLk.kuk.kukT.."
+  "..kk..kuk.kukT.."
+  "......kkk.kkkk.."
+  "......kkk.......")
+   (rows
+  "................"
+  "......kkkk...k.."
+  ".....kUUUUk.kVk."
+  "......kpPPk.kTk."
+  "......kPpPk.kTk."
+  ".......kPk..kTk."
+  ".....kHHHHkkpTk."
+  "...kucCCcCCckTk."
+  "...kucCCcCCckTk."
+  "...kuccCcCcckTk."
+  "..kPkcCcCcCckTk."
+  "..kikcCckCcckTk."
+  ".kQLkkuukuukkTk."
+  ".kLLk.kuk.kukT.."
+  "..kk..kkk.kkkT.."
+  "......kkk.kkkk.."))
+)
 
 ; --- what lies about --------------------------------------------------------
 
