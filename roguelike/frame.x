@@ -309,6 +309,11 @@
                (self y (int+ x 1))))))
      rl cl)))
 
+; How much of a cell in view the dark takes where no light reaches, and
+; how much of that a cell seen before and out of view keeps, out of 256.
+(def %fr-dark 140)
+(def %fr-seen 140)
+
 ; The light map of VIEW, the view op, and LIGHTS, the light ops, at
 ; TICK: a canvas, (COLS ROWS REGION), a pixel a cell, its R G B what
 ; the cell's pixels are multiplied by out of 255.  The level is dark
@@ -332,8 +337,8 @@
     ((fn (self i)
        (when (int< i n)
          (do (def v (char->int (str-byte-ref seen i)))
-             (def m (int- 256 (int/ (int* 205 (%fr-get w i 0)) 256)))
-             (def m2 (if (int= v 2) m (if (int= v 1) (int/ (int* m 97) 256) 0)))
+             (def m (int- 256 (int/ (int* %fr-dark (%fr-get w i 0)) 256)))
+             (def m2 (if (int= v 2) m (if (int= v 1) (int/ (int* m %fr-seen) 256) 0)))
              (def o (int* i 4))
              (ptr-set! rp o (%fr-byte (int/ (int* m2 (%fr-get w i 1)) 256)) 1)
              (ptr-set! rp (int+ o 1) (%fr-byte (int/ (int* m2 (%fr-get w i 2)) 256)) 1)

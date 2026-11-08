@@ -23,7 +23,7 @@
 (import roguelike/state game-over game-over! game-exploring? game-exploring! game-band band-name)
 (import roguelike/frame frame-art)
 (import roguelike/game game-key! game-explore!)
-(import roguelike/paint paint-width paint-height paint-make paint-turn! paint-frame! paint-flickers?)
+(import roguelike/paint paint-width paint-height paint-make paint-screen paint-turn! paint-frame! paint-flickers?)
 
 ; A frame's wait while a light flickers, and the wait for a key when
 ; nothing moves, in microseconds.
@@ -89,7 +89,9 @@
             (paint-turn! p g (%wn-art a g))
             (Sdl show! win (List ref 2 (paint-frame! p g tick)))
             (self g a p win tick)))
-      ((not (null? e)) (self g a p win tick))
+      ; Any other event -- a resize, the window shown again -- may have
+      ; lost what was presented: the frame is presented again.
+      ((not (null? e)) (do (Sdl show! win (List ref 2 (paint-screen p))) (self g a p win tick)))
       ((game-exploring? g)
         (do (game-explore! g) (Heap collect)
             (paint-turn! p g (%wn-art a g))
