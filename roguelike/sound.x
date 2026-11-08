@@ -54,7 +54,8 @@
 ; streams, 4 the music's tracker, 5 the bed's, 6 the sounds rendered,
 ; ((KEY . (REGION . BYTES)) ...), 7 the tension, 8 the game as it was
 ; (%sd-glance), 9 the random state, 10 blocks since a collect, 11 the
-; place the music is for, 12 the place's random sounds.
+; place the music is for, 12 the place's random sounds, 13 how loud
+; the turn's sounds are, a percentage (sound-volume!).
 
 (def %sd-vector-type ((prim-ref (lit type) (lit of)) (Vector make 0 ())))
 (def %sd-get (fn (_ s k) (obj-ref s (int+ k 1))))
@@ -116,18 +117,25 @@
     (unless (int= 0 (Sdl audio-queued best)) (Sdl audio-clear! best))
     best))
 
+; VOICES, each its (gain G) taken to PCT percent of it.
+(def %sd-louder
+  (fn (_ voices pct)
+    (if (int= pct 100) voices
+      (List map (fn (_ v) (List map (fn (_ p) (if (if (pair? p) (eq? (first p) (lit gain)) #f) (list (lit gain) (int/ (int* (first (rest p)) pct) 100)) p)) v))
+        voices))))
+
 ; Sound NAME played now on a turn's stream, at one of three pitches and
 ; one of three places, -1 left, 0 ahead, 1 right.
 (def %sd-play!
   (fn (_ s name side)
     (def set (%sd-get s 0))
     (def f (%sd-sound set name))
-    (unless (null? f)
+    (unless (if (null? f) #t (int< (%sd-get s 13) 1))
       (do (def vary (%sd-prop1 f (lit vary) 0))
           (def pick (int- (%sd-random! s 3) 1))
-          (def key (Str8 append name "/" (Str8 str pick) "/" (Str8 str side)))
+          (def key (Str8 append name "/" (Str8 str pick) "/" (Str8 str side) "/" (Str8 str (%sd-get s 13))))
           (def b (%sd-bytes s key
-                   (fn (_) (Mixer render %sd-rate (%sd-voices f (int* pick vary) (int* side 55))
+                   (fn (_) (Mixer render %sd-rate (%sd-louder (%sd-voices f (int* pick vary) (int* side 55)) (%sd-get s 13))
                                      (List map rest (%sd-props f (lit echo)))))))
           (Sdl audio-put! (%sd-free-stream s) (first b) (rest b))))))
 
@@ -331,8 +339,8 @@
             (def m (Mixer make %sd-rate %sd-block))
             (Mixer gain! m (data-get set (lit music-gain) 80))
             (List for-each (fn (_ e) (Mixer echo! m (List ref 0 e) (List ref 1 e) (List ref 2 e))) (data-all set (lit music-echo)))
-            (def s (obj-make %sd-vector-type 14))
-            (obj-set! s 0 13)
+            (def s (obj-make %sd-vector-type 15))
+            (obj-set! s 0 14)
             (%sd-put! s 0 set)
             (%sd-put! s 1 m)
             (%sd-put! s 2 (Sdl audio-open %sd-rate 2))
@@ -346,6 +354,7 @@
             (%sd-put! s 10 0)
             (%sd-put! s 11 "")
             (%sd-put! s 12 ())
+            (%sd-put! s 13 100)
             (%sd-tension! s g)
             (%sd-place! s g)
             (Mixer source! m (%sd-heart s) 0)
@@ -385,10 +394,19 @@
           (%sd-place! s g)
           (sound-pump! s)))))
 
+; Sound S played with the music at MUSIC percent of the set's own
+; (music-gain N) and the turn's sounds at EFFECTS percent; nothing
+; heard of either at 0.
+(def sound-volume!
+  (fn (_ s music effects)
+    (unless (null? s)
+      (do (Mixer gain! (%sd-get s 1) (int/ (int* music (data-get (%sd-get s 0) (lit music-gain) 80)) 100))
+          (%sd-put! s 13 effects)))))
+
 (def sound-close
   (fn (_ s)
     (unless (null? s)
       (do (Sdl audio-close (%sd-get s 2))
           (List for-each (fn (_ st) (Sdl audio-close st)) (%sd-get s 3))))))
 
-(provide roguelike/sound sound-make sound-pump! sound-collect? sound-turn! sound-close)
+(provide roguelike/sound sound-make sound-pump! sound-collect? sound-turn! sound-volume! sound-close)

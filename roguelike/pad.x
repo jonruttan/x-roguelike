@@ -11,7 +11,7 @@
 ;     X  the pack           Y  explore
 ;     LB go up (<)          RB go down (>)
 ;     left stick click  rest (.)      right stick click  search (s)
-;     Start  the keys (?)   Back  the map of the world (m)
+;     Start  the pause menu    Back  the map of the world (m)
 ;
 ; A command that asks for a thing -- quaff, read, wear -- is still a
 ; key on the keyboard.
@@ -45,7 +45,7 @@
         (pair (lit west) "i") (pair (lit north) "o")
         (pair (lit left-shoulder) "<") (pair (lit right-shoulder) ">")
         (pair (lit left-stick) ".") (pair (lit right-stick) "s")
-        (pair (lit start) "?") (pair (lit back) "m")))
+        (pair (lit start) (lit pause)) (pair (lit back) "m")))
 
 ; The game's key for a step of DX across and DY down, each -1, 0 or 1.
 (def %pd-dirs

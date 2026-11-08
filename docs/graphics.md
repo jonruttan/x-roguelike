@@ -44,6 +44,17 @@ screen's pixel, the art's scale: a line holds 52 letters.
 - **More**: a message that runs past the strip waits on a marker at the
   strip's end, as `--More--` does.
 
+## Menus
+
+The title screen, the options and the pause are drawn over the level,
+dimmed (`paint-menu!`): the heading large, the title's larger still,
+the items in a column with the chosen one bright and marked, and along
+the foot what the keys do.  The foot names the gamepad's buttons, A on
+green and B on red as the buttons are, when the last key came from the
+pad, and the keyboard's otherwise.  The choice moves with the keys the
+game takes for up and down; enter, space or A take it, Esc or B go
+back, and left and right change an option (`roguelike/menu`).
+
 ## What every set needs
 
 Every picture is keyed by the name the set already uses: the glyph's

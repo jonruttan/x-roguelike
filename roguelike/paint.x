@@ -641,6 +641,78 @@
     (%pt-overlay! s (Vector ref 4 p) font (draw-overlay g))
     s))
 
+; --- menus --------------------------------------------------------------------
+
+; The level dimmed behind a menu: a dark, mostly opaque picture stretched
+; over the screen.
+(def %pt-veil (Canvas fill! (Canvas make 3 3) 0 0 3 3 (list 8 7 6 210)))
+(def %pt-text-w (fn (_ s) (int* %pt-advance (Str8 length s))))
+
+; TEXT on a strip of its own, shown on screen S centred at Y, SCALE
+; times the font's size, in COLOUR.
+(def %pt-big!
+  (fn (_ s font text y scale colour)
+    (def w (int+ 2 (%pt-text-w text)))
+    (def c (Canvas make w (int+ 2 %pt-pitch)))
+    (Canvas text! c 1 1 text colour font)
+    (Canvas nine! s (int/ (int- paint-width (int* scale w)) 2) y (int* scale w) (int* scale (int+ 2 %pt-pitch)) c 0 0 0 0)))
+
+; A pad button's or a key's name drawn as a prompt on strip C at X Y: a
+; pad's A and B on their own colours, the way the buttons are; a key in
+; brackets.  The x after it.
+(def %pt-badge-ink
+  (fn (_ name)
+    (match ((str=? name "A") %pt-good) ((str=? name "B") %pt-bad) ((str=? name "X") (list 92 132 210)) ((str=? name "Y") %pt-warn) (#t %pt-dim))))
+(def %pt-badge-w (fn (_ name pad?) (if pad? (int+ 4 (%pt-text-w name)) (%pt-text-w (Str8 append "[" name "]")))))
+(def %pt-badge!
+  (fn (_ c x y name pad? font)
+    (if pad?
+      (do (Canvas fill! c x (int- y 1) (%pt-badge-w name #t) (int+ %pt-pitch 1) (%pt-badge-ink name))
+          (Canvas text! c (int+ x 2) y name %pt-hud-ground font))
+      (Canvas text! c x y (Str8 append "[" name "]") %pt-bright font))
+    (int+ x (%pt-badge-w name pad?))))
+
+; A menu over game G's level, on painter P's screen: HEADING large, at
+; the title's size when TITLE?; LINES, the CHOSEN one bright and
+; marked; and along the foot each of PROMPTS, (NAME . WHAT), the
+; button or key NAME and what it does, drawn as a pad's buttons when
+; PAD?.  The screen.
+(def paint-menu!
+  (fn (_ p g heading title? lines chosen prompts pad?)
+    (def s (paint-frame! p g 0))
+    (def font (Vector ref 2 p))
+    (Canvas nine! s 0 0 paint-width paint-height %pt-veil 1 1 1 1)
+    ; The ground over the messages, the third line's too (%pt-top!).
+    (Canvas fill! s 0 0 paint-width (int* %pt-scale (int+ %pt-top-h %pt-pitch)) %pt-hud-ground)
+    (Canvas fill! s 0 %pt-stand-y paint-width (int- paint-height %pt-stand-y) %pt-hud-ground)
+    (%pt-big! s font heading 72 (if title? 6 4) %pt-bright)
+    (def n (List length lines))
+    (def row (int+ %pt-pitch 4))
+    (def c (Canvas make %pt-strip-w (int* n row)))
+    ; The items a column, its left edge where the widest is centred; the
+    ; chosen one marked before it.
+    (def widest (List fold (fn (_ w l) (if (int< w (%pt-text-w l)) (%pt-text-w l) w)) 0 lines))
+    (def x0 (int/ (int- %pt-strip-w widest) 2))
+    ((fn (self l i)
+       (unless (null? l)
+         (do (when (int= i chosen) (Canvas text! c (int- x0 (int* 2 %pt-advance)) (int+ 2 (int* i row)) ">" %pt-warn font))
+             (Canvas text! c x0 (int+ 2 (int* i row)) (first l) (if (int= i chosen) %pt-bright %pt-dim) font)
+             (self (rest l) (int+ i 1)))))
+     lines 0)
+    (Canvas nine! s 0 (if title? 170 130) paint-width (int* %pt-scale (int* n row)) c 0 0 0 0)
+    (def foot (Canvas make %pt-strip-w (int+ %pt-pitch 4)))
+    (def width
+      (List fold (fn (_ x pr) (int+ x (int+ (%pt-badge-w (first pr) pad?) (int+ %pt-advance (int+ (%pt-text-w (rest pr)) (int* 2 %pt-advance))))))
+        0 prompts))
+    (List fold
+      (fn (_ x pr)
+        (def after (int+ %pt-advance (%pt-badge! foot x 2 (first pr) pad? font)))
+        (Canvas text! foot after 2 (rest pr) %pt-ink font)
+        (int+ after (int+ (%pt-text-w (rest pr)) (int* 2 %pt-advance))))
+      (int/ (int- %pt-strip-w width) 2) prompts)
+    (%pt-show! s foot (int- paint-height (int* %pt-scale (int+ %pt-pitch 8))))
+    s))
+
 ; Whether the last turn's scene has a light that flickers, a glint or a
 ; tile that moves: whether the frame changes with the tick.
 (def paint-flickers?
@@ -653,4 +725,5 @@
 
 (provide roguelike/paint
   paint-width paint-height paint-art paint-arts paint-font paint-make paint-screen paint-turn! paint-frame! paint-flickers?
-  paint-zoom paint-zoom! paint-zoom-least paint-zoom-most paint-zoom-first paint-animating? paint-step! paint-level-y)
+  paint-zoom paint-zoom! paint-zoom-least paint-zoom-most paint-zoom-first paint-animating? paint-step! paint-level-y
+  paint-menu!)

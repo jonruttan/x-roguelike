@@ -196,11 +196,13 @@
     (def dir (Str8 append (%cl-data-dir opts) "/" (Opts value opts "-s" "classic")))
     (def set (data-load dir))
     (def saved (save-read (save-path (%cl-set-name opts) "save") set 24 80))
-    (def g (if (null? saved) (game-make (data-choose set (%cl-picks opts)) (%cl-seed opts) 24 80) saved))
+    (def fresh (fn (_) (game-make (data-choose set (%cl-picks opts)) (%cl-seed opts) 24 80)))
     (def zoom (if (null? (Opts value opts "-z")) () (%cl-to-int (Opts value opts "-z"))))
-    (def failed (window-play g (paint-arts dir) (paint-font (%cl-art-dir)) 2 zoom))
-    (if (null? failed) (%cl-finish! g set (%cl-set-name opts))
-      (do (%cl-say 2 (Str8 append "x-roguelike: " (%cl-err-text failed) "\n")) 1))))
+    (def played (window-play saved fresh (paint-arts dir) (paint-font (%cl-art-dir)) 2 zoom (data-get set (lit title) "x-roguelike")))
+    (match
+      ((not (null? (rest played))) (do (%cl-say 2 (Str8 append "x-roguelike: " (%cl-err-text (rest played)) "\n")) 1))
+      ((null? (first played)) 0)
+      (#t (%cl-finish! (first played) set (%cl-set-name opts))))))
 
 (def %cl-play
   (fn (_ opts)
