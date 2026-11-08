@@ -39,6 +39,12 @@
   (guardian "Old Man")
   (level-style well))
 
+; The ramp, (ramp OF RUNG ...): what a fight costs, armed, as a share of
+; the player's hit points, RUNG in OF; a rung a band, the next for its
+; guardian, up the Fibonacci ladder to the last guardian, who takes it
+; all.  tools/model.x reads each creature against it.
+(ramp 21 3 5 8 13 21)
+
 (player 14 16)
 (unarmed 1 3)
 
