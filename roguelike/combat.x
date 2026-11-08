@@ -133,6 +133,10 @@
           (state-tell! g (lit stolen) "The {name} snatches something from your pack and runs!"
             (list (pair "name" (creature-name cr))))))))
 
+; The turns a cold blow slows the player; slowed, every creature acts
+; twice a turn (game.x).
+(def combat-chill 4)
+
 ; CR's traits, after its blow lands.
 (def %cb-trait!
   (fn (_ g cr trait)
@@ -142,7 +146,7 @@
       ((eq? trait (lit venom)) (when (state-chance? rng 30) (%cb-weaken! g 1)))
       ((eq? trait (lit sticky)) (do (player-condition! p (lit held) 3) (state-tell! g (lit held) "You are held fast!" ())))
       ((eq? trait (lit dazzle)) (do (player-condition! p (lit confused) 4) (state-tell! g (lit dazzled) "Your head swims." ())))
-      ((eq? trait (lit cold)) (do (player-condition! p (lit slowed) 4) (state-tell! g (lit chilled) "A chill slows your limbs." ())))
+      ((eq? trait (lit cold)) (do (player-condition! p (lit slowed) combat-chill) (state-tell! g (lit chilled) "A chill slows your limbs." ())))
       ((eq? trait (lit drain))
         (when (< 5 (player-hpmax p))
           (do (player-hpmax! p (- (player-hpmax p) 1)) (state-tell! g (lit drained) "You feel your vigour ebb." ()))))
@@ -161,4 +165,4 @@
             (Str8 append "killed by a " (creature-name cr)))))))
 
 (provide roguelike/combat
-  combat-chance combat-hit? combat-str-bonus combat-player-dice combat-player-level combat-exp-for combat-kill! combat-player-attacks! combat-hurt-player! combat-creature-attacks!)
+  combat-chance combat-hit? combat-chill combat-str-bonus combat-player-dice combat-player-level combat-exp-for combat-kill! combat-player-attacks! combat-hurt-player! combat-creature-attacks!)

@@ -12,11 +12,15 @@
 ; regenerates gets a hit point back every third turn (creatures.x), so
 ; its hit points come off at the player's rate less a third, or never
 ; when that rate is no more than a third.  A fast creature strikes twice
-; a turn, a slow one every other.
+; a turn, a slow one every other.  A cold blow slows the player for
+; combat.x's chill, and slowed, every creature acts twice a turn: a
+; cold creature's strikes are counted over the turns it keeps the
+; player slowed.
 
 (module roguelike/odds)
 
 (import x/num/float)
+(import x/core/doors int/)
 (import roguelike/combat combat-chance)
 
 (def %od-f (fn (_ n) (Float from n)))
@@ -52,11 +56,39 @@
     (def rate (/ (%od-f hp) t))
     (if (< rate (/ (%od-f 1) 3)) (%od-f 999) (/ (%od-f hp) (- rate (/ (%od-f 1) 3))))))
 
-; The hurt a turn from one of LEVEL striking (LO HI) at DEFENCE, at SPEED
-; fast, slow or nil.
-(def odds-hurt
-  (fn (_ level attack defence speed)
-    (def whole (* (odds-hit level defence) (odds-mid attack)))
-    (match ((eq? speed (lit fast)) (* 2 whole)) ((eq? speed (lit slow)) (/ whole 2)) (#t whole))))
+(def %od-pow (fn (self x n) (if (< n 1) (%od-f 1) (* x (self x (- n 1))))))
+; The chance that none lands of HALVES half-strikes at chance H: a half
+; is a strike every other turn.
+(def %od-miss
+  (fn (_ h halves)
+    (if (< halves 2) (- (%od-f 1) (/ h 2)) (%od-pow (- (%od-f 1) h) (int/ halves 2)))))
 
-(provide roguelike/odds odds-hit odds-mid odds-swings odds-kill odds-regen odds-hurt)
+; The share of turns the player is slowed by one striking HALVES
+; half-strikes a turn at chance H, each that lands slowing for CHILL
+; turns, and striking twice as often while it does: the settled spread
+; of a chain over the turns of chill left, from none.
+(def odds-chilled
+  (fn (_ h halves chill)
+    (def miss (fn (_ c) (%od-miss h (if (< 0 c) (* 2 halves) halves))))
+    (def cs (List range 0 (+ chill 1)))
+    (def step
+      (fn (_ dist)
+        (def at (fn (_ c) (if (< chill c) (%od-f 0) (List ref c dist))))
+        (def landed (%od-sum (List map (fn (_ c) (* (at c) (- (%od-f 1) (miss c)))) cs)))
+        (List map (fn (_ c)
+                    (+ (+ (if (= c chill) landed (%od-f 0)) (* (at (+ c 1)) (miss (+ c 1))))
+                       (if (= c 0) (* (at 0) (miss 0)) (%od-f 0))))
+                  cs)))
+    (def settle (fn (self n dist) (if (< n 1) dist (self (- n 1) (step dist)))))
+    (- (%od-f 1) (first (settle 60 (List map (fn (_ c) (%od-f (if (= c 0) 1 0))) cs))))))
+
+; The hurt a turn from one of LEVEL striking (LO HI) at DEFENCE, at SPEED
+; fast, slow or nil, its blow slowing the player CHILL turns, 0 for none.
+(def odds-hurt
+  (fn (_ level attack defence speed chill)
+    (def h (odds-hit level defence))
+    (def halves (match ((eq? speed (lit fast)) 4) ((eq? speed (lit slow)) 1) (#t 2)))
+    (def slowed (if (< chill 1) (%od-f 0) (odds-chilled h halves chill)))
+    (* (* h (odds-mid attack)) (* (/ (%od-f halves) 2) (+ (%od-f 1) slowed)))))
+
+(provide roguelike/odds odds-hit odds-mid odds-swings odds-kill odds-regen odds-chilled odds-hurt)
