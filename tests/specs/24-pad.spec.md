@@ -20,6 +20,14 @@ step it.
 ---
     ("," () 'escape ">" "?" () #t #f #f)
 
+### an event with nothing after its name, a quit or a close, is no key
+
+```roguelike
+(write (list (pad-key s '(quit) 0) (pad-key s '(close) 0) (pad-key s '(other 512) 0)))
+```
+---
+    (() () ())
+
 ## directions
 
 ### a d-pad direction moves after a moment, then repeats while held, and stops on release
