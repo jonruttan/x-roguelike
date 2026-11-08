@@ -1,0 +1,232 @@
+; sounds.xon -- the delve set heard: waves, the sounds a turn makes, and
+; what each place sounds like.  Every sound here is synthesised as it is
+; described; docs/sound.md has the forms.
+;
+; A sound is (sound "NAME" PROP ... (voice PROP ...) ...): each voice a
+; wave read at a pitch under an envelope of (MS PERCENT) points, with
+; (cut PCT) its low-pass, (pan -100..100), (gain PCT), (detune CENTS),
+; (slide PITCH) a pitch it slides to over its envelope, and (at MS) its
+; start.  (vary CENTS) plays it a little flat or sharp at random, (gain
+; PCT) is the whole sound's, (echo MS FEEDBACK WET) an echo on it.
+
+; --- waves: harmonics from the fundamental ------------------------------------
+
+(wave reed 6 4 3 2 1 1)
+(wave hollow 6 0 2 0 1)
+(wave glass 5 0 0 2 0 0 0 1)
+(wave warm 8 3 1)
+(wave thin 2 0 3 0 2 0 1)
+
+; --- the music's room ----------------------------------------------------------
+
+(music-gain 75)
+(music-echo 430 42 26)
+(music-echo 610 30 14)
+
+; --- feet: (footstep TERRAIN "SOUND"), "default" for the rest ------------------
+
+(footstep "default" "step-stone")
+(footstep "floor" "step-stone")
+(footstep "passage" "step-grit")
+(footstep "door" "step-wood")
+(footstep "gate" "step-wood")
+(footstep "bog" "step-mud")
+(footstep "down" "step-stone")
+(footstep "up" "step-stone")
+
+(sound "step-stone" (vary 70) (gain 30)
+  (voice (wave noise) (hz 1) (cut 10) (env (0 0) (2 70) (25 18) (70 0)))
+  (voice (hz 75) (slide 50) (env (0 0) (2 45) (45 0))))
+
+(sound "step-grit" (vary 90) (gain 28)
+  (voice (wave noise) (hz 1) (cut 24) (env (0 0) (1 60) (15 10) (40 0)))
+  (voice (wave noise) (hz 1) (cut 30) (at 22) (env (0 0) (1 40) (30 0)))
+  (voice (hz 80) (slide 55) (env (0 0) (2 35) (40 0))))
+
+(sound "step-wood" (vary 60) (gain 32)
+  (voice (hz 190) (slide 130) (cut 40) (env (0 0) (1 55) (70 0)))
+  (voice (wave noise) (hz 1) (cut 7) (env (0 0) (2 40) (50 0))))
+
+(sound "step-mud" (vary 50) (gain 34)
+  (voice (wave noise) (hz 1) (cut 4) (env (0 0) (18 75) (60 30) (140 0)))
+  (voice (hz 120) (slide 55) (env (0 0) (12 30) (110 0))))
+
+; --- blows ---------------------------------------------------------------------
+
+; The player's: a swing that misses, a blow that lands, one that kills.
+(sound "swing" (vary 120) (gain 40)
+  (voice (wave noise) (hz 1) (cut 5) (env (0 0) (55 65) (150 0)) (pan -20))
+  (voice (wave noise) (hz 1) (cut 18) (env (0 0) (70 25) (130 0)) (pan 20)))
+
+(sound "hit" (vary 80) (gain 60)
+  (voice (hz 150) (slide 45) (env (0 0) (1 100) (100 0)))
+  (voice (wave noise) (hz 1) (cut 35) (env (0 0) (1 85) (12 30) (35 0)))
+  (voice (wave reed) (note "C2") (slide "G1") (cut 20) (env (0 0) (2 40) (70 0))))
+
+(sound "kill" (vary 60) (gain 62)
+  (voice (hz 150) (slide 40) (env (0 0) (1 100) (110 0)))
+  (voice (wave noise) (hz 1) (cut 35) (env (0 0) (1 80) (40 0)))
+  (voice (wave reed) (note "E3") (slide "E1") (cut 25) (at 40) (env (0 0) (10 45) (550 0)))
+  (voice (wave noise) (hz 1) (cut 6) (at 90) (env (0 0) (20 50) (320 0))))
+
+; A creature's on the player: struck, or missed.
+(sound "struck" (vary 60) (gain 66)
+  (voice (hz 95) (slide 35) (env (0 0) (1 100) (170 0)))
+  (voice (wave noise) (hz 1) (cut 22) (env (0 0) (1 90) (70 0)))
+  (voice (wave thin) (note "F#2") (cut 30) (env (0 0) (3 30) (120 0)))
+  (voice (wave thin) (note "C3") (cut 30) (env (0 0) (3 25) (120 0))))
+
+(sound "dodged" (vary 140) (gain 36)
+  (voice (wave noise) (hz 1) (cut 9) (env (0 0) (35 55) (110 0))))
+
+; --- the player's state --------------------------------------------------------
+
+; Hurt by anything; the wound that takes them under (low-hp PCT).
+(low-hp 30)
+(sound "hurt" (vary 40) (gain 34)
+  (voice (wave reed) (note "A1") (slide "F1") (cut 14) (env (0 0) (25 45) (260 0))))
+
+(sound "low" (gain 40)
+  (voice (wave glass) (note "E5") (env (0 0) (4 45) (450 0)) (pan -20))
+  (voice (wave glass) (note "C5") (at 230) (env (0 0) (4 45) (650 0)) (pan 20))
+  (voice (wave reed) (note "E2") (cut 10) (env (0 0) (80 30) (900 0))))
+
+(sound "healed" (gain 34) (echo 140 35 30)
+  (voice (wave glass) (note "C5") (env (0 0) (5 35) (700 0)) (pan -40))
+  (voice (wave glass) (note "E5") (at 70) (env (0 0) (5 35) (700 0)) (pan -10))
+  (voice (wave glass) (note "G5") (at 140) (env (0 0) (5 35) (700 0)) (pan 10))
+  (voice (wave glass) (note "C6") (at 210) (env (0 0) (5 30) (900 0)) (pan 40)))
+
+(sound "level" (gain 40) (echo 180 35 30)
+  (voice (wave reed) (note "C4") (cut 35) (env (0 0) (5 50) (300 0)))
+  (voice (wave reed) (note "G4") (cut 35) (at 110) (env (0 0) (5 50) (300 0)))
+  (voice (wave reed) (note "C5") (cut 35) (at 220) (env (0 0) (5 50) (300 0)))
+  (voice (wave glass) (note "E5") (at 330) (env (0 0) (8 45) (1400 0)))
+  (voice (wave glass) (note "G5") (at 330) (env (0 0) (8 30) (1400 0))))
+
+(sound "pickup" (vary 30) (gain 30)
+  (voice (wave glass) (note "A5") (env (0 0) (2 40) (90 0)))
+  (voice (wave glass) (note "E6") (at 55) (env (0 0) (2 35) (140 0))))
+
+(sound "gold" (vary 50) (gain 30)
+  (voice (wave glass) (note "E6") (env (0 0) (1 45) (160 0)) (pan -15))
+  (voice (wave glass) (note "B6") (at 45) (env (0 0) (1 40) (220 0)) (pan 15))
+  (voice (wave noise) (hz 1) (cut 60) (env (0 0) (1 30) (15 0))))
+
+(sound "stairs" (gain 36)
+  (voice (hz 85) (slide 55) (env (0 0) (2 50) (60 0)))
+  (voice (wave noise) (hz 1) (cut 10) (env (0 0) (2 50) (50 0)))
+  (voice (hz 80) (slide 50) (at 160) (env (0 0) (2 50) (60 0)))
+  (voice (wave noise) (hz 1) (cut 10) (at 160) (env (0 0) (2 50) (50 0)))
+  (voice (hz 75) (slide 45) (at 320) (env (0 0) (2 50) (60 0)))
+  (voice (wave noise) (hz 1) (cut 10) (at 320) (env (0 0) (2 50) (50 0)))
+  (voice (hz 70) (slide 40) (at 480) (env (0 0) (2 45) (60 0)))
+  (voice (wave noise) (hz 1) (cut 10) (at 480) (env (0 0) (2 45) (50 0))))
+
+; A new band reached: a struck stone, deep, dying slowly.
+(sound "arrived" (gain 44) (echo 430 40 32)
+  (voice (note "C2") (env (0 0) (8 60) (3200 0)))
+  (voice (wave glass) (note "G3") (env (0 0) (8 30) (2600 0)) (pan -30))
+  (voice (wave glass) (note "C4") (detune 6) (env (0 0) (8 20) (2400 0)) (pan 30))
+  (voice (wave hollow) (note "C3") (cut 18) (env (0 0) (500 25) (2800 0))))
+
+(sound "hungry" (gain 40)
+  (voice (hz 70) (slide 48) (env (0 0) (120 55) (300 35) (650 0)))
+  (voice (wave noise) (hz 1) (cut 2) (env (0 0) (150 60) (600 0))))
+
+(sound "weak" (gain 44)
+  (voice (hz 60) (slide 38) (env (0 0) (200 60) (500 40) (1100 0)))
+  (voice (wave noise) (hz 1) (cut 2) (env (0 0) (250 65) (1000 0)))
+  (voice (wave reed) (note "D2") (slide "A1") (cut 10) (env (0 0) (300 25) (1100 0))))
+
+; A condition taken on, and one shaken off.
+(sound "afflicted" (gain 34)
+  (voice (wave reed) (note "C4") (slide "B3") (cut 25) (env (0 0) (40 35) (520 0)) (pan -25))
+  (voice (wave reed) (note "C#4") (slide "C4") (cut 25) (env (0 0) (40 35) (520 0)) (pan 25)))
+
+(sound "relieved" (gain 28)
+  (voice (wave glass) (note "G4") (env (0 0) (60 35) (900 0)) (pan -20))
+  (voice (wave glass) (note "D5") (env (0 0) (60 30) (900 0)) (pan 20)))
+
+(sound "died" (gain 55) (echo 520 50 35)
+  (voice (wave reed) (note "E3") (slide "E1") (cut 28) (env (0 0) (60 60) (2600 0)))
+  (voice (note "A1") (env (0 0) (100 55) (3600 0)))
+  (voice (wave noise) (hz 1) (cut 2) (env (0 0) (400 40) (3000 0))))
+
+(sound "won" (gain 44) (echo 380 40 30)
+  (voice (wave warm) (note "C4") (env (0 0) (200 45) (3500 0)) (pan -40))
+  (voice (wave warm) (note "E4") (at 150) (env (0 0) (200 40) (3400 0)))
+  (voice (wave warm) (note "G4") (at 300) (env (0 0) (200 40) (3300 0)) (pan 40))
+  (voice (wave glass) (note "C6") (at 450) (env (0 0) (10 30) (3000 0))))
+
+; What sets each sound off: a turn's events by name.
+(cue "step" "step-stone")
+(cue "miss" "swing")
+(cue "hit" "hit")
+(cue "kill" "kill")
+(cue "struck" "struck")
+(cue "dodged" "dodged")
+(cue "hurt" "hurt")
+(cue "low" "low")
+(cue "healed" "healed")
+(cue "level" "level")
+(cue "pickup" "pickup")
+(cue "gold" "gold")
+(cue "stairs" "stairs")
+(cue "arrived" "arrived")
+(cue "hungry" "hungry")
+(cue "weak" "weak")
+(cue "afflicted" "afflicted")
+(cue "relieved" "relieved")
+(cue "died" "died")
+(cue "won" "won")
+
+; --- fear ----------------------------------------------------------------------
+
+; Tension rises from a creature awake and in sight, by (tension-near N)
+; a cell nearer, and from wounds past (tension-hp PCT) of the player's
+; hit points.  (heart "SOUND" FROM SLOW FAST): above tension FROM the
+; heart is heard, SLOW beats a minute rising to FAST at 100.
+(tension-near 12)
+(tension-hp 60)
+(heart "heart" 25 62 150)
+
+(sound "heart" (gain 70)
+  (voice (hz 52) (slide 40) (cut 30) (env (0 0) (8 100) (120 0)))
+  (voice (wave noise) (hz 1) (cut 2) (env (0 0) (6 70) (70 0)))
+  (voice (hz 48) (slide 38) (cut 30) (at 170) (env (0 0) (8 70) (110 0)))
+  (voice (wave noise) (hz 1) (cut 2) (at 170) (env (0 0) (6 50) (60 0))))
+
+; --- places: (ambience PLACE (bed "SONG") (random "SOUND" EVERY-MS GAIN) ...) --
+
+(sound "drip" (vary 300) (gain 30)
+  (voice (note "E6") (slide "B5") (env (0 0) (1 40) (110 0)))
+  (voice (note "B6") (at 70) (env (0 0) (1 15) (90 0))))
+
+(sound "creak" (vary 200) (gain 26)
+  (voice (wave reed) (note "D2") (slide "E2") (cut 7) (env (0 0) (220 30) (800 0)))
+  (voice (wave noise) (hz 1) (cut 3) (env (0 0) (200 25) (700 0))))
+
+(sound "rumble" (vary 100) (gain 40)
+  (voice (wave noise) (hz 1) (cut 1) (env (0 0) (350 80) (1900 0)))
+  (voice (hz 38) (slide 30) (env (0 0) (300 50) (1700 0))))
+
+(sound "trickle" (vary 400) (gain 22)
+  (voice (wave glass) (note "G6") (env (0 0) (1 25) (60 0)))
+  (voice (wave glass) (note "D6") (at 90) (env (0 0) (1 20) (60 0)))
+  (voice (wave glass) (note "A6") (at 150) (env (0 0) (1 18) (60 0)))
+  (voice (wave noise) (hz 1) (cut 30) (env (0 0) (50 20) (260 0))))
+
+(sound "settle" (vary 150) (gain 30)
+  (voice (wave hollow) (note "C2") (cut 5) (env (0 0) (400 40) (2200 0)))
+  (voice (hz 50) (env (0 0) (300 30) (1800 0))))
+
+(sound "chime" (vary 500) (gain 18)
+  (voice (wave glass) (note "C6") (env (0 0) (2 30) (1600 0)))
+  (voice (wave glass) (note "G6") (detune 9) (at 3) (env (0 0) (2 15) (1300 0))))
+
+(ambience "The Galleries" (bed "galleries-air") (random "drip" 6000 50) (random "creak" 14000 60) (random "rumble" 40000 45))
+(ambience "The Flood" (bed "flood-water") (random "trickle" 5000 50) (random "drip" 4000 45) (random "rumble" 50000 35))
+(ambience "The Old Works" (bed "works-air") (random "settle" 15000 55) (random "drip" 9000 35))
+(ambience "The Heart" (bed "heart-air") (random "chime" 9000 45) (random "settle" 20000 45))
+(ambience "default" (bed "galleries-air") (random "drip" 8000 40))

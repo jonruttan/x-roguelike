@@ -9,7 +9,9 @@
 ; A gamepad's events become the same keys through roguelike/pad, and
 ; F11 or Alt-Enter switches the window to fullscreen and back.
 ; The screen is drawn again after every key, and about twelve times a
-; second while a light flickers.
+; second while a light flickers.  The game is heard as well as seen
+; (roguelike/sound): its music is kept fed each time round the loop,
+; and each turn's sounds are played as the turn is drawn.
 ;
 ; @author [Jon Ruttan](jonruttan@gmail.com)
 ; @copyright 2026 Jon Ruttan
@@ -28,6 +30,7 @@
 (import roguelike/paint paint-width paint-height paint-make paint-screen paint-turn! paint-frame! paint-flickers?
   paint-zoom paint-zoom! paint-animating? paint-step!)
 (import roguelike/pad pad-make pad-key pad-event? pad-fullscreen? pad-fullscreen!)
+(import roguelike/sound sound-make sound-pump! sound-collect? sound-turn! sound-close)
 
 ; A frame's wait while a light flickers, and the wait for a key when
 ; nothing moves, in microseconds.
@@ -95,6 +98,8 @@
 (def %wn-loop
   (fn (self g a p win tick)
     (def pad (Vector ref 3 a))
+    (def snd (Vector ref 4 a))
+    (sound-pump! snd)
     (def ev (Sdl poll))
     (def key (if (if (null? ev) #f (eq? (first ev) (lit key-down)))
                (window-key (List ref 1 ev) (List ref 2 ev))
@@ -121,6 +126,7 @@
       ; collect's cost comes after the key's answer, not before it.
       ((not (null? key))
         (do (if (game-exploring? g) (game-exploring! g ()) (game-key! g key))
+            (sound-turn! snd g)
             (paint-turn! p g (%wn-art a g))
             (Sdl show! win (List ref 2 (paint-frame! p g tick)))
             (Heap collect)
@@ -133,6 +139,7 @@
       ; Exploring steps on without waiting for each step to be shown.
       ((game-exploring? g)
         (do (game-explore! g)
+            (sound-turn! snd g)
             (paint-turn! p g (%wn-art a g))
             (Sdl show! win (List ref 2 (paint-frame! p g tick)))
             (Heap collect)
@@ -150,7 +157,9 @@
             (Sdl show! win (List ref 2 (paint-frame! p g (+ tick 1))))
             (Heap collect)
             (self g a p win (+ tick 1))))
-      (#t (do (Sys usleep %wn-idle-us) (self g a p win tick))))))
+      (#t (do (Sys usleep %wn-idle-us)
+              (when (sound-collect? snd) (Heap collect))
+              (self g a p win tick))))))
 
 ; The zoom KEY asks for: 1 for + or =, -1 for -, 0 for any other.
 (def %wn-zoom-step
@@ -166,7 +175,7 @@
 ; with its own set's pictures.
 (def window-play
   (fn (_ g arts font scale zoom)
-    (def a (Vector of arts "" () (pad-make)))
+    (def a (Vector of arts "" () (pad-make) ()))
     (def win (Sdl scaling! (Sdl open "x-roguelike" paint-width paint-height scale) (lit fit)))
     (def failed
       (guard (e e)
@@ -174,8 +183,10 @@
             (unless (null? zoom) (paint-zoom! p zoom))
             (paint-turn! p g (%wn-art a g))
             (Sdl show! win (List ref 2 (paint-frame! p g 0)))
+            (Vector set! 4 (sound-make g) a)
             (%wn-loop g a p win 0)
             ())))
+    (sound-close (Vector ref 4 a))
     (Sdl close win)
     failed))
 
