@@ -68,15 +68,24 @@ scores kept best first.
 
 ## where
 
-### each set its own directory: a save on one is never read on another
+### each set its own directory under HOME: a save on one is never read on another
 
 ```roguelike
 (import roguelike/save save-path)
-(def tail (fn (_ p) (Str8 join "/" (List drop (- (List length (Str8 split "/" p)) 2) (Str8 split "/" p)))))
-(write (list (tail (save-path "delve" "save")) (tail (save-path "kettle" "save"))
-             (tail (save-path "data/kettle/" "scores"))
-             (File exists? (save-path "delve" "save"))
-             (str=? (save-path "delve" "save") (save-path "kettle" "save"))))
+(def home (Sys getenv "HOME"))
+(def tmp (File temp "/tmp/x-roguelike-home-"))
+(File close (first tmp))
+(File unlink (rest tmp))
+(File mkdir (rest tmp))
+(Sys setenv "HOME" (rest tmp))
+(def under (fn (_ p) (Str8 sub (+ (Str8 length (rest tmp)) 1) (- (Str8 length p) (+ (Str8 length (rest tmp)) 1)) p)))
+(def got (list (under (save-path "delve" "save")) (under (save-path "kettle" "save"))
+               (under (save-path "data/kettle/" "scores"))
+               (File exists? (save-path "delve" "save"))
+               (str=? (save-path "delve" "save") (save-path "kettle" "save"))))
+(Sys setenv "HOME" home)
+(List for-each (fn (_ d) (File rmdir (Str8 append (rest tmp) d))) (list "/.x-roguelike/delve" "/.x-roguelike/kettle" "/.x-roguelike" ""))
+(write got)
 ```
 ---
-    ("delve/save" "kettle/save" "kettle/scores" #f #f)
+    (".x-roguelike/delve/save" ".x-roguelike/kettle/save" ".x-roguelike/kettle/scores" #f #f)
