@@ -641,7 +641,24 @@
   "..kIkkuUkUukDk.."
   "..kJk.kwkwk.kk.."
   "...k..kwkwk....."
-  "......kk.kk....."))
+  "......kk.kk.....")
+  (frames 6 (rows
+  "................"
+  "................"
+  ".......kkk...x.."
+  "......kwWwk.xLx."
+  ".....kwWwwwkxLlx"
+  ".....kwpPPwk.ux."
+  ".....kwPpPwk.Tk."
+  "......kkPkk..Tk."
+  ".....kDwwwDkkTk."
+  "....kDuUUuuDpk.."
+  "....kDUuUuUDk..."
+  "...kDDiiqiiDDk.."
+  "...kDkuUuUukDk.."
+  "..kIkkuUkUukDk.."
+  "...k..kwkwk....."
+  "......kk.kk.....")))
 
 ; A rat of the vault, long and grey-brown, nose to the ground.
 (tile "cave rat" (rows
@@ -660,7 +677,24 @@
   "....kkkkkkVvvk.."
   "...kvVVVVvvvBvkk"
   "kXkvvvvvvvvvvvvX"
-  ".kXkkvkkkkvkkkk."))
+  ".kXkkvkkkkvkkkk.")
+  (frames 4 (rows
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  ".........kXk...."
+  "...kkkkkkVvvk..."
+  "..kvVVVVvvvBvkk."
+  "XkvvvvvvvvvvvvX."
+  "kXkkvkkkkvkkkk..")))
 
 ; A big dusty moth whose body gives a sickly light; it muddles the eye.
 (tile "glow moth" (light 200 220 140 2) (flicker 20) (rows
@@ -679,7 +713,24 @@
   "..kkk......kkk.."
   "................"
   "................"
-  "................"))
+  "................")
+  (frames 3 (rows
+  "................"
+  "................"
+  "......k..k......"
+  ".kk....kk....kk."
+  "kzzkk.ZMMZ.kkzzk"
+  "kzuzzkZMMZkzzuzk"
+  "kzzzzzkMMkzzzzzk"
+  ".kzzuzzMMzzuzzk."
+  "..kzzzkMMkzzzk.."
+  "...kzzkMMkzzk..."
+  "..kzzzkMMkzzzk.."
+  ".kzuzzkZZkzzuzk."
+  ".kzzzk.ZZ.kzzzk."
+  "..kkk......kkk.."
+  "................"
+  "................")))
 
 ; A fat pale larva, slow, ringed, its jaws dark.
 (tile "pale grub" (rows
@@ -698,7 +749,24 @@
   "...kHHKHHHKHHk.."
   "..kHHHKHHHKHHHkk"
   "..kKHHKHHHKHHPtk"
-  "...kkkkkkkkkkkk."))
+  "...kkkkkkkkkkkk.")
+  (frames 4 (rows
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "......kkkk......"
+  "...kkkHHHHkk...."
+  "..kHHKHHHKHHk..."
+  ".kHHHKHHHKHHHkk."
+  ".kKHHKHHHKHHPtk."
+  "..kkkkkkkkkkkk..")))
 
 ; A flat dark crawler on too many legs, a red mark where the venom is.
 (tile "scuttler" (rows
@@ -717,7 +785,24 @@
   ".....kkENkk....."
   "......kEEk......"
   ".......kk......."
-  "................"))
+  "................")
+  (frames 6 (rows
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "......k..k......"
+  ".......kk......."
+  "..k..kENNEk..k.."
+  "...kkENDDNEkk..."
+  "..k.kENNNNEk.k.."
+  ".k.kkENNNNEkk.k."
+  "...k.kENNEk.k..."
+  "..k.kkENNEkk.k.."
+  "......kEEk......"
+  ".......kk......."
+  "................")))
 
 ; A leech the length of an arm, black-green and wet, its mouth a red ring.
 (tile "mire leech" (rows
@@ -736,7 +821,24 @@
   "..kgGWGngggnDk.."
   ".kgggngggnggDBk."
   "kgggnggggnggDDk."
-  ".kkkkkkkkkkkkk.."))
+  ".kkkkkkkkkkkkk..")
+  (frames 4 (rows
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "......kkkkkk...."
+  "....kkgGGgggkk.."
+  "...kgGWGngggnDk."
+  "..kgggngggnggDBk"
+  ".kgggnggggnggDDk"
+  "..kkkkkkkkkkkkk.")))
 
 ; A lean hound the grey of cold ash, embers for eyes, at a run.
 (tile "ash hound" (rows
@@ -755,7 +857,24 @@
   "...krrRRRRrrk..."
   "..krk.krk.krk..."
   ".kr..kr...kr...."
-  ".k...k....kk...."))
+  ".k...k....kk....")
+  (frames 6 (rows
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "...........kk..."
+  "..........krk..."
+  "kk.......krRRk.."
+  ".kk.....krRlRRkk"
+  "..krkkkkrRhRRRRk"
+  "...krRRhRRRRkkk."
+  "...krrRRRRrrk..."
+  ".kr..kr...kr...."
+  ".k...k....kk....")))
 
 ; A magpie, black and white with a green sheen, a stolen ring in its beak.
 (tile "magpie" (rows
@@ -774,7 +893,24 @@
   "..k11knnnnk....."
   ".k11k.kJkJ......"
   "k11k...k.k......"
-  "kk.....kkkk....."))
+  "kk.....kkkk.....")
+  (frames 3 (rows
+  "................"
+  "................"
+  ".........kkk...."
+  "........knnnk..."
+  "........knnnkkk."
+  "........knnnkqQk"
+  ".......knnnk.kk."
+  "......kBBnn1k..."
+  ".....kBBBn11k..."
+  "....kBBBBn11k..."
+  "...k1BBBnn1k...."
+  "..k11knnnnk....."
+  ".k11k.kJkJ......"
+  "k11k...k.k......"
+  "kk.....kkkk....."
+  "................")))
 
 ; A man emptied out: grey skin on bone, the eyes gone dark, in rags; he
 ; mends as he walks.
@@ -794,7 +930,24 @@
   "....k.kuuuuk.k.."
   "......k2kk2k...."
   "......k2k.k2k..."
-  "......kk..kk...."))
+  "......kk..kk....")
+  (frames 6 (rows
+  "................"
+  "................"
+  "................"
+  ".......kkk......"
+  "......k232k....."
+  "......kk2kk....."
+  "......k232k....."
+  ".......k3k......"
+  ".....kuu2uuk...."
+  "....k2kuuuk2k..."
+  "....k2kuUukk2k.."
+  "...k2k.kuuk.k2k."
+  "...k3k.kuuk.k3k."
+  "....k.kuuuuk.k.."
+  "......k2k.k2k..."
+  "......kk..kk....")))
 
 ; A carved guard on its plinth, mossed and still, a stone blade grounded.
 (tile "stone sentinel" (rows
@@ -813,7 +966,24 @@
   "....kRRRRrrk...."
   "..kkkkkkkkkkkk.."
   "..khRRRRRRgrrk.."
-  "..kkkkkkkkkkkk.."))
+  "..kkkkkkkkkkkk..")
+  (frames 6 (rows
+  "................"
+  "......kkkk......"
+  ".....khRRrk....."
+  ".....kRkkrk....."
+  ".....krRRrk....."
+  "....kkkrrkkk...."
+  "...khRRRRRrrk..."
+  "..khRkRRhRkrrk.."
+  "..kRrkRRhRkrrk.."
+  "..kRrkRRhgkrrk.."
+  "..kkkkRRhgkkkk.."
+  "....kRRRhgrk...."
+  "....kRRRhRrk...."
+  "....kRRRRrrk...."
+  "..khRRRRRRgrrk.."
+  "..kkkkkkkkkkkk..")))
 
 ; A drift of cold blue light that numbs what it touches.
 (tile "cold wisp" (light 150 200 240 2) (flicker 30) (rows
@@ -832,7 +1002,24 @@
   "......66446....."
   ".......6646....."
   "........66......"
-  "................"))
+  "................")
+  (frames 3 (rows
+  "................"
+  "................"
+  "................"
+  "................"
+  "......66........"
+  ".....6446.6....."
+  "....644446......"
+  "...6445544666..."
+  "...6455554446..."
+  "..64455554446..."
+  "...6445544466..."
+  "....64444466...."
+  ".....664446....."
+  "......66446....."
+  ".......6646....."
+  "........66......")))
 
 ; A great lump of a man, little head, a hide clout and a club; he runs
 ; when hurt.
@@ -852,7 +1039,24 @@
   ".....kPPkPPk.kTk"
   ".....kPPkPPk..k."
   "....kPPk.kPPk..."
-  "....kkkk.kkkk..."))
+  "....kkkk.kkkk...")
+  (frames 6 (rows
+  "................"
+  "......kkk......."
+  ".....kPpPk......"
+  ".....kPPPk......"
+  "...kkkkPkkkk...."
+  "..kPpPPPPPPpk..."
+  ".kPpPPPPPPPPpkk."
+  ".kPPkPPPPPPkPktk"
+  "kPPkkPpPPPPkPkTk"
+  "kPPk.kPPPPkkPkTk"
+  "kPk..k7777k.kkTk"
+  "kpk..k7O77k..kVk"
+  ".k...k7777k..kTk"
+  ".....kPPkPPk.kTk"
+  "....kPPk.kPPk..."
+  "....kkkk.kkkk...")))
 
 ; A heap of bog that stands and walks, moss and black mud, long-armed;
 ; what is torn off it grows back.
@@ -872,7 +1076,24 @@
   ".k.kgggk.kggk.k."
   "..kg8gk...kg8k.."
   "..kgggk...kgggk."
-  "..kkkk.....kkkk."))
+  "..kkkk.....kkkk.")
+  (frames 6 (rows
+  "................"
+  "................"
+  "................"
+  "......kkkk......"
+  "....kkgGGgkk...."
+  "...kgGG8GGggk..."
+  "..kgG8gGGg8ggk.."
+  "..kg8ggGgg8ggk.."
+  ".kGgggg8gggggGk."
+  "kgGkgGggggGgkGgk"
+  "kgk.kgg8gggk.kgk"
+  "kgk.kggggg8k.kgk"
+  "k8k.kg8gggggkk8k"
+  ".k.kgggk.kggk.k."
+  "..kgggk...kgggk."
+  "..kkkk.....kkkk.")))
 
 ; A worm as thick as a man, risen from its bore: a ringed maw, teeth in
 ; rows.
@@ -892,7 +1113,24 @@
   "..kk00000000kk.."
   ".k099999999990k."
   "k09999999999990k"
-  "kkkkkkkkkkkkkkkk"))
+  "kkkkkkkkkkkkkkkk")
+  (frames 4 (rows
+  "................"
+  "................"
+  "....kkkkkk......"
+  "..kk099990kk...."
+  ".k09kkkkkk90k..."
+  ".k9kBkBkBkk9k..."
+  "k09kkDDDDkk90k.."
+  "k99kDkkkkDk99k.."
+  "k09kkDDDDkk90k.."
+  ".k9kkBkBkBk9k..."
+  ".k09kkkkkk90k..."
+  "..k09999990k...."
+  ".kk00000000kk..."
+  "k099999999990k.."
+  "09999999999990k."
+  "kkkkkkkkkkkkkkk.")))
 
 ; Something hooded that was buried here, half seen, reaching; its touch
 ; takes the strength out of you.
@@ -912,7 +1150,24 @@
   "...!#!!#!!#!...."
   "...!!.!#!.!!...."
   "......!!!......."
-  "................"))
+  "................")
+  (frames 3 (rows
+  "................"
+  "................"
+  "......!!!!......"
+  ".....!####!....."
+  "....!#!!!!#!...."
+  "....!#!kk!#!...."
+  "....!#!!!!#!...."
+  "...!##!!!!##!..."
+  "..!##!####!##!.."
+  ".!#!.!####!.!#!."
+  ".!b!.!#!##!.!b!."
+  "....!##!##!....."
+  "....!#!##!#!...."
+  "...!#!!#!!#!...."
+  "...!!.!#!.!!...."
+  "......!!!.......")))
 
 ; A long-limbed thing crouched in the dark, seen only by its eye-shine.
 (tile "night stalker" (rows
@@ -931,7 +1186,24 @@
   "%...%%..%%.%%..."
   "...%%..%%...%%.."
   "..%%...%.....%.."
-  "..%.....%....%%."))
+  "..%.....%....%%.")
+  (frames 6 (rows
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "..........%%%..."
+  ".........%%$%%.."
+  "....%%%%%%%%%%%."
+  "..%%%n%%%%%%%n%."
+  ".%%.%%%%%%%%.%%."
+  "%%..%%n%%%%%..%."
+  "%...%%..%%.%%..."
+  "..%%...%.....%.."
+  "..%.....%....%%.")))
 
 ; A low drake of black clinker, fire in its cracks, smoke at the mouth.
 (tile "ember drake" (light 255 120 60 3) (flicker 20) (rows
@@ -950,7 +1222,24 @@
   ".k&&*&l&&*&&&k.."
   "..kk&&&l&&&*&&k."
   "...k&k.kk&k.k&k."
-  "...kk....kk..kk."))
+  "...kk....kk..kk.")
+  (frames 3 (rows
+  "................"
+  "................"
+  "................"
+  "...........kkk.."
+  "..........k&*&k."
+  ".........k&*L*&k"
+  ".........k&&kxlL"
+  "........k&lk.kx."
+  "k.......k&&k...."
+  "&k...kkk&*&k...."
+  "k&kkk&*&l&&*k..."
+  ".k&&*&l&&*&&&k.."
+  "..kk&&&l&&&*&&k."
+  "...k&k.kk&k.k&k."
+  "...kk....kk..kk."
+  "................")))
 
 ; The vault's last keeper, in old rusted plate and a red tabard, his
 ; keys at his belt and a poleaxe in his fist; he does not sleep.
@@ -970,7 +1259,24 @@
   ".kTk..kIi.iOIk.."
   ".kTk..kIi.kIik.."
   ".kTk.kIIk.kIIk.."
-  ".kkk.kkkk.kkkk.."))
+  ".kkk.kkkk.kkkk..")
+  (frames 6 (rows
+  "................"
+  ".kk.....kkkk...."
+  "kJIk...kIJJIk..."
+  "kIJk...kkkkkk..."
+  ".kTk...kiIIik..."
+  ".kTk..kkkiikkk.."
+  ".kTk.kIJIiiIJIk."
+  ".kTkkIiDqqqDiIk."
+  ".kTkIikDqDqDkiIk"
+  ".kikIkkDDqDDkkik"
+  ".kTkkk.DDqqDkqk."
+  ".kTk..kDDqDDkQqk"
+  ".kTk..kiDDDOik.."
+  ".kTk..kIi.iOIk.."
+  ".kTk.kIIk.kIIk.."
+  ".kkk.kkkk.kkkk..")))
 
 ; --- what lies about --------------------------------------------------------
 
