@@ -158,9 +158,12 @@
     cr))
 
 ; KEY pressed until TEST answers true or N presses are spent: the presses.
+; A --More-- or a thing looked at is put away with enter, as a player
+; does: KEY alone would leave it up.
 (def spec-press-until
   (fn (self g key test n)
-    (match ((test) 0) ((= n 0) 0) (#t (do (game-key! g key) (when (= 0 (% n 10)) (Heap collect)) (+ 1 (self g key test (- n 1))))))))
+    (def waiting? (if (null? (game-ask g)) #f (if (eq? (first (game-ask g)) 'more) #t (eq? (first (game-ask g)) 'look))))
+    (match ((test) 0) ((= n 0) 0) (#t (do (game-key! g (if waiting? (lit enter) key)) (when (= 0 (% n 10)) (Heap collect)) (+ 1 (self g key test (- n 1))))))))
 
 ; How many cells of M are not rock; how many have been seen.
 (def %spec-count
@@ -304,7 +307,12 @@
     (if (null? hit) ()
       (pair (first hit) (pair (+ (player-r p) (* n (first (rest hit)))) (+ (player-c p) (* n (rest (rest hit)))))))))
 
-; Every question G is asking answered with Escape, a --More-- included,
-; so the next key is a move: a crossing's band word can overrun the row.
+; What G is asking put away as a player does: a --More-- or a thing
+; looked at with enter, a question with Escape.
+(def spec-dismiss!
+  (fn (_ g)
+    (game-key! g (if (if (null? (game-ask g)) #f (if (eq? (first (game-ask g)) 'more) #t (eq? (first (game-ask g)) 'look))) (lit enter) (lit escape)))))
+; Every question G is asking put away, so the next key is a move: a
+; crossing's band word can overrun the row.
 (def spec-settle!
-  (fn (self g) (unless (null? (game-ask g)) (do (game-key! g (lit escape)) (self g)))))
+  (fn (self g) (unless (null? (game-ask g)) (do (spec-dismiss! g) (self g)))))
