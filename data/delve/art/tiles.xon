@@ -686,7 +686,24 @@
   "..kkQqQQQQqqk..."
   "kPQqLqqqqqqqqkk."
   ".kkkqkkkkkqkkXXk"
-  "................"))
+  "................")
+  (frames 4 (rows
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "...kXQQQQQk....."
+  ".kkQqQQQQqqk...."
+  "PQqLqqqqqqqqkk.."
+  "kkkqkkkkkqkkXXk."
+  "................")))
 
 (tile "drip toad" (rows
   "................"
@@ -704,7 +721,24 @@
   ".kgGHGGGGGGHGGgk"
   "kggggGoGGoGggggk"
   "kgkkggggggggkkgk"
-  ".kk..kkkkkk..kk."))
+  ".kk..kkkkkk..kk.")
+  (frames 4 (rows
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "....kkkkkk......"
+  "..kHLkGGkLHk...."
+  ".kGGGHGGGHGGGk.."
+  "kgGHGGGGGGHGGgk."
+  "ggggGoGGoGggggk."
+  "gkkggggggggkkgk."
+  "kk..kkkkkk..kk..")))
 
 ; Firedamp pooled in the roof, a lamp's breath from burning.
 (tile "gas mote" (light 120 180 220 2) (flicker 30) (rows
@@ -723,7 +757,24 @@
   ".....jj..jj....."
   "................"
   "................"
-  "................"))
+  "................")
+  (frames 3 (rows
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "........j......."
+  ".....jjjmj......"
+  "...jjjmmmmjjj..."
+  "..jjmmmMmmmmjj.."
+  ".jjmmMMMMmmmmjj."
+  ".jmmmMMMmmMmmmj."
+  "..jjmmmmmmmmjj.."
+  "...jjjjmmjjjj..."
+  ".....jj..jj....."
+  "................"
+  "................")))
 
 ; One of the firedamp shift, forty years dead, his lamp out.
 (tile "gallery shade" (rows
@@ -742,7 +793,24 @@
   "...KKKaAKAaK...."
   "......aAKAa....."
   "......Ka.aK....."
-  "......K...K....."))
+  "......K...K.....")
+  (frames 3 (rows
+  "................"
+  ".......KKK......"
+  "......KaAaK....."
+  ".....KKKKKKK...."
+  "......KaaaK....."
+  ".......KaK......"
+  ".....KaAAAaK...."
+  "....KaAAaAAaK..."
+  "....KaAAaAAaK..."
+  "...KaKaAaAaKK..."
+  "...KiKaaaaaK...."
+  "...KKKaAKAaK...."
+  "......aAKAa....."
+  "......Ka.aK....."
+  "......K...K....."
+  "................")))
 
 (tile "lampman" (light 255 186 108 3) (flicker 10) (rows
   "................"
