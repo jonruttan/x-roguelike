@@ -23,7 +23,8 @@
 (import roguelike/state game-over game-over! game-exploring? game-exploring! game-band band-name)
 (import roguelike/frame frame-art)
 (import roguelike/game game-key! game-explore!)
-(import roguelike/paint paint-width paint-height paint-make paint-screen paint-turn! paint-frame! paint-flickers?)
+(import roguelike/paint paint-width paint-height paint-make paint-screen paint-turn! paint-frame! paint-flickers?
+  paint-zoom paint-zoom!)
 
 ; A frame's wait while a light flickers, and the wait for a key when
 ; nothing moves, in microseconds.
@@ -83,19 +84,30 @@
       ((not (null? (game-over g))) ())
       ((if (null? e) #f (if (eq? (first e) (lit quit)) #t (eq? (first e) (lit close))))
         (game-over! g (lit saved)))
-      ((not (null? key))
-        (do (if (game-exploring? g) (game-exploring! g ()) (game-key! g key))
-            (Heap collect)
+      ; + or = shows the level larger, - smaller: the window's, not the
+      ; game's, so no turn passes.
+      ((not (int= 0 (%wn-zoom-step key)))
+        (do (paint-zoom! p (int+ (paint-zoom p) (%wn-zoom-step key)))
             (paint-turn! p g (%wn-art a g))
             (Sdl show! win (List ref 2 (paint-frame! p g tick)))
+            (Heap collect)
+            (self g a p win tick)))
+      ; The frame goes on screen before the heap is collected: the
+      ; collect's cost comes after the key's answer, not before it.
+      ((not (null? key))
+        (do (if (game-exploring? g) (game-exploring! g ()) (game-key! g key))
+            (paint-turn! p g (%wn-art a g))
+            (Sdl show! win (List ref 2 (paint-frame! p g tick)))
+            (Heap collect)
             (self g a p win tick)))
       ; Any other event -- a resize, the window shown again -- may have
       ; lost what was presented: the frame is presented again.
       ((not (null? e)) (do (Sdl show! win (List ref 2 (paint-screen p))) (self g a p win tick)))
       ((game-exploring? g)
-        (do (game-explore! g) (Heap collect)
+        (do (game-explore! g)
             (paint-turn! p g (%wn-art a g))
             (Sdl show! win (List ref 2 (paint-frame! p g tick)))
+            (Heap collect)
             (Sys usleep 30000)
             (self g a p win tick)))
       ((paint-flickers? p)
@@ -105,16 +117,23 @@
             (self g a p win (+ tick 1))))
       (#t (do (Sys usleep %wn-idle-us) (self g a p win tick))))))
 
+; The zoom KEY asks for: 1 for + or =, -1 for -, 0 for any other.
+(def %wn-zoom-step
+  (fn (_ key)
+    (if (str? key) (match ((str=? key "+") 1) ((str=? key "=") 1) ((str=? key "-") -1) (#t 0)) 0)))
+
 ; Game G played in a window, its art from FORMS (from paint-art) and
-; FONT (from paint-font), at SCALE times the screen's size: nil, or
-; what was raised while it was played, the window closed either way.
+; FONT (from paint-font), at SCALE times the screen's size, the level
+; shown at ZOOM, nil for the painter's first: nil, or what was raised
+; while it was played, the window closed either way.
 (def window-play
-  (fn (_ g forms font scale)
+  (fn (_ g forms font scale zoom)
     (def a (Vector of forms () ()))
     (def win (Sdl scaling! (Sdl open "x-roguelike" paint-width paint-height scale) (lit fit)))
     (def failed
       (guard (e e)
         (do (def p (paint-make font))
+            (unless (null? zoom) (paint-zoom! p zoom))
             (paint-turn! p g (%wn-art a g))
             (Sdl show! win (List ref 2 (paint-frame! p g 0)))
             (%wn-loop g a p win 0)

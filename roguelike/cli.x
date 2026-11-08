@@ -50,6 +50,7 @@
           (Opts arg "-S" "--seed" "N" "The seed; the same seed is the same dungeon")
           (Opts arg "-d" "--data" "DIR" "Where the sets are, in place of the bundle's data/")
           (Opts flag "-w" "--window" "Play in a window, drawn with the set's pictures (needs SDL3)")
+          (Opts arg "-z" "--zoom" "N" "In a window, the level shown N times its size, 1 to 4 (2); + and - change it while playing")
           (Opts flag "-V" "--version" "Print the version and exit")
           (Opts flag "-h" "--help" "Print this help and exit"))
     (pair (lit help) #f)))
@@ -195,7 +196,8 @@
     (def saved (save-read (save-path "save") set 24 80))
     (def g (if (null? saved) (game-make (data-choose set (%cl-picks opts)) (%cl-seed opts) 24 80) saved))
     (def art (paint-art (guard (e ()) (data-load (Str8 append dir "/art")))))
-    (def failed (window-play g art (paint-font (%cl-art-dir)) 2))
+    (def zoom (if (null? (Opts value opts "-z")) () (%cl-to-int (Opts value opts "-z"))))
+    (def failed (window-play g art (paint-font (%cl-art-dir)) 2 zoom))
     (if (null? failed) (%cl-finish! g set)
       (do (%cl-say 2 (Str8 append "x-roguelike: " (%cl-err-text failed) "\n")) 1))))
 
