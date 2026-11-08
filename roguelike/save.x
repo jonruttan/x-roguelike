@@ -36,7 +36,7 @@
   map-up map-up! map-each! map-light!)
 (import roguelike/state
   game-set game-depth game-depth! game-map game-map! game-player game-creatures game-creatures!
-  game-floor game-floor! game-pack game-pack! game-turn game-turn! game-known game-known! game-told game-told! game-deepest
+  game-floor game-floor! game-pack game-pack! game-turn game-turn! game-clock game-clock! game-known game-known! game-told game-told! game-deepest
   game-deepest! game-seed game-guises game-goal-placed? game-goal-placed! game-pages-placed game-page-placed!
   game-quests game-quest-state! game-placed game-placed! game-sure game-sure! game-traps game-traps! game-new
   game-screen game-screen! game-kept game-keep! game-screens? game-screen-key game-chain game-chain!
@@ -137,7 +137,7 @@
     (def m (game-map g))
     (def screen (if (null? (game-screen g)) (list -1 -1) (list (first (game-screen g)) (rest (game-screen g)))))
     (List append
-      (list (pair (lit saved) (List append (list (game-seed g) (game-depth g) (game-turn g) (game-deepest g) (if (game-goal-placed? g) 1 0)) screen))
+      (list (pair (lit saved) (List append (list (game-seed g) (game-depth g) (game-turn g) (game-deepest g) (if (game-goal-placed? g) 1 0)) screen (list (game-clock g))))
             (list (lit player) (player-r p) (player-c p) (player-hp p) (player-hpmax p) (player-str p) (player-strmax p)
                   (player-level p) (player-exp p) (player-gold p) (player-food p))
             (pair (lit conditions) (List flat-map (fn (_ c) (list (symbol->str (first c)) (rest c))) (player-conditions p)))
@@ -317,6 +317,7 @@
             (Vector set! 12 (List map (fn (_ a) (pair (Str8 ->sym (first a)) (rest a))) (%sv-all forms (lit guise))) g)
             (game-depth! g (List ref 1 head))
             (game-turn! g (List ref 2 head))
+            (game-clock! g (if (< 7 (List length head)) (List ref 7 head) (List ref 2 head)))
             (game-deepest! g (List ref 3 head))
             (when (= 1 (List ref 4 head)) (game-goal-placed! g))
             (game-known! g (%sv-one forms (lit known)))

@@ -30,6 +30,10 @@
 (def scale-down (fn (_ sc m) (%sc-cells m (rest sc))))
 (def scale-area (fn (_ sc m) (%sc-cells m (int* (first sc) (rest sc)))))
 
+; The seconds a walker takes over a cell at SC, a metre and four tenths
+; a second, to the nearest, a second at least: a turn's time at SC.
+(def scale-seconds (fn (_ sc) ((fn (_ s) (if (< s 1) 1 s)) (int/ (int+ (int* (first sc) 5) 3) 7))))
+
 ; Every (scale N) among FORMS, at any depth, is on the ladder, or this
 ; raises, naming the form.
 (def scale-check!
@@ -43,4 +47,4 @@
               (self (rest f)))))
       forms)))
 
-(provide roguelike/scale scale-rung scale-across scale-down scale-area scale-check!)
+(provide roguelike/scale scale-rung scale-across scale-down scale-area scale-seconds scale-check!)

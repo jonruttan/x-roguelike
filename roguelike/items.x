@@ -516,11 +516,17 @@
               (if (if (null? f) #t (null? cr)) (state-tell! g (lit nothing-happens) "Nothing happens." ())
                 (f g cr (rest e))))))))
 
+; Food eaten fills the player to the most the set's (hunger ...) gives
+; (2000), and never empties one fuller than that, come from a set that
+; allows more.
 (def items-eat!
   (fn (_ g it)
     (def p (game-player g))
-    (def n (+ (player-food p) (item-prop1 it (lit nutrition) 500)))
-    (player-food! p (if (< 2000 n) 2000 n))
+    (def spec (game-param g (lit hunger) ()))
+    (def most (if (< 3 (List length spec)) (List ref 3 spec) 2000))
+    (def had (player-food p))
+    (def n (+ had (item-prop1 it (lit nutrition) 500)))
+    (player-food! p (match ((not (< most n)) n) ((< most had) had) (#t most)))
     (%it-consume! g it)
     (state-tell! g (lit ate) "That tasted {how}." (list (pair "how" (if ((game-rng g) bool) "good" "awful"))))))
 
