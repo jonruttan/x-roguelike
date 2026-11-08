@@ -58,11 +58,12 @@
     (List map (fn (_ n) (pair n (List filter (fn (_ t) (%fr-same? (first t) n)) tiles))) names)))
 (def %fr-named (fn (_ groups name) ((fn (_ g) (if (null? g) () (rest g))) (List find (fn (_ g) (%fr-same? (first g) name)) groups))))
 
-; Of TILES, one name's, those with part PART (nil for none), the band's
+; Of TILES, one name's, those with part PART (nil for none) and no pose
+; (a pose is drawn only for its moment, never as a variant), the band's
 ; own when it has any, else the set's: (TOTAL-WEIGHT . TILES), or nil.
 (def %fr-variants
   (fn (_ tiles part band)
-    (def mine (List filter (fn (_ t) (eq? (%fr-prop1 t (lit part)) part)) tiles))
+    (def mine (List filter (fn (_ t) (if (eq? (%fr-prop1 t (lit part)) part) (null? (%fr-prop t (lit pose))) #f)) tiles))
     (def own (if (null? band) () (List filter (fn (_ t) ((fn (_ b) (if (null? b) #f (str=? b band))) (%fr-prop1 t (lit band)))) mine)))
     (def vs (if (null? own) (List filter (fn (_ t) (null? (%fr-prop t (lit band)))) mine) own))
     (if (null? vs) () (pair (List fold (fn (_ n t) (+ n (%fr-weight t))) 0 vs) vs))))

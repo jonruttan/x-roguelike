@@ -1,0 +1,95 @@
+; poses.xon -- the player's poses: a blow struck, a blow taken, and
+;   dead.  Each drawn in place of the player for the moment it lasts;
+;   the read and the form as tiles.xon.
+
+(tile player (pose attack) (light 255 200 130 5) (flicker 10) (rows
+  "................"
+  ".....kkkk...k..."
+  "....kUUUUk.kVk.."
+  ".....kpPPk.kTk.."
+  ".....kPpPk.kTk.."
+  "......kPk..kTk.."
+  "....kHHHHkkpTk.."
+  "..kucCCcCCckTk.."
+  "..kucCCcCCckTk.."
+  "..kuccCcCcckTk.."
+  ".kPkcCcCcCckTk.."
+  ".kikcCckCcckTk.."
+  "kQLkkuukuukkTk.."
+  "kLLk.kuk.kukT..."
+  ".kk...kkk.kkkT.."
+  "......kkk.kkkk..")
+  (frames 3
+   (rows
+  "................"
+  "................"
+  ".......kkkk...k."
+  "......kUUUUk.kVk"
+  ".......kpPPk.kTk"
+  ".......kPpPk.kTk"
+  "........kPk..kTk"
+  "......kHHHHkkpTk"
+  "....kucCCcCCckTk"
+  "....kucCCcCCckTk"
+  "....kuccCcCcckTk"
+  "...kPkcCcCcCckTk"
+  "...kikcCckCcckTk"
+  "..kQLkkuukuukkTk"
+  "..kLLkkkukkkukT."
+  "...kk.kkk.kkkk..")
+  ))
+
+(tile player (pose hit) (light 255 200 130 5) (flicker 10) (rows
+  "................"
+  "......kkkk...k.."
+  ".....kAAAAk.kAk."
+  "......kAAAk.kAk."
+  "......kAAAk.kAk."
+  ".......kAk..kAk."
+  ".....kAAAAkkAAk."
+  "...kAAAAAAAAkAk."
+  "...kAAAAAAAAkAk."
+  "...kAAAAAAAAkAk."
+  "..kAkAAAAAAAkAk."
+  "..kAkAAAkAAAkAk."
+  ".kAAkkAAkAAkkAk."
+  ".kAAk.kAk.kAkA.."
+  "..kk..kkk.kkkA.."
+  "......kkk.kkkk..")
+  (frames 2
+   (rows
+  "................"
+  "....kkkk...k...."
+  "...kUUUUk.kVk..."
+  "....kpPPk.kTk..."
+  "....kPpPk.kTk..."
+  ".....kPk..kTk..."
+  "...kHHHHkkpTk..."
+  "..kucCCcCCckTk.."
+  "..kucCCcCCckTk.."
+  "..kuccCcCcckTk.."
+  ".kPkcCcCcCckTk.."
+  ".kikcCckCcckTk.."
+  "kQLkkuukuukkTk.."
+  "kLLk.kuk.kukT..."
+  ".kk...kkk.kkkT.."
+  "......kkk.kkkk..")
+  ))
+
+(tile player (pose dead) (light 255 200 130 5) (flicker 10) (rows
+  "................"
+  "................"
+  "..kk............"
+  ".kLQkk.........."
+  ".kLLiPkkk......."
+  "..kkkkuuu......."
+  "...kccccck...k.."
+  "kkkuCCcCCH.kkUk."
+  "kkuuccCCCHkPpUk."
+  "kkkkkCcccHPpPUk."
+  "...uCcCCCHkPPUk."
+  "kkkucCcCCk.kkk.."
+  "kkukccccck......"
+  "kkkkkkkkkpkkkk.."
+  "kTTTTTTTTTTTTVk."
+  "...kkkkkkkkkkk.."))
