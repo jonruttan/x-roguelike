@@ -26,7 +26,7 @@
 (import x/core/doors int& int+ int< int= str-make str->ptr ptr-set! str-byte-ref char->int str-byte-len)
 (import roguelike/state game-over game-over! game-exploring? game-exploring! game-band band-name game-place)
 (import roguelike/frame frame-art)
-(import roguelike/game game-key! game-explore!)
+(import roguelike/game game-key! game-waiting? game-explore!)
 (import roguelike/paint paint-width paint-height paint-make paint-screen paint-turn! paint-frame! paint-flickers?
   paint-zoom paint-zoom! paint-animating? paint-step!)
 (import roguelike/pad pad-make pad-key pad-event? pad-fullscreen? pad-fullscreen!)
@@ -103,7 +103,8 @@
     (def ev (Sdl poll))
     (def key (if (if (null? ev) #f (eq? (first ev) (lit key-down)))
                (window-key (List ref 1 ev) (List ref 2 ev))
-               (pad-key pad ev (%wn-ms))))
+               ; A gamepad's A goes on past a message as enter does.
+               ((fn (_ k) (if (if (str? k) (if (str=? k ",") (game-waiting? g) #f) #f) (lit enter) k)) (pad-key pad ev (%wn-ms)))))
     (def e (if (pad-event? ev) () ev))
     (match
       ((not (null? (game-over g))) ())

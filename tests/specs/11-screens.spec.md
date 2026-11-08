@@ -125,7 +125,7 @@ descents, and their specs stand.
              (game-messages d) (game-turn d)))
 ```
 ---
-    ("The valley:  --any key--" "" "" "       . @" "" 1 ("You know only the level you stand on.") 0)
+    ("The valley:  --Enter--" "" "" "       . @" "" 1 ("You know only the level you stand on.") 0)
 
 ## the goal
 

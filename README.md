@@ -33,13 +33,15 @@ Each set keeps its own save and scores, in `~/.x-roguelike/NAME/`.
     f                 fill the lamp from a flask
     S                 save and leave           Q         quit
     ?                 the keys                 Esc       stop asking
+    Enter  Space      go on past --More--, put away what you look at
     Ctrl-L            draw the screen again
 
 In a window (`-w`), F11 or Alt-Enter switches to fullscreen and back,
 and a gamepad plays too:
 
     left stick, d-pad  move, in eight directions; held, it keeps moving
-    A  pick up         B  stop asking (Esc)
+    A  pick up, or go on past a message (Enter)
+    B  stop asking (Esc)
     X  your pack       Y  explore
     LB go up (<)       RB go down (>)
     left stick click   rest           right stick click  search

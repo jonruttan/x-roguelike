@@ -76,7 +76,7 @@ of it and the win at the hub.
              (List any? (fn (_ r) (Str8 includes? where r)) rows) (game-quest-state g (List ref 1 first-q))))
 ```
 ---
-    (#t #t "Guild clerk  --any key--" #t 'open)
+    (#t #t "Guild clerk  --Enter--" #t 'open)
 
 ### the last want lies where the chain says, walked to; the errand paid inward from there ends with the goal in the square, and the win
 
@@ -89,6 +89,7 @@ of it and the win at the hub.
 (def calm! (fn (_) (game-creatures! g (List filter (fn (_ cr) (if (creature-trait? cr 'talks) #t (not (null? (creature-carried cr))))) (game-creatures g)))))
 (def step!
   (fn (_ dx dy)
+    (spec-settle! g)
     (match ((< dx 0) (do (player-at! p 11 0) (game-key! g "h")))
            ((< 0 dx) (do (player-at! p 11 79) (game-key! g "l")))
            ((< dy 0) (do (player-at! p 0 40) (game-key! g "k")))
@@ -115,7 +116,7 @@ of it and the win at the hub.
     (def giver (List find (fn (_ cr) (str=? (creature-name cr) (List ref 2 q))) (game-creatures g)))
     (def key (spec-beside! g giver))
     (game-key! g key)
-    (game-key! g (lit escape))
+    (spec-dismiss! g)
     (game-key! g key)
     (game-key! g "a")
     (game-quest-state g (List ref 1 q))))
@@ -136,7 +137,7 @@ of it and the win at the hub.
 (def giver (List find (fn (_ cr) (creature-trait? cr 'talks)) (game-creatures g)))
 (game-creatures! g (list giver))
 (game-key! g (spec-beside! g giver))
-(game-key! g (lit escape))
+(spec-dismiss! g)
 (def tmp (File temp "/tmp/x-roguelike-"))
 (File close (first tmp))
 (def path (rest tmp))
