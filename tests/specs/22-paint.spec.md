@@ -11,7 +11,7 @@ each frame that layer, what stands on it, the light and the text.
 ### every tile with rows has its picture; one drawn as another takes that one's
 
 ```roguelike
-(import roguelike/paint paint-art paint-font paint-make paint-screen paint-turn! paint-frame! paint-flickers? paint-width paint-height)
+(import roguelike/paint paint-art paint-font paint-make paint-screen paint-turn! paint-frame! paint-flickers? paint-width paint-height paint-level-y)
 (import roguelike/frame frame-art frame-camera frame-place frame-tile-size frame-level-y)
 (import x/gfx/canvas)
 (def spec-art (paint-art (data-load "data/delve/art")))
@@ -42,14 +42,14 @@ each frame that layer, what stands on it, the light and the text.
 ---
     (3 3 #t ((10 20 30 255) (200 100 50 255) (10 20 30 255)))
 
-### the font: a letter's cell eight wide
+### the font: a letter's cell six wide, its ink and one clear column
 
 ```roguelike
 (def spec-font (paint-font "art"))
 (write (List ref 2 spec-font))
 ```
 ---
-    8
+    6
 
 
 ## a frame
@@ -67,8 +67,8 @@ each frame that layer, what stands on it, the light and the text.
 (def at (frame-place (frame-camera (map-rows m) (map-cols m) (player-r pl) (player-c pl)) (player-r pl) (player-c pl)))
 (def lit? (fn (_ px) (< 0 (+ (first px) (List ref 1 px) (List ref 2 px)))))
 (write (list (first s) (List ref 1 s)
-             (lit? (Canvas pixel s (+ 16 (* 2 (first at))) (+ 16 (+ frame-level-y (* 2 (- (rest at) frame-level-y))))))
-             (Canvas pixel s 0 0)
+             (lit? (Canvas pixel s (+ 16 (* 2 (first at))) (+ 16 (+ paint-level-y (* 2 (- (rest at) frame-level-y))))))
+             (Canvas pixel s 0 (+ paint-level-y 60))
              (List any? (fn (_ x) (lit? (Canvas pixel s x 351))) (List range 0 80))
              (paint-flickers? p)))
 ```
@@ -79,12 +79,12 @@ each frame that layer, what stands on it, the light and the text.
 
 ```roguelike
 (import roguelike/draw draw-overlay)
-(def before (Canvas pixel s 4 28))
+(def before (Canvas pixel s 20 60))
 (game-key! g "i")
 (paint-turn! p g fa)
 (def s (paint-frame! p g 0))
 (def ink? (fn (_ y) (List any? (fn (_ x) (= 206 (first (Canvas pixel s x y)))) (List range 8 200))))
-(write (list (List length (draw-overlay g)) (equal? before (Canvas pixel s 4 28)) (List any? ink? (List range 32 40))))
+(write (list (List length (draw-overlay g)) (equal? before (Canvas pixel s 20 60)) (List any? ink? (List range 58 74))))
 ```
 ---
     (1 #f #t)
@@ -99,7 +99,7 @@ each frame that layer, what stands on it, the light and the text.
 (write (list (at-zoom 1) (at-zoom 3) (at-zoom 4) (at-zoom 9) (at-zoom 0) (at-zoom 2)))
 ```
 ---
-    ((1 20 40 640) (3 7 14 224) (4 5 10 160) (4 5 10 160) (1 20 40 640) (2 10 20 320))
+    ((1 18 40 640) (3 6 14 224) (4 5 10 160) (4 5 10 160) (1 18 40 640) (2 9 20 320))
 
 
 ## each place's art
