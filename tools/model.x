@@ -13,7 +13,9 @@
 ; there, how many creatures, how many awake at the start and how many
 ; more wander in, how often a weapon lies there, and for each kind of
 ; creature what a fight costs, bare-handed and with the best gear the
-; level can hold.
+; level can hold.  With the set's (ramp OF RUNG ...), each armed fight's
+; share of the hit points is set against its band's rung, and on a
+; band's last level its guardian against the next: on, over or under.
 ;
 ; The terms, each from the engine:
 ;
@@ -155,6 +157,35 @@
     (def miss (- (%md-f 1) (%md-draw set depth group)))
     (- 1 (%md-mean (List map (fn (_ n) (Float pow miss (%md-f n))) (%md-upto (data-one set (lit items) (list 4 8))))))))
 
+; --- the ramp ---------------------------------------------------------------
+
+; The set's bands, (NAME TO . PROPS) each, shallowest first; the index
+; of the one DEPTH lies in, or nil past them all.
+(def %md-bands (fn (_ set) (data-all set (lit band))))
+(def %md-band-at
+  (fn (_ set depth)
+    ((fn (self i bands) (match ((null? bands) ()) ((not (< (List ref 1 (first bands)) depth)) i) (#t (self (+ i 1) (rest bands)))))
+     0 (%md-bands set))))
+; The ramp's rung I as a share, or nil with no ramp or no such rung.
+(def %md-rung
+  (fn (_ set i)
+    (def ramp (data-one set (lit ramp) ()))
+    (if (if (null? ramp) #t (not (< (+ i 1) (List length ramp)))) ()
+      (/ (%md-f (List ref (+ i 1) ramp)) (first ramp)))))
+; The guardian of the band DEPTH ends, as its creature form, or nil.
+(def %md-guardian
+  (fn (_ set depth)
+    (def i (%md-band-at set depth))
+    (def band (if (null? i) () (List ref i (%md-bands set))))
+    (def name (if (null? band) "" (if (= depth (List ref 1 band)) (data-prop1 band (lit guardian) "") "")))
+    (if (str=? name "") () (List find (fn (_ k) (str=? (first k) name)) (data-all set (lit creature))))))
+; SHARE against RUNG: over or under it by more than 1.3 times, a half
+; step of a ladder rising by 1.6, else on it.
+(def %md-on-rung
+  (fn (_ share rung)
+    (def step (/ (%md-f 13) 10))
+    (match ((null? rung) "") ((< (* rung step) share) "over") ((< share (/ rung step)) "under") (#t "on"))))
+
 ; --- the player and the gear -------------------------------------------------
 
 ; The level EXP buys: (exp) for level 2, doubling each level after.
@@ -215,12 +246,13 @@
 
 (def %md-titles
   (fn (_)
-    (%md-line " " (%md-rpad 18 "") "              hurt   turns to kill   one fight's hurt           most beaten (bare armed)   packs")
-    (%md-line " " (%md-rpad 18 "kind") "  you%   it%  a turn     bare  armed       bare  armed   pack     in the open   in a line   too many")))
+    (%md-line " " (%md-rpad 18 "") "              hurt   turns to kill   one fight's hurt           most beaten (bare armed)   packs       ramp")
+    (%md-line " " (%md-rpad 18 "kind") "  you%   it%  a turn     bare  armed       bare  armed   pack     in the open   in a line   too many  share rung")))
 
-; KIND's row against WHO bare and with GEAR.
+; KIND's row against WHO bare and with GEAR, its armed fight's share of
+; the hit points against RUNG.
 (def %md-kind-row
-  (fn (_ set depth kind who gear)
+  (fn (_ set depth kind who gear rung)
     (def bonus (combat-str-bonus (List ref 1 who)))
     (def hp (first who))
     (def kh (data-prop kind (lit hp) (list 1 6)))
@@ -238,17 +270,24 @@
               (%md-pad 7 (%md-span pack))
               (%md-pad 12 (Str8 str (open one-bare))) (%md-pad 4 (Str8 str (open one-armed)))
               (%md-pad 8 (Str8 str (line one-bare))) (%md-pad 4 (Str8 str (line one-armed)))
-              (%md-pct 11 (%md-beyond pack (open one-armed))))))
+              (%md-pct 11 (%md-beyond pack (open one-armed)))
+              (%md-pct 7 (/ one-armed hp)) (if (null? rung) "" (%md-pct 5 rung)) " " (%md-on-rung (/ one-armed hp) rung))))
 
+; A level's rows: each kind against its band's rung, and on the band's
+; last level its guardian against the next.
 (def %md-level
   (fn (_ set depth)
     (def who (%md-player set depth))
     (def gear (%md-gear set depth (List ref 1 who)))
     (def kinds (%md-kinds set depth))
+    (def i (%md-band-at set depth))
+    (def rung (if (null? i) () (%md-rung set i)))
+    (def guardian (%md-guardian set depth))
     (%md-head set depth who gear)
     (%md-level-lines set depth kinds)
     (%md-titles)
-    (List for-each (fn (_ k) (%md-kind-row set depth k who gear)) kinds)
+    (List for-each (fn (_ k) (%md-kind-row set depth k who gear rung)) kinds)
+    (unless (null? guardian) (%md-kind-row set depth guardian who gear (%md-rung set (+ i 1))))
     (%md-line "")))
 
 (def %md-main
@@ -259,6 +298,6 @@
     (def one (%md-env "MODEL_DEPTH" ""))
     (%md-line "The " name " set, by its numbers")
     (%md-line "")
-    (List for-each (fn (_ d) (%md-level set d)) (if (str=? one "") (List range 1 (+ 1 last)) (list (%md-int one))))))
+    (List for-each (fn (_ d) (%md-level set d) (Heap collect)) (if (str=? one "") (List range 1 (+ 1 last)) (list (%md-int one))))))
 
 (%md-main)

@@ -34,9 +34,9 @@
 ; The middle of DICE, (LO HI).
 (def odds-mid (fn (_ d) (/ (%od-f (+ (first d) (List ref 1 d))) 2)))
 
-; The mean swings to take HP hit points at chance P a swing, a hit
-; doing DICE plus BONUS.  The list is built from E(0) up, newest first.
-(def odds-swings
+; The mean swings E(h) to take h hit points at chance P a swing, a hit
+; doing DICE plus BONUS, for every h from HP down to 0, newest first.
+(def %od-swings
   (fn (_ p dice bonus hp)
     (def faces (%od-upto dice))
     (def es (fn (self h)
@@ -44,10 +44,16 @@
                 (do (def known (self (- h 1)))
                     (def at (fn (_ k) (if (< k 1) (%od-f 0) (List ref (- (- h 1) k) known))))
                     (pair (+ (/ (%od-f 1) p) (%od-mean (List map (fn (_ x) (at (- h (+ x bonus)))) faces))) known)))))
-    (first (es hp))))
+    (es hp)))
+(def odds-swings (fn (_ p dice bonus hp) (first (%od-swings p dice bonus hp))))
 
-; The mean of odds-swings over hit points HP, (LO HI).
-(def odds-kill (fn (_ p dice bonus hp) (%od-mean (List map (fn (_ h) (odds-swings p dice bonus h)) (%od-upto hp)))))
+; The mean of odds-swings over hit points HP, (LO HI), from the one
+; list to HI.
+(def odds-kill
+  (fn (_ p dice bonus hp)
+    (def hi (List ref 1 hp))
+    (def es (%od-swings p dice bonus hi))
+    (%od-mean (List map (fn (_ h) (List ref (- hi h) es)) (%od-upto hp)))))
 
 ; Turns T to take HP hit points from one that regenerates: 999 when it
 ; heals as fast as it is hurt.
