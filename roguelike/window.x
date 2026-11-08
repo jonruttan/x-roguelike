@@ -111,7 +111,7 @@
 (def window-play
   (fn (_ g forms font scale)
     (def a (Vector of forms () ()))
-    (def win (Sdl open "x-roguelike" paint-width paint-height scale))
+    (def win (Sdl scaling! (Sdl open "x-roguelike" paint-width paint-height scale) (lit fit)))
     (def failed
       (guard (e e)
         (do (def p (paint-make font))
