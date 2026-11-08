@@ -673,8 +673,8 @@
   "...kDkuUuUukDk.."
   "..kIkkuUkUukDk.."
   "..kJk.kwkwk.kk.."
-  "..kJk.kwkwk.kk.."
   "...k..kwkwk....."
+  "......kwkwk....."
   "......kk.kk.....")
    (rows
   "................"
@@ -691,7 +691,7 @@
   "....kDkuUuUukDk."
   "...kIkkuUkUukDk."
   "...kJk.kwkwk.kk."
-  "...k..kwkwk....."
+  "....k.kwkwk....."
   "......kk.kk.....")
    (rows
   "................"
@@ -708,7 +708,7 @@
   "..kDkuUuUukDk..."
   ".kIkkuUkUukDk..."
   ".kJk.kwkwk.kk..."
-  "...k..kwkwk....."
+  "..k...kwkwk....."
   "......kk.kk....."))
   (walk 1
    (rows
@@ -742,8 +742,8 @@
   "...kDkuUuUukDk.."
   "..kIkkuUkUukDk.."
   "..kJk.kwkwk.kk.."
-  "..kJk.kwkwk.kk.."
-  "...k..kkkwk....."
+  "...k..kwkwk....."
+  "......kkkwk....."
   ".........kk.....")
    (rows
   ".......kkk...x.."
@@ -759,16 +759,16 @@
   "...kDkuUuUukDk.."
   "..kIkkuUkUukDk.."
   "..kJk.kwkwk.kk.."
-  "..kJk.kwkwk.kk.."
-  "...k..kkkwk....."
+  "...k..kwkwk....."
+  "......kkkwk....."
   ".........kk.....")
    (rows
+  "................"
   ".......kkk...x.."
   "......kwWwk.xLx."
   ".....kwWwwwkxLlx"
   ".....kwpPPwk.ux."
   ".....kwPpPwk.Tk."
-  "......kkPkk..Tk."
   "......kkPkk..Tk."
   ".....kDwwwDkkTk."
   "....kDuUUuuDpk.."
@@ -810,8 +810,8 @@
   "...kDkuUuUukDk.."
   "..kIkkuUkUukDk.."
   "..kJk.kwkwk.kk.."
-  "..kJk.kwkwk.kk.."
-  "...k..kwkkk....."
+  "...k..kwkwk....."
+  "......kwkkk....."
   "......kk........")
    (rows
   ".......kkk...x.."
@@ -827,16 +827,16 @@
   "...kDkuUuUukDk.."
   "..kIkkuUkUukDk.."
   "..kJk.kwkwk.kk.."
-  "..kJk.kwkwk.kk.."
-  "...k..kwkkk....."
+  "...k..kwkwk....."
+  "......kwkkk....."
   "......kk........")
    (rows
+  "................"
   ".......kkk...x.."
   "......kwWwk.xLx."
   ".....kwWwwwkxLlx"
   ".....kwpPPwk.ux."
   ".....kwPpPwk.Tk."
-  "......kkPkk..Tk."
   "......kkPkk..Tk."
   ".....kDwwwDkkTk."
   "....kDuUUuuDpk.."
