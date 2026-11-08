@@ -26,6 +26,11 @@ screen's pixel, the art's scale: a line holds 52 letters.
   dimmed, rock black.  Found traps and items where they were seen;
   creatures only in view; the player last.  A warm glow round the
   player stands for the lamp.
+- **Blows**: after a turn with a fight, about a third of a second of
+  it: the striker lunges toward its target, a blow that lands flashes
+  the target (white for the player's, red for a creature's), the
+  player's kill bursts where the creature was, and the damage, or
+  "miss", rises from the target.
 - **Overlays**: a list looked at, the items a question can take, a
   choice, a page read, a talker's words, the world map and the end of
   the game lie over the level on a panel, as the terminal lays them
