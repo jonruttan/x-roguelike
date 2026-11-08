@@ -26,7 +26,7 @@
 (import x/core/doors int& int+ int- int< int= str-make str->ptr ptr-set! str-byte-ref char->int str-byte-len)
 (import roguelike/state game-over game-over! game-exploring? game-exploring! game-band band-name game-place game-ask)
 (import roguelike/frame frame-art)
-(import roguelike/game game-key! game-explore!)
+(import roguelike/game game-key! game-waiting? game-explore!)
 (import roguelike/paint paint-width paint-height paint-make paint-screen paint-turn! paint-frame! paint-flickers?
   paint-zoom paint-zoom! paint-animating? paint-step! paint-menu!)
 (import roguelike/pad pad-make pad-key pad-event? pad-fullscreen? pad-fullscreen!)
@@ -211,7 +211,10 @@
     (sound-pump! snd)
     (def in (%wn-input a))
     (def ev (first in))
-    (def key (rest in))
+    ; A gamepad's A goes on past a message as enter does.
+    (def key (if (if (Vector ref 6 a) (if (str? (rest in)) (if (str=? (rest in) ",") (game-waiting? g) #f) #f) #f)
+               (lit enter)
+               (rest in)))
     (def e (if (pad-event? ev) () ev))
     (match
       ((not (null? (game-over g))) ())

@@ -92,7 +92,7 @@ blow on a sleeper -- is in 10-elements.
              (List length (game-pack g)) (null? (game-ask (spec-game-on (spec-set-named "delve") 4 (list "r"))))))
 ```
 ---
-    ("a scrap  --any key--" #t #t 2 1 #t)
+    ("a scrap  --Enter--" #t #t 2 1 #t)
 
 ### a page in the pack and the pages placed come back from a save
 
@@ -307,7 +307,7 @@ blow on a sleeper -- is in 10-elements.
 (write (list (spec-row g 0) (Str8 starts? " You enter the Delve." (spec-row g 1)) (game-turn g)))
 ```
 ---
-    ("Lately:  --any key--" #t 1)
+    ("Lately:  --Enter--" #t 1)
 
 ## known on sight
 

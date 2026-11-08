@@ -36,12 +36,12 @@ them, what each asks, and what it pays.  On the delve set.
 (def before (game-quest-state g "the lamp"))
 (game-key! g key)
 (def asked (list (spec-row g 0) (Str8 starts? " I kept the lamps at the breach." (spec-row g 1)) (- (game-turn g) turn) (game-quest-state g "the lamp")))
-(game-key! g (lit escape))
+(spec-dismiss! g)
 (game-key! g key)
 (write (list before asked (Str8 starts? " No lamp yet." (spec-row g 1)) (state-adjacent? (creature-r keeper) (creature-c keeper) (player-r (game-player g)) (player-c (game-player g)))))
 ```
 ---
-    (() ("lampman  --any key--" #t 1 'open) #t #t)
+    (() ("lampman  --Enter--" #t 1 'open) #t #t)
 
 ### the lamp brought, the keeper offers two things; a takes the first, the lamp is gone, and there is no more to ask
 
@@ -54,7 +54,7 @@ them, what each asks, and what it pays.  On the delve set.
 (def keeper (first (game-creatures g)))
 (def key (spec-beside! g keeper))
 (game-key! g key)
-(game-key! g (lit escape))
+(spec-dismiss! g)
 (spec-drop-here! g "the foreman's lamp")
 (game-key! g ",")
 (def held (List map (fn (_ it) (items-name g it)) (game-pack g)))
@@ -76,7 +76,7 @@ row: the --More-- is answered before the next step down.
 ```roguelike
 (def g (spec-game-on (spec-set-named "delve") 4 ()))
 (player-hp! (game-player g) 1000)
-(def down! (fn (_) (def m (game-map g)) (player-at! (game-player g) (first (map-down m)) (rest (map-down m))) (game-key! g ">") (unless (null? (game-ask g)) (game-key! g (lit escape)))))
+(def down! (fn (_) (def m (game-map g)) (player-at! (game-player g) (first (map-down m)) (rest (map-down m))) (game-key! g ">") (unless (null? (game-ask g)) (spec-dismiss! g))))
 (down!)
 (down!)
 (game-creatures! g ())
@@ -86,10 +86,10 @@ row: the --More-- is answered before the next step down.
 (def surveyor (first (game-creatures g)))
 (def key (spec-beside! g surveyor))
 (game-key! g key)
-(game-key! g (lit escape))
+(spec-dismiss! g)
 (game-key! g key)
 (def pressed (Str8 starts? " Not the whole of it yet." (spec-row g 1)))
-(game-key! g (lit escape))
+(spec-dismiss! g)
 (spec-drop-here! g "survey")
 (game-key! g ",")
 (game-key! g "r")
@@ -114,7 +114,7 @@ row: the --More-- is answered before the next step down.
 (game-creatures! g (List filter (fn (_ cr) (creature-trait? cr 'talks)) (game-creatures g)))
 (def keeper (first (game-creatures g)))
 (game-key! g (spec-beside! g keeper))
-(game-key! g (lit escape))
+(spec-dismiss! g)
 (def tmp (File temp "/tmp/x-roguelike-"))
 (File close (first tmp))
 (def path (rest tmp))

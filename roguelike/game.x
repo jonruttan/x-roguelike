@@ -635,8 +635,9 @@
 
 ; A question: (KIND PROMPT HANDLER . CLASS).  item: a letter, HANDLER
 ; given the pack item, of CLASS, one or a list, when named; dir:
-; HANDLER given (DR . DC); yn: HANDLER on y; look: any key, LINES shown
-; till then; choose: HANDLER given the key, LINES shown till then.
+; HANDLER given (DR . DC); yn: HANDLER on y; look: one of %gm-on-keys,
+; LINES shown till then; choose: HANDLER given the key, LINES shown till
+; then.
 (def %gm-ask-item!
   (fn (_ g prompt class handler)
     (if (null? (List filter (fn (_ it) (item-class-in? it class)) (game-pack g)))
@@ -749,13 +750,28 @@
 ; making a level, some 8 million (see %gm-level!).
 (def game-key!
   (fn (_ g key)
-    (state-clear-messages! g)
-    (game-exploring! g ())
-    (match
-      ((not (null? (game-over g))) ())
-      ((not (null? (game-ask g))) (when (%gm-answer! g key) (%gm-end-turn! g)))
-      (#t (when (%gm-command! g key) (%gm-end-turn! g))))
-    (game-more! g)))
+    (unless (%gm-held? g key)
+      (do (state-clear-messages! g)
+          (game-exploring! g ())
+          (match
+            ((not (null? (game-over g))) ())
+            ((not (null? (game-ask g))) (when (%gm-answer! g key) (%gm-end-turn! g)))
+            (#t (when (%gm-command! g key) (%gm-end-turn! g))))
+          (game-more! g)))))
+
+; The keys that go on past --More-- and put away what is being looked
+; at: enter and space, and nothing else (a gamepad's A is sent as enter).
+; Any other key is taken as a slip and changes nothing, so a message is
+; not lost to a key meant for the turn after it.
+(def %gm-on-keys (list (lit enter) " "))
+; Whether game G is showing a --More-- or a thing looked at, waiting
+; for one of %gm-on-keys.
+(def game-waiting?
+  (fn (_ g)
+    (def q (game-ask g))
+    (if (null? q) #f (if (eq? (first q) (lit more)) #t (eq? (first q) (lit look))))))
+(def %gm-held?
+  (fn (_ g key) (if (game-waiting? g) (not (List any? (fn (_ k) (%gm-key=? k key)) %gm-on-keys)) #f)))
 
 ; --- the score -----------------------------------------------------------------
 
@@ -837,4 +853,4 @@
           "S      save and leave       Q      quit"
           "?      these keys           Esc    stop asking")))
 
-(provide roguelike/game game-make game-key! game-explore! game-frontier? game-more! game-score game-score-lines game-score-text game-help)
+(provide roguelike/game game-make game-key! game-waiting? game-explore! game-frontier? game-more! game-score game-score-lines game-score-text game-help)

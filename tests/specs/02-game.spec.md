@@ -112,17 +112,17 @@ stairs, and what the screen shows.
 ---
     ("You descend into the Sunken Vault.  Find the Sunstone, and bring it back up." "Level:1  Gold:0  Hp:12(12)  Str:16(16)  Arm:0  Exp:1/0" #t)
 
-### i lists the pack over the level until a key, and takes no turn
+### i lists the pack over the level until enter or space, and takes no turn
 
 ```roguelike
 (def g (spec-game 11 (list "i")))
 (def rows (spec-screen g))
 (def top (List ref 0 rows))
-(game-key! g (lit escape))
+(spec-dismiss! g)
 (write (list top (Str8 starts? " Your pack is empty." (List ref 1 rows)) (game-turn g) (null? (game-ask g))))
 ```
 ---
-    ("Your pack:  --any key--" #t 0 #t)
+    ("Your pack:  --Enter--" #t 0 #t)
 
 ### a list laid over the level is gone from the screen once a key is pressed
 
@@ -136,7 +136,7 @@ blank must still be written over.
 (game-key! g "?")
 (game-draw! g s)
 (def during (shown?))
-(game-key! g (lit escape))
+(spec-dismiss! g)
 (game-draw! g s)
 (write (list during (shown?)))
 ```
@@ -150,7 +150,7 @@ blank must still be written over.
 (write (list (List ref 0 (spec-screen g)) (Str8 starts? " h j k l y u b n  move; the arrows too." (List ref 1 (spec-screen g)))))
 ```
 ---
-    ("The keys:  --any key--" #t)
+    ("The keys:  --Enter--" #t)
 
 ### Q asks, and y ends the game
 

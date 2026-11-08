@@ -261,7 +261,7 @@
     (def q (game-ask g))
     (match
       ((if (null? q) #f (eq? (first q) (lit more))) (Str8 append (Str8 join "  " (game-messages g)) "  --More--"))
-      ((not (null? q)) (if (eq? (first q) (lit look)) (Str8 append (List ref 1 q) "  --any key--") (List ref 1 q)))
+      ((not (null? q)) (if (eq? (first q) (lit look)) (Str8 append (List ref 1 q) "  --Enter--") (List ref 1 q)))
       ((not (null? (game-over g)))
         (Str8 append (Str8 join "  " (game-messages g)) "  --any key--"))
       (#t (Str8 join "  " (game-messages g))))))
