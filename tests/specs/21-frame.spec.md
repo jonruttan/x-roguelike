@@ -32,13 +32,13 @@ takes, a wall in parts by its neighbours, and the camera on the player.
 
 ## the camera
 
-### the player in the middle, the view held inside the map
+### the player in the middle, always: the view runs past the map's edge
 
 ```roguelike
 (write (list (frame-camera 22 80 0 0) (frame-camera 22 80 11 40) (frame-camera 22 80 21 79) (frame-camera 10 30 5 5)))
 ```
 ---
-    ((0 . 0) (6 . 30) (12 . 60) (0 . 0))
+    ((-5 . -10) (6 . 30) (16 . 69) (0 . -5))
 
 
 ## the art
@@ -105,6 +105,20 @@ takes, a wall in parts by its neighbours, and the camera on the player.
 ---
     (#t #t #t #t #t #t)
 
+### a view past the map's corner: the cells off the map dark fills, their view bytes 0
+
+```roguelike
+(import roguelike/frame frame-view)
+(import x/core/doors str-byte-ref char->int)
+(def off (frame-level fa m (pair -3 -5)))
+(def first-op (List find (fn (_ op) (if (= (List ref 1 op) 0) (= (List ref 2 op) frame-level-y) #f)) off))
+(def bytes (List ref 5 (frame-view m (pair -3 -5))))
+(write (list (first first-op) (char->int (str-byte-ref bytes 0))
+             (<= (* (frame-view-rows) (frame-view-cols)) (List length off))))
+```
+---
+    ('fill 0 #t)
+
 ### what stands on it, the player last over a shadow; the view; the lights
 
 ```roguelike
@@ -123,7 +137,7 @@ takes, a wall in parts by its neighbours, and the camera on the player.
              (List find (fn (_ op) (if (eq? (first op) 'light) (= (List ref 1 op) (+ 8 (first at))) #f)) scene)))
 ```
 ---
-    ('shadow 'player (0 24 20 10) 2 ('light 280 112 255 196 118 5 10))
+    ('shadow 'player (0 24 20 10) 2 ('light 168 112 255 196 118 5 10))
 
 ### the light map: the player's cell lit and warm, a seen cell dimmer, a dark one black
 
@@ -142,7 +156,7 @@ takes, a wall in parts by its neighbours, and the camera on the player.
              ))
 ```
 ---
-    ((20 10) (255 237 209 255) (255 239 212 255) (111 117 124 255) (0 0 0 255) (117 105 108 89))
+    ((20 10) (255 236 208 255) (255 238 210 255) (148 155 164 255) (0 0 0 255) (117 105 108 89))
 
 ### a set with no art: what stands on the level is its glyph
 

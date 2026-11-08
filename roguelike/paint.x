@@ -582,7 +582,9 @@
     (Canvas copy! work 0 0 (Vector ref 1 p) 0 0 lw lh)
     (def cam (first (Vector ref 3 p)))
     (when (int< (Vector ref 8 p) 0) (Vector set! 8 tick p))
-    (%pt-ops! work over frame-level-y font (int+ tick (int+ (int* (rest cam) 7) (int* (first cam) 13))) (int- tick (Vector ref 8 p)))
+    ; The camera may sit past the map's top or left edge; moved on by a
+    ; screenful so the tick a tile steps by is never below zero.
+    (%pt-ops! work over frame-level-y font (int+ tick (int+ (int* (int+ (rest cam) 128) 7) (int* (int+ (first cam) 128) 13))) (int- tick (Vector ref 8 p)))
     (Canvas light! work 0 0 lw lh
       (frame-light-map (List find (fn (_ op) (eq? (first op) (lit view))) over)
                        (List filter (fn (_ op) (eq? (first op) (lit light))) over) tick)
