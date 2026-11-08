@@ -135,7 +135,7 @@ each frame that layer, what stands on it, the light and the text.
 (def pl (game-player g))
 (def m (game-map g))
 (def at (frame-place (frame-camera (map-rows m) (map-cols m) (player-r pl) (player-c pl)) (player-r pl) (player-c pl)))
-(def px (fn (_ s) (Canvas pixel s (+ 16 (* 2 (first at))) (+ 16 (+ frame-level-y (* 2 (- (rest at) frame-level-y)))))))
+(def px (fn (_ s) (Canvas pixel s (+ 16 (* 2 (first at))) (+ 16 (+ paint-level-y (* 2 (- (rest at) frame-level-y)))))))
 (state-clear-messages! g)
 (paint-turn! p g fa)
 (def calm (paint-animating? p))
@@ -149,3 +149,30 @@ each frame that layer, what stands on it, the light and the text.
 ```
 ---
     (#f #t #t 8 #f)
+
+## steps
+
+### a thing that steps glides from the cell it left over five frames; a turn stood still shows nothing
+
+```roguelike
+(def g (spec-game-on (spec-set-named "delve") 3 ()))
+(def m (game-map g))
+(paint-turn! p g fa)
+(def open (spec-open g))
+(game-key! g (first open))
+(state-clear-messages! g)
+(paint-turn! p g fa)
+(def stepping (paint-animating? p))
+(def pl (game-player g))
+(def at (frame-place (frame-camera (map-rows m) (map-cols m) (player-r pl) (player-c pl)) (player-r pl) (player-c pl)))
+(def cell (fn (_ s) (List map (fn (_ d) (Canvas pixel s (+ (* 2 (first at)) d) (+ 16 (+ paint-level-y (* 2 (- (rest at) frame-level-y)))))) (List range 0 32))))
+(def leaving (cell (paint-frame! p g 0)))
+(def steps ((fn (self n) (if (paint-animating? p) (do (paint-step! p) (self (+ n 1))) n)) 0))
+(def arrived (cell (paint-frame! p g 0)))
+(game-key! g ".")
+(state-clear-messages! g)
+(paint-turn! p g fa)
+(write (list stepping steps (not (equal? leaving arrived)) (paint-animating? p)))
+```
+---
+    (#t 5 #t #f)

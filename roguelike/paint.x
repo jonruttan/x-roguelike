@@ -236,7 +236,8 @@
 ; when its picture is opaque and blended when not, a fill in black, a
 ; glyph in the font in the middle of its cell.  A tile with no picture
 ; draws nothing.  A tile op's form is (NAME . PROPS), then a walking
-; thing's MODE (see %pt-pick), AGE the ticks since the turn was shown.
+; thing's MODE (see %pt-pick) and the (DX . DY) it is drawn off its
+; cell by (see %pt-motion), AGE the ticks since the turn was shown.
 (def %pt-op!
   (fn (_ c op dy font tick age)
     (def head (first op))
@@ -245,11 +246,13 @@
     (def more (rest (rest (rest op))))
     (match
       ((eq? head (lit tile))
-        ((fn (_ pic)
+        ((fn (_ pic shift)
            (unless (null? pic)
              ((if (first (rest (rest pic))) %pt-copy! %pt-blend!)
-              Canvas c x y (first (rest pic)) 0 0 frame-tile-size frame-tile-size)))
-         (%pt-pick (rest (first more)) x (first (rest (rest op))) tick (if (null? (rest more)) () (first (rest more))) age)))
+              Canvas c (if (pair? shift) (int+ x (first shift)) x) (if (pair? shift) (int+ y (rest shift)) y)
+              (first (rest pic)) 0 0 frame-tile-size frame-tile-size)))
+         (%pt-pick (rest (first more)) x (first (rest (rest op))) tick (if (null? (rest more)) () (first (rest more))) age)
+         (if (null? (rest more)) () (if (null? (rest (rest more))) () (first (rest (rest more)))))))
       ((eq? head (lit fill)) (%pt-fill! Canvas c x y (first more) (first (rest more)) %pt-black))
       ((eq? head (lit glyph)) (%pt-text! Canvas c (int+ x 5) (int+ y 4) (first more) %pt-glyph font))
       (#t ()))))
@@ -295,30 +298,56 @@
 ; creature was, and the damage, or "miss", rises from the target.  Each
 ; a frame's step, by frame K.
 (def %pt-blow-frames 8)
-(def %pt-lunge-by (Vector of 2 4 5 3 1 0 0 0))
+(def %pt-lunge-by (Vector of 2 4 5 4 2 1 0 0))
 (def %pt-flash-by (Vector of 230 190 140 90 40 0 0 0))
 (def %pt-burst-by (Vector of 1 2 4 5 6 5 3 0))
 (def %pt-stamp! (method-of Canvas (lit stamp!)))
 (def %pt-sign (fn (_ n) (if (int< n 0) -1 (if (int< 0 n) 1 0))))
 (def %pt-blow-ops (fn (self ops) (match ((null? ops) ()) ((eq? (first (first ops)) (lit blow)) (pair (first ops) (self (rest ops)))) (#t (self (rest ops))))))
 
-; OPS with each tile and glyph standing where a blow of BLOWS was struck
-; from moved toward its target by frame K's lunge.
-(def %pt-lunge
-  (fn (_ ops blows k)
-    (def by (Vector ref k %pt-lunge-by))
-    (def step
-      (fn (self op bs)
-        (if (null? bs) op
-          (do (def b (first bs))
-              (def fx (first (rest b)))
-              (def fy (first (rest (rest b))))
-              (if (if (int= fx (first (rest op))) (int= fy (first (rest (rest op)))) #f)
-                (pair (first op)
-                  (pair (int+ fx (int* by (%pt-sign (int- (List ref 3 b) fx))))
-                    (pair (int+ fy (int* by (%pt-sign (int- (List ref 4 b) fy)))) (rest (rest (rest op))))))
-                (self op (rest bs)))))))
-    (List map (fn (_ op) (if (match ((eq? (first op) (lit tile)) #t) ((eq? (first op) (lit glyph)) #t) (#t #f)) (step op blows) op)) ops)))
+; A thing that stepped glides from the cell it left over
+; %pt-glide-frames frames, what is left of the way in sixteenths each
+; frame: quick off the mark, slowing, a pixel past and back.
+(def %pt-glide-frames 5)
+(def %pt-glide-by (Vector of 11 6 2 -1 0))
+
+; The (DX . DY) the striker standing at X Y is moved toward its target
+; by frame K of BLOWS, or nil when no blow was struck from there.
+(def %pt-lunge-at
+  (fn (self x y blows k)
+    (match
+      ((null? blows) ())
+      ((if (int= x (List ref 1 (first blows))) (int= y (List ref 2 (first blows))) #f)
+        ((fn (_ b by) (pair (int* by (%pt-sign (int- (List ref 3 b) x))) (int* by (%pt-sign (int- (List ref 4 b) y)))))
+         (first blows) (Vector ref k %pt-lunge-by)))
+      (#t (self x y (rest blows) k)))))
+
+; OPS as frame KB of BLOWS and frame KG of the glide move them: each
+; walking thing's tile op, (tile X Y PICTURE MODE FROM), made (tile X Y
+; PICTURE MODE (DX . DY)), the pixels it is drawn off its cell by, the
+; way back to FROM still to go and its lunge; a glyph standing where a
+; blow was struck from moved by its lunge.  The cell stays the op's, so
+; a picture keeps the variant of its cell while it moves.
+(def %pt-motion
+  (fn (_ ops blows kb kg)
+    (def gb (if (int< kg %pt-glide-frames) (Vector ref kg %pt-glide-by) 0))
+    (def lb (fn (_ x y) (if (int< kb %pt-blow-frames) (%pt-lunge-at x y blows kb) ())))
+    (List map
+      (fn (_ op)
+        (def x (List ref 1 op))
+        (def y (List ref 2 op))
+        (match
+          ((if (eq? (first op) (lit tile)) (not (null? (rest (rest (rest (rest op)))))) #f)
+            ((fn (_ from lunge)
+               (list (lit tile) x y (List ref 3 op) (List ref 4 op)
+                     (pair (int+ (if (null? from) 0 (int/ (int* gb (first from)) 16)) (if (null? lunge) 0 (first lunge)))
+                           (int+ (if (null? from) 0 (int/ (int* gb (rest from)) 16)) (if (null? lunge) 0 (rest lunge))))))
+             (List ref 5 op) (lb x y)))
+          ((eq? (first op) (lit glyph))
+            ((fn (_ lunge) (if (null? lunge) op (pair (lit glyph) (pair (int+ x (first lunge)) (pair (int+ y (rest lunge)) (rest (rest (rest op))))))))
+             (lb x y)))
+          (#t op)))
+      ops)))
 
 ; The picture of the last tile of OPS at X Y, what is drawn on top
 ; there, or nil.
@@ -373,26 +402,34 @@
           (%pt-text! Canvas c x ny s (match ((eq? how (lit miss)) %pt-miss-ink) (mine %pt-dealt-ink) (#t %pt-hurt-ink)) font)
           (self c ops (rest blows) k dy font)))))
 
-; Whether painter P has a turn's blows still to show.
+; Whether painter P has a turn's blows, or a step, still to show.
 (def paint-animating?
-  (fn (_ p) (if (int< (Vector ref 9 p) %pt-blow-frames) (not (null? (%pt-blow-ops (%pt-over p)))) #f)))
-; Painter P a frame on in showing the blows.
-(def paint-step! (fn (_ p) (do (Vector set! 9 (int+ 1 (Vector ref 9 p)) p) p)))
+  (fn (_ p)
+    (match
+      ((if (int< (Vector ref 9 p) %pt-blow-frames) (not (null? (%pt-blow-ops (%pt-over p)))) #f) #t)
+      ((int< (Vector ref 12 p) %pt-glide-frames) (List any? %pt-stepped? (%pt-over p)))
+      (#t #f))))
+; Whether OP is a walking thing's tile op come from another cell.
+(def %pt-stepped?
+  (fn (_ op) (if (eq? (first op) (lit tile)) (if (null? (rest (rest (rest (rest (rest op)))))) #f (pair? (List ref 5 op))) #f)))
+; Painter P a frame on in showing the blows and the steps.
+(def paint-step!
+  (fn (_ p) (do (Vector set! 9 (int+ 1 (Vector ref 9 p)) p) (Vector set! 12 (int+ 1 (Vector ref 12 p)) p) p)))
 
 ; A painter: [SCREEN LAYER FONT SCENE PANEL WORK ZOOM WHERE SHOWN BLOW
-; TOP STANDING], the scene the last turn's, the panel the art's
+; TOP STANDING GLIDE], the scene the last turn's, the panel the art's
 ; nine-piece picture (a tile form) or nil, WORK the level drawn and lit
 ; at the tile's size before it is shown at ZOOM, LAYER and WORK the
 ; view's size; WHERE each walking thing's (WHO R . C) on the last turn,
 ; SHOWN the tick that turn was first shown at, or -1 before it is; BLOW
 ; the frame the turn's blows are shown at; TOP and STANDING the strips
 ; the messages and the standing are drawn on, TOP a pair: two lines and
-; three.
+; three; GLIDE the frame the turn's steps are shown at.
 (def paint-make
   (fn (_ font)
     (paint-zoom! (Vector of (Canvas make paint-width paint-height) () font () () () 0 () -1 %pt-blow-frames
                             (pair (Canvas make %pt-strip-w %pt-top-h) (Canvas make %pt-strip-w (int+ %pt-top-h %pt-pitch)))
-                            (Canvas make %pt-strip-w %pt-stand-h))
+                            (Canvas make %pt-strip-w %pt-stand-h) %pt-glide-frames)
                  paint-zoom-first)))
 (def paint-screen (fn (_ p) (Vector ref 0 p)))
 (def %pt-over (fn (_ p) (rest (rest (Vector ref 3 p)))))
@@ -414,8 +451,10 @@
 (def %pt-level-h (fn (_) (int* (frame-view-rows) frame-tile-size)))
 
 ; Of OPS, each walking thing's tile op, (tile X Y PICTURE (WHO R . C)),
-; made (tile X Y PICTURE MODE): moving when WAS, the (WHO R . C) of the
-; turn before, has WHO elsewhere, still otherwise.
+; made (tile X Y PICTURE MODE FROM): moving when WAS, the (WHO R . C) of
+; the turn before, has WHO elsewhere, still otherwise; FROM the pixels
+; (DX . DY) to the cell it stepped from, or nil when it did not step
+; there from a cell beside it.
 (def %pt-modes
   (fn (_ ops was)
     (List map
@@ -423,8 +462,12 @@
         (if (if (eq? (first op) (lit tile)) (null? (rest (rest (rest (rest op))))) #t) op
           ((fn (_ at)
              (def before (List find (fn (_ w) (same? (first w) (first at))) was))
-             (def moved (if (null? before) #f (not (if (= (first (rest before)) (first (rest at))) (= (rest (rest before)) (rest (rest at))) #f))))
-             (list (lit tile) (first (rest op)) (first (rest (rest op))) (List ref 3 op) (if moved (lit moving) (lit still))))
+             (def dr (if (null? before) 0 (int- (first (rest before)) (first (rest at)))))
+             (def dc (if (null? before) 0 (int- (rest (rest before)) (rest (rest at)))))
+             (def moved (not (if (int= dr 0) (int= dc 0) #f)))
+             (def beside (if (int< (int* dr dr) 2) (int< (int* dc dc) 2) #f))
+             (list (lit tile) (first (rest op)) (first (rest (rest op))) (List ref 3 op) (if moved (lit moving) (lit still))
+                   (if (if moved beside #f) (pair (int* dc frame-tile-size) (int* dr frame-tile-size)) ())))
            (List ref 4 op))))
       ops)))
 ; The (WHO R . C) of each walking thing's tile op of OPS.
@@ -448,6 +491,7 @@
     (Vector set! 8 -1 p)
     (Vector set! 4 (frame-named a (lit panel) 0) p)
     (Vector set! 9 0 p)
+    (Vector set! 12 0 p)
     p))
 
 ; TEXT in lines of at most N letters, broken at a space.
@@ -574,7 +618,7 @@
     (def font (Vector ref 2 p))
     (def k (Vector ref 9 p))
     (def blows (if (int< k %pt-blow-frames) (%pt-blow-ops (%pt-over p)) ()))
-    (def over (if (null? blows) (%pt-over p) (%pt-lunge (%pt-over p) blows k)))
+    (def over (%pt-motion (%pt-over p) blows k (Vector ref 12 p)))
     (def work (Vector ref 5 p))
     (def lw (first work))
     (def lh (first (rest work)))

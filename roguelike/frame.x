@@ -206,19 +206,19 @@
 ; The picture named NAME put at R C, over its shadow when SHADOW; where
 ; the art has no picture of it, its GLYPH, (glyph X Y GLYPH), as the
 ; terminal shows it; nothing out of view.  A thing that walks, WHO (a
-; creature, or player), has its tile op as (tile X Y PICTURE (WHO R .
-; C)), so the painter can tell whether it moved since the last turn.
+; creature, or player), has its tile op, and its shadow's, as (tile X Y
+; PICTURE (WHO R . C)), so the painter can tell whether it moved since
+; the last turn and move the two together.
 (def %fr-put
   (fn (_ a cam r c name shadow glyph who)
     (def at (frame-place cam r c))
     (def p (frame-named a name (+ (* r 80) c)))
     (def s (if shadow (frame-named a (lit shadow) 0) ()))
+    (def put (fn (_ pic) (if (null? who) (list (lit tile) (first at) (rest at) pic) (list (lit tile) (first at) (rest at) pic (pair who (pair r c))))))
     (match
       ((null? at) ())
       ((null? p) (list (list (lit glyph) (first at) (rest at) glyph)))
-      (#t (List append (if (null? s) () (list (list (lit tile) (first at) (rest at) s)))
-                       (list (if (null? who) (list (lit tile) (first at) (rest at) p)
-                               (list (lit tile) (first at) (rest at) p (pair who (pair r c))))))))))
+      (#t (List append (if (null? s) () (list (put s))) (list (put p)))))))
 ; What stands on G's level under camera CAM with art A, in the order
 ; the terminal draws it: found traps and items where they were seen,
 ; creatures in view over their shadows, the player last.

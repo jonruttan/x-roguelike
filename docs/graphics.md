@@ -27,10 +27,15 @@ screen's pixel, the art's scale: a line holds 52 letters.
   dimmed, rock black.  Found traps and items where they were seen;
   creatures only in view; the player last.  A warm glow round the
   player stands for the lamp.
-- **Blows**: after a turn with a fight, about a third of a second of
-  it: the striker lunges toward its target, a blow that lands flashes
-  the target (white for the player's, red for a creature's), the
-  player's kill bursts where the creature was, and the damage, or
+- **Steps**: a thing that stepped to a cell beside it glides there
+  from the cell it left, over its shadow, in about a quarter of a
+  second: quick off the mark, slowing, a pixel past and back.  Its
+  pictures stay its new cell's.  A key pressed meanwhile is taken at
+  once; exploring does not wait for it.
+- **Blows**: after a turn with a fight, about half a second of it: the
+  striker lunges toward its target and eases back, a blow that lands
+  flashes the target (white for the player's, red for a creature's),
+  the player's kill bursts where the creature was, and the damage, or
   "miss", rises from the target.
 - **Overlays**: a list looked at, the items a question can take, a
   choice, a page read, a talker's words, the world map and the end of
