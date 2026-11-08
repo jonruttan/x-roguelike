@@ -64,7 +64,7 @@
   items-by-letter items-pickup!
   items-drop! items-quaff! items-read! items-zap! items-eat! items-wield! items-wear! items-take-off!
   items-put-on! items-remove!)
-(import roguelike/quests quests-place! quests-talk!)
+(import roguelike/quests quests-place! quests-talk! quests-keepers!)
 (import roguelike/chain chain-build!)
 (import roguelike/traps traps-found-at traps-place! traps-step! traps-search!)
 (import roguelike/interiors interiors-door! interiors-params interiors-prop1)
@@ -154,6 +154,7 @@
     (items-place-goal! g)
     (items-place-pages! g)
     (quests-place! g)
+    (quests-keepers! g)
     (traps-place! g)
     (%gm-light! g)
     (Heap collect)))

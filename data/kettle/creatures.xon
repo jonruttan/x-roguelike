@@ -21,7 +21,8 @@
 (creature "Guild bailiff" "G" (depth 4 5) (level 5) (hp 14 22) (attack 3 8) (defence 6) (exp 30) (ranged 2 5) (shot "a bolt") (traits ranged) (tale "A Guild bailiff: the Guild's hired man, with bolts, about its dig" "on the rim."))
 
 ; The people: each talks when walked into, and is placed by the chain
-; (see scenes.xon); one that talks is never drawn for a screen.
+; (see scenes.xon) or stands in their building in the town as its
+; keeper (see town/game.xon); one that talks is never drawn for a screen.
 (creature "bailiff's widow" "&" (depth 0 0) (level 1) (hp 1 1) (attack 0 0) (defence 0) (exp 0) (traits talks))
 (creature "Guild clerk" "&" (depth 0 0) (level 1) (hp 1 1) (attack 0 0) (defence 0) (exp 0) (traits talks))
 (creature "night watchman" "&" (depth 0 0) (level 1) (hp 1 1) (attack 0 0) (defence 0) (exp 0) (traits talks))
@@ -41,3 +42,8 @@
 (creature "woodcutter" "&" (depth 0 0) (level 1) (hp 1 1) (attack 0 0) (defence 0) (exp 0) (traits talks))
 (creature "cobbler" "&" (depth 0 0) (level 1) (hp 1 1) (attack 0 0) (defence 0) (exp 0) (traits talks))
 (creature "tanner" "&" (depth 0 0) (level 1) (hp 1 1) (attack 0 0) (defence 0) (exp 0) (traits talks))
+; Keepers only, with no scene.
+(creature "engine-wright" "&" (depth 0 0) (level 1) (hp 1 1) (attack 0 0) (defence 0) (exp 0) (traits talks))
+(creature "baker" "&" (depth 0 0) (level 1) (hp 1 1) (attack 0 0) (defence 0) (exp 0) (traits talks))
+(creature "chapel warden" "&" (depth 0 0) (level 1) (hp 1 1) (attack 0 0) (defence 0) (exp 0) (traits talks))
+(creature "deacon" "&" (depth 0 0) (level 1) (hp 1 1) (attack 0 0) (defence 0) (exp 0) (traits talks))

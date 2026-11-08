@@ -24,10 +24,11 @@
 
 (import x/type/vector)
 (import roguelike/data data-all data-prop data-prop1)
-(import roguelike/map map-rows map-cols map-tile map-seen? map-each! tile-rock)
+(import x/core/doors int/)
+(import roguelike/map map-rows map-cols map-tile map-seen? map-each! map-places tile-rock tile-floor)
 (import roguelike/dungeon dungeon-spot)
 (import roguelike/state
-  game-rng game-set game-depth game-map game-player game-creatures game-creatures! game-floor game-floor!
+  game-rng game-set game-forms game-turn game-depth game-map game-player game-creatures game-creatures! game-floor game-floor!
   game-pack game-ask! game-quest-state game-quest-state! game-placed? game-placed! game-chain game-screen game-below? game-region game-world-all
   player-r player-c creature-make creature-name creature-carried!
   item-make item-name item-class? item-at! item-letter!
@@ -181,14 +182,17 @@
     (if (null? forms) (do (game-quest-state! g (%qs-name q) (lit done)) (%qs-look! g cr (data-prop q (lit done) ())))
       (game-ask! g (list (lit choose) "Which will you take?" pick (List append (data-prop q (lit done) ()) (list "" choices)))))))
 
-; The giver CR walked into: its quest opened, pressed, met, or over.  A
-; turn passes.
+; The giver CR walked into: its quest opened, pressed, met, or over, a
+; keeper with no quest or one over saying a line.  A turn passes.
 (def quests-talk!
   (fn (_ g cr)
     (def q (List find (fn (_ q) (str=? (%qs-giver q) (creature-name cr))) (%qs-quests g)))
     (def state (if (null? q) (lit done) (game-quest-state g (%qs-name q))))
     (def subs (list (pair "name" (creature-name cr))))
+    (def lines (%qs-lines g (creature-name cr)))
     (match
+      ((if (eq? state (lit done)) (not (null? lines)) #f)
+        (%qs-look! g cr (list (List ref (% (game-turn g) (List length lines)) lines))))
       ((null? q) (state-tell! g (lit no-words) "The {name} has nothing to say." subs))
       ((eq? state (lit done)) (state-tell! g (lit quest-over) "The {name} has nothing more to ask." subs))
       ((null? state) (do (game-quest-state! g (%qs-name q) (lit open)) (%qs-look! g cr (data-prop q (lit ask) ()))))
@@ -197,4 +201,41 @@
       (#t (%qs-look! g cr (data-prop q (lit again) ()))))
     #t))
 
-(provide roguelike/quests quests-place! quests-talk!)
+; --- the keepers -------------------------------------------------------------
+
+; A building's (keeper NAME LINE ...) stands inside it on the level that
+; lays it, unless the game's chain gives NAME a screen of its own; walked
+; into with nothing to ask, the keeper says a LINE, the next each turn.
+
+; The keepers of the buildings among the forms in force, each (BUILDING
+; NAME LINE ...).
+(def %qs-keepers
+  (fn (_ g)
+    (List flat-map (fn (_ b) (List map (fn (_ k) (pair (first b) k)) (data-all (rest b) (lit keeper))))
+      (data-all (game-forms g) (lit building)))))
+(def %qs-chain-giver? (fn (_ g name) (List any? (fn (_ q) (str=? (%qs-giver q) name)) (List map rest (game-chain g)))))
+; A free floor cell inside the place P, (NAME R0 C0 R1 C1), the middle
+; one of them, or nil.
+(def %qs-inside
+  (fn (_ g p)
+    (def cells (List flat-map (fn (_ r) (List map (fn (_ c) (pair r c)) (List range (+ (List ref 2 p) 1) (List ref 4 p))))
+                 (List range (+ (List ref 1 p) 1) (List ref 3 p))))
+    (def free (List filter (fn (_ at) (if (= (map-tile (game-map g) (first at) (rest at)) tile-floor) (state-free? g (first at) (rest at)) #f)) cells))
+    (if (null? free) () (List ref (int/ (List length free) 2) free))))
+; Each keeper on the level just made, inside their building.
+(def quests-keepers!
+  (fn (_ g)
+    (List for-each
+      (fn (_ bk)
+        (def place (List find (fn (_ p) (str=? (first p) (first bk))) (map-places (game-map g))))
+        (def kind (%qs-kind g (List ref 1 bk)))
+        (unless (if (null? place) #t (if (null? kind) #t (%qs-chain-giver? g (first kind))))
+          ((fn (_ at) (unless (null? at) (%qs-creature! g kind (first at) (rest at)))) (%qs-inside g place))))
+      (%qs-keepers g))))
+; The lines of the keeper NAME among the forms in force, or nil.
+(def %qs-lines
+  (fn (_ g name)
+    (def bk (List find (fn (_ bk) (str=? (List ref 1 bk) name)) (%qs-keepers g)))
+    (if (null? bk) () (rest (rest bk)))))
+
+(provide roguelike/quests quests-place! quests-talk! quests-keepers!)
