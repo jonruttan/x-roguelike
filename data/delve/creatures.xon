@@ -20,7 +20,7 @@
 (creature "knocker" "k" (depth 2 6) (level 2) (hp 4 9) (attack 1 3) (defence 4) (exp 6) (ranged 1 3) (shot "a stone") (traits ranged skittish) (tale "A knocker: the hewers' tale of the thing that knocks in the rock," "left a crust at every shift.  Since the breach it walks, and" "throws stones."))
 (creature "pit ferret" "f" (depth 3 3) (level 2) (hp 5 10) (attack 1 5) (defence 3) (exp 5) (pack 1 3) (tale "A pit ferret: bred from the miners' ratters, gone wild below." "They hunt in packs."))
 (creature "gallery shade" "g" (depth 2 4) (level 2) (hp 5 9) (attack 1 4) (defence 4) (exp 6) (traits cold slow) (tale "A gallery shade: the firedamp shift, forty years dead, walking" "since the breach."))
-(creature "fireman" "F" (depth 0 0) (article "the") (level 3) (hp 20 28) (attack 2 7) (defence 5) (exp 45) (traits cold regen) (tale "The fireman of the firedamp shift: he tested for gas, saw the" "Candle burn tall, and sent them down anyway."))
+(creature "fireman" "F" (depth 0 0) (article "the") (level 3) (hp 14 18) (attack 1 4) (defence 5) (exp 45) (traits cold) (tale "The fireman of the firedamp shift: he tested for gas, saw the" "Candle burn tall, and sent them down anyway."))
 
 ; The Flood, 4 to 6: what lives in standing water.
 (creature "lantern eel" "e" (depth 4 7) (level 3) (hp 8 14) (attack 2 6) (defence 4) (exp 10) (traits dazzle fast) (tale "A lantern eel: a river eel come in with the water, and lit by it."))
