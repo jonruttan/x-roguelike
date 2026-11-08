@@ -65,3 +65,18 @@ scores kept best first.
 ```
 ---
     (("  1450  level 20  won" "   120  level 3  killed by a cave rat" "    50  level 1  quit") 10)
+
+## where
+
+### each set its own directory: a save on one is never read on another
+
+```roguelike
+(import roguelike/save save-path)
+(def tail (fn (_ p) (Str8 join "/" (List drop (- (List length (Str8 split "/" p)) 2) (Str8 split "/" p)))))
+(write (list (tail (save-path "delve" "save")) (tail (save-path "kettle" "save"))
+             (tail (save-path "data/kettle/" "scores"))
+             (File exists? (save-path "delve" "save"))
+             (str=? (save-path "delve" "save") (save-path "kettle" "save"))))
+```
+---
+    ("delve/save" "kettle/save" "kettle/scores" #f #f)
