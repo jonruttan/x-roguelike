@@ -24,7 +24,20 @@
 ; unless given.  BALANCE_FIRST is the first seed, 1 unless given, so a
 ; game too long to share a run can have one to itself.  BALANCE_TRACE,
 ; set to anything, writes a line a key: the turn, level, hit points,
-; place and what was said.  The spread between attributes is the room
+; place and what was said.
+;
+; BALANCE_KEEP=DIR saves each game, SET-SEED.sav in DIR, the turn it
+; first sees the creature BALANCE_BOSS names, the fireman unless given,
+; and ends the game there, reported as capped;
+; a game that never sees it leaves its save empty, so a batch wipes its
+; own seeds' saves.  BALANCE_FROM=DIR fights again from those saves
+; instead of playing games: BALANCE_TRIES times a seed, 20 unless given,
+; the dice reseeded each try and the boss's hit points rolled again,
+; with BOSS_HP, BOSS_ATTACK, BOSS_DEFENCE, BOSS_LEVEL ("LO HI" or "N")
+; and BOSS_TRAITS (words, "-" for none) in place of the set's numbers
+; for it, and BALANCE_TURNS, 400 unless given, the most a fight runs.
+;
+; The spread between attributes is the room
 ; skill has; what tools/model.x says a fight costs is what they
 ; are measured against.  An instrument, not a gate: nothing here is a
 ; spec.
@@ -45,7 +58,9 @@
   item-class item-name item-prop item-prop1 item-enchant item-letter item-r item-c game-floor
   creature-r creature-c creature-state creature-trait? creature-hp creature-prop creature-prop1 state-defence state-adjacent? state-dist state-shortfall state-creature-at state-items-at
   game-quest-state game-screens? game-screen game-screen-key game-hub game-chain game-inside state-creature-named
-  game-top-set game-home game-place game-below?)
+  game-top-set game-home game-place game-below?
+  game-rng game-rng! creature-hp! state-roll)
+(import roguelike/save save-write! save-read)
 (import roguelike/creatures creatures-shown? creatures-door-diagonal?)
 (import roguelike/items items-goal-held?)
 (import roguelike/traps traps-found-at)
@@ -528,9 +543,26 @@
     (when (if (null? (Vector ref 6 s)) (not (null? (player-weapon (game-player g)))) #f)
       (do (Vector set! 6 (game-turn g) s) (Vector set! 7 (List length (Vector ref 5 s)) s)))))
 
+; --- the boss: kept where first seen, fought again and again ---------------
+
+; The save for SEED of SET in the directory DIR.
+(def %bl-save-path
+  (fn (_ dir set seed) (Str8 append dir "/" (first (data-one set (lit set) (list "set"))) "-" (Str8 str seed) ".sav")))
+
+; The boss BALANCE_BOSS names, on the level and in view, or nil.
+(def %bl-boss-shown
+  (fn (_ g name)
+    (def cr (state-creature-named g name))
+    (if (null? cr) () (if (creatures-shown? g cr) cr ()))))
+
 (def %bl-game
   (fn (_ set seed cap who)
     (def trace? (not (str=? (%bl-env "BALANCE_TRACE" "") "")))
+    (def keep (%bl-env "BALANCE_KEEP" ""))
+    (def boss (%bl-env "BALANCE_BOSS" "fireman"))
+    (def path (if (str=? keep "") "" (%bl-save-path keep set seed)))
+    (unless (str=? path "") (File write-all path ""))
+    (def kept (Vector of (str=? path "")))
     (Heap collect)
     (def g (game-make set seed 24 80))
     (def s (Vector of #f "" 0 0 #f () () 0 () ()))
@@ -538,10 +570,12 @@
     (def loop
       (fn (self turn stalled)
         (def depth (game-depth g))
-        (unless (if (null? (game-over g)) (< cap (game-turn g)) #t)
+        (unless (match ((not (null? (game-over g))) #t) ((< cap (game-turn g)) #t) ((str=? path "") #f) (#t (Vector ref 0 kept)))
           (do (if (< 30 stalled) (game-key! g ".") (%bl-turn! g s who))
               (%bl-met! g s)
               (when trace? (%bl-trace g))
+              (unless (if (Vector ref 0 kept) #t (null? (%bl-boss-shown g boss)))
+                (do (save-write! g path) (Vector set! 0 #t kept)))
               (Heap collect)
               (unless (= depth (game-depth g)) (Vector set! 0 (pair (%bl-arrival g) (Vector ref 0 arrivals)) arrivals))
               (self (game-turn g) (if (= turn (game-turn g)) (+ stalled 1) 0))))))
@@ -549,6 +583,94 @@
     (list seed (if (null? (game-over g)) (lit capped) (game-over g)) (game-epitaph g) (game-deepest g) (game-turn g)
           (Vector ref 2 s) (Vector ref 3 s) (List reverse (Vector ref 0 arrivals))
           (Vector ref 6 s) (if (null? (Vector ref 6 s)) (List length (Vector ref 5 s)) (Vector ref 7 s)))))
+
+; The numbers in the words of S.
+(def %bl-nums (fn (_ s) (List map %bl-int (List reject (fn (_ w) (str=? w "")) (Str8 split " " s)))))
+; PROPS with (KEY . VALS) in place of any KEY there was.
+(def %bl-prop (fn (_ props key vals) (pair (pair key vals) (List reject (fn (_ p) (if (pair? p) (eq? (first p) key) #f)) props))))
+; PROPS as BOSS_HP, BOSS_ATTACK, BOSS_DEFENCE, BOSS_LEVEL and BOSS_TRAITS
+; give them; a trait list of "-" is none.
+(def %bl-boss-props
+  (fn (_ props)
+    (def nums (fn (_ have env key) (def v (%bl-env env "")) (if (str=? v "") have (%bl-prop have key (%bl-nums v)))))
+    (def traits (%bl-env "BOSS_TRAITS" ""))
+    (def with (nums (nums (nums (nums props "BOSS_HP" (lit hp)) "BOSS_ATTACK" (lit attack)) "BOSS_DEFENCE" (lit defence)) "BOSS_LEVEL" (lit level)))
+    (if (str=? traits "") with
+      (%bl-prop with (lit traits) (List map (fn (_ w) (Str8 ->sym w)) (List reject (fn (_ w) (if (str=? w "") #t (str=? w "-"))) (Str8 split " " traits)))))))
+; SET with the creature NAME's numbers as the BOSS_ variables give them.
+(def %bl-boss-set
+  (fn (_ set name)
+    (List map (fn (_ f)
+                (if (if (pair? f) (if (eq? (first f) (lit creature)) (str=? (List ref 1 f) name) #f) #f)
+                  (pair (first f) (pair (List ref 1 f) (pair (List ref 2 f) (%bl-boss-props (rest (rest (rest f)))))))
+                  f))
+              set)))
+(def %bl-boss-text
+  (fn (_ set name)
+    (def rec (List find (fn (_ k) (str=? (first k) name)) (data-all set (lit creature))))
+    (def show (fn (_ key) (Str8 append (symbol->str key) " " (Str8 join " " (List map (fn (_ v) (if (symbol? v) (symbol->str v) (Str8 str v))) (data-prop rec key ()))))))
+    (Str8 join "  " (List map show (list (lit hp) (lit attack) (lit defence) (lit level) (lit traits))))))
+
+; One fight from the save at PATH, try TRY: the dice reseeded by the
+; try, the boss's hit points rolled again in its range, and WHO playing
+; until the boss is dead, the player is, the level is left, or CAP turns
+; pass.  (OUTCOME HP HPMAX TURNS), or nil with no save there.
+(def %bl-fight
+  (fn (_ set path seed try who boss cap)
+    (Heap collect)
+    (def g (if (File exists? path) (save-read path set 24 80) ()))
+    (if (null? g) ()
+      (do (game-rng! g (Random sw (+ (* 7907 seed) (* 104729 try))))
+          (def cr (state-creature-named g boss))
+          (unless (null? cr)
+            (do (def hp (creature-prop cr (lit hp) (list 1 1)))
+                (creature-hp! cr (state-roll (game-rng g) (first hp) (List ref 1 hp)))))
+          (def s (Vector of #f "" 0 0 #f () () 0 () ()))
+          (def depth (game-depth g))
+          (def start (game-turn g))
+          (def loop
+            (fn (self turn stalled)
+              (match ((not (null? (game-over g))) (game-over g))
+                     ((not (= depth (game-depth g))) (lit left))
+                     ((null? (state-creature-named g boss)) (lit beat))
+                     ((< (+ start cap) (game-turn g)) (lit capped))
+                     (#t (do (if (< 30 stalled) (game-key! g ".") (%bl-turn! g s who))
+                             (Heap collect)
+                             (self (game-turn g) (if (= turn (game-turn g)) (+ stalled 1) 0)))))))
+          (def outcome (loop start 0))
+          (def p (game-player g))
+          (list outcome (player-hp p) (player-hpmax p) (- (game-turn g) start))))))
+
+(def %bl-fights
+  (fn (_ set ranges from seeds)
+    (def dir (%bl-env "BALANCE_FROM" ""))
+    (def boss (%bl-env "BALANCE_BOSS" "fireman"))
+    (def tries (%bl-int (%bl-env "BALANCE_TRIES" "20")))
+    (def cap (%bl-int (%bl-env "BALANCE_TURNS" "400")))
+    (def bset (%bl-boss-set set boss))
+    (def is (fn (_ o) (fn (_ r) (eq? (first r) o))))
+    (def line
+      (fn (_ head rs)
+        (def beat (List filter (is (lit beat)) rs))
+        (%bl-line head (Str8 str (List length rs)) " fights: beat " (Str8 str (List length beat))
+                  ", dead " (Str8 str (%bl-count (is (lit dead)) rs))
+                  ", left " (Str8 str (%bl-count (is (lit left)) rs))
+                  ", capped " (Str8 str (%bl-count (is (lit capped)) rs))
+                  "; on a win " (Str8 str (%bl-mean (List map (fn (_ r) (int/ (* 100 (List ref 1 r)) (List ref 2 r))) beat))) "% hp left"
+                  ", " (Str8 str (%bl-mean (List map (fn (_ r) (List ref 3 r)) rs))) " turns")))
+    (%bl-line "Boss: " boss "  " (%bl-boss-text bset boss))
+    (def all
+      (List flat-map
+        (fn (_ seed)
+          (def path (%bl-save-path dir set seed))
+          (def who (%bl-who ranges seed))
+          (def rs (if (if (File exists? path) (< 0 (Str8 length (File read-all path))) #f)
+                    (List reject null? (List map (fn (_ try) (%bl-fight bset path seed try who boss cap)) (List range 1 (+ tries 1))))
+                    ()))
+          (unless (null? rs) (line (Str8 append "seed " (Str8 str seed) ": ") rs))
+          rs)
+        (List range from (+ from seeds))))
+    (line "All: " all)))
 
 ; --- the report --------------------------------------------------------------
 
@@ -661,6 +783,10 @@
     (def name (%bl-env "BALANCE_SET" "delve"))
     (def ranges (%bl-ranges (%bl-make)))
     (def set (data-load (Str8 append %lang-root "/data/" name)))
+    (if (not (str=? (%bl-env "BALANCE_FROM" "") "")) (%bl-fights set ranges from seeds) (%bl-games set ranges from seeds cap))))
+
+(def %bl-games
+  (fn (_ set ranges from seeds cap)
     (def games
       (List map (fn (_ seed)
                   (def who (%bl-who ranges seed))

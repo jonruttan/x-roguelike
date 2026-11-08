@@ -48,6 +48,7 @@
 (def %st-get (fn (_ g k) (%st-ref g k)))
 (def %st-put! (fn (_ g k x) (%st-set! g k x)))
 (def game-rng (fn (_ g) (%st-get g 0)))
+(def game-rng! (fn (_ g rng) (%st-put! g 0 rng)))
 (def game-set (fn (_ g) (%st-get g 1)))
 (def game-depth (fn (_ g) (%st-get g 2)))
 (def game-depth! (fn (_ g n) (%st-put! g 2 n)))
@@ -556,7 +557,7 @@
        (state-ring-bonus g (lit protection)))))
 
 (provide roguelike/state
-  game-rng game-set game-depth game-depth! game-map game-map! game-player game-creatures game-creatures!
+  game-rng game-rng! game-set game-depth game-depth! game-map game-map! game-player game-creatures game-creatures!
   game-floor game-floor! game-pack game-pack! game-messages game-messages! game-turn game-turn!
   game-ask game-ask! game-over game-over! game-guises game-known game-known! game-told game-told! game-deepest game-deepest!
   game-log game-rows game-cols game-epitaph game-epitaph! game-seed game-goal-placed? game-goal-placed!
