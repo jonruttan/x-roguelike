@@ -12,10 +12,10 @@
 ; placed, what the set made sure of,
 ; the chain, the choices it was played with, the level's traps by
 ; their kind's name, its tiles and seen flags as strings of digits, its
-; rooms and stairs; then, in a world of screens, the doors laid, the
-; interior stood in, the regions stood in through doors, each with the
-; screen and depth at its door, whose the level
-; in hand then is, and each other level kept, screen or interior, after
+; rooms, named places and stairs; then, in a world of screens, the
+; doors laid, the interior stood in, the regions stood in through doors,
+; each with the screen and depth at its door, whose the level in hand
+; then is, and each other level kept, screen or interior, after
 ; a (screen KEY) line, the same way.  Reading one builds the game again on the same set with the
 ; same choices; a thing the set no longer has is left out.  A save is
 ; read once and then removed by the play that read it, so a game is
@@ -32,7 +32,7 @@
 (import roguelike/items items-page-named)
 (import roguelike/traps trap-make trap-r trap-c trap-name trap-found?)
 (import roguelike/map
-  map-make map-rows map-cols map-tile map-set! map-seen? map-seen! map-rooms map-rooms! map-down map-down!
+  map-make map-rows map-cols map-tile map-set! map-seen? map-seen! map-rooms map-rooms! map-places map-places! map-down map-down!
   map-up map-up! map-each! map-light!)
 (import roguelike/state
   game-set game-depth game-depth! game-map game-map! game-player game-creatures game-creatures!
@@ -109,6 +109,7 @@
       (list (list (lit level) (map-rows m) (map-cols m) (%sv-digits m #f) (%sv-digits m #t))
             (pair (lit stairs) (List append (%sv-at (map-down m)) (%sv-at (map-up m)))))
       (List map (fn (_ room) (list (lit room) (List ref 0 room) (List ref 1 room) (List ref 2 room) (List ref 3 room) (if (List ref 4 room) 1 0))) (map-rooms m))
+      (List map (fn (_ place) (pair (lit place) place)) (map-places m))
       (List map (fn (_ it) (%sv-item (lit floor) it)) items)
       (List map (fn (_ t) (list (lit trap) (trap-r t) (trap-c t) (trap-name t) (if (trap-found? t) 1 0))) traps)
       (List map (fn (_ cr) (list (lit creature) (creature-name cr) (creature-r cr) (creature-c cr) (creature-hp cr)
@@ -202,6 +203,7 @@
     (%sv-digits! m (List ref 2 args) #f)
     (%sv-digits! m (List ref 3 args) #t)
     (map-rooms! m (List map (fn (_ r) (list (List ref 0 r) (List ref 1 r) (List ref 2 r) (List ref 3 r) (= 1 (List ref 4 r)))) (%sv-all forms (lit room))))
+    (map-places! m (%sv-all forms (lit place)))
     (def st (%sv-one forms (lit stairs)))
     (unless (< (List ref 0 st) 0) (map-down! m (pair (List ref 0 st) (List ref 1 st))))
     (unless (< (List ref 2 st) 0) (map-up! m (pair (List ref 2 st) (List ref 3 st))))

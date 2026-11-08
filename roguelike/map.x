@@ -86,8 +86,9 @@
 
 ; A level is a vector: 0 rows, 1 columns, 2 the tiles, 3 the seen flags,
 ; 4 the visible flags, 5 the rooms, 6 the stairs down (R . C), 7 the
-; stairs up.  Its slots are read through the object doors, not the
-; class: a cell's flag is asked for thousands of times a turn.
+; stairs up, 8 the named places, (NAME R0 C0 R1 C1) each, walls and
+; all.  Its slots are read through the object doors, not the class: a
+; cell's flag is asked for thousands of times a turn.
 (def %mp-get (fn (_ m k) (obj-ref m (int+ k 1))))
 (def %mp-put! (fn (_ m k x) (obj-set! m (int+ k 1) x)))
 (def map-rows (fn (_ m) (%mp-get m 0)))
@@ -98,6 +99,13 @@
 (def map-down! (fn (_ m at) (%mp-put! m 6 at)))
 (def map-up (fn (_ m) (%mp-get m 7)))
 (def map-up! (fn (_ m at) (%mp-put! m 7 at)))
+(def map-places (fn (_ m) (%mp-get m 8)))
+(def map-places! (fn (_ m places) (%mp-put! m 8 places)))
+; The named place R C lies in, (NAME R0 C0 R1 C1), or nil.
+(def map-place-at
+  (fn (_ m r c)
+    (List find (fn (_ p) (if (< (List ref 1 p) (+ r 1)) (if (< r (+ (List ref 3 p) 1)) (if (< (List ref 2 p) (+ c 1)) (< c (+ (List ref 4 p) 1)) #f) #f) #f))
+      (map-places m))))
 
 (def %mp-zero!
   (fn (self p i n) (when (int< i n) (do (ptr-set! p i 0 1) (self p (int+ i 1) n)))))
@@ -106,7 +114,7 @@
 
 (def map-make
   (fn (_ rows cols)
-    (def m (Vector make 8 ()))
+    (def m (Vector make 9 ()))
     (%mp-put! m 0 rows)
     (%mp-put! m 1 cols)
     (Vector set! 2 (%mp-buffer (int* rows cols)) m)
@@ -358,7 +366,7 @@
   tile-rock tile-floor tile-wall tile-door tile-passage tile-down tile-up
   tile-water tile-pillar tile-fall tile-dressed tile-hedge tile-gate tile-thicket tile-edge tile-bog tile-scar
   map-terrain map-kinds map-look map-look-run
-  map-make map-rows map-cols map-rooms map-rooms! map-down map-down! map-up map-up!
+  map-make map-rows map-cols map-rooms map-rooms! map-down map-down! map-up map-up! map-places map-places! map-place-at
   map-in? map-tile map-set! map-seen? map-seen! map-visible? map-passable? map-walkable?
   room-r0 room-c0 room-r1 room-c1 room-lit? room-covers? room-inside? room-centre map-room-at
   map-each! map-opaque? map-light! map-light-radius! map-row-glyphs! map-visible-next map-visible-run
