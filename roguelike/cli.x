@@ -34,6 +34,8 @@
   game-over game-epitaph game-depth game-deepest game-messages game-ask game-player player-gold game-exploring? game-exploring!)
 (import roguelike/game game-make game-key! game-explore! game-score game-score-text game-help)
 (import roguelike/draw game-draw!)
+(import roguelike/paint paint-art paint-font)
+(import roguelike/window window-play)
 (import roguelike/save save-write! save-read save-path save-score! save-scores)
 
 (def roguelike-version "0.1.0")
@@ -47,6 +49,7 @@
           (Opts arg "-c" "--choose" "GROUP=NAME" "A way to play the set, of those it offers; -h lists them; again for another group")
           (Opts arg "-S" "--seed" "N" "The seed; the same seed is the same dungeon")
           (Opts arg "-d" "--data" "DIR" "Where the sets are, in place of the bundle's data/")
+          (Opts flag "-w" "--window" "Play in a window, drawn with the set's pictures (needs SDL3)")
           (Opts flag "-V" "--version" "Print the version and exit")
           (Opts flag "-h" "--help" "Print this help and exit"))
     (pair (lit help) #f)))
@@ -176,6 +179,26 @@
                    (Str8 join "" (List map (fn (_ c) (Str8 append "  -c " (data-choice-text c) "\n")) offered)))))
     0))
 
+; Where the pictures shared by every set are: the bundle's art/, or
+; art/ here.
+(def %cl-art-dir
+  (fn (_)
+    (def root (guard (e ()) %lang-root))
+    (if (str? root) (Str8 append root "/art") "art")))
+
+; A game in a window: the set's art from its art/ directory, the font
+; from the bundle's; a set with no art plays with its letters.
+(def %cl-window
+  (fn (_ opts)
+    (def dir (Str8 append (%cl-data-dir opts) "/" (Opts value opts "-s" "classic")))
+    (def set (data-load dir))
+    (def saved (save-read (save-path "save") set 24 80))
+    (def g (if (null? saved) (game-make (data-choose set (%cl-picks opts)) (%cl-seed opts) 24 80) saved))
+    (def art (paint-art (guard (e ()) (data-load (Str8 append dir "/art")))))
+    (def failed (window-play g art (paint-font (%cl-art-dir)) 2))
+    (if (null? failed) (%cl-finish! g set)
+      (do (%cl-say 2 (Str8 append "x-roguelike: " (%cl-err-text failed) "\n")) 1))))
+
 (def %cl-play
   (fn (_ opts)
     ; x.sh parks the user's terminal on fd 3 while the boot stream holds
@@ -220,8 +243,8 @@
       ((Opts on? opts "-V") (do (%cl-say 1 (Str8 append "x-roguelike " roguelike-version "\n")) 0))
       ((if (null? seed) #f (null? (%cl-to-int seed))) (do (%cl-say 2 "x-roguelike: --seed takes a number\n") 2))
       ((not (null? bad-pick)) (do (%cl-say 2 (Str8 append "x-roguelike: " bad-pick "\n")) 2))
-      ((null? words) (guard (e (do (%cl-say 2 (Str8 append "x-roguelike: " (%cl-err-text e) "\n")) 1)) (%cl-play opts)))
-      ((str=? (first words) "play") (guard (e (do (%cl-say 2 (Str8 append "x-roguelike: " (%cl-err-text e) "\n")) 1)) (%cl-play opts)))
+      ((null? words) (guard (e (do (%cl-say 2 (Str8 append "x-roguelike: " (%cl-err-text e) "\n")) 1)) (if (Opts on? opts "-w") (%cl-window opts) (%cl-play opts))))
+      ((str=? (first words) "play") (guard (e (do (%cl-say 2 (Str8 append "x-roguelike: " (%cl-err-text e) "\n")) 1)) (if (Opts on? opts "-w") (%cl-window opts) (%cl-play opts))))
       ((str=? (first words) "scores") (%cl-scores))
       (#t (do (%cl-say 2 (Str8 append "x-roguelike: no such command: " (first words) "\n" (Opts usage roguelike-options))) 2)))))
 

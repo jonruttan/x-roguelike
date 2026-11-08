@@ -289,4 +289,9 @@
     (screen-put! s (- (Screen rows s) 1) 0 (%dr-status g) %dr-plain)
     s))
 
-(provide roguelike/draw game-draw!)
+; The top row's text and the standing's, as the terminal shows them;
+; the window draws them too.
+(def draw-top (fn (_ g) (%dr-top g)))
+(def draw-status (fn (_ g) (%dr-status g)))
+
+(provide roguelike/draw game-draw! draw-top draw-status)
