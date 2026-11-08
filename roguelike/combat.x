@@ -26,7 +26,8 @@
   creature-hp creature-hp! creature-name creature-prop creature-prop1 creature-trait? creature-state creature-state!
   creature-carried! creature-carried item-prop item-enchant item-letter!
   state-say! state-tell! state-roll state-chance? state-remove-creature! state-remove-pack!
-  state-defence state-strength state-shortfall game-floor! game-floor item-at! creature-r creature-c)
+  state-defence state-strength state-shortfall game-floor! game-floor item-at! creature-r creature-c
+  state-blow! player-r player-c)
 
 (def %cb-clamp (fn (_ n lo hi) (match ((< n lo) lo) ((< hi n) hi) (#t n))))
 
@@ -89,17 +90,22 @@
     (%cb-level-up! g)))
 
 ; The player strikes CR: on one asleep or wandering, unaware, a sure
-; blow the set's (surprise N) times over when N is more than one.
+; blow the set's (surprise N) times over when N is more than one.  The
+; blow is kept for a front end to show (state-blow!).
 (def combat-player-attacks!
   (fn (_ g cr)
     (def subs (list (pair "name" (creature-name cr))))
+    (def p (game-player g))
     (def unaware? (match ((eq? (creature-state cr) (lit asleep)) #t) ((eq? (creature-state cr) (lit wandering)) #t) (#t #f)))
     (def surprise (if unaware? (game-param1 g (lit surprise) 1) 1))
+    (def blow! (fn (_ how n) (state-blow! g (player-r p) (player-c p) (creature-r cr) (creature-c cr) how n)))
     (if (if (< 1 surprise) #f (not (combat-hit? (game-rng g) (combat-player-level g) (creature-prop1 cr (lit defence) 3))))
-      (state-tell! g (lit miss) "You miss the {name}." subs)
-      (do (creature-hp! cr (- (creature-hp cr) (* surprise (%cb-player-damage g))))
+      (do (blow! (lit miss) 0) (state-tell! g (lit miss) "You miss the {name}." subs))
+      (do (def n (* surprise (%cb-player-damage g)))
+          (creature-hp! cr (- (creature-hp cr) n))
           (creature-state! cr (lit awake))
           (when (< 1 surprise) (state-tell! g (lit surprised) "You strike the {name} unawares." subs))
+          (blow! (if (< (creature-hp cr) 1) (lit kill) (lit hit)) n)
           (if (< (creature-hp cr) 1) (combat-kill! g cr)
             (state-tell! g (lit hit) "You hit the {name}." subs))))))
 
@@ -153,16 +159,19 @@
       ((eq? trait (lit thief)) (%cb-steal! g cr))
       (#t ()))))
 
-; CR strikes the player.
+; CR strikes the player, the blow kept for a front end to show.
 (def combat-creature-attacks!
   (fn (_ g cr)
     (def subs (list (pair "name" (creature-name cr))))
+    (def p (game-player g))
+    (def blow! (fn (_ how n) (state-blow! g (creature-r cr) (creature-c cr) (player-r p) (player-c p) how n)))
     (if (not (combat-hit? (game-rng g) (creature-prop1 cr (lit level) 1) (state-defence g)))
-      (state-tell! g (lit creature-miss) "The {name} misses you." subs)
+      (do (blow! (lit miss) 0) (state-tell! g (lit creature-miss) "The {name} misses you." subs))
       (do (state-tell! g (lit creature-hit) "The {name} hits you." subs)
           (List for-each (fn (_ t) (%cb-trait! g cr t)) (creature-prop cr (lit traits) ()))
-          (combat-hurt-player! g (%cb-dice (game-rng g) (creature-prop cr (lit attack) (list 1 2)))
-            (Str8 append "killed by a " (creature-name cr)))))))
+          (def n (%cb-dice (game-rng g) (creature-prop cr (lit attack) (list 1 2))))
+          (blow! (if (< (player-hp p) (+ n 1)) (lit kill) (lit hit)) n)
+          (combat-hurt-player! g n (Str8 append "killed by a " (creature-name cr)))))))
 
 (provide roguelike/combat
   combat-chance combat-hit? combat-chill combat-str-bonus combat-player-dice combat-player-level combat-exp-for combat-kill! combat-player-attacks! combat-hurt-player! combat-creature-attacks!)

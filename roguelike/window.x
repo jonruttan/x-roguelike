@@ -26,12 +26,14 @@
 (import roguelike/frame frame-art)
 (import roguelike/game game-key! game-explore!)
 (import roguelike/paint paint-width paint-height paint-make paint-screen paint-turn! paint-frame! paint-flickers?
-  paint-zoom paint-zoom!)
+  paint-zoom paint-zoom! paint-animating? paint-step!)
 (import roguelike/pad pad-make pad-key pad-event? pad-fullscreen? pad-fullscreen!)
 
 ; A frame's wait while a light flickers, and the wait for a key when
 ; nothing moves, in microseconds.
 (def %wn-frame-us 83000)
+; A frame's wait while a turn's blows are shown.
+(def %wn-blow-us 40000)
 (def %wn-idle-us 10000)
 
 ; SDL's shift bits, and what a shifted key types on a US keyboard: the
@@ -128,6 +130,12 @@
       ((not (null? e)) (do (Sdl show! win (List ref 2 (paint-screen p))) (self g a p win tick)))
       ; A gamepad event that is no key yet: the next one at once.
       ((not (null? ev)) (self g a p win tick))
+      ; A turn's blows shown a frame at a time, before anything else moves.
+      ((paint-animating? p)
+        (do (Sys usleep %wn-blow-us)
+            (paint-step! p)
+            (Sdl show! win (List ref 2 (paint-frame! p g (+ tick 1))))
+            (self g a p win (+ tick 1))))
       ((game-exploring? g)
         (do (game-explore! g)
             (paint-turn! p g (%wn-art a g))
