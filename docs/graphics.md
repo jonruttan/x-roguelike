@@ -9,17 +9,18 @@ the terminal shows too.
 
 A screen 640 by 360 pixels, drawn in x as one RGBA buffer and scaled
 whole to the window: 2x at 1280 by 720, 3x at 1920 by 1080, 4x at
-2560 by 1440.  Tiles are 16 by 16; text is an 8 by 8 font, so a line
-holds 80 letters, as the terminal does.
+2560 by 1440.  Tiles are 16 by 16, shown at the zoom (1 to 4, 2 at the
+start).  Text is an 8 by 8 font cut to 6 wide, drawn at twice the
+screen's pixel, the art's scale: a line holds 52 letters.
 
 | Rows (pixels) | What | The terminal's |
 |---|---|---|
-| 0 to 23 | messages, two lines; a question asks here | the top row |
-| 24 to 327 | the level, 40 tiles by 19 | the rows between |
-| 328 to 359 | the standing: band and level (or screen), hit points as a bar, strength, armour, experience, gold, hunger and conditions | the last row |
+| 0 to 41 | messages, two lines on a strip ruled off from the level, three over the level's top when they need it; a question asks here, brighter | the top row |
+| 42 to 319 | the level, as many cells as fill it at the zoom | the rows between |
+| 320 to 359 | the standing, two lines: the band and level (or the screen's name) and the gold; hit points as a bar coloured by how many are left, strength (amber when spent), armour, experience level, and hunger and conditions in amber | the last row |
 
-- **The level** is 80 by 22, as in the terminal.  The window shows 40 by
-  19 of it; the camera keeps the player in the middle, held inside the
+- **The level** is 80 by 22, as in the terminal.  The window shows 20 by
+  9 of it at the first zoom; the camera keeps the player in the middle, held inside the
   map, so it scrolls only when the player walks.
 - **In view and seen**: cells in view drawn whole, cells seen before
   dimmed, rock black.  Found traps and items where they were seen;
