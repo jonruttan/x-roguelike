@@ -8,20 +8,21 @@ searching, and the blow on a sleeper.  Each is off in classic.
 
 ## hunger
 
-### past nothing, starving costs a hit point every six turns and stops them returning; there is no faint
+### past nothing, starving costs a hit point when the clock passes ten minutes and stops them returning; there is no faint
 
 ```roguelike
 (def g (spec-game-on (spec-set-named "delve") 4 ()))
 (game-creatures! g ())
 (def p (game-player g))
 (player-food! p 0)
+(game-clock! g 595)
 (def hp (player-hp p))
 (List for-each (fn (_ k) (game-key! g k)) (List map (fn (_ n) ".") (List range 0 12)))
 (write (list (- hp (player-hp p)) (List count-if (fn (_ m) (str=? m "You are starving.")) (game-log g))
              (List any? (fn (_ m) (Str8 starts? "You faint" m)) (game-log g)) (Str8 includes? "Starving" (spec-row g 23)) (game-over g)))
 ```
 ---
-    (2 2 #f #t ())
+    (1 1 #f #t ())
 
 ## gear
 

@@ -55,7 +55,7 @@ name for a creature.
 | ground | `floor` `wall` `door` `passage` `down` `up` `trap` | 7 |
 | the player | `player`, and its poses `attack` `hit` `dead` | 1 to 4 |
 | marks | `mark-confused` `mark-blind` `mark-held` `mark-hasted` `mark-slowed` `mark-seeing` `mark-hungry` `mark-weak` `mark-fainting` `mark-wounded` | up to 10 |
-| items | `potion` `scroll` `wand` `ring` `weapon` `armour` `food` `gold` `goal`, and `page` `token` where the set has them | 9 to 11 |
+| items | `potion` `scroll` `wand` `ring` `weapon` `armour` `food` `gold` `goal`, and `oil` `page` `token` where the set has them | 9 to 12 |
 | creatures | every `(creature NAME ...)` of the set, talkers each their own | classic 17, delve 23, kettle 28 |
 | bands | a band's own `wall` and `floor`, where its place differs | delve 3, kettle 4, town 1 |
 | the screen | `panel` (a nine-piece frame), `shadow` | 2 |

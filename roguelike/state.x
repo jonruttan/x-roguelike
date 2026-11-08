@@ -262,7 +262,8 @@
 ; The player is a vector: 0 row, 1 column, 2 hit points, 3 the most, 4
 ; strength, 5 the most, 6 level, 7 experience, 8 gold, 9 the armour
 ; worn, 10 the weapon wielded, 11 the rings worn, 12 food, 13 the
-; conditions, (NAME . TURNS).
+; conditions, (NAME . TURNS), 14 the seconds of oil in the lamp, or -1
+; with no lamp lit yet.
 (def player-r (fn (_ p) (%st-ref p 0)))
 (def player-c (fn (_ p) (%st-ref p 1)))
 (def player-at! (fn (_ p r c) (%st-set! p 0 r) (%st-set! p 1 c)))
@@ -290,11 +291,13 @@
 (def player-food! (fn (_ p n) (%st-set! p 12 n)))
 (def player-conditions (fn (_ p) (%st-ref p 13)))
 (def player-conditions! (fn (_ p l) (%st-set! p 13 l)))
+(def player-lamp (fn (_ p) (%st-ref p 14)))
+(def player-lamp! (fn (_ p n) (%st-set! p 14 n)))
 
 (def %st-player-make
   (fn (_ set)
     (def spec (data-one set (lit player) (list 12 16)))
-    (def p (Vector make 14 ()))
+    (def p (Vector make 15 ()))
     (player-at! p 0 0)
     (player-hp! p (List ref 0 spec))
     (player-hpmax! p (List ref 0 spec))
@@ -305,6 +308,7 @@
     (player-gold! p 0)
     (player-rings! p ())
     (player-food! p (data-get set (lit hunger) 1300))
+    (player-lamp! p (data-get set (lit lamp) -1))
     (player-conditions! p ())
     p))
 
@@ -584,7 +588,7 @@
   player-r player-c player-at! player-hp player-hp! player-hpmax player-hpmax! player-str player-str!
   player-strmax player-strmax! player-level player-level! player-exp player-exp! player-gold player-gold!
   player-armour player-armour! player-weapon player-weapon! player-rings player-rings! player-food player-food!
-  player-conditions player-conditions! player-condition player-condition! player-tick!
+  player-conditions player-conditions! player-lamp player-lamp! player-condition player-condition! player-tick!
   creature-make creature-kind creature-r creature-c creature-at! creature-hp creature-hp! creature-state
   creature-state! creature-carried creature-carried! creature-target creature-target! creature-name creature-glyph creature-prop creature-prop1 state-a-kind
   creature-trait? creature-condition creature-condition! creature-tick!

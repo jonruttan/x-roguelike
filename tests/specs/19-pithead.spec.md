@@ -45,7 +45,7 @@ its first level comes back onto the door.
 ---
     ("pit" #t #t #t ("There is a way into the pit here."))
 
-### > on the door goes down into the Delve: its first level, made by its forms, the player on its stairs up, and the pit's word and the band's
+### > on the door goes down into the Delve: its first level, made by its forms, the player on its stairs up, the pit's word and the band's, and the lamp lit
 
 ```roguelike
 (def g (spec-to-pithead! (spec-game-on (spec-set-named "kettle") 4 ())))
@@ -58,10 +58,10 @@ its first level comes back onto the door.
 (write (list (game-below? g) (game-region g) (game-depth g) (data-get (game-set g) 'title "") (band-name (game-band g))
              (game-screens? g) (game-inside g) (data-get (game-top-set g) 'title "")
              (= (player-r p) (first (map-up m))) (= (player-c p) (rest (map-up m))) (not (null? (map-down m)))
-             (List reverse (List take 3 (game-log g)))))
+             (List reverse (List take 4 (game-log g)))))
 ```
 ---
-    (#t "delve" 1 "The Delve" "The Galleries" #f () "Kettle" #t #t #t ("You go down the pit." "The winding shaft: the cage gone, ladders down into the dark, and water loud below." "The Galleries: the worked mine, propped and railed, its lamps long out."))
+    (#t "delve" 1 "The Delve" "The Galleries" #f () "Kettle" #t #t #t ("You go down the pit." "The winding shaft: the cage gone, ladders down into the dark, and water loud below." "The Galleries: the worked mine, propped and railed, its lamps long out." "You light your lamp."))
 
 ### the stairs below go on down and back up as the Delve's do
 
