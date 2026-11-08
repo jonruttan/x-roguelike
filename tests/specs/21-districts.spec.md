@@ -22,7 +22,7 @@ brought to the square is the win.
              (data-one town 'world ()) (List map (fn (_ s) (list (first s) (List ref 1 s))) (data-all town 'screen))))
 ```
 ---
-    (("town" "delve") (("Kettle")) 1 2 1 ('screens 3 3) (("the Square" (1 1)) ("the Pithead" (1 0)) ("the River End" (1 2)) ("the Terraces" (2 1)) ("Guild Street" (0 1))))
+    (("town" "delve") (("Kettle")) 21 2 1 ('screens 3 3) (("the Square" (1 1)) ("the Pithead" (1 0)) ("the River End" (1 2)) ("the Terraces" (2 1)) ("Guild Street" (0 1))))
 
 ### a game of kettle begins on the square: in the town, on its hub, the valley's hub kept with the town's door on it
 

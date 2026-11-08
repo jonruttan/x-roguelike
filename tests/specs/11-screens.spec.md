@@ -41,16 +41,16 @@ descents, and their specs stand.
 
 ## the hub
 
-### a new game starts on the hub screen, in its middle, at depth 0, nobody about but the chain's giver, and says so
+### a new game starts on the hub screen at depth 0, its middle walled in by the town's ground, so at the town's door, nobody about but the chain's giver, and says so
 
 ```roguelike
 (def g (spec-game-on (spec-valley) 4 ()))
 (def p (game-player g))
 (write (list (first (game-screen g)) (rest (game-screen g)) (first (game-hub g)) (rest (game-hub g)) (game-depth g) (List map creature-name (game-creatures g))
-             (player-r p) (< (state-dist 11 40 (player-r p) (player-c p)) 10) (game-messages g) (List ref 23 (spec-screen g))))
+             (player-r p) (player-c p) (game-messages g) (List ref 23 (spec-screen g))))
 ```
 ---
-    (3 2 3 2 0 ("Guild clerk") 11 #t ("Kettle's square, by the well-head.  Someone here knows where the Guild's ledger is; ask about.") "Screen:3,2  Gold:0  Hp:14(14)  Str:16(16)  Arm:0  Exp:1/0")
+    (3 2 3 2 0 ("Guild clerk") 11 27 ("Kettle's square, by the well-head.  Someone here knows where the Guild's ledger is; ask about.") "Screen:3,2  Gold:0  Hp:14(14)  Str:16(16)  Arm:0  Exp:1/0")
 
 ## the edges
 

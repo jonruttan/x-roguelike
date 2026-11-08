@@ -17,6 +17,11 @@
 
 (world screens 7 5)
 
+; The valley is drawn at 21, a cell 21 metres across and 34 down, a
+; screen some 1700 metres by 750; the town's ground stands on the hub
+; at its own size, a block of 23 cells by 6 (see interiors.x).
+(scale 21)
+
 ; The town is the set beside this one, a region of the same world: its
 ; door is on the hub (see interiors.xon), and the game starts through
 ; it, on the square, (start NAME) naming the door.  The Delve lies under
@@ -48,7 +53,27 @@
 ; Open ground: thickets of wall, the outer ring always clear.
 (level-style open)
 (clumps 8 14)
-(clump-size 16 48)
+(clump-size 11000 34000)
+
+; The valley's ground in metres: the closes, (close W H), and the
+; road's gates, (gate-first LO HI) in and (gate-gap LO HI) apart; the
+; hills' edges, (edge-length LO HI), the boulders (boulder-drop LO HI)
+; below them, and bog and gorse in square metres, (bog-size LO HI) and
+; (gorse-size LO HI); the rim's scars, (scar-across LO HI) along and
+; (scar-down LO HI) down, its ruins (ruin-width LO HI) by (ruin-depth
+; LO HI), and its standing stones (stone-gap M) apart.
+(close 210 136)
+(gate-first 63 252)
+(gate-gap 210 504)
+(edge-length 420 1050)
+(boulder-drop 68 102)
+(bog-size 14000 43000)
+(gorse-size 5700 14000)
+(scar-across 315 840)
+(scar-down 170 408)
+(ruin-width 126 294)
+(ruin-depth 136 238)
+(stone-gap 42)
 
 (creatures 2 5)
 (items 1 2)
