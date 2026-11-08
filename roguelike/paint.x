@@ -21,17 +21,33 @@
 (import x/gfx/canvas)
 (import x/core/doors int+ int- int* int/ int% int< int= str-make str->ptr ptr-ref ptr-set!)
 (import roguelike/data data-load data-all)
+(import roguelike/state game-ask)
 (import roguelike/frame frame-tile-size frame-view-rows frame-view-cols frame-view! frame-level-y
   frame-scene frame-light-map frame-named)
-(import roguelike/draw draw-top draw-status draw-overlay)
+(import roguelike/draw draw-top draw-standing draw-overlay)
 
 (def paint-width 640)
 (def paint-height 360)
-; The screen's part the level is shown in, below the two lines of
-; messages and above the standing.
+
+; The text is drawn at the art's scale: onto a strip at one screen
+; pixel a font pixel, the strip then shown twice the size.  A letter is
+; 6 wide and a line 9 high on the strip, so a strip line holds 52
+; letters inside its margins.
+(def %pt-scale 2)
+(def %pt-strip-w (int/ paint-width %pt-scale))
+(def %pt-advance 6)
+(def %pt-pitch 9)
+(def %pt-margin 4)
+(def %pt-cols (int/ (int- %pt-strip-w (int* 2 %pt-margin)) %pt-advance))
+; The messages' strip, two lines, and the standing's, two lines, in
+; strip pixels.
+(def %pt-top-h 21)
+(def %pt-stand-h 20)
+; The screen's part the level is shown in, between the two strips.
+(def paint-level-y (int* %pt-scale %pt-top-h))
 (def %pt-area-w paint-width)
-(def %pt-area-h 320)
-(def %pt-status-y (+ frame-level-y (+ %pt-area-h 3)))
+(def %pt-area-h (int- paint-height (int* %pt-scale (int+ %pt-top-h %pt-stand-h))))
+(def %pt-stand-y (int+ paint-level-y %pt-area-h))
 ; The zooms the level can be shown at: the view as many cells as fill
 ; the area at the zoom, the last cell cut where it does not divide.
 (def paint-zoom-least 1)
@@ -41,6 +57,16 @@
 (def %pt-black (list 0 0 0))
 (def %pt-ink (list 206 198 184))
 (def %pt-glyph (list 236 228 204))
+; The strips' colours: a sooty ground ruled off from the level, labels
+; dim and values bright, a warning amber and a danger red.
+(def %pt-hud-ground (list 26 23 20))
+(def %pt-hud-rule (list 92 80 64))
+(def %pt-dim (list 150 138 120))
+(def %pt-bright (list 240 232 210))
+(def %pt-warn (list 222 172 72))
+(def %pt-bad (list 214 84 62))
+(def %pt-good (list 116 170 92))
+(def %pt-bar-ground (list 54 48 42))
 
 ; The property KEY of PROPS, or nil: a plain walk, as the ops below,
 ; since a List send costs a few hundred objects and a turn draws
@@ -148,11 +174,13 @@
     (ptr-set! (str->ptr s) 1 0 1)
     s))
 
-; The font of the art at DIR, (letter CODE (rows ...)) each, for text!.
+; The font of the art at DIR, (letter CODE (rows ...)) each, for text!:
+; each letter's columns 1 to 6, its ink and one clear, so letters sit a
+; column apart, not three.
 (def paint-font
   (fn (_ dir)
     (Canvas font
-      (List map (fn (_ l) (list (%pt-letter (first l)) (rest (first (rest l)))))
+      (List map (fn (_ l) (list (%pt-letter (first l)) (List map (fn (_ r) (Str8 sub 1 %pt-advance r)) (rest (first (rest l))))))
         (data-all (data-load dir) (lit letter))))))
 
 ; --- drawing ------------------------------------------------------------------
@@ -208,7 +236,8 @@
 ; when its picture is opaque and blended when not, a fill in black, a
 ; glyph in the font in the middle of its cell.  A tile with no picture
 ; draws nothing.  A tile op's form is (NAME . PROPS), then a walking
-; thing's MODE (see %pt-pick), AGE the ticks since the turn was shown.
+; thing's MODE (see %pt-pick) and the (DX . DY) it is drawn off its
+; cell by (see %pt-motion), AGE the ticks since the turn was shown.
 (def %pt-op!
   (fn (_ c op dy font tick age)
     (def head (first op))
@@ -217,13 +246,15 @@
     (def more (rest (rest (rest op))))
     (match
       ((eq? head (lit tile))
-        ((fn (_ pic)
+        ((fn (_ pic shift)
            (unless (null? pic)
              ((if (first (rest (rest pic))) %pt-copy! %pt-blend!)
-              Canvas c x y (first (rest pic)) 0 0 frame-tile-size frame-tile-size)))
-         (%pt-pick (rest (first more)) x (first (rest (rest op))) tick (if (null? (rest more)) () (first (rest more))) age)))
+              Canvas c (if (pair? shift) (int+ x (first shift)) x) (if (pair? shift) (int+ y (rest shift)) y)
+              (first (rest pic)) 0 0 frame-tile-size frame-tile-size)))
+         (%pt-pick (rest (first more)) x (first (rest (rest op))) tick (if (null? (rest more)) () (first (rest more))) age)
+         (if (null? (rest more)) () (if (null? (rest (rest more))) () (first (rest (rest more)))))))
       ((eq? head (lit fill)) (%pt-fill! Canvas c x y (first more) (first (rest more)) %pt-black))
-      ((eq? head (lit glyph)) (%pt-text! Canvas c (int+ x 4) (int+ y 4) (first more) %pt-glyph font))
+      ((eq? head (lit glyph)) (%pt-text! Canvas c (int+ x 5) (int+ y 4) (first more) %pt-glyph font))
       (#t ()))))
 ; Each op of OPS drawn on C as %pt-op! draws it.
 (def %pt-ops!
@@ -267,30 +298,56 @@
 ; creature was, and the damage, or "miss", rises from the target.  Each
 ; a frame's step, by frame K.
 (def %pt-blow-frames 8)
-(def %pt-lunge-by (Vector of 2 4 5 3 1 0 0 0))
+(def %pt-lunge-by (Vector of 2 4 5 4 2 1 0 0))
 (def %pt-flash-by (Vector of 230 190 140 90 40 0 0 0))
 (def %pt-burst-by (Vector of 1 2 4 5 6 5 3 0))
 (def %pt-stamp! (method-of Canvas (lit stamp!)))
 (def %pt-sign (fn (_ n) (if (int< n 0) -1 (if (int< 0 n) 1 0))))
 (def %pt-blow-ops (fn (self ops) (match ((null? ops) ()) ((eq? (first (first ops)) (lit blow)) (pair (first ops) (self (rest ops)))) (#t (self (rest ops))))))
 
-; OPS with each tile and glyph standing where a blow of BLOWS was struck
-; from moved toward its target by frame K's lunge.
-(def %pt-lunge
-  (fn (_ ops blows k)
-    (def by (Vector ref k %pt-lunge-by))
-    (def step
-      (fn (self op bs)
-        (if (null? bs) op
-          (do (def b (first bs))
-              (def fx (first (rest b)))
-              (def fy (first (rest (rest b))))
-              (if (if (int= fx (first (rest op))) (int= fy (first (rest (rest op)))) #f)
-                (pair (first op)
-                  (pair (int+ fx (int* by (%pt-sign (int- (List ref 3 b) fx))))
-                    (pair (int+ fy (int* by (%pt-sign (int- (List ref 4 b) fy)))) (rest (rest (rest op))))))
-                (self op (rest bs)))))))
-    (List map (fn (_ op) (if (match ((eq? (first op) (lit tile)) #t) ((eq? (first op) (lit glyph)) #t) (#t #f)) (step op blows) op)) ops)))
+; A thing that stepped glides from the cell it left over
+; %pt-glide-frames frames, what is left of the way in sixteenths each
+; frame: quick off the mark, slowing, a pixel past and back.
+(def %pt-glide-frames 5)
+(def %pt-glide-by (Vector of 11 6 2 -1 0))
+
+; The (DX . DY) the striker standing at X Y is moved toward its target
+; by frame K of BLOWS, or nil when no blow was struck from there.
+(def %pt-lunge-at
+  (fn (self x y blows k)
+    (match
+      ((null? blows) ())
+      ((if (int= x (List ref 1 (first blows))) (int= y (List ref 2 (first blows))) #f)
+        ((fn (_ b by) (pair (int* by (%pt-sign (int- (List ref 3 b) x))) (int* by (%pt-sign (int- (List ref 4 b) y)))))
+         (first blows) (Vector ref k %pt-lunge-by)))
+      (#t (self x y (rest blows) k)))))
+
+; OPS as frame KB of BLOWS and frame KG of the glide move them: each
+; walking thing's tile op, (tile X Y PICTURE MODE FROM), made (tile X Y
+; PICTURE MODE (DX . DY)), the pixels it is drawn off its cell by, the
+; way back to FROM still to go and its lunge; a glyph standing where a
+; blow was struck from moved by its lunge.  The cell stays the op's, so
+; a picture keeps the variant of its cell while it moves.
+(def %pt-motion
+  (fn (_ ops blows kb kg)
+    (def gb (if (int< kg %pt-glide-frames) (Vector ref kg %pt-glide-by) 0))
+    (def lb (fn (_ x y) (if (int< kb %pt-blow-frames) (%pt-lunge-at x y blows kb) ())))
+    (List map
+      (fn (_ op)
+        (def x (List ref 1 op))
+        (def y (List ref 2 op))
+        (match
+          ((if (eq? (first op) (lit tile)) (not (null? (rest (rest (rest (rest op)))))) #f)
+            ((fn (_ from lunge)
+               (list (lit tile) x y (List ref 3 op) (List ref 4 op)
+                     (pair (int+ (if (null? from) 0 (int/ (int* gb (first from)) 16)) (if (null? lunge) 0 (first lunge)))
+                           (int+ (if (null? from) 0 (int/ (int* gb (rest from)) 16)) (if (null? lunge) 0 (rest lunge))))))
+             (List ref 5 op) (lb x y)))
+          ((eq? (first op) (lit glyph))
+            ((fn (_ lunge) (if (null? lunge) op (pair (lit glyph) (pair (int+ x (first lunge)) (pair (int+ y (rest lunge)) (rest (rest (rest op))))))))
+             (lb x y)))
+          (#t op)))
+      ops)))
 
 ; The picture of the last tile of OPS at X Y, what is drawn on top
 ; there, or nil.
@@ -345,22 +402,35 @@
           (%pt-text! Canvas c x ny s (match ((eq? how (lit miss)) %pt-miss-ink) (mine %pt-dealt-ink) (#t %pt-hurt-ink)) font)
           (self c ops (rest blows) k dy font)))))
 
-; Whether painter P has a turn's blows still to show.
+; Whether painter P has a turn's blows, or a step, still to show.
 (def paint-animating?
-  (fn (_ p) (if (int< (Vector ref 9 p) %pt-blow-frames) (not (null? (%pt-blow-ops (%pt-over p)))) #f)))
-; Painter P a frame on in showing the blows.
-(def paint-step! (fn (_ p) (do (Vector set! 9 (int+ 1 (Vector ref 9 p)) p) p)))
+  (fn (_ p)
+    (match
+      ((if (int< (Vector ref 9 p) %pt-blow-frames) (not (null? (%pt-blow-ops (%pt-over p)))) #f) #t)
+      ((int< (Vector ref 12 p) %pt-glide-frames) (List any? %pt-stepped? (%pt-over p)))
+      (#t #f))))
+; Whether OP is a walking thing's tile op come from another cell.
+(def %pt-stepped?
+  (fn (_ op) (if (eq? (first op) (lit tile)) (if (null? (rest (rest (rest (rest (rest op)))))) #f (pair? (List ref 5 op))) #f)))
+; Painter P a frame on in showing the blows and the steps.
+(def paint-step!
+  (fn (_ p) (do (Vector set! 9 (int+ 1 (Vector ref 9 p)) p) (Vector set! 12 (int+ 1 (Vector ref 12 p)) p) p)))
 
-; A painter: [SCREEN LAYER FONT SCENE PANEL WORK ZOOM WHERE SHOWN BLOW],
-; the scene the last turn's, the panel the art's nine-piece picture (a
-; tile form) or nil, WORK the level drawn and lit at the tile's size
-; before it is shown at ZOOM, LAYER and WORK the view's size; WHERE
-; each walking thing's (WHO R . C) on the last turn, SHOWN the tick that
-; turn was first shown at, or -1 before it is; BLOW the frame the turn's
-; blows are shown at.
+; A painter: [SCREEN LAYER FONT SCENE PANEL WORK ZOOM WHERE SHOWN BLOW
+; TOP STANDING GLIDE], the scene the last turn's, the panel the art's
+; nine-piece picture (a tile form) or nil, WORK the level drawn and lit
+; at the tile's size before it is shown at ZOOM, LAYER and WORK the
+; view's size; WHERE each walking thing's (WHO R . C) on the last turn,
+; SHOWN the tick that turn was first shown at, or -1 before it is; BLOW
+; the frame the turn's blows are shown at; TOP and STANDING the strips
+; the messages and the standing are drawn on, TOP a pair: two lines and
+; three; GLIDE the frame the turn's steps are shown at.
 (def paint-make
   (fn (_ font)
-    (paint-zoom! (Vector of (Canvas make paint-width paint-height) () font () () () 0 () -1 %pt-blow-frames) paint-zoom-first)))
+    (paint-zoom! (Vector of (Canvas make paint-width paint-height) () font () () () 0 () -1 %pt-blow-frames
+                            (pair (Canvas make %pt-strip-w %pt-top-h) (Canvas make %pt-strip-w (int+ %pt-top-h %pt-pitch)))
+                            (Canvas make %pt-strip-w %pt-stand-h) %pt-glide-frames)
+                 paint-zoom-first)))
 (def paint-screen (fn (_ p) (Vector ref 0 p)))
 (def %pt-over (fn (_ p) (rest (rest (Vector ref 3 p)))))
 (def paint-zoom (fn (_ p) (Vector ref 6 p)))
@@ -381,8 +451,10 @@
 (def %pt-level-h (fn (_) (int* (frame-view-rows) frame-tile-size)))
 
 ; Of OPS, each walking thing's tile op, (tile X Y PICTURE (WHO R . C)),
-; made (tile X Y PICTURE MODE): moving when WAS, the (WHO R . C) of the
-; turn before, has WHO elsewhere, still otherwise.
+; made (tile X Y PICTURE MODE FROM): moving when WAS, the (WHO R . C) of
+; the turn before, has WHO elsewhere, still otherwise; FROM the pixels
+; (DX . DY) to the cell it stepped from, or nil when it did not step
+; there from a cell beside it.
 (def %pt-modes
   (fn (_ ops was)
     (List map
@@ -390,8 +462,12 @@
         (if (if (eq? (first op) (lit tile)) (null? (rest (rest (rest (rest op))))) #t) op
           ((fn (_ at)
              (def before (List find (fn (_ w) (same? (first w) (first at))) was))
-             (def moved (if (null? before) #f (not (if (= (first (rest before)) (first (rest at))) (= (rest (rest before)) (rest (rest at))) #f))))
-             (list (lit tile) (first (rest op)) (first (rest (rest op))) (List ref 3 op) (if moved (lit moving) (lit still))))
+             (def dr (if (null? before) 0 (int- (first (rest before)) (first (rest at)))))
+             (def dc (if (null? before) 0 (int- (rest (rest before)) (rest (rest at)))))
+             (def moved (not (if (int= dr 0) (int= dc 0) #f)))
+             (def beside (if (int< (int* dr dr) 2) (int< (int* dc dc) 2) #f))
+             (list (lit tile) (first (rest op)) (first (rest (rest op))) (List ref 3 op) (if moved (lit moving) (lit still))
+                   (if (if moved beside #f) (pair (int* dc frame-tile-size) (int* dr frame-tile-size)) ())))
            (List ref 4 op))))
       ops)))
 ; The (WHO R . C) of each walking thing's tile op of OPS.
@@ -415,39 +491,122 @@
     (Vector set! 8 -1 p)
     (Vector set! 4 (frame-named a (lit panel) 0) p)
     (Vector set! 9 0 p)
+    (Vector set! 12 0 p)
     p))
 
-; TEXT in lines of at most eighty letters, broken at a space.
+; TEXT in lines of at most N letters, broken at a space.
 (def %pt-break
-  (fn (self text i)
-    (match ((< i 1) 80) ((str=? (Str8 sub i 1 text) " ") i) (#t (self text (- i 1))))))
+  (fn (self text i n)
+    (match ((< i 1) n) ((str=? (Str8 sub i 1 text) " ") i) (#t (self text (- i 1) n)))))
 (def %pt-lines
-  (fn (self text)
-    (if (< (Str8 length text) 81) (list text)
-      ((fn (_ at) (pair (Str8 sub 0 at text) (self (Str8 sub (+ at 1) (- (Str8 length text) (+ at 1)) text))))
-       (%pt-break text 80)))))
-(def %pt-fit (fn (_ s) (if (< 80 (Str8 length s)) (Str8 sub 0 80 s) s)))
+  (fn (self text n)
+    (if (< (Str8 length text) (+ n 1)) (list text)
+      ((fn (_ at) (pair (Str8 sub 0 at text) (self (Str8 sub (+ at 1) (- (Str8 length text) (+ at 1)) text) n)))
+       (%pt-break text n n)))))
+(def %pt-fit (fn (_ s n) (if (< n (Str8 length s)) (Str8 sub 0 n s) s)))
+
+; Strip STRIP shown on screen S at Y, at the text's scale.
+(def %pt-show!
+  (fn (_ s strip y)
+    (Canvas nine! s 0 y paint-width (int* %pt-scale (List ref 1 strip)) strip 0 0 0 0)))
+
+; The messages, or the question asked, on the top strip, the ground
+; ruled off from the level below: two lines, or three over the level's
+; top when the text needs them.  STRIPS is (TWO . THREE).
+(def %pt-top!
+  (fn (_ s strips font text asking?)
+    (def lines (List take 3 (%pt-lines text %pt-cols)))
+    (def strip (if (int< 2 (List length lines)) (rest strips) (first strips)))
+    (def h (List ref 1 strip))
+    (def colour (if asking? %pt-bright %pt-ink))
+    (Canvas fill! strip 0 0 %pt-strip-w h %pt-hud-ground)
+    (Canvas fill! strip 0 (int- h 1) %pt-strip-w 1 %pt-hud-rule)
+    ((fn (self l y) (unless (null? l) (do (Canvas text! strip %pt-margin y (first l) colour font) (self (rest l) (int+ y %pt-pitch)))))
+     lines 2)
+    (%pt-show! s strip 0)))
+
+; LABEL dim then VALUE in COLOUR, on STRIP at X Y: the x after them.
+(def %pt-pair!
+  (fn (_ strip x y label value colour font)
+    (Canvas text! strip x y label %pt-dim font)
+    (def vx (int+ x (int* %pt-advance (int+ (Str8 length label) 1))))
+    (Canvas text! strip vx y value colour font)
+    (int+ vx (int* %pt-advance (int+ (Str8 length value) 2)))))
+
+; The colour of HP out of MAX: good above half, a warning above a
+; quarter, danger below.
+(def %pt-hp-colour
+  (fn (_ hp max)
+    (match ((int< max (int* 2 hp)) %pt-good) ((int< max (int* 4 hp)) %pt-warn) (#t %pt-bad))))
+
+; The standing on its strip: the place and the gold on the first line;
+; hit points as a bar, strength, armour, the level, and any hunger or
+; condition on the second.  A spent strength is a warning.
+(def %pt-bar-w 48)
+(def %pt-standing!
+  (fn (_ s strip font st)
+    (def place (List ref 0 st))
+    (def depth (List ref 1 st))
+    (def hp (List ref 2 st))
+    (def hpmax (List ref 3 st))
+    (def gold (Str8 str (List ref 4 st)))
+    (def strength (List ref 5 st))
+    (def strmax (List ref 6 st))
+    (def warnings (List ref 9 st))
+    (def y1 2)
+    (def y2 (int+ 2 %pt-pitch))
+    (def right (int- %pt-strip-w %pt-margin))
+    (Canvas fill! strip 0 0 %pt-strip-w %pt-stand-h %pt-hud-ground)
+    (Canvas fill! strip 0 0 %pt-strip-w 1 %pt-hud-rule)
+    (Canvas text! strip %pt-margin y1
+      (%pt-fit (match ((null? depth) place)
+                      ((str=? place "") (Str8 append "Level " (Str8 str depth)))
+                      (#t (Str8 append place ", level " (Str8 str depth))))
+               (int- %pt-cols (int+ 6 (Str8 length gold))))
+      %pt-bright font)
+    (%pt-pair! strip (int- right (int* %pt-advance (int+ 5 (Str8 length gold)))) y1 "Gold" gold %pt-bright font)
+    (def colour (%pt-hp-colour hp hpmax))
+    (Canvas text! strip %pt-margin y2 "HP" %pt-dim font)
+    (def bx (int+ %pt-margin (int* 3 %pt-advance)))
+    (Canvas fill! strip bx (int+ y2 1) %pt-bar-w 5 %pt-bar-ground)
+    (Canvas fill! strip bx (int+ y2 1) (int/ (int* %pt-bar-w (if (int< hp 0) 0 hp)) (if (int< hpmax 1) 1 hpmax)) 5 colour)
+    (def tx (int+ bx (int+ %pt-bar-w %pt-advance)))
+    (def hpt (Str8 append (Str8 str hp) "/" (Str8 str hpmax)))
+    (Canvas text! strip tx y2 hpt colour font)
+    (def x1 (int+ tx (int* %pt-advance (int+ (Str8 length hpt) 2))))
+    (def x2 (%pt-pair! strip x1 y2 "Str" (if (int< strength strmax) (Str8 append (Str8 str strength) "/" (Str8 str strmax)) (Str8 str strength))
+                       (if (int< strength strmax) %pt-warn %pt-bright) font))
+    (def x3 (%pt-pair! strip x2 y2 "Arm" (Str8 str (List ref 7 st)) %pt-bright font))
+    (def x4 (%pt-pair! strip x3 y2 "Lv" (Str8 str (List ref 8 st)) %pt-bright font))
+    (Canvas text! strip x4 y2 (%pt-fit warnings (int/ (int- right x4) %pt-advance)) %pt-warn font)
+    (%pt-show! s strip %pt-stand-y)))
 
 ; LINES laid over the level on a panel at its top left: the art's
 ; nine-piece PANEL (a tile form) stretched round them, or a dark box
-; where the set has none.  Nothing for no lines.
+; where the set has none.  Drawn at the text's scale when the lines fit
+; the level's area so, else at the screen's.  Nothing for no lines.
 (def %pt-panel-dark (list 20 18 16 235))
 (def %pt-overlay!
   (fn (_ s panel font lines)
     (unless (null? lines)
-      (do (def shown (List take (int/ (- %pt-area-h 16) 9) lines))
-          (def w (+ 16 (* 8 (List fold (fn (_ n l) (if (< n (Str8 length l)) (Str8 length l) n)) 0 shown))))
-          (def w2 (if (< paint-width w) paint-width w))
-          (def h (+ 16 (* 9 (List length shown))))
-          (def x 0)
-          (def y frame-level-y)
+      (do (def widest (List fold (fn (_ n l) (if (< n (Str8 length l)) (Str8 length l) n)) 0 lines))
+          (def scale (if (if (int< (int* (List length lines) %pt-pitch) (int- (int/ %pt-area-h %pt-scale) 16))
+                             (int< (int* widest %pt-advance) (int- %pt-strip-w 16)) #f)
+                       %pt-scale 1))
+          (def room-w (int/ paint-width scale))
+          (def shown (List take (int/ (- (int/ %pt-area-h scale) 16) %pt-pitch) lines))
+          (def w (int+ 16 (int* %pt-advance widest)))
+          (def w2 (if (int< room-w w) room-w w))
+          (def h (int+ 16 (int* %pt-pitch (List length shown))))
+          (def c (Canvas make w2 h))
           (def pic (if (null? panel) () (%pt-find (rest panel) (lit picture))))
           (def cut (if (null? panel) () (%pt-find (rest panel) (lit cut))))
           (if (if (null? pic) #t (null? cut))
-            (Canvas blend! s x y (Canvas fill! (Canvas make w2 h) 0 0 w2 h %pt-panel-dark) 0 0 w2 h)
-            (Canvas nine! s x y w2 h (List ref 1 pic) (List ref 1 cut) (List ref 2 cut) (List ref 3 cut) (List ref 4 cut)))
-          ((fn (self l ly) (unless (null? l) (do (Canvas text! s (+ x 8) ly (%pt-fit (first l)) %pt-ink font) (self (rest l) (+ ly 9)))))
-           shown (+ y 8))))))
+            (Canvas fill! c 0 0 w2 h %pt-panel-dark)
+            (Canvas nine! c 0 0 w2 h (List ref 1 pic) (List ref 1 cut) (List ref 2 cut) (List ref 3 cut) (List ref 4 cut)))
+          ((fn (self l ly) (unless (null? l) (do (Canvas text! c 8 ly (%pt-fit (first l) (int/ (int- w2 16) %pt-advance)) %pt-ink font) (self (rest l) (+ ly %pt-pitch)))))
+           shown 8)
+          (Canvas nine! s 0 paint-level-y (int* scale w2) (int* scale h) c 0 0 0 0)))))
 
 ; Frame TICK of game G drawn on the screen from the last turn's scene:
 ; the layer, what stands on it, the light and the glints, worked at the
@@ -459,7 +618,7 @@
     (def font (Vector ref 2 p))
     (def k (Vector ref 9 p))
     (def blows (if (int< k %pt-blow-frames) (%pt-blow-ops (%pt-over p)) ()))
-    (def over (if (null? blows) (%pt-over p) (%pt-lunge (%pt-over p) blows k)))
+    (def over (%pt-motion (%pt-over p) blows k (Vector ref 12 p)))
     (def work (Vector ref 5 p))
     (def lw (first work))
     (def lh (first (rest work)))
@@ -467,20 +626,18 @@
     (Canvas copy! work 0 0 (Vector ref 1 p) 0 0 lw lh)
     (def cam (first (Vector ref 3 p)))
     (when (int< (Vector ref 8 p) 0) (Vector set! 8 tick p))
-    (%pt-ops! work over frame-level-y font (int+ tick (int+ (int* (rest cam) 7) (int* (first cam) 13))) (int- tick (Vector ref 8 p)))
+    ; The camera may sit past the map's top or left edge; moved on by a
+    ; screenful so the tick a tile steps by is never below zero.
+    (%pt-ops! work over frame-level-y font (int+ tick (int+ (int* (int+ (rest cam) 128) 7) (int* (int+ (first cam) 128) 13))) (int- tick (Vector ref 8 p)))
     (Canvas light! work 0 0 lw lh
       (frame-light-map (List find (fn (_ op) (eq? (first op) (lit view))) over)
                        (List filter (fn (_ op) (eq? (first op) (lit light))) over) tick)
       frame-tile-size)
     (%pt-glints! work over frame-level-y tick)
     (%pt-blows! work over blows k frame-level-y font)
-    (Canvas nine! s 0 frame-level-y (int* zoom lw) (int* zoom lh) work 0 0 0 0)
-    (Canvas fill! s 0 0 paint-width frame-level-y %pt-black)
-    (Canvas fill! s 0 (+ frame-level-y %pt-area-h) paint-width (- paint-height (+ frame-level-y %pt-area-h)) %pt-black)
-    (def lines (%pt-lines (draw-top g)))
-    (Canvas text! s 0 4 (first lines) %pt-ink font)
-    (unless (null? (rest lines)) (Canvas text! s 0 13 (%pt-fit (first (rest lines))) %pt-ink font))
-    (Canvas text! s 0 %pt-status-y (%pt-fit (draw-status g)) %pt-ink font)
+    (Canvas nine! s 0 paint-level-y (int* zoom lw) (int* zoom lh) work 0 0 0 0)
+    (%pt-top! s (Vector ref 10 p) font (draw-top g) (not (null? (game-ask g))))
+    (%pt-standing! s (Vector ref 11 p) font (draw-standing g))
     (%pt-overlay! s (Vector ref 4 p) font (draw-overlay g))
     s))
 
@@ -496,4 +653,4 @@
 
 (provide roguelike/paint
   paint-width paint-height paint-art paint-arts paint-font paint-make paint-screen paint-turn! paint-frame! paint-flickers?
-  paint-zoom paint-zoom! paint-zoom-least paint-zoom-most paint-zoom-first paint-animating? paint-step!)
+  paint-zoom paint-zoom! paint-zoom-least paint-zoom-most paint-zoom-first paint-animating? paint-step! paint-level-y)

@@ -20,6 +20,7 @@
 (glyph weapon ")")
 (glyph armour "[")
 (glyph food ":")
+(glyph oil "(")
 (glyph gold "$")
 (glyph goal "*")
 (glyph page "%")

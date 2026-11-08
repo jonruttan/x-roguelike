@@ -39,14 +39,26 @@
   (guardian "Old Man")
   (level-style well))
 
+; The ramp, (ramp OF RUNG ...): what a fight costs, armed, as a share of
+; the player's hit points, RUNG in OF; a rung a band, the next for its
+; guardian, up the Fibonacci ladder to the last guardian, who takes it
+; all.  tools/model.x reads each creature against it.
+(ramp 21 3 5 8 13 21)
+
 (player 14 16)
 (unarmed 1 3)
 
-; Food at the start; when hunger is felt; when it weakens.  Past
-; nothing, (starve N) costs a hit point every N turns and stops them
-; returning, in place of the faint and the end.
-(hunger 1600 400 200)
-(starve 6)
+; Food in seconds, a turn the time to walk a cell: half a day's at the
+; start; felt with four hours left, weakening with one; a day's the
+; most.  Past nothing, (starve N) costs a hit point every N seconds and
+; stops them returning, in place of the faint and the end.
+(hunger 43200 14400 3600 86400)
+(starve 600)
+
+; The lamp: half an hour of oil when full, lit full at the start or the
+; first turn below; said when ten minutes are left; out, the cells
+; beside are all there is to see.  An oil flask fills it.
+(lamp 1800 600)
 
 ; Traps a level, hidden until stepped on or searched out beside; the
 ; kinds are in traps.xon.

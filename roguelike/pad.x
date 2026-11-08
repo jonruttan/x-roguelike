@@ -104,7 +104,7 @@
 (def %pd-take!
   (fn (_ s e)
     (def what (if (null? e) () (first e)))
-    (def name (if (null? e) () (List ref 1 e)))
+    (def name (if (pad-event? e) (List ref 1 e) ()))
     (match
       ((eq? what (lit pad-axis))
         (match ((eq? name (lit left-x)) (Vector set! 0 (%pd-axis (List ref 2 e) (Vector ref 0 s)) s))

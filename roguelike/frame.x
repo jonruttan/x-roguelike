@@ -138,14 +138,13 @@
 ; --- the camera -------------------------------------------------------------
 
 ; The view's top-left cell, (R0 . C0): the player at R C in the middle,
-; the view held inside the map's ROWS by COLS.
+; always, so the screen is never half empty beside a map's edge.  What
+; lies past the edge is drawn as rock.  ROWS and COLS, the map's size,
+; are not needed to place it.
 (def frame-camera
   (fn (_ rows cols r c)
-    (def clamp (fn (_ v hi) (match ((< v 0) 0) ((< hi v) (if (< hi 0) 0 hi)) (#t v))))
-    (def vr (frame-view-rows))
-    (def vc (frame-view-cols))
-    (pair (clamp (- r (int/ vr 2)) (- rows vr))
-          (clamp (- c (int/ vc 2)) (- cols vc)))))
+    (pair (- r (int/ (frame-view-rows) 2))
+          (- c (int/ (frame-view-cols) 2)))))
 
 ; --- the level --------------------------------------------------------------
 
@@ -156,8 +155,12 @@
 
 ; What to draw for the cell at R C of M with art A, at X Y: the
 ; ground's picture, or a wall's parts, or the shade a wall's face
-; casts; a cell not seen is a fill of the dark.
+; casts; a cell not seen, or off the map, is a fill of the dark.
 (def frame-cell
+  (fn (_ a m r c x y)
+    (if (map-in? m r c) (%fr-cell a m r c x y)
+      (list (list (lit fill) x y frame-tile-size frame-tile-size)))))
+(def %fr-cell
   (fn (_ a m r c x y)
     (def t (map-tile m r c))
     (def pics (Vector ref t (first a)))
@@ -203,19 +206,19 @@
 ; The picture named NAME put at R C, over its shadow when SHADOW; where
 ; the art has no picture of it, its GLYPH, (glyph X Y GLYPH), as the
 ; terminal shows it; nothing out of view.  A thing that walks, WHO (a
-; creature, or player), has its tile op as (tile X Y PICTURE (WHO R .
-; C)), so the painter can tell whether it moved since the last turn.
+; creature, or player), has its tile op, and its shadow's, as (tile X Y
+; PICTURE (WHO R . C)), so the painter can tell whether it moved since
+; the last turn and move the two together.
 (def %fr-put
   (fn (_ a cam r c name shadow glyph who)
     (def at (frame-place cam r c))
     (def p (frame-named a name (+ (* r 80) c)))
     (def s (if shadow (frame-named a (lit shadow) 0) ()))
+    (def put (fn (_ pic) (if (null? who) (list (lit tile) (first at) (rest at) pic) (list (lit tile) (first at) (rest at) pic (pair who (pair r c))))))
     (match
       ((null? at) ())
       ((null? p) (list (list (lit glyph) (first at) (rest at) glyph)))
-      (#t (List append (if (null? s) () (list (list (lit tile) (first at) (rest at) s)))
-                       (list (if (null? who) (list (lit tile) (first at) (rest at) p)
-                               (list (lit tile) (first at) (rest at) p (pair who (pair r c))))))))))
+      (#t (List append (if (null? s) () (list (put s))) (list (put p)))))))
 ; What stands on G's level under camera CAM with art A, in the order
 ; the terminal draws it: found traps and items where they were seen,
 ; creatures in view over their shadows, the player last.
@@ -251,7 +254,7 @@
        (when (int< i n)
          (do (def r (int+ (first cam) (int/ i cols)))
              (def c (int+ (rest cam) (int% i cols)))
-             (ptr-set! bp i (match ((map-visible? m r c) 2) ((map-seen? m r c) 1) (#t 0)) 1)
+             (ptr-set! bp i (match ((not (map-in? m r c)) 0) ((map-visible? m r c) 2) ((map-seen? m r c) 1) (#t 0)) 1)
              (self (int+ i 1)))))
      0)
     (list (lit view) 0 frame-level-y cols rows bytes)))
@@ -346,8 +349,8 @@
 
 ; How much of a cell in view the dark takes where no light reaches, and
 ; how much of that a cell seen before and out of view keeps, out of 256.
-(def %fr-dark 100)
-(def %fr-seen 150)
+(def %fr-dark 72)
+(def %fr-seen 200)
 ; What of red and green a cell seen before keeps, out of 256: its blue
 ; all, so the remembered level is cool.
 (def %fr-cool-r 190)

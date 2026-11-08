@@ -37,7 +37,7 @@
   game-pages-placed game-page-placed! game-sure game-sure? game-sure! band-name band-to
   player-r player-c player-at! player-hp player-hp! player-hpmax player-hpmax! player-str player-str!
   player-strmax player-strmax! player-armour player-armour! player-weapon player-weapon! player-rings
-  player-rings! player-food player-food! player-condition! player-gold player-gold!
+  player-rings! player-food player-food! player-lamp player-lamp! player-condition! player-gold player-gold!
   creature-hp creature-hp! creature-at! creature-condition! creature-name
   item-make item-form item-class item-name item-prop item-prop1 item-count item-count! item-charges
   item-charges! item-enchant item-enchant! item-letter item-letter! item-r item-c item-at! item-class? item-class-in?
@@ -262,6 +262,7 @@
     (pair (lit armour) (fn (_ g it) (Str8 append (item-name it) " ["
                                       (Str8 str (+ (item-prop1 it (lit armour) 0) (item-enchant it))) "]" (%it-need it))))
     (pair (lit food) (fn (_ g it) (%it-plural it (item-name it))))
+    (pair (lit oil) (fn (_ g it) (%it-plural it (item-name it))))
     (pair (lit gold) (fn (_ g it) (Str8 append (Str8 str (item-count it)) " gold pieces")))
     (pair (lit goal) (fn (_ g it) (item-name it)))
     (pair (lit page) (fn (_ g it) (item-name it)))
@@ -301,11 +302,11 @@
            (#t (Str8 sub i 1 %it-letters)))))
 (def items-by-letter (fn (_ g l) (List find (fn (_ it) (str=? (item-letter it) l)) (game-pack g))))
 
-; A pack item like IT, for a food that stacks, or nil.
+; A pack item like IT, for a food or oil that stacks, or nil.
 (def %it-stack
   (fn (_ g it)
-    (if (item-class? it (lit food))
-      (List find (fn (_ x) (if (item-class? x (lit food)) (str=? (item-name x) (item-name it)) #f)) (game-pack g))
+    (if (item-class-in? it (list (lit food) (lit oil)))
+      (List find (fn (_ x) (if (item-class? x (item-class it)) (str=? (item-name x) (item-name it)) #f)) (game-pack g))
       ())))
 
 ; What is under the player picked up: gold to the purse, the rest to
@@ -530,6 +531,21 @@
     (%it-consume! g it)
     (state-tell! g (lit ate) "That tasted {how}." (list (pair "how" (if ((game-rng g) bool) "good" "awful"))))))
 
+; Oil poured into the lamp, its (oil N) seconds of it, to the set's
+; (lamp FULL) at the most.  Answers whether it was: with no lamp here
+; there is nothing to fill.
+(def items-fill!
+  (fn (_ g it)
+    (def spec (game-param g (lit lamp) ()))
+    (def p (game-player g))
+    (if (null? spec)
+      (do (state-tell! g (lit no-lamp) "You have no lamp to fill." ()) #f)
+      (do (def n (+ (if (< (player-lamp p) 0) 0 (player-lamp p)) (item-prop1 it (lit oil) 600)))
+          (player-lamp! p (if (< (List ref 0 spec) n) (List ref 0 spec) n))
+          (%it-consume! g it)
+          (state-tell! g (lit filled) "You fill your lamp." ())
+          #t))))
+
 (def items-wield!
   (fn (_ g it)
     (def p (game-player g))
@@ -564,4 +580,4 @@
   items-new items-spawn! items-place-sure! items-place-caches! items-place-goal! items-goal-held? items-page-named items-place-pages!
   items-known? items-know! items-name items-worn
   items-glyph items-pack-lines items-by-letter items-pickup! items-drop! items-quaff! items-read! items-target items-zap!
-  items-eat! items-wield! items-wear! items-take-off! items-put-on! items-remove! items-teleport!)
+  items-eat! items-fill! items-wield! items-wear! items-take-off! items-put-on! items-remove! items-teleport!)

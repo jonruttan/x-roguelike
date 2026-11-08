@@ -9,26 +9,33 @@ the terminal shows too.
 
 A screen 640 by 360 pixels, drawn in x as one RGBA buffer and scaled
 whole to the window: 2x at 1280 by 720, 3x at 1920 by 1080, 4x at
-2560 by 1440.  Tiles are 16 by 16; text is an 8 by 8 font, so a line
-holds 80 letters, as the terminal does.
+2560 by 1440.  Tiles are 16 by 16, shown at the zoom (1 to 4, 2 at the
+start).  Text is an 8 by 8 font cut to 6 wide, drawn at twice the
+screen's pixel, the art's scale: a line holds 52 letters.
 
 | Rows (pixels) | What | The terminal's |
 |---|---|---|
-| 0 to 23 | messages, two lines; a question asks here | the top row |
-| 24 to 327 | the level, 40 tiles by 19 | the rows between |
-| 328 to 359 | the standing: band and level (or screen), hit points as a bar, strength, armour, experience, gold, hunger and conditions | the last row |
+| 0 to 41 | messages, two lines on a strip ruled off from the level, three over the level's top when they need it; a question asks here, brighter | the top row |
+| 42 to 319 | the level, as many cells as fill it at the zoom | the rows between |
+| 320 to 359 | the standing, two lines: the band and level (or the screen's name) and the gold; hit points as a bar coloured by how many are left, strength (amber when spent), armour, experience level, and hunger and conditions in amber | the last row |
 
-- **The level** is 80 by 22, as in the terminal.  The window shows 40 by
-  19 of it; the camera keeps the player in the middle, held inside the
-  map, so it scrolls only when the player walks.
+- **The level** is 80 by 22, as in the terminal.  The window shows 20 by
+  9 of it at the first zoom; the camera keeps the player in the middle,
+  always, the view running past the map's edge onto rock, so it scrolls
+  as the player walks.
 - **In view and seen**: cells in view drawn whole, cells seen before
   dimmed, rock black.  Found traps and items where they were seen;
   creatures only in view; the player last.  A warm glow round the
   player stands for the lamp.
-- **Blows**: after a turn with a fight, about a third of a second of
-  it: the striker lunges toward its target, a blow that lands flashes
-  the target (white for the player's, red for a creature's), the
-  player's kill bursts where the creature was, and the damage, or
+- **Steps**: a thing that stepped to a cell beside it glides there
+  from the cell it left, over its shadow, in about a quarter of a
+  second: quick off the mark, slowing, a pixel past and back.  Its
+  pictures stay its new cell's.  A key pressed meanwhile is taken at
+  once; exploring does not wait for it.
+- **Blows**: after a turn with a fight, about half a second of it: the
+  striker lunges toward its target and eases back, a blow that lands
+  flashes the target (white for the player's, red for a creature's),
+  the player's kill bursts where the creature was, and the damage, or
   "miss", rises from the target.
 - **Overlays**: a list looked at, the items a question can take, a
   choice, a page read, a talker's words, the world map and the end of
@@ -48,7 +55,7 @@ name for a creature.
 | ground | `floor` `wall` `door` `passage` `down` `up` `trap` | 7 |
 | the player | `player`, and its poses `attack` `hit` `dead` | 1 to 4 |
 | marks | `mark-confused` `mark-blind` `mark-held` `mark-hasted` `mark-slowed` `mark-seeing` `mark-hungry` `mark-weak` `mark-fainting` `mark-wounded` | up to 10 |
-| items | `potion` `scroll` `wand` `ring` `weapon` `armour` `food` `gold` `goal`, and `page` `token` where the set has them | 9 to 11 |
+| items | `potion` `scroll` `wand` `ring` `weapon` `armour` `food` `gold` `goal`, and `oil` `page` `token` where the set has them | 9 to 12 |
 | creatures | every `(creature NAME ...)` of the set, talkers each their own | classic 17, delve 23, kettle 28 |
 | bands | a band's own `wall` and `floor`, where its place differs | delve 3, kettle 4, town 1 |
 | the screen | `panel` (a nine-piece frame), `shadow` | 2 |

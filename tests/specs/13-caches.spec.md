@@ -11,7 +11,7 @@ band's caches, each a thing worth having with a keeper beside it.
 
 ```roguelike
 (def set (spec-valley))
-(def allowed (list "mending" "survey" "walking staff" "waxed coat" "bread" "cheese" "gold"))
+(def allowed (list "mending" "survey" "walking staff" "waxed coat" "bread" "cheese" "oil flask" "gold"))
 (def hub-ok?
   (fn (_ seed)
     (def g (spec-game-on set seed ()))

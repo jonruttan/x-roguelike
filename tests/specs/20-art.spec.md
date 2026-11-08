@@ -106,7 +106,7 @@ each the art's size, held TICKS a picture.
 (write (list (art-problems (spec-set-named "delve") art) (List length (data-all art 'tile))))
 ```
 ---
-    (() 148)
+    (() 149)
 
 ### classic's art is whole
 
@@ -124,7 +124,7 @@ each the art's size, held TICKS a picture.
 (write (list (art-problems (spec-set-named "kettle") art) (List length (data-all art 'tile))))
 ```
 ---
-    (() 158)
+    (() 159)
 
 ### town's art is whole, the town's walls and setts with it
 

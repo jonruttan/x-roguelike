@@ -50,7 +50,7 @@
   game-screen-form game-screen-name game-regions game-region game-home game-place
   game-deepest game-deepest! game-rows game-cols game-param game-param1 game-new game-epitaph! game-kept game-quests
   game-messages game-messages! game-log game-band game-band-from band-to band-prop1 game-forms
-  player-r player-c player-at! player-hp player-hp! player-hpmax player-level player-food player-food!
+  player-r player-c player-at! player-hp player-hp! player-hpmax player-level player-food player-food! player-lamp player-lamp!
   player-condition player-tick! player-armour player-rings player-gold
   state-say! state-tell! state-text state-clear-messages! state-clear-log! state-roll state-chance? state-dir state-dirs
   state-creature-at state-creature-named state-items-at state-free? state-ring? item-class? item-class-in? item-class
@@ -62,7 +62,7 @@
   items-spawn! items-place-sure! items-place-caches! items-place-goal! items-place-pages! items-goal-held? items-name items-worn
   items-pack-lines
   items-by-letter items-pickup!
-  items-drop! items-quaff! items-read! items-zap! items-eat! items-wield! items-wear! items-take-off!
+  items-drop! items-quaff! items-read! items-zap! items-eat! items-fill! items-wield! items-wear! items-take-off!
   items-put-on! items-remove!)
 (import roguelike/quests quests-place! quests-talk! quests-keepers!)
 (import roguelike/chain chain-build!)
@@ -76,11 +76,12 @@
 ; --- levels ------------------------------------------------------------------
 
 ; What is in view, from where the player stands: by the room, or by
-; sight within the set's (view N); nothing, blind.
+; sight within the set's (view N); the cells beside, with the lamp out
+; under the set's (lamp ...); nothing, blind.
 (def %gm-light!
   (fn (_ g)
     (def p (game-player g))
-    (def view (game-param1 g (lit view) 0))
+    (def view (if (%gm-dark? g) 1 (game-param1 g (lit view) 0)))
     (match ((< 0 (player-condition p (lit blind))) (map-light! (game-map g) -9 -9))
            ((< 0 view) (map-light-radius! (game-map g) (player-r p) (player-c p) view))
            (#t (map-light! (game-map g) (player-r p) (player-c p))))
@@ -436,6 +437,27 @@
     (when (if (< 0 k) (< (player-hp p) (player-hpmax p)) #f)
       (player-hp! p (if (< (player-hpmax p) hp) (player-hpmax p) hp)))))
 
+; The lamp, where the set has (lamp FULL LOW): FULL seconds of oil when
+; full, lit full the first turn the player is there with none lit yet,
+; then burning a second a second, said when it is down to LOW and when
+; it goes out.
+(def %gm-lamp!
+  (fn (_ g was now)
+    (def spec (game-param g (lit lamp) ()))
+    (def p (game-player g))
+    (def before (player-lamp p))
+    (def left ((fn (_ n) (if (< n 0) 0 n)) (- before (- now was))))
+    (match ((null? spec) ())
+           ((< before 0) (do (player-lamp! p (List ref 0 spec)) (state-tell! g (lit lamp-lit) "You light your lamp." ())))
+           (#t (do (player-lamp! p left)
+                   (match ((%gm-reached? 0 before left) (state-tell! g (lit lamp-out) "Your lamp goes out." ()))
+                          ((%gm-reached? (List ref 1 spec) before left) (state-tell! g (lit lamp-low) "Your lamp burns low." ()))
+                          (#t ())))))))
+
+; Whether the lamp is out under the set's (lamp ...).
+(def %gm-dark?
+  (fn (_ g) (if (null? (game-param g (lit lamp) ())) #f (= 0 (player-lamp (game-player g))))))
+
 (def %gm-creatures-act!
   (fn (_ g)
     (def p (game-player g))
@@ -452,6 +474,7 @@
     (game-clock! g now)
     (%gm-hunger! g was now)
     (%gm-regen! g was now)
+    (%gm-lamp! g was now)
     (%gm-creatures-act! g)
     (player-tick! (game-player g))
     (creatures-wander! g)
@@ -649,6 +672,7 @@
     (pair "r" (fn (_ g) (%gm-ask-item! g "Read what?" (list (lit scroll) (lit page)) (fn (_ it) (items-read! g it) #t))))
     (pair "z" (fn (_ g) (%gm-ask-item! g "Zap what?" (lit wand) (fn (_ it) (%gm-zap! g it)))))
     (pair "e" (fn (_ g) (%gm-ask-item! g "Eat what?" (lit food) (fn (_ it) (items-eat! g it) #t))))
+    (pair "f" (fn (_ g) (%gm-ask-item! g "Fill the lamp with what?" (lit oil) (fn (_ it) (items-fill! g it)))))
     (pair "w" (fn (_ g) (%gm-ask-item! g "Wield what?" (lit weapon) (fn (_ it) (items-wield! g it) #t))))
     (pair "W" (fn (_ g) (%gm-ask-item! g "Wear what?" (lit armour) (fn (_ it) (items-wear! g it) #t))))
     (pair "T" (fn (_ g) (do (items-take-off! g) #t)))
@@ -809,6 +833,7 @@
           "z      zap a wand           e      eat"
           "w      wield a weapon       W  T   wear armour, take it off"
           "P  R   put on a ring, take it off"
+          "f      fill the lamp from a flask"
           "S      save and leave       Q      quit"
           "?      these keys           Esc    stop asking")))
 

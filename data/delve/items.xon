@@ -50,8 +50,12 @@
 (item armour "scale coat" (rarity 8) (depth 4 12) (armour 4) (strength 15))
 (item armour "plated harness" (rarity 4) (depth 7 12) (armour 6) (strength 18))
 
-(item food "miner's tin" (rarity 20) (nutrition 900))
-(item food "dried fish" (rarity 12) (nutrition 500))
+(item food "miner's tin" (rarity 20) (nutrition 21600))
+(item food "dried fish" (rarity 12) (nutrition 14400))
+
+; Tallow oil, rendered at the chandler's: ten minutes of the lamp a
+; flask.
+(item oil "oil flask" (rarity 24) (oil 600))
 
 ; What the people below ask for, and what they give: never drawn for a
 ; level.
