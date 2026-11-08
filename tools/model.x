@@ -48,7 +48,7 @@
 (import roguelike/data data-load data-all data-one data-prop data-prop1 data-trait?)
 (import roguelike/state state-covers?)
 (import roguelike/odds odds-hit odds-mid odds-kill odds-hurt)
-(import roguelike/combat combat-str-bonus)
+(import roguelike/combat combat-str-bonus combat-chill)
 
 (def %md-env
   (fn (_ name default)
@@ -97,7 +97,8 @@
 (def %md-hurt
   (fn (_ kind defence)
     (odds-hurt (data-prop1 kind (lit level) 1) (data-prop kind (lit attack) (list 1 2)) defence
-               (match ((data-trait? kind (lit fast)) (lit fast)) ((data-trait? kind (lit slow)) (lit slow)) (#t ())))))
+               (match ((data-trait? kind (lit fast)) (lit fast)) ((data-trait? kind (lit slow)) (lit slow)) (#t ()))
+               (if (data-trait? kind (lit cold)) combat-chill 0))))
 
 ; --- a level's creatures and items ----------------------------------------------
 
