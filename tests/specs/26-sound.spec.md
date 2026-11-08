@@ -1,0 +1,51 @@
+# The game heard
+# @weight 2
+
+The delve set's sounds and songs (see `docs/sound.md`): every song a
+tracker can play, every name a cue or a place gives a sound or a song the
+set has, and every sound rendered to frames. Nothing here opens an audio
+device.
+
+## the data
+
+### every song makes a tracker, and every place's music and bed is a song
+
+```roguelike
+(import x/audio/tracker)
+(def spec-set (data-load "data/delve"))
+(def spec-songs (data-all spec-set 'song))
+(def spec-song? (fn (_ n) (List any? (fn (_ s) (str=? (first s) n)) spec-songs)))
+(def spec-beds (List flat-map (fn (_ a) (List map (fn (_ p) (List ref 1 p)) (List filter (fn (_ p) (if (pair? p) (eq? (first p) 'bed) #f)) (rest a)))) (data-all spec-set 'ambience)))
+(write (list (List all? (fn (_ s) (str? (Tracker name (Tracker make (pair 'song s))))) spec-songs)
+             (List all? (fn (_ m) (spec-song? (List ref 1 m))) (data-all spec-set 'music))
+             (List all? spec-song? spec-beds)
+             (< 0 (List length spec-beds))))
+```
+---
+    (#t #t #t #t)
+
+### every cue, footstep, heartbeat and random sound names a sound of the set
+
+```roguelike
+(def spec-set (data-load "data/delve"))
+(def spec-sound? (fn (_ n) (List any? (fn (_ s) (str=? (first s) n)) (data-all spec-set 'sound))))
+(def spec-randoms (List flat-map (fn (_ a) (List map (fn (_ p) (List ref 1 p)) (List filter (fn (_ p) (if (pair? p) (eq? (first p) 'random) #f)) (rest a)))) (data-all spec-set 'ambience)))
+(write (list (List all? (fn (_ c) (spec-sound? (List ref 1 c))) (data-all spec-set 'cue))
+             (List all? (fn (_ c) (spec-sound? (List ref 1 c))) (data-all spec-set 'footstep))
+             (spec-sound? (first (data-one spec-set 'heart ())))
+             (List all? spec-sound? spec-randoms)))
+```
+---
+    (#t #t #t #t)
+
+### every sound renders to frames
+
+```roguelike
+(import x/audio/mixer)
+(def spec-set (data-load "data/delve"))
+(List for-each (fn (_ w) (Mixer wave! (first w) (rest w))) (data-all spec-set 'wave))
+(def spec-voices (fn (_ s) (List map rest (List filter (fn (_ p) (if (pair? p) (eq? (first p) 'voice) #f)) (rest s)))))
+(write (List all? (fn (_ s) (< 0 (rest (Mixer render 8000 (spec-voices s) ())))) (data-all spec-set 'sound)))
+```
+---
+    #t
