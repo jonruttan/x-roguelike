@@ -1,29 +1,29 @@
 ; creatures.xon -- the rest of the delve's creatures drawn, by band: the read and the form as tiles.xon.
 
 ; an eel lit by the stone's water
-(colour "0" 150 230 210)
-(colour "1" 46 56 52)
-(colour "2" 84 140 130)
+(colour "0" 190 254 248)
+(colour "1" 79 103 93)
+(colour "2" 116 210 198)
 ; a leech
-(colour "3" 52 40 38)
+(colour "3" 100 70 67)
 ; a shard of the stone's light
-(colour "4" 176 214 242)
+(colour "4" 222 250 255)
 ; the drowned
-(colour "5" 66 104 108 150)
+(colour "5" 97 171 178 150)
 ; a well-keeper's robe, faded
-(colour "6" 108 100 82)
+(colour "6" 174 161 127)
 ; a bat's wing
-(colour "7" 74 58 56)
+(colour "7" 134 100 95)
 ; a blind white crayfish
-(colour "8" 206 200 186)
-(colour "9" 148 142 132)
+(colour "8" 247 243 233)
+(colour "9" 212 205 191)
 ; the Flood's current: foam, deep water
-(colour "!" 172 198 200 220)
-(colour "?" 22 40 50 230)
+(colour "!" 223 244 245 220)
+(colour "?" 31 77 100 230)
 ; the well-keepers' dressed limestone
-(colour "%" 164 158 140)
+(colour "%" 225 218 196)
 ; a ferret's fur
-(colour "&" 168 146 108)
+(colour "&" 231 208 148)
 
 ; --- the Galleries ----------------------------------------------------------
 

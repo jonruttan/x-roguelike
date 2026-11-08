@@ -22,65 +22,65 @@
 (size 16 16)
 
 (colour "." 0 0 0 0)
-(colour "k" 16 13 12)
+(colour "k" 33 25 22)
 ; rock: sandstone beds, shale, a coal seam
-(colour "d" 38 32 29)
-(colour "r" 62 53 47)
-(colour "R" 84 73 63)
-(colour "h" 124 108 88)
-(colour "n" 24 23 26)
-(colour "N" 52 52 58)
+(colour "d" 74 58 51)
+(colour "r" 113 93 79)
+(colour "R" 146 124 103)
+(colour "h" 194 169 132)
+(colour "n" 46 44 51)
+(colour "N" 93 93 106)
 ; the floor: grit, stones, damp, standing water; light from above
-(colour "s" 44 39 35)
-(colour "f" 54 48 43)
-(colour "F" 68 61 54)
-(colour "e" 34 30 28)
-(colour "w" 32 44 54)
-(colour "W" 66 92 108)
-(colour "z" 92 83 66)
+(colour "s" 84 72 62)
+(colour "f" 100 85 74)
+(colour "F" 122 106 90)
+(colour "e" 65 56 51)
+(colour "w" 53 82 106)
+(colour "W" 101 155 181)
+(colour "z" 156 139 103)
 ; timber, iron, rust, leather, cloth
-(colour "t" 66 47 32)
-(colour "T" 98 74 50)
-(colour "V" 122 94 64)
-(colour "i" 50 52 56)
-(colour "I" 92 94 98)
-(colour "J" 128 124 116)
-(colour "O" 100 58 34)
-(colour "o" 134 84 46)
-(colour "u" 72 55 42)
-(colour "U" 102 80 60)
-(colour "c" 40 42 50)
-(colour "C" 66 74 92)
+(colour "t" 125 82 44)
+(colour "T" 169 124 69)
+(colour "V" 196 151 87)
+(colour "i" 89 93 103)
+(colour "I" 150 153 161)
+(colour "J" 194 188 175)
+(colour "O" 177 97 37)
+(colour "o" 213 134 46)
+(colour "u" 132 95 65)
+(colour "U" 173 132 89)
+(colour "c" 72 77 95)
+(colour "C" 110 127 161)
 ; skin, grey hair, bone and paper
-(colour "p" 168 132 108)
-(colour "P" 120 90 76)
-(colour "b" 132 126 112)
-(colour "B" 200 190 164)
+(colour "p" 234 192 153)
+(colour "P" 194 144 115)
+(colour "b" 199 190 168)
+(colour "B" 245 238 213)
 ; lamp light, coin
-(colour "l" 214 164 86)
-(colour "L" 246 220 156)
-(colour "y" 176 138 58)
-(colour "Y" 228 196 110)
+(colour "l" 253 220 87)
+(colour "L" 255 250 191)
+(colour "y" 239 200 40)
+(colour "Y" 254 241 122)
 ; creatures: rat, toad, firedamp, the dead
-(colour "q" 84 72 64)
-(colour "Q" 122 106 92)
-(colour "g" 68 70 46)
-(colour "G" 112 110 66)
-(colour "H" 150 140 92)
-(colour "m" 130 180 200 120)
-(colour "M" 214 238 242 180)
-(colour "j" 120 160 172 45)
-(colour "K" 22 28 34 170)
-(colour "a" 98 124 138 140)
-(colour "A" 172 196 208 170)
+(colour "q" 146 122 104)
+(colour "Q" 192 167 140)
+(colour "g" 119 124 69)
+(colour "G" 178 175 87)
+(colour "H" 217 204 124)
+(colour "m" 176 236 249 120)
+(colour "M" 246 254 255 180)
+(colour "j" 169 223 234 45)
+(colour "K" 38 53 69 170)
+(colour "a" 147 191 209 140)
+(colour "A" 223 243 249 170)
 ; the Lodestar's cold light; a panel's ground
-(colour "x" 90 120 150 90)
-(colour "Z" 18 15 13 232)
+(colour "x" 134 186 224 90)
+(colour "Z" 37 29 23 232)
 (colour "S" 0 0 0 110)
 (colour "-" 0 0 0 55)
 ; a neckerchief, a shawl; a rat's ears and tail
-(colour "D" 132 44 36)
-(colour "X" 168 112 104)
+(colour "D" 220 62 40)
+(colour "X" 236 167 152)
 
 ; --- the ground -------------------------------------------------------------
 
@@ -347,7 +347,41 @@
   "ddddddddrdddddrd"
   "rRRrRRRRrRRRRrRR"
   "rrrrrrrrkrrrdrrr"
-  "kkkkkkkkkkkkkkkk"))
+  "kkkkkkkkkkkkkkkk")
+  (frames 3 (rows
+  "dddnddddddnddddd"
+  "hhRhhhhRlhhhRhhh"
+  "RRRRrRRRLRRrRRRR"
+  "RhRRRRRlLlRRRhRR"
+  "RRRrRRRRlRRRRRRR"
+  "rRRRRRkrBRRRRRrR"
+  "rrrrrrkuBurRrrrr"
+  "ddrdddduuudddddd"
+  "dkddddddkddddkdd"
+  "nnNnnnnnnnnnNnnn"
+  "nNnnnNnnnnnnnnNn"
+  "knnnnnnknnnnnnnk"
+  "ddddddddrdddddrd"
+  "rRRrRRRRrRRRRrRR"
+  "rrrrrrrrkrrrdrrr"
+  "kkkkkkkkkkkkkkkk")
+   (rows
+  "dddnddddddnddddd"
+  "hhRhhhhRhhhhRhhh"
+  "RRRRrRRLRRRrRRRR"
+  "RhRRRRRLllRRRhRR"
+  "RRRrRRRRRRRRRRRR"
+  "rRRRRRkrBRRRRRrR"
+  "rrrrrrkuBurRrrrr"
+  "ddrdddduuudddddd"
+  "dkddddddkddddkdd"
+  "nnNnnnnnnnnnNnnn"
+  "nNnnnNnnnnnnnnNn"
+  "knnnnnnknnnnnnnk"
+  "ddddddddrdddddrd"
+  "rRRrRRRRrRRRRrRR"
+  "rrrrrrrrkrrrdrrr"
+  "kkkkkkkkkkkkkkkk")))
 
 ; The face's ends, where the floor turns round it.
 (tile wall (part face-w) (rows
@@ -610,14 +644,31 @@
   "......kPpPk..Tk."
   ".......kPk...Tk."
   ".....kcDDDckTk.."
-  "....kcCCcCCTk..."
-  "....kcCCcCPk...."
+  "....kbCCcCCTk..."
+  "....kbCCcCPk...."
   "...kPkcCcCck...."
   "...kikuuuuuk...."
   "..klLkcCkCck...."
   "..kLlkcCkCck...."
   "...kk.kCkCk....."
-  "......kk.kk....."))
+  "......kk.kk.....")
+  (frames 4 (rows
+  "................"
+  ".......kkk......"
+  "......kuUuk.kk.."
+  ".....kkkkkkkIIk."
+  "......kpPPk..Tk."
+  "......kPpPk..Tk."
+  ".......kPk...Tk."
+  ".....kcDDDckTk.."
+  "....kbCCcCCTk..."
+  "....kbCCcCPk...."
+  "...kPkcCcCck...."
+  "...kikuuuuuk...."
+  "..kLlkcCkCck...."
+  "..klLkcCkCck...."
+  "...kk.kCkCk....."
+  "......kk.kk.....")))
 
 (tile "mine rat" (rows
   "................"
@@ -709,7 +760,24 @@
   "...kcccCccccck.."
   "...kccccCcccck.."
   "..kccccccccccck."
-  "..kkkkkkkkkkkkk."))
+  "..kkkkkkkkkkkkk.")
+  (frames 3 (rows
+  "................"
+  "................"
+  ".......kkk......"
+  "......kbbbk....."
+  "......kpPbk....."
+  "......kPpPk..kk."
+  ".....kDDDDDk.Llk"
+  "....kDoDDDoDkPk."
+  "....kDDDoDDk...."
+  "....kcDDDDck...."
+  "....kccccccck..."
+  "...kccCcccCcck.."
+  "...kcccCccccck.."
+  "...kccccCcccck.."
+  "..kccccccccccck."
+  "..kkkkkkkkkkkkk.")))
 
 ; --- what lies about --------------------------------------------------------
 
