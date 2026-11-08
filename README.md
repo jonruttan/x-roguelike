@@ -110,7 +110,10 @@ door onto the street; two cells round the edge are street, and the
 (size W D) . PROPS)` the level names is laid from its plan round the
 square, W metres along and D deep, walled, its door toward the
 square, on the first side it fits; the terraces keep off them, and
-its door, stood on, says its `(enter "TEXT")`.  In a world of screens the bands run from
+its door, stood on, says its `(enter "TEXT")`.  Its `(keeper NAME
+LINE ...)` stands inside, unless the chain gives NAME a screen of its
+own, and walked into with nothing to ask says a LINE, the next each
+turn.  In a world of screens the bands run from
 the hub, ring 0, and any form a band names besides its own -- a level
 knob, a level style -- is in front of the set's on its screens, so
 `kettle`'s first band, "Kettle", lays hedged fields round the town's

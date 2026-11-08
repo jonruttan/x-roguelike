@@ -19,7 +19,7 @@ descents, and their specs stand.
              (List map (fn (_ b) (List ref 1 b)) (data-all set 'band))))
 ```
 ---
-    ("kettle" 'screens 7 5 'open 2 1200 28 (0 1 3 5))
+    ("kettle" 'screens 7 5 'open 2 1200 32 (0 1 3 5))
 
 ## open ground
 
