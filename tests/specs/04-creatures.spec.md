@@ -80,6 +80,23 @@ what runs, what dies, and the messages that outrun the row.
 ---
     ('blow #t #t #t #t 'kill #t 1 ())
 
+### a creature that shoots keeps its shot as a blow, with what flew
+
+```roguelike
+(def g (spec-game-on (spec-set-named "delve") 5 ()))
+(game-creatures! g ())
+(def open (spec-open g))
+(def p (game-player g))
+(player-hp! p 500)
+(spec-place! g "knocker" (first (rest open)) (rest (rest open)) 100 'awake)
+(def shot (fn (_) (List find (fn (_ b) (eq? (List ref 7 b) 'shot)) (game-blows g))))
+(spec-press-until g "." (fn (_) (not (null? (shot)))) 60)
+(def b (shot))
+(write (list (List ref 5 b) (< 0 (List ref 6 b)) (= (List ref 3 b) (player-r p)) (= (List ref 4 b) (player-c p)) (List ref 7 b)))
+```
+---
+    ('hit #t #t #t 'shot)
+
 ### a skittish creature badly hurt runs
 
 ```roguelike

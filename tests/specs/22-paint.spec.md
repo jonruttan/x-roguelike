@@ -140,7 +140,7 @@ each frame that layer, what stands on it, the light and the text.
 (paint-turn! p g fa)
 (def calm (paint-animating? p))
 (def plain (px (paint-frame! p g 0)))
-(state-blow! g (player-r pl) (+ (player-c pl) 1) (player-r pl) (player-c pl) 'hit 3)
+(state-blow! g (player-r pl) (+ (player-c pl) 1) (player-r pl) (player-c pl) 'hit 3 ())
 (paint-turn! p g fa)
 (def struck (paint-animating? p))
 (def flashed (px (paint-frame! p g 0)))
@@ -191,3 +191,26 @@ each frame that layer, what stands on it, the light and the text.
 ```
 ---
     (#t #t)
+
+## what flies
+
+### a shot flies from the striker to its target for four frames, then lands as a blow does
+
+```roguelike
+(def g (spec-game-on (spec-set-named "delve") 3 ()))
+(def m (game-map g))
+(def pl (game-player g))
+(paint-turn! p g fa)
+(state-clear-messages! g)
+(state-blow! g (player-r pl) (- (player-c pl) 4) (player-r pl) (player-c pl) 'hit 2 'shot)
+(paint-turn! p g fa)
+(def at (frame-place (frame-camera (map-rows m) (map-cols m) (player-r pl) (player-c pl)) (player-r pl) (player-c pl)))
+; The middle row of the cells between, where the stone passes.
+(def path (fn (_ s) (List map (fn (_ x) (Canvas pixel s x (+ 16 (+ paint-level-y (* 2 (- (rest at) frame-level-y)))))) (List range (* 2 (- (first at) 64)) (* 2 (first at))))))
+(def flying (path (paint-frame! p g 0)))
+(def steps ((fn (self n) (if (paint-animating? p) (do (paint-step! p) (self (+ n 1))) n)) 0))
+(def after (path (paint-frame! p g 0)))
+(write (list steps (not (equal? flying after))))
+```
+---
+    (12 #t)

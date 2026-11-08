@@ -414,9 +414,10 @@
         (frame-glints g cam) (frame-blows g cam))))))
 
 ; The turn's blows whose target is in view under camera CAM, oldest
-; first, each (blow FX FY TX TY HOW N BY-PLAYER?): the pixel places of
-; who struck (the target's when the striker is out of view) and of whom,
-; HOW hit, miss or kill, N the damage, and whether the player struck.
+; first, each (blow FX FY TX TY HOW N BY-PLAYER? WHAT): the pixel
+; places of who struck (the target's when the striker is out of view)
+; and of whom, HOW hit, miss, kill or touch, N the damage, whether the
+; player struck, and what flew, or nil.
 (def frame-blows
   (fn (_ g cam)
     (def p (game-player g))
@@ -426,7 +427,8 @@
         (def from ((fn (_ f) (if (null? f) to f)) (frame-place cam (List ref 1 b) (List ref 2 b))))
         (if (null? to) ()
           (list (list (lit blow) (first from) (rest from) (first to) (rest to) (List ref 5 b) (List ref 6 b)
-                      (if (= (List ref 1 b) (player-r p)) (= (List ref 2 b) (player-c p)) #f)))))
+                      (if (= (List ref 1 b) (player-r p)) (= (List ref 2 b) (player-c p)) #f)
+                      (List ref 7 b)))))
       (List reverse (game-blows g)))))
 
 
