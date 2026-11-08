@@ -7,8 +7,8 @@ cut in nine; each pixel names a colour of the file; each tile names a
 glyph or a creature of the set, or the panel or the shadow; a band
 tile names a band of the set, a `(part P)` one of the pieces the
 front-end puts together, and `(as OTHER)` a tile of the art; a tile's
-`(frames TICKS (rows ...) ...)` are each the art's size, held TICKS a
-picture.
+`(frames TICKS (rows ...) ...)` and `(walk TICKS (rows ...) ...)` are
+each the art's size, held TICKS a picture.
 
 
 ## the checker
@@ -39,12 +39,12 @@ picture.
              (list n "has a pixel with no colour"))
            (#t ()))))
 (def %art-frames
-  (fn (_ n fs size chars)
-    (match ((not (if (number? (first fs)) (< 0 (first fs)) #f)) (list n "has frames with no pace"))
-           ((null? (rest fs)) (list n "has frames with no pictures"))
+  (fn (_ n what fs size chars)
+    (match ((not (if (number? (first fs)) (< 0 (first fs)) #f)) (list n (Str8 append "has " what " with no pace")))
+           ((null? (rest fs)) (list n (Str8 append "has " what " with no pictures")))
            (#t ((fn (_ bad) (if (null? bad) () (first bad)))
                 (List filter (fn (_ x) (not (null? x)))
-                  (List map (fn (_ r) (if (if (pair? r) (eq? (first r) 'rows) #f) (%art-rows n (rest r) size chars) (list n "has a frame that is not rows")))
+                  (List map (fn (_ r) (if (if (pair? r) (eq? (first r) 'rows) #f) (%art-rows n (rest r) size chars) (list n "has a picture that is not rows")))
                     (rest fs))))))))
 (def %art-tile
   (fn (_ t size chars known tiles bands)
@@ -57,6 +57,7 @@ picture.
     (def light (%art-prop t 'light))
     (def flicker (%art-prop t 'flicker))
     (def frames (%art-prop t 'frames))
+    (def walk (%art-prop t 'walk))
     (List filter (fn (_ x) (not (null? x)))
       (list
         (if (List any? (fn (_ k) (%art-same? k n)) known) () (list n "names nothing in the set"))
@@ -64,7 +65,8 @@ picture.
         (if (null? part) () (if (List any? (fn (_ p) (eq? p (List ref 1 part))) %art-parts) () (list n "names no part")))
         (if (null? light) () (if (= 5 (List length light)) () (list n "has a light of the wrong shape")))
         (if (null? flicker) () (if (null? light) (list n "flickers with no light") ()))
-        (if (null? frames) () (%art-frames n (rest frames) size chars))
+        (if (null? frames) () (%art-frames n "frames" (rest frames) size chars))
+        (if (null? walk) () (%art-frames n "a walk" (rest walk) size chars))
         (if (null? as) () (if (List any? (fn (_ o) (%art-same? (first o) (List ref 1 as))) tiles) () (list n "is drawn as nothing")))
         (if (null? rows) (if (null? as) (list n "has no rows") ()) (%art-rows n (rest rows) (if (null? cut) size ()) chars))))))
 (def art-problems
@@ -83,10 +85,11 @@ picture.
         '(tile gold (light 1 2) (rows "aa" "aa")) '(tile ring (flicker 5) (rows "aa" "aa"))
         '(tile panel (cut 1 1 1 1) (rows "aaa" "aaa" "aaa"))
         '(tile food (rows "aa" "aa") (frames 0 (rows "aa" "aa"))) '(tile wand (rows "aa" "aa") (frames 2))
-        '(tile scroll (rows "aa" "aa") (frames 2 (rows "aa" "aa") (rows "aa" "ab"))) '(tile potion (rows "aa" "aa") (frames 2 (rows "aa" "aa"))))))
+        '(tile scroll (rows "aa" "aa") (frames 2 (rows "aa" "aa") (rows "aa" "ab"))) '(tile potion (rows "aa" "aa") (frames 2 (rows "aa" "aa")))
+        '(tile weapon (rows "aa" "aa") (walk 2)) '(tile armour (rows "aa" "aa") (walk 2 (rows "aa" "a"))))))
 ```
 ---
-    (('wall "has a row of the wrong width") ('floor "has a pixel with no colour") ('up "has the wrong number of rows") ("nobody" "names nothing in the set") ('down "is drawn as nothing") ('wall "names no band") ('wall "names no part") ('gold "has a light of the wrong shape") ('ring "flickers with no light") ('food "has frames with no pace") ('wand "has frames with no pictures") ('scroll "has a pixel with no colour"))
+    (('wall "has a row of the wrong width") ('floor "has a pixel with no colour") ('up "has the wrong number of rows") ("nobody" "names nothing in the set") ('down "is drawn as nothing") ('wall "names no band") ('wall "names no part") ('gold "has a light of the wrong shape") ('ring "flickers with no light") ('food "has frames with no pace") ('wand "has frames with no pictures") ('scroll "has a pixel with no colour") ('weapon "has a walk with no pictures") ('armour "has a row of the wrong width"))
 
 
 ## the sets

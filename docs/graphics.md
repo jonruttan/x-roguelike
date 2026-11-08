@@ -95,6 +95,14 @@ files of `data/SET` alone, so the terminal game never reads these.
   a flame, a drip, washing in the wind.  Each cell starts the round at
   its own place, so two flames never move together.  A front-end that
   does not move tiles draws the first picture.
+- The player and a creature move two ways.  On the turn it steps to
+  another cell it walks: its `(walk TICKS (rows ...) ...)`, or its
+  frames where it has no walk, played once round in time, then it
+  stands.  Standing, it fidgets: mostly the first picture, now and then
+  another for a while, at no beat, each out of step with the rest.  A
+  walk is drawn only for a step; a tile with frames and no walk still
+  fidgets.  The players and the Delve's guardians walk; the rest of
+  the living fidget.
 
 ## Walls
 
