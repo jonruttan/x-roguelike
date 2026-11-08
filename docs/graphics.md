@@ -20,8 +20,9 @@ screen's pixel, the art's scale: a line holds 52 letters.
 | 320 to 359 | the standing, two lines: the band and level (or the screen's name) and the gold; hit points as a bar coloured by how many are left, strength (amber when spent), armour, experience level, and hunger and conditions in amber | the last row |
 
 - **The level** is 80 by 22, as in the terminal.  The window shows 20 by
-  9 of it at the first zoom; the camera keeps the player in the middle, held inside the
-  map, so it scrolls only when the player walks.
+  9 of it at the first zoom; the camera keeps the player in the middle,
+  always, the view running past the map's edge onto rock, so it scrolls
+  as the player walks.
 - **In view and seen**: cells in view drawn whole, cells seen before
   dimmed, rock black.  Found traps and items where they were seen;
   creatures only in view; the player last.  A warm glow round the
