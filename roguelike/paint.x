@@ -130,7 +130,9 @@
 (def %pt-nth (fn (self n l) (if (int= n 0) (first l) (self (int- n 1) (rest l)))))
 ; The picture of PROPS, a tile's, at TICK for the cell at X Y: its one
 ; picture, or of its pictures the one the tick has come to, each cell
-; out of step with the rest by its place.
+; out of step with the rest by its place.  TICK comes moved on by the
+; camera's place (paint-frame!), so the step is the map cell's and
+; holds as the view scrolls.
 (def %pt-pick
   (fn (_ props x y tick)
     (def ps (%pt-find props (lit pictures)))
@@ -277,7 +279,8 @@
     (def lh (first (rest work)))
     (def zoom (Vector ref 6 p))
     (Canvas copy! work 0 0 (Vector ref 1 p) 0 0 lw lh)
-    (%pt-ops! work over frame-level-y font tick)
+    (def cam (first (Vector ref 3 p)))
+    (%pt-ops! work over frame-level-y font (int+ tick (int+ (int* (rest cam) 7) (int* (first cam) 13))))
     (Canvas light! work 0 0 lw lh
       (frame-light-map (List find (fn (_ op) (eq? (first op) (lit view))) over)
                        (List filter (fn (_ op) (eq? (first op) (lit light))) over) tick)
