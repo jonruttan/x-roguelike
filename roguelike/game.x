@@ -38,7 +38,7 @@
 (import x/sys/gc)
 (import roguelike/map
   map-rows map-cols map-in? map-tile map-up map-down map-walkable? map-seen? map-light! map-light-radius!
-  tile-rock tile-down tile-up)
+  map-place-at tile-rock tile-down tile-up tile-door)
 (import roguelike/dungeon dungeon-generate dungeon-spot)
 (import x/core/doors int/)
 (import roguelike/state
@@ -434,13 +434,22 @@
   (fn (_ g)
     (def here (state-items-at g (player-r (game-player g)) (player-c (game-player g))))
     (unless (null? here) (items-pickup! g))))
-; A door stood on, out of doors in a world of screens, says where it goes.
+; A door stood on, out of doors in a world of screens, says where it goes;
+; a building's door says the building, by its (enter "TEXT") or its name.
 (def %gm-note-door!
   (fn (_ g)
     (def p (game-player g))
     (def name (if (if (game-screens? g) (null? (game-inside g)) #f) (game-door g (game-level-key g)) ()))
     (when (if (null? name) #f (= (map-tile (game-map g) (player-r p) (player-c p)) tile-down))
-      (state-tell! g (lit door) "There is a way into the {name} here." (list (pair "name" name))))))
+      (state-tell! g (lit door) "There is a way into the {name} here." (list (pair "name" name))))
+    (def place (if (= (map-tile (game-map g) (player-r p) (player-c p)) tile-door) (map-place-at (game-map g) (player-r p) (player-c p)) ()))
+    (unless (null? place)
+      ((fn (_ b)
+         (def enter (if (null? b) "" (data-get (rest b) (lit enter) "")))
+         (if (str=? enter "")
+           (state-tell! g (lit building) "The door of {name}." (list (pair "name" (first place))))
+           (state-say! g enter)))
+       (List find (fn (_ f) (str=? (first f) (first place))) (data-all (game-forms g) (lit building)))))))
 
 ; A step DR DC, a blow at what stands there, or a word with it when it
 ; talks: whether a turn passed.  Confused, the step goes any way; held,

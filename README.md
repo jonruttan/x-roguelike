@@ -105,9 +105,12 @@ stairs.  `(level-style town)` lays a town: streets, and rows of
 terraces `(terrace-depth LO HI)` metres deep with `(street LO HI)`
 between the rows, each terrace `(terrace-length LO HI)` along with
 `(lane LO HI)` between, its houses `(house-width LO HI)` each with a
-door onto the
-street; two cells round the edge are street, and the `(square W H)` in
-the middle is left clear.  In a world of screens the bands run from
+door onto the street; two cells round the edge are street, and the
+`(square W H)` in the middle is left clear.  Each `(building NAME
+(size W D) . PROPS)` the level names is laid from its plan round the
+square, W metres along and D deep, walled, its door toward the
+square, on the first side it fits; the terraces keep off them, and
+its door, stood on, says its `(enter "TEXT")`.  In a world of screens the bands run from
 the hub, ring 0, and any form a band names besides its own -- a level
 knob, a level style -- is in front of the set's on its screens, so
 `kettle`'s first band, "Kettle", lays hedged fields round the town's
@@ -203,7 +206,9 @@ PROPS)` is screen X Y, its PROPS in front of its band's there, its
 `(enter "TEXT")` said the first time there, and a world that names any
 has only those.  `town` is five: the square, with the pithead north of
 it, the river end south, the terraces east and Guild Street west, at
-two metres a cell.
+two metres a cell, each with its buildings: the inn and the council
+house on the square, the engine house on the pithead, the mill on the
+river, the chapel by the terraces, the Guild hall on Guild Street.
 
 What a game is worth is the set's `(score (NAME POINTS) ...)`: POINTS
 for each of `gold`, `deepest` (the level reached, or the screens out

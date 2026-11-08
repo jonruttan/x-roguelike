@@ -23,7 +23,7 @@
 
 (import roguelike/data data-all data-one data-get data-region)
 (import roguelike/map
-  map-rows map-cols map-set! map-down! map-each! map-walkable? map-fill-unreached!
+  map-rows map-cols map-set! map-down! map-each! map-walkable? map-fill-unreached! map-place-at
   tile-down tile-floor tile-wall tile-thicket)
 (import roguelike/dungeon dungeon-spot)
 (import x/core/doors int/)
@@ -87,7 +87,8 @@
 
 ; On a screen just made, a door to the first interior whose depth
 ; covers it and whose chance comes up: the stairs down on a free cell
-; off the outer ring, the interior's name kept under the screen's key.
+; off the outer ring and out of any building, the interior's name kept
+; under the screen's key.
 ; A door into a region that is a world of screens is laid in the
 ; region's own ground, drawn at its size when it fits (%in-ground).
 (def interiors-door!
@@ -103,6 +104,7 @@
       (fn (_ r c)
         (match ((< r 1) #f) ((< c 1) #f) ((< (- (map-rows m) 2) r) #f) ((< (- (map-cols m) 2) c) #f)
                ((not (state-free? g r c)) #f)
+               ((not (null? (map-place-at m r c))) #f)
                (#t (null? (state-items-at g r c))))))
     (def ground (if (null? pick) () (%in-ground g m (first (%in-prop pick (lit region) (list ""))))))
     (def at (match ((null? pick) ()) ((not (null? ground)) (%in-place! g m ground)) (#t (dungeon-spot (game-rng g) m inner? 100))))
