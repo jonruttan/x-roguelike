@@ -19,11 +19,11 @@
 
 (import x/type/vector)
 (import x/gfx/canvas)
-(import x/core/doors int+ int* int< int= str-make str->ptr ptr-ref ptr-set!)
+(import x/core/doors int+ int* int/ int< int= str-make str->ptr ptr-ref ptr-set!)
 (import roguelike/data data-load data-all)
 (import roguelike/frame frame-tile-size frame-view-rows frame-view-cols frame-level-y
-  frame-scene frame-light-map)
-(import roguelike/draw draw-top draw-status)
+  frame-scene frame-light-map frame-named)
+(import roguelike/draw draw-top draw-status draw-overlay)
 
 (def paint-width 640)
 (def paint-height 360)
@@ -109,10 +109,11 @@
         (Canvas fill! c (List ref 1 op) (- (List ref 2 op) dy) (List ref 3 op) (List ref 4 op) %pt-black))
       (#t ()))))
 
-; A painter: [SCREEN LAYER FONT SCENE], the scene the last turn's.
+; A painter: [SCREEN LAYER FONT SCENE PANEL], the scene the last
+; turn's and the panel the art's nine-piece picture (a tile form), or nil.
 (def paint-make
   (fn (_ font)
-    (Vector of (Canvas make paint-width paint-height) (Canvas make %pt-level-w %pt-level-h) font ())))
+    (Vector of (Canvas make paint-width paint-height) (Canvas make %pt-level-w %pt-level-h) font () ())))
 (def paint-screen (fn (_ p) (Vector ref 0 p)))
 (def %pt-over (fn (_ p) (rest (rest (Vector ref 3 p)))))
 
@@ -125,6 +126,7 @@
     (Canvas fill! layer 0 0 %pt-level-w %pt-level-h %pt-black)
     (List for-each (fn (_ op) (%pt-op! layer op frame-level-y)) (first (rest scene)))
     (Vector set! 3 scene p)
+    (Vector set! 4 (frame-named a (lit panel) 0) p)
     p))
 
 ; TEXT in lines of at most eighty letters, broken at a space.
@@ -137,6 +139,27 @@
       ((fn (_ at) (pair (Str8 sub 0 at text) (self (Str8 sub (+ at 1) (- (Str8 length text) (+ at 1)) text))))
        (%pt-break text 80)))))
 (def %pt-fit (fn (_ s) (if (< 80 (Str8 length s)) (Str8 sub 0 80 s) s)))
+
+; LINES laid over the level on a panel at its top left: the art's
+; nine-piece PANEL (a tile form) stretched round them, or a dark box
+; where the set has none.  Nothing for no lines.
+(def %pt-panel-dark (list 20 18 16 235))
+(def %pt-overlay!
+  (fn (_ s panel font lines)
+    (unless (null? lines)
+      (do (def shown (List take (int/ (- %pt-level-h 16) 9) lines))
+          (def w (+ 16 (* 8 (List fold (fn (_ n l) (if (< n (Str8 length l)) (Str8 length l) n)) 0 shown))))
+          (def w2 (if (< paint-width w) paint-width w))
+          (def h (+ 16 (* 9 (List length shown))))
+          (def x 0)
+          (def y frame-level-y)
+          (def pic (if (null? panel) () (%pt-find (rest panel) (lit picture))))
+          (def cut (if (null? panel) () (%pt-find (rest panel) (lit cut))))
+          (if (if (null? pic) #t (null? cut))
+            (Canvas blend! s x y (Canvas fill! (Canvas make w2 h) 0 0 w2 h %pt-panel-dark) 0 0 w2 h)
+            (Canvas nine! s x y w2 h (List ref 1 pic) (List ref 1 cut) (List ref 2 cut) (List ref 3 cut) (List ref 4 cut)))
+          ((fn (self l ly) (unless (null? l) (do (Canvas text! s (+ x 8) ly (%pt-fit (first l)) %pt-ink font) (self (rest l) (+ ly 9)))))
+           shown (+ y 8))))))
 
 ; Frame TICK of game G drawn on the screen from the last turn's scene:
 ; the layer, what stands on it, the light, the messages and the
@@ -158,6 +181,7 @@
     (Canvas text! s 0 4 (first lines) %pt-ink font)
     (unless (null? (rest lines)) (Canvas text! s 0 13 (%pt-fit (first (rest lines))) %pt-ink font))
     (Canvas text! s 0 340 (%pt-fit (draw-status g)) %pt-ink font)
+    (%pt-overlay! s (Vector ref 4 p) font (draw-overlay g))
     s))
 
 ; Whether the last turn's scene has a light that flickers: whether the

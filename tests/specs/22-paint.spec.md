@@ -61,3 +61,17 @@ each frame that layer, what stands on it, the light and the text.
 ```
 ---
     (640 360 #t (0 0 0 255) #t #t)
+
+### the pack looked at lies over the level on the panel, its lines written
+
+```roguelike
+(import roguelike/draw draw-overlay)
+(def before (Canvas pixel s 4 28))
+(game-key! g "i")
+(paint-turn! p g fa)
+(def s (paint-frame! p g 0))
+(def ink? (fn (_ y) (List any? (fn (_ x) (= 206 (first (Canvas pixel s x y)))) (List range 8 200))))
+(write (list (List length (draw-overlay g)) (equal? before (Canvas pixel s 4 28)) (List any? ink? (List range 32 40))))
+```
+---
+    (1 #f #t)
