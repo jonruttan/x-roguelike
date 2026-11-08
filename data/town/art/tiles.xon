@@ -939,3 +939,42 @@
   "dhhhhhhhhhhhhhhd"
   "kRRRRRRRRRRRRRRk"))
 
+
+; --- who walks there ---------------------------------------------------------
+
+; One of Kettle's people about the streets: flat cap, muffler, a long
+; coat, a walking staff, and a lantern for the dark coming home.
+(tile player (light 255 200 130 5) (flicker 10) (rows
+  "................"
+  "......kkkk...k.."
+  ".....kUUUUk.kVk."
+  "......kpPPk.kTk."
+  "......kPpPk.kTk."
+  ".......kPk..kTk."
+  ".....kHHHHkkpTk."
+  "...kucCCcCCckTk."
+  "...kucCCcCCckTk."
+  "...kuccCcCcckTk."
+  "..kPkcCcCcCckTk."
+  "..kikcCckCcckTk."
+  ".kQLkkuukuukkTk."
+  ".kLLk.kuk.kukT.."
+  "..kk..kkk.kkkT.."
+  "......kkk.kkkk..")
+  (frames 4 (rows
+  "................"
+  "......kkkk...k.."
+  ".....kUUUUk.kVk."
+  "......kpPPk.kTk."
+  "......kPpPk.kTk."
+  ".......kPk..kTk."
+  ".....kHHHHkkpTk."
+  "...kucCCcCCckTk."
+  "...kucCCcCCckTk."
+  "...kuccCcCcckTk."
+  "..kPkcCcCcCckTk."
+  "..kikcCckCcckTk."
+  ".kLLkkuukuukkTk."
+  ".kQLk.kuk.kukT.."
+  "..kk..kkk.kkkT.."
+  "......kkk.kkkk..")))

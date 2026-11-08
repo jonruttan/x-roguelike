@@ -54,6 +54,12 @@ Anything with no picture is drawn as its glyph in the font, in the
 colour the terminal gives it.  A set with no art at all still plays in
 the window.
 
+A region (a set joined to the one the game began on, gone into by a
+door: the town from the valley, the Delve from the town) is drawn with
+its own set's art, and the art of the set the game began on behind it
+for any name it draws nothing of: the region's ground is its own, the
+world's people and things look the same wherever they are carried.
+
 ## The form
 
 A set's pictures are in `data/SET/art/*.xon`.  The set is the `.xon`

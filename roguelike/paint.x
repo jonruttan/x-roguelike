@@ -104,6 +104,38 @@
             ((fn (_ ps) (if (null? ps) () (list ps))) (%pt-prop other (lit pictures))))))
       drawn)))
 
+; Whether tile names A and B are one name: a glyph's symbol or a
+; creature's string.
+(def %pt-same-name? (fn (_ a b) (if (str? a) (if (str? b) (str=? a b) #f) (eq? a b))))
+; The painted art OWN, then each tile of the painted art OUTER whose
+; name OWN draws nothing of: a region's own ground in front, and the
+; world's people and things it carries in drawn as the world draws
+; them.
+(def %pt-beside
+  (fn (_ own outer)
+    (def names (List map (fn (_ f) (List ref 1 f)) (List filter %pt-tile? own)))
+    (List append own
+      (List filter (fn (_ f) (if (%pt-tile? f) (not (List any? (fn (_ n) (%pt-same-name? n (List ref 1 f))) names)) #f))
+        outer))))
+
+; The art of each place of the set at DIR, as a function of the place:
+; "" the set's own art/; a region (see data.x) the art/ of its set
+; beside DIR, with the set's own art behind it for any name it does
+; not draw.  Each is read and painted (paint-art) the first time it is
+; asked for.  A name no art draws is drawn with its letter.
+(def paint-arts
+  (fn (_ dir)
+    (def made (Vector of ()))
+    (fn (self place)
+      (def hit (List find (fn (_ p) (str=? (first p) place)) (Vector ref 0 made)))
+      (if (null? hit)
+        ((fn (_ own)
+           (def art (if (str=? place "") own (%pt-beside own (self ""))))
+           (Vector set! 0 (pair (pair place art) (Vector ref 0 made)) made)
+           art)
+         (paint-art (guard (e ()) (data-load (Str8 append (if (str=? place "") dir (Str8 append dir "/../" place)) "/art")))))
+        (rest hit)))))
+
 ; A one-letter string of the character with code N.
 (def %pt-letter
   (fn (_ n)
@@ -306,5 +338,5 @@
       (%pt-over p))))
 
 (provide roguelike/paint
-  paint-width paint-height paint-art paint-font paint-make paint-screen paint-turn! paint-frame! paint-flickers?
+  paint-width paint-height paint-art paint-arts paint-font paint-make paint-screen paint-turn! paint-frame! paint-flickers?
   paint-zoom paint-zoom! paint-zoom-least paint-zoom-most paint-zoom-first)
