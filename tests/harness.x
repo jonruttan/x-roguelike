@@ -18,14 +18,14 @@
   room-r0 room-c0 room-r1 room-c1 room-centre
   map-room-at map-light-radius! tile-rock tile-floor tile-wall tile-door tile-passage tile-down tile-up
   tile-water tile-pillar tile-fall tile-dressed tile-hedge tile-gate tile-thicket tile-edge tile-bog tile-scar map-passable?
-  dungeon-generate scale-rung scale-across scale-down scale-area scale-check!
+  dungeon-generate scale-rung scale-across scale-down scale-area scale-seconds scale-check!
   game-make game-key! game-explore! game-more! game-score game-score-lines game-score-text game-help game-draw!
   game-set game-depth game-map game-player game-creatures game-creatures! game-floor game-floor! game-pack game-pack!
   game-messages game-turn game-ask game-over game-epitaph game-known game-deepest game-log game-pages-placed
   game-quest-state game-placed game-sure game-traps game-traps! game-exploring?
   game-screen game-screens? game-kept game-kept-level game-hub game-screen-key game-screen-distance game-chain
   game-band band-name game-forms
-  game-door game-inside game-level-key game-turn! game-over! game-deepest! game-quest-state!
+  game-door game-inside game-level-key game-turn! game-clock game-clock! game-over! game-deepest! game-quest-state!
   game-below? game-region game-regions game-top-set game-screen-name
   player-r player-c player-at! player-hp player-hp! player-hpmax player-str player-level player-exp player-gold player-gold!
   player-food player-food! player-condition player-weapon player-armour player-rings

@@ -39,7 +39,8 @@
 ; the set has made sure of: "stocked N" for each level stocked, and one
 ; "band NAME: ITEM" for each item a band has laid, 32 the regions stood
 ; in, innermost first, each (NAME SET SCREEN DEPTH): the region's name,
-; and the set, the screen and the depth at its door, 33 unused, 34 the
+; and the set, the screen and the depth at its door, 33 the clock, the
+; seconds the game has taken, each turn the time to walk a cell, 34 the
 ; names of the kinds whose tale has been told.
 ; Every slot here is read through the object doors, not the class: a
 ; class send costs some two hundred objects, and a turn reads thousands.
@@ -65,6 +66,8 @@
 (def game-messages! (fn (_ g l) (%st-put! g 8 l)))
 (def game-turn (fn (_ g) (%st-get g 9)))
 (def game-turn! (fn (_ g n) (%st-put! g 9 n)))
+(def game-clock (fn (_ g) (%st-get g 33)))
+(def game-clock! (fn (_ g n) (%st-put! g 33 n)))
 (def game-ask (fn (_ g) (%st-get g 10)))
 (def game-ask! (fn (_ g q) (%st-put! g 10 q)))
 (def game-over (fn (_ g) (%st-get g 11)))
@@ -441,7 +444,7 @@
     (%st-put! g 29 ())
     (%st-put! g 30 ())
     (%st-put! g 32 ())
-    (%st-put! g 33 ())
+    (%st-put! g 33 0)
     (%st-put! g 34 ())
     g))
 
@@ -558,7 +561,7 @@
 
 (provide roguelike/state
   game-rng game-rng! game-set game-depth game-depth! game-map game-map! game-player game-creatures game-creatures!
-  game-floor game-floor! game-pack game-pack! game-messages game-messages! game-turn game-turn!
+  game-floor game-floor! game-pack game-pack! game-messages game-messages! game-turn game-turn! game-clock game-clock!
   game-ask game-ask! game-over game-over! game-guises game-known game-known! game-told game-told! game-deepest game-deepest!
   game-log game-rows game-cols game-epitaph game-epitaph! game-seed game-goal-placed? game-goal-placed!
   game-pages-placed game-page-placed! game-quests game-quest-state game-quest-state! game-placed game-placed?

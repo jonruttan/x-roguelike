@@ -23,8 +23,11 @@
 
 (player 14 16)
 (unarmed 1 3)
-(hunger 1200 300 150)
-(starve 6)
+; Food in seconds, a turn the time to walk a cell: half a day's at the
+; start; felt with four hours left, weakening with one; a day's the
+; most.  Past nothing, (starve N) costs a hit point every N seconds.
+(hunger 43200 14400 3600 86400)
+(starve 600)
 (view 8)
 
 ; Streets and terraces, in metres: rows of brick terraces under slate,
@@ -41,7 +44,7 @@
 (items 0 0)
 (gold 0 0 0)
 (exp 10)
-(regen 12)
+(regen 30)
 (known potion scroll)
 
 ; The town as one band, so its walls and setts are drawn as the town's.

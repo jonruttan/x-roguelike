@@ -78,7 +78,7 @@ there who ask for something and pay for it.
 What a set may turn on, each off unless named: `(view N)` sight to N
 cells, `(level-style caves)` with `(cave-fill PERCENT)`, `(known CLASS
 ...)`, a first `(hunger ...)` value under one, or `(starve N)` for a hit
-point every N turns past nothing in place of the faint; `(traps LO HI)`
+point every N seconds past nothing in place of the faint; `(traps LO HI)`
 a level, of its `(trap NAME MESSAGE (effect ...))` kinds, hurt, hold,
 aggravate or teleport; `(surprise N)` times the damage on a sleeper;
 `(strength N)` on a weapon or armour, and `(effect upgrade)` on a
@@ -186,6 +186,15 @@ scale off the sequence is refused when the set is read.  A band's or
 an interior's scale is in front of the set's, and an interior that
 names none is at 1.  `kettle`'s valley is at
 21, a screen near enough 1700 metres by 750, and `town` at 2.
+
+A turn takes the time to walk a cell at the level's scale, a metre
+and four tenths a second, a second at least: a second at 1 and 2,
+fifteen on `kettle`'s valley.  The game keeps a clock of the seconds,
+and food, `(starve N)` and `(regen N)` are counted on it, so a set
+whose levels are at 1 plays a second a turn.  `(hunger STORE HUNGRY
+WEAK MOST DEATH)` gives MOST, what eating fills to (2000), and DEATH,
+the seconds under nothing a set with no `(starve N)` dies at (150);
+`kettle` begins with half a day's food and holds a day's.
 
 What a cell is and how it is drawn are kept apart.  `roguelike/map`
 reports each cell's kind of terrain -- floor, wall, door, water,

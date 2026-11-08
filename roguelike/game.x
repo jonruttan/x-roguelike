@@ -43,7 +43,7 @@
 (import x/core/doors int/)
 (import roguelike/state
   game-rng game-set game-depth game-depth! game-map game-map! game-player game-creatures game-creatures!
-  game-floor game-floor! game-pack game-turn game-turn! game-ask game-ask! game-over game-over! game-traps game-traps! game-told game-told!
+  game-floor game-floor! game-pack game-turn game-turn! game-ask game-ask! game-over game-over! game-traps game-traps! game-told game-told! game-clock game-clock!
   game-exploring game-exploring! game-below? game-go-below! game-go-above! game-top-set
   game-screen game-screen! game-kept-level game-keep! game-screens? game-world-cols game-world-rows game-hub
   game-screen-distance game-screen-in? game-screen-key game-door game-inside game-inside! game-level-key
@@ -69,7 +69,7 @@
 (import roguelike/traps traps-found-at traps-place! traps-step! traps-search!)
 (import roguelike/interiors interiors-door! interiors-params interiors-prop1)
 (import roguelike/data data-all data-one data-get data-region)
-(import roguelike/scale scale-check!)
+(import roguelike/scale scale-rung scale-seconds scale-check!)
 
 (def %gm-roll2 (fn (_ g spec) (state-roll (game-rng g) (List ref 0 spec) (List ref 1 spec))))
 
@@ -378,37 +378,63 @@
 (def %gm-starving?
   (fn (_ g) (if (< 0 (game-param1 g (lit starve) 0)) (< (player-food (game-player g)) 0) #f)))
 
-(def %gm-hunger!
+; The seconds a turn takes here: a cell walked at the level's scale,
+; an interior's own or 1, out of doors the screen's, band's or set's.
+(def %gm-seconds
   (fn (_ g)
+    (def in (game-inside g))
+    (scale-seconds (scale-rung (if (null? in) (data-get (game-forms g) (lit scale) 1) (interiors-prop1 g in (lit scale) 1))))))
+
+; How many times every N seconds comes round from the clock at WAS to
+; the clock at NOW.
+(def %gm-every (fn (_ n was now) (- (int/ now n) (int/ was n))))
+
+; Whether FROM to TO came down to MARK or past it.
+(def %gm-reached? (fn (_ mark from to) (if (< mark from) (not (< mark to)) #f)))
+
+; Food is seconds of it, the set's (hunger STORE HUNGRY WEAK MOST DEATH):
+; STORE at the start, felt at HUNGRY and weakening at WEAK, MOST the
+; most eaten (2000), and, past nothing with no (starve N), death at
+; DEATH seconds under (150).  A ring of sustenance halves the cost.
+; Under (starve N) a hit point goes every N seconds past nothing.
+(def %gm-hunger!
+  (fn (_ g was now)
     (def p (game-player g))
     (def spec (game-param g (lit hunger) (list 1300 300 150)))
     (def starve (game-param1 g (lit starve) 0))
-    (unless (if (state-ring? g (lit sustenance)) (= 1 (% (game-turn g) 2)) (< (List ref 0 spec) 1))
-      (player-food! p (- (player-food p) 1)))
+    (def s (- now was))
+    (def before (player-food p))
+    (unless (< (List ref 0 spec) 1)
+      (player-food! p (- before (if (state-ring? g (lit sustenance)) (int/ (+ s (- 1 (% (game-turn g) 2))) 2) s))))
     (def f (player-food p))
     (match
       ((< (List ref 0 spec) 1) ())
-      ((= f (List ref 1 spec)) (state-tell! g (lit hungry) "You are getting hungry." ()))
-      ((= f (List ref 2 spec)) (state-tell! g (lit weak) "You are weak with hunger." ()))
+      ((%gm-reached? (List ref 1 spec) before f) (state-tell! g (lit hungry) "You are getting hungry." ()))
+      ((%gm-reached? (List ref 2 spec) before f) (state-tell! g (lit weak) "You are weak with hunger." ()))
       ((%gm-starving? g)
-        (when (= 0 (% (game-turn g) starve))
-          (do (state-tell! g (lit starving) "You are starving." ())
-              (combat-hurt-player! g 1 (state-text g (lit starved) "starved to death" ())))))
-      ((< f -150) (combat-hurt-player! g 10000 (state-text g (lit starved) "starved to death" ())))
+        ((fn (_ k)
+           (when (< 0 k)
+             (do (state-tell! g (lit starving) "You are starving." ())
+                 (combat-hurt-player! g k (state-text g (lit starved) "starved to death" ())))))
+         (%gm-every starve was now)))
+      ((< f (- 0 (if (< 4 (List length spec)) (List ref 4 spec) 150)))
+        (combat-hurt-player! g 10000 (state-text g (lit starved) "starved to death" ())))
       ((if (< f 0) (state-chance? (game-rng g) 15) #f)
         (do (state-tell! g (lit faint) "You faint from lack of food." ()) (creatures-act! g)))
       (#t ()))))
 
-; A hit point back every so many turns: the set's (regen N), two fewer
-; a level, four at least; every third turn with a ring of regeneration;
-; none while starving.
+; A hit point back every so many seconds: the set's (regen N), two
+; fewer a level, four at least; every third second with a ring of
+; regeneration; none while starving.
 (def %gm-regen!
-  (fn (_ g)
+  (fn (_ g was now)
     (def p (game-player g))
     (def period (if (state-ring? g (lit regeneration)) 3
                   ((fn (_ n) (if (< n 4) 4 n)) (- (game-param1 g (lit regen) 20) (* 2 (- (player-level p) 1))))))
-    (when (match ((%gm-starving? g) #f) ((not (= 0 (% (game-turn g) period))) #f) (#t (< (player-hp p) (player-hpmax p))))
-      (player-hp! p (+ (player-hp p) 1)))))
+    (def k (if (%gm-starving? g) 0 (%gm-every period was now)))
+    (def hp (+ (player-hp p) k))
+    (when (if (< 0 k) (< (player-hp p) (player-hpmax p)) #f)
+      (player-hp! p (if (< (player-hpmax p) hp) (player-hpmax p) hp)))))
 
 (def %gm-creatures-act!
   (fn (_ g)
@@ -420,9 +446,12 @@
 
 (def %gm-end-turn!
   (fn (_ g)
+    (def was (game-clock g))
+    (def now (+ was (%gm-seconds g)))
     (game-turn! g (+ (game-turn g) 1))
-    (%gm-hunger! g)
-    (%gm-regen! g)
+    (game-clock! g now)
+    (%gm-hunger! g was now)
+    (%gm-regen! g was now)
     (%gm-creatures-act! g)
     (player-tick! (game-player g))
     (creatures-wander! g)

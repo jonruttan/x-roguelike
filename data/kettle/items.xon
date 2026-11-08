@@ -23,8 +23,8 @@
 (item armour "waxed coat" (rarity 12) (depth 0 3) (armour 1))
 (item armour "leather jerkin" (rarity 8) (depth 2 5) (armour 2))
 
-(item food "bread" (rarity 14) (depth 0 5) (nutrition 600))
-(item food "cheese" (rarity 8) (depth 0 5) (nutrition 400))
+(item food "bread" (rarity 14) (depth 0 5) (nutrition 21600))
+(item food "cheese" (rarity 8) (depth 0 5) (nutrition 14400))
 
 (guise wand "ash" "hazel" "elm" "yew")
 (guise ring "tin" "horn" "bone" "silver")
