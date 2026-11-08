@@ -32,7 +32,7 @@
   game-over game-epitaph game-turn game-traps game-param1 game-screens? game-screen
   player-r player-c player-hp player-hpmax player-str player-strmax player-level player-exp player-gold
   player-food player-lamp player-condition item-r item-c item-class? item-class creature-r creature-c creature-glyph
-  creature-trait? game-param game-band band-prop1 game-forms state-defence)
+  creature-trait? game-param game-band band-prop1 game-forms state-defence band-name game-screen-name)
 (import roguelike/combat combat-exp-for)
 (import roguelike/creatures creatures-shown?)
 (import roguelike/items items-glyph items-pack-lines)
@@ -306,4 +306,19 @@
 (def draw-top (fn (_ g) (%dr-top g)))
 (def draw-status (fn (_ g) (%dr-status g)))
 
-(provide roguelike/draw game-draw! draw-top draw-status draw-overlay)
+; The standing in its parts, for a front-end that lays it out itself:
+; (PLACE DEPTH HP HPMAX GOLD STR STRMAX ARMOUR LEVEL WARNINGS).  PLACE is
+; the screen's name in a world of screens, else the band's, or ""; DEPTH
+; the level, nil in a world of screens; WARNINGS hunger, the lamp and
+; conditions, "" for none.
+(def draw-standing
+  (fn (_ g)
+    (def p (game-player g))
+    (def b (game-band g))
+    (list (if (game-screens? g) (game-screen-name g) (if (null? b) "" (band-name b)))
+          (if (game-screens? g) () (game-depth g))
+          (player-hp p) (player-hpmax p) (player-gold p) (player-str p) (player-strmax p)
+          (state-defence g) (player-level p)
+          (Str8 join " " (List filter (fn (_ s) (not (str=? s ""))) (list (%dr-hunger g) (%dr-lamp g) (%dr-conditions g)))))))
+
+(provide roguelike/draw game-draw! draw-top draw-status draw-standing draw-overlay)
