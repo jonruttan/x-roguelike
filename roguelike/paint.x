@@ -68,24 +68,28 @@
   (fn (_ rows colours)
     ((fn (_ c) (list (lit picture) c (%pt-opaque? c))) (Canvas rows (rest rows) colours))))
 
-; ART-FORMS with each tile form's picture added, and for a tile that
-; moves, (pictures TICKS PICTURE ...): its own rows' then each of its
-; (frames TICKS (rows ...) ...), each held TICKS ticks.  A tile drawn as
-; another takes the first of that one's whole, unbanded pictures.
+; ART-FORMS with each tile form's picture added; for a tile that moves,
+; (pictures TICKS PICTURE ...): its own rows' then each of its (frames
+; TICKS (rows ...) ...), each held TICKS ticks; and for one that walks,
+; (walking TICKS PICTURE ...): each of its (walk TICKS (rows ...) ...).
+; A tile drawn as another takes the first of that one's whole, unbanded
+; pictures.
 (def paint-art
   (fn (_ art-forms)
     (def colours (data-all art-forms (lit colour)))
+    (def cycle (fn (_ head form pics) (pair head (pair (first (rest form)) pics))))
     (def drawn
       (List map
         (fn (_ f)
           (def rows (if (%pt-tile? f) (%pt-prop f (lit rows)) ()))
           (def frames (if (null? rows) () (%pt-prop f (lit frames))))
+          (def walk (if (null? rows) () (%pt-prop f (lit walk))))
+          (def each (fn (_ form) (List map (fn (_ r) (%pt-picture r colours)) (rest (rest form)))))
           (if (null? rows) f
             ((fn (_ pic)
                (List append f (list pic)
-                 (if (null? frames) ()
-                   (list (pair (lit pictures) (pair (first (rest frames))
-                     (pair pic (List map (fn (_ r) (%pt-picture r colours)) (rest (rest frames))))))))))
+                 (if (null? frames) () (list (cycle (lit pictures) frames (pair pic (each frames)))))
+                 (if (null? walk) () (list (cycle (lit walking) walk (each walk))))))
              (%pt-picture rows colours))))
         art-forms))
     (def whole
@@ -161,25 +165,52 @@
 ; The Nth of L.
 (def %pt-nth (fn (self n l) (if (int= n 0) (first l) (self (int- n 1) (rest l)))))
 ; The picture of PROPS, a tile's, at TICK for the cell at X Y: its one
-; picture, or of its pictures the one the tick has come to, each cell
-; out of step with the rest by its place.  TICK comes moved on by the
-; camera's place (paint-frame!), so the step is the map cell's and
-; holds as the view scrolls.
+; picture, or of its pictures one by how the tile moves.  TICK comes
+; moved on by the camera's place (paint-frame!), so a cell's step holds
+; as the view scrolls; each cell is out of step with the rest by its
+; place.  MODE is nil for the ground, whose pictures go round in turn;
+; for a thing that walks, moving when it moved on the last turn, still
+; otherwise.  A thing moving, for one round of its pictures after the
+; turn (AGE the ticks since that turn was first shown), goes round its
+; walk (walking ...), or its pictures where it has no walk, in step; a
+; thing still, or done moving, holds its first picture and now and
+; then, at no beat, shows another for a while.
 (def %pt-pick
-  (fn (_ props x y tick)
+  (fn (_ props x y tick mode age)
     (def ps (%pt-find props (lit pictures)))
-    (if (null? ps) (%pt-find props (lit picture))
-      (do (def ticks (first (rest ps)))
-          (def all (rest (rest ps)))
-          (def seed (int+ (int* (int/ x frame-tile-size) 7) (int* (int/ y frame-tile-size) 13)))
-          (%pt-nth (int% (int/ (int+ tick seed) ticks) (%pt-length all 0)) all)))))
+    (def ws (if (eq? mode (lit moving)) (%pt-find props (lit walking)) ()))
+    (def seed (int+ (int* (int/ x frame-tile-size) 7) (int* (int/ y frame-tile-size) 13)))
+    (match
+      ((if (null? ws) #f (int< age (%pt-round ws))) (%pt-cycle ws tick seed))
+      ((null? ps) (%pt-find props (lit picture)))
+      ((null? mode) (%pt-cycle ps tick seed))
+      ((if (eq? mode (lit moving)) (int< age (%pt-round ps)) #f) (%pt-cycle ps tick seed))
+      (#t (%pt-fidget ps tick seed)))))
 (def %pt-length (fn (self l n) (if (null? l) n (self (rest l) (int+ n 1)))))
+; The ticks of one round of PS, (HEAD TICKS PICTURE ...).
+(def %pt-round (fn (_ ps) (int* (first (rest ps)) (%pt-length (rest (rest ps)) 0))))
+; Of PS, the picture TICK has come to, going round in turn from SEED.
+(def %pt-cycle
+  (fn (_ ps tick seed)
+    (def all (rest (rest ps)))
+    (%pt-nth (int% (int/ (int+ tick seed) (first (rest ps))) (%pt-length all 0)) all)))
+; Of PS, its first picture, or for about one stretch of TICKS in five
+; another of them, the stretches picked by a hash of the stretch and
+; SEED, so a crowd standing about fidgets each at its own odd moments.
+(def %pt-fidget
+  (fn (_ ps tick seed)
+    (def all (rest (rest ps)))
+    (def n (%pt-length all 0))
+    (def stretch (int/ (int+ tick (int* seed 5)) (first (rest ps))))
+    (def h (int% (int* (int+ (int* stretch 7919) (int* seed 104729)) 31337) 1009))
+    (if (if (int< 1 n) (int< (int% h 100) 22) #f) (%pt-nth (int+ 1 (int% h (int- n 1))) all) (first all))))
 ; Op OP drawn on canvas C at TICK, its Y moved up by DY: a tile copied
 ; when its picture is opaque and blended when not, a fill in black, a
 ; glyph in the font in the middle of its cell.  A tile with no picture
-; draws nothing.  A tile op's form is (NAME . PROPS).
+; draws nothing.  A tile op's form is (NAME . PROPS), then a walking
+; thing's MODE (see %pt-pick), AGE the ticks since the turn was shown.
 (def %pt-op!
-  (fn (_ c op dy font tick)
+  (fn (_ c op dy font tick age)
     (def head (first op))
     (def x (first (rest op)))
     (def y (int- (first (rest (rest op))) dy))
@@ -190,14 +221,14 @@
            (unless (null? pic)
              ((if (first (rest (rest pic))) %pt-copy! %pt-blend!)
               Canvas c x y (first (rest pic)) 0 0 frame-tile-size frame-tile-size)))
-         (%pt-pick (rest (first more)) x (first (rest (rest op))) tick)))
+         (%pt-pick (rest (first more)) x (first (rest (rest op))) tick (if (null? (rest more)) () (first (rest more))) age)))
       ((eq? head (lit fill)) (%pt-fill! Canvas c x y (first more) (first (rest more)) %pt-black))
       ((eq? head (lit glyph)) (%pt-text! Canvas c (int+ x 4) (int+ y 4) (first more) %pt-glyph font))
       (#t ()))))
 ; Each op of OPS drawn on C as %pt-op! draws it.
 (def %pt-ops!
-  (fn (self c ops dy font tick)
-    (unless (null? ops) (do (%pt-op! c (first ops) dy font tick) (self c (rest ops) dy font tick)))))
+  (fn (self c ops dy font tick age)
+    (unless (null? ops) (do (%pt-op! c (first ops) dy font tick age) (self c (rest ops) dy font tick age)))))
 
 ; A glint op, (glint X Y SEED GOLD?), drawn on C at TICK, its Y moved
 ; up by DY: a star near the cell's top right that grows and shrinks
@@ -316,18 +347,20 @@
 
 ; Whether painter P has a turn's blows still to show.
 (def paint-animating?
-  (fn (_ p) (if (int< (Vector ref 7 p) %pt-blow-frames) (not (null? (%pt-blow-ops (%pt-over p)))) #f)))
+  (fn (_ p) (if (int< (Vector ref 9 p) %pt-blow-frames) (not (null? (%pt-blow-ops (%pt-over p)))) #f)))
 ; Painter P a frame on in showing the blows.
-(def paint-step! (fn (_ p) (do (Vector set! 7 (int+ 1 (Vector ref 7 p)) p) p)))
+(def paint-step! (fn (_ p) (do (Vector set! 9 (int+ 1 (Vector ref 9 p)) p) p)))
 
-; A painter: [SCREEN LAYER FONT SCENE PANEL WORK ZOOM BLOW], the scene
-; the last turn's, the panel the art's nine-piece picture (a tile form)
-; or nil, WORK the level drawn and lit at the tile's size before it is
-; shown at ZOOM, LAYER and WORK the view's size, BLOW the frame the
-; turn's blows are shown at.
+; A painter: [SCREEN LAYER FONT SCENE PANEL WORK ZOOM WHERE SHOWN BLOW],
+; the scene the last turn's, the panel the art's nine-piece picture (a
+; tile form) or nil, WORK the level drawn and lit at the tile's size
+; before it is shown at ZOOM, LAYER and WORK the view's size; WHERE
+; each walking thing's (WHO R . C) on the last turn, SHOWN the tick that
+; turn was first shown at, or -1 before it is; BLOW the frame the turn's
+; blows are shown at.
 (def paint-make
   (fn (_ font)
-    (paint-zoom! (Vector of (Canvas make paint-width paint-height) () font () () () 0 %pt-blow-frames) paint-zoom-first)))
+    (paint-zoom! (Vector of (Canvas make paint-width paint-height) () font () () () 0 () -1 %pt-blow-frames) paint-zoom-first)))
 (def paint-screen (fn (_ p) (Vector ref 0 p)))
 (def %pt-over (fn (_ p) (rest (rest (Vector ref 3 p)))))
 (def paint-zoom (fn (_ p) (Vector ref 6 p)))
@@ -347,17 +380,41 @@
 (def %pt-level-w (fn (_) (int* (frame-view-cols) frame-tile-size)))
 (def %pt-level-h (fn (_) (int* (frame-view-rows) frame-tile-size)))
 
+; Of OPS, each walking thing's tile op, (tile X Y PICTURE (WHO R . C)),
+; made (tile X Y PICTURE MODE): moving when WAS, the (WHO R . C) of the
+; turn before, has WHO elsewhere, still otherwise.
+(def %pt-modes
+  (fn (_ ops was)
+    (List map
+      (fn (_ op)
+        (if (if (eq? (first op) (lit tile)) (null? (rest (rest (rest (rest op))))) #t) op
+          ((fn (_ at)
+             (def before (List find (fn (_ w) (same? (first w) (first at))) was))
+             (def moved (if (null? before) #f (not (if (= (first (rest before)) (first (rest at))) (= (rest (rest before)) (rest (rest at))) #f))))
+             (list (lit tile) (first (rest op)) (first (rest (rest op))) (List ref 3 op) (if moved (lit moving) (lit still))))
+           (List ref 4 op))))
+      ops)))
+; The (WHO R . C) of each walking thing's tile op of OPS.
+(def %pt-where
+  (fn (_ ops)
+    (List map (fn (_ op) (List ref 4 op))
+      (List filter (fn (_ op) (if (eq? (first op) (lit tile)) (not (null? (rest (rest (rest (rest op)))))) #f)) ops))))
+
 ; The turn's scene of game G with art A taken, and its level drawn into
-; the layer: once a turn, not a frame.
+; the layer: once a turn, not a frame.  Each walking thing is marked
+; moving or still against where it stood on the turn before.
 (def paint-turn!
   (fn (_ p g a)
     (def scene (frame-scene g a))
+    (def over (rest (rest scene)))
     (def layer (Vector ref 1 p))
     (Canvas fill! layer 0 0 (%pt-level-w) (%pt-level-h) %pt-black)
-    (%pt-ops! layer (first (rest scene)) frame-level-y (Vector ref 2 p) 0)
-    (Vector set! 3 scene p)
+    (%pt-ops! layer (first (rest scene)) frame-level-y (Vector ref 2 p) 0 0)
+    (Vector set! 3 (pair (first scene) (pair (first (rest scene)) (%pt-modes over (Vector ref 7 p)))) p)
+    (Vector set! 7 (%pt-where over) p)
+    (Vector set! 8 -1 p)
     (Vector set! 4 (frame-named a (lit panel) 0) p)
-    (Vector set! 7 0 p)
+    (Vector set! 9 0 p)
     p))
 
 ; TEXT in lines of at most eighty letters, broken at a space.
@@ -400,7 +457,7 @@
   (fn (_ p g tick)
     (def s (Vector ref 0 p))
     (def font (Vector ref 2 p))
-    (def k (Vector ref 7 p))
+    (def k (Vector ref 9 p))
     (def blows (if (int< k %pt-blow-frames) (%pt-blow-ops (%pt-over p)) ()))
     (def over (if (null? blows) (%pt-over p) (%pt-lunge (%pt-over p) blows k)))
     (def work (Vector ref 5 p))
@@ -409,7 +466,8 @@
     (def zoom (Vector ref 6 p))
     (Canvas copy! work 0 0 (Vector ref 1 p) 0 0 lw lh)
     (def cam (first (Vector ref 3 p)))
-    (%pt-ops! work over frame-level-y font (int+ tick (int+ (int* (rest cam) 7) (int* (first cam) 13))))
+    (when (int< (Vector ref 8 p) 0) (Vector set! 8 tick p))
+    (%pt-ops! work over frame-level-y font (int+ tick (int+ (int* (rest cam) 7) (int* (first cam) 13))) (int- tick (Vector ref 8 p)))
     (Canvas light! work 0 0 lw lh
       (frame-light-map (List find (fn (_ op) (eq? (first op) (lit view))) over)
                        (List filter (fn (_ op) (eq? (first op) (lit light))) over) tick)
@@ -431,7 +489,8 @@
 (def paint-flickers?
   (fn (_ p)
     (List any? (fn (_ op) (match ((eq? (first op) (lit light)) (< 0 (List ref 7 op))) ((eq? (first op) (lit glint)) #t)
-                                 ((eq? (first op) (lit tile)) (not (null? (%pt-find (rest (List ref 3 op)) (lit pictures)))))
+                                 ((eq? (first op) (lit tile))
+                                   ((fn (_ props) (not (if (null? (%pt-find props (lit pictures))) (null? (%pt-find props (lit walking))) #f))) (rest (List ref 3 op))))
                                  (#t #f)))
       (%pt-over p))))
 

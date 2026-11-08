@@ -201,9 +201,11 @@
 
 ; The picture named NAME put at R C, over its shadow when SHADOW; where
 ; the art has no picture of it, its GLYPH, (glyph X Y GLYPH), as the
-; terminal shows it; nothing out of view.
+; terminal shows it; nothing out of view.  A thing that walks, WHO (a
+; creature, or player), has its tile op as (tile X Y PICTURE (WHO R .
+; C)), so the painter can tell whether it moved since the last turn.
 (def %fr-put
-  (fn (_ a cam r c name shadow glyph)
+  (fn (_ a cam r c name shadow glyph who)
     (def at (frame-place cam r c))
     (def p (frame-named a name (+ (* r 80) c)))
     (def s (if shadow (frame-named a (lit shadow) 0) ()))
@@ -211,8 +213,8 @@
       ((null? at) ())
       ((null? p) (list (list (lit glyph) (first at) (rest at) glyph)))
       (#t (List append (if (null? s) () (list (list (lit tile) (first at) (rest at) s)))
-                       (list (list (lit tile) (first at) (rest at) p)))))))
-
+                       (list (if (null? who) (list (lit tile) (first at) (rest at) p)
+                               (list (lit tile) (first at) (rest at) p (pair who (pair r c))))))))))
 ; What stands on G's level under camera CAM with art A, in the order
 ; the terminal draws it: found traps and items where they were seen,
 ; creatures in view over their shadows, the player last.
@@ -223,15 +225,15 @@
     (def set (game-set g))
     (List append
       (List flat-map (fn (_ t) (if (if (trap-found? t) (map-seen? m (trap-r t) (trap-c t)) #f)
-                                 (%fr-put a cam (trap-r t) (trap-c t) (lit trap) #f (data-glyph set (lit trap) "^")) ()))
+                                 (%fr-put a cam (trap-r t) (trap-c t) (lit trap) #f (data-glyph set (lit trap) "^") ()) ()))
         (game-traps g))
       (List flat-map (fn (_ it) (if (map-seen? m (item-r it) (item-c it))
-                                  (%fr-put a cam (item-r it) (item-c it) (item-class it) #f (items-glyph g it)) ()))
+                                  (%fr-put a cam (item-r it) (item-c it) (item-class it) #f (items-glyph g it) ()) ()))
         (game-floor g))
       (List flat-map (fn (_ cr) (if (creatures-shown? g cr)
-                                  (%fr-put a cam (creature-r cr) (creature-c cr) (creature-name cr) #t (creature-glyph cr)) ()))
+                                  (%fr-put a cam (creature-r cr) (creature-c cr) (creature-name cr) #t (creature-glyph cr) cr) ()))
         (game-creatures g))
-      (%fr-put a cam (player-r p) (player-c p) (lit player) #t (data-glyph set (lit player) "@")))))
+      (%fr-put a cam (player-r p) (player-c p) (lit player) #t (data-glyph set (lit player) "@") (lit player)))))
 
 ; --- what is lit ----------------------------------------------------------------
 
