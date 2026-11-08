@@ -262,16 +262,18 @@
       (do (Screen fill s r 0 (+ 2 (Str8 length (first lines))) %dr-plain)
           (screen-put! s r 1 (first lines) %dr-plain)
           (self s (+ r 1) (rest lines))))))
-; A list looked at, or the pack's items a question can take, over the
-; level.
-(def %dr-overlay!
-  (fn (_ g s)
+; The lines laid over the level: a list looked at, a choice, or the
+; pack's items a question can take; nil for none.  The window lays the
+; same lines on a panel.
+(def draw-overlay
+  (fn (_ g)
     (def q (game-ask g))
     (match ((null? q) ())
-           ((eq? (first q) (lit look)) (%dr-lines! s 1 (List ref 3 q)))
-           ((eq? (first q) (lit choose)) (%dr-lines! s 1 (List ref 3 q)))
-           ((eq? (first q) (lit item)) (%dr-lines! s 1 (items-pack-lines g (List ref 3 q))))
+           ((eq? (first q) (lit look)) (List ref 3 q))
+           ((eq? (first q) (lit choose)) (List ref 3 q))
+           ((eq? (first q) (lit item)) (items-pack-lines g (List ref 3 q)))
            (#t ()))))
+(def %dr-overlay! (fn (_ g s) (%dr-lines! s 1 (draw-overlay g))))
 
 ; G drawn on S: S.  The level's rows are written whole; the first and
 ; last rows are blanked before their text.
@@ -289,4 +291,9 @@
     (screen-put! s (- (Screen rows s) 1) 0 (%dr-status g) %dr-plain)
     s))
 
-(provide roguelike/draw game-draw!)
+; The top row's text and the standing's, as the terminal shows them;
+; the window draws them too.
+(def draw-top (fn (_ g) (%dr-top g)))
+(def draw-status (fn (_ g) (%dr-status g)))
+
+(provide roguelike/draw game-draw! draw-top draw-status draw-overlay)
