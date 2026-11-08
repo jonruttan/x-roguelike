@@ -31,6 +31,7 @@
 (def %pt-level-h (* frame-view-rows frame-tile-size))
 (def %pt-black (list 0 0 0))
 (def %pt-ink (list 206 198 184))
+(def %pt-glyph (list 236 228 204))
 
 ; The property KEY of PROPS, or nil.
 (def %pt-find (fn (_ props key) (List find (fn (_ p) (if (pair? p) (eq? (first p) key) #f)) props)))
@@ -92,10 +93,11 @@
 ; --- drawing ------------------------------------------------------------------
 
 ; Op OP drawn on canvas C, its Y moved up by DY: a tile copied when its
-; picture is opaque and blended when not, a fill in black.  A tile with
+; picture is opaque and blended when not, a fill in black, a glyph in
+; the font in the middle of its cell.  A tile with
 ; no picture draws nothing.  A tile op's form is (NAME . PROPS).
 (def %pt-op!
-  (fn (_ c op dy)
+  (fn (_ c op dy font)
     (def head (first op))
     (match
       ((eq? head (lit tile))
@@ -107,6 +109,8 @@
          (%pt-find (rest (List ref 3 op)) (lit picture))))
       ((eq? head (lit fill))
         (Canvas fill! c (List ref 1 op) (- (List ref 2 op) dy) (List ref 3 op) (List ref 4 op) %pt-black))
+      ((eq? head (lit glyph))
+        (Canvas text! c (+ (List ref 1 op) 4) (+ (- (List ref 2 op) dy) 4) (List ref 3 op) %pt-glyph font))
       (#t ()))))
 
 ; A painter: [SCREEN LAYER FONT SCENE PANEL], the scene the last
@@ -124,7 +128,7 @@
     (def scene (frame-scene g a))
     (def layer (Vector ref 1 p))
     (Canvas fill! layer 0 0 %pt-level-w %pt-level-h %pt-black)
-    (List for-each (fn (_ op) (%pt-op! layer op frame-level-y)) (first (rest scene)))
+    (List for-each (fn (_ op) (%pt-op! layer op frame-level-y (Vector ref 2 p))) (first (rest scene)))
     (Vector set! 3 scene p)
     (Vector set! 4 (frame-named a (lit panel) 0) p)
     p))
@@ -170,7 +174,7 @@
     (def font (Vector ref 2 p))
     (def over (%pt-over p))
     (Canvas copy! s 0 frame-level-y (Vector ref 1 p) 0 0 %pt-level-w %pt-level-h)
-    (List for-each (fn (_ op) (%pt-op! s op 0)) over)
+    (List for-each (fn (_ op) (%pt-op! s op 0 font)) over)
     (Canvas light! s 0 frame-level-y %pt-level-w %pt-level-h
       (frame-light-map (List find (fn (_ op) (eq? (first op) (lit view))) over)
                        (List filter (fn (_ op) (eq? (first op) (lit light))) over) tick)

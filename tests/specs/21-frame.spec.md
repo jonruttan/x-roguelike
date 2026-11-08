@@ -135,3 +135,13 @@ takes, a wall in parts by its neighbours, and the camera on the player.
 ```
 ---
     ((40 19) (255 244 226 255) (251 239 223 255) (137 130 122 255) (0 0 0 255) (117 105 108 89))
+
+### a set with no art: what stands on the level is its glyph
+
+```roguelike
+(def bare (frame-things g (frame-art () ()) cam))
+(write (list (List all? (fn (_ op) (eq? (first op) 'glyph)) bare)
+             (List ref 3 (List ref (- (List length bare) 1) bare))))
+```
+---
+    (#t "@")

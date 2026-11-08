@@ -20,10 +20,11 @@
 
 (import x/type/vector)
 (import x/core/doors int+ int- int* int/ int% int< int= str-make str->ptr ptr-set! ptr-ref str-byte-ref char->int)
-(import roguelike/data data-all)
+(import roguelike/data data-all data-glyph)
+(import roguelike/items items-glyph)
 (import roguelike/map map-terrain map-kinds map-rows map-cols map-tile map-seen? map-visible? map-in? map-opaque? tile-rock)
 (import roguelike/state game-map game-player game-floor game-creatures game-traps
-  player-r player-c item-r item-c item-class creature-r creature-c creature-name)
+  player-r player-c item-r item-c item-class creature-r creature-c creature-name creature-glyph game-set)
 (import roguelike/creatures creatures-shown?)
 (import roguelike/traps trap-r trap-c trap-found?)
 
@@ -179,16 +180,19 @@
     (if (if (< vr 0) #t (if (< vc 0) #t (if (< vr frame-view-rows) (not (< vc frame-view-cols)) #t))) ()
       (pair (* frame-tile-size vc) (+ frame-level-y (* frame-tile-size vr))))))
 
-; The picture named NAME put at R C, over its shadow when SHADOW, or
-; nothing when it has no picture or is out of view.
+; The picture named NAME put at R C, over its shadow when SHADOW; where
+; the art has no picture of it, its GLYPH, (glyph X Y GLYPH), as the
+; terminal shows it; nothing out of view.
 (def %fr-put
-  (fn (_ a cam r c name shadow)
+  (fn (_ a cam r c name shadow glyph)
     (def at (frame-place cam r c))
     (def p (frame-named a name (+ (* r 80) c)))
     (def s (if shadow (frame-named a (lit shadow) 0) ()))
-    (if (if (null? at) #t (null? p)) ()
-      (List append (if (null? s) () (list (list (lit tile) (first at) (rest at) s)))
-                   (list (list (lit tile) (first at) (rest at) p))))))
+    (match
+      ((null? at) ())
+      ((null? p) (list (list (lit glyph) (first at) (rest at) glyph)))
+      (#t (List append (if (null? s) () (list (list (lit tile) (first at) (rest at) s)))
+                       (list (list (lit tile) (first at) (rest at) p)))))))
 
 ; What stands on G's level under camera CAM with art A, in the order
 ; the terminal draws it: found traps and items where they were seen,
@@ -197,17 +201,18 @@
   (fn (_ g a cam)
     (def m (game-map g))
     (def p (game-player g))
+    (def set (game-set g))
     (List append
       (List flat-map (fn (_ t) (if (if (trap-found? t) (map-seen? m (trap-r t) (trap-c t)) #f)
-                                 (%fr-put a cam (trap-r t) (trap-c t) (lit trap) #f) ()))
+                                 (%fr-put a cam (trap-r t) (trap-c t) (lit trap) #f (data-glyph set (lit trap) "^")) ()))
         (game-traps g))
       (List flat-map (fn (_ it) (if (map-seen? m (item-r it) (item-c it))
-                                  (%fr-put a cam (item-r it) (item-c it) (item-class it) #f) ()))
+                                  (%fr-put a cam (item-r it) (item-c it) (item-class it) #f (items-glyph g it)) ()))
         (game-floor g))
       (List flat-map (fn (_ cr) (if (creatures-shown? g cr)
-                                  (%fr-put a cam (creature-r cr) (creature-c cr) (creature-name cr) #t) ()))
+                                  (%fr-put a cam (creature-r cr) (creature-c cr) (creature-name cr) #t (creature-glyph cr)) ()))
         (game-creatures g))
-      (%fr-put a cam (player-r p) (player-c p) (lit player) #t))))
+      (%fr-put a cam (player-r p) (player-c p) (lit player) #t (data-glyph set (lit player) "@")))))
 
 ; --- what is lit ----------------------------------------------------------------
 
