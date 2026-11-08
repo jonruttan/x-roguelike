@@ -36,7 +36,7 @@
 (import roguelike/dungeon dungeon-spot)
 (import roguelike/state
   game-rng game-set game-depth game-map game-player game-creatures game-creatures! game-turn game-param game-param1
-  player-r player-c player-condition state-covers?
+  player-r player-c player-hp player-condition state-covers? state-blow!
   creature-make creature-r creature-c creature-at! creature-hp creature-hp! creature-state creature-state!
   creature-carried creature-name creature-prop creature-prop1 creature-trait? creature-condition creature-tick! state-a-kind
   creature-target creature-target!
@@ -263,19 +263,23 @@
     (match ((not (if (creature-trait? cr (lit breath)) #t (creature-trait? cr (lit ranged)))) #f)
            ((not (%cr-in-line? cr (game-player g))) #f)
            (#t (state-chance? (game-rng g) 30)))))
+; Either is kept as a blow, with what flew, for a front end to show.
 (def %cr-breathe!
   (fn (_ g cr)
+    (def p (game-player g))
+    (def let-fly!
+      (fn (_ what lo-hi cause)
+        (def n (state-roll (game-rng g) (first lo-hi) (List ref 1 lo-hi)))
+        (combat-hurt-player! g n (Str8 append cause (creature-name cr)))
+        (state-blow! g (creature-r cr) (creature-c cr) (player-r p) (player-c p)
+          (if (< (player-hp p) 1) (lit kill) (lit hit)) n what)))
     (if (creature-trait? cr (lit breath))
-      (do (def bolt (creature-prop cr (lit bolt) (list 2 8)))
-          (state-tell! g (lit breath) "The {name} breathes {what} at you!"
+      (do (state-tell! g (lit breath) "The {name} breathes {what} at you!"
             (list (pair "name" (creature-name cr)) (pair "what" (creature-prop1 cr (lit breath) "fire"))))
-          (combat-hurt-player! g (state-roll (game-rng g) (first bolt) (List ref 1 bolt))
-            (Str8 append "burned by a " (creature-name cr))))
-      (do (def shot (creature-prop cr (lit ranged) (list 1 4)))
-          (state-tell! g (lit shot) "The {name} shoots {what} at you!"
+          (let-fly! (lit breath) (creature-prop cr (lit bolt) (list 2 8)) "burned by a "))
+      (do (state-tell! g (lit shot) "The {name} shoots {what} at you!"
             (list (pair "name" (creature-name cr)) (pair "what" (creature-prop1 cr (lit shot) "something"))))
-          (combat-hurt-player! g (state-roll (game-rng g) (first shot) (List ref 1 shot))
-            (Str8 append "shot by a " (creature-name cr)))))))
+          (let-fly! (lit shot) (creature-prop cr (lit ranged) (list 1 4)) "shot by a ")))))
 
 ; A creature with (summon NAME) calls one of that kind to its side,
 ; one turn in ten while the player is in view.

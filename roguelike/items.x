@@ -38,7 +38,7 @@
   player-r player-c player-at! player-hp player-hp! player-hpmax player-hpmax! player-str player-str!
   player-strmax player-strmax! player-armour player-armour! player-weapon player-weapon! player-rings
   player-rings! player-food player-food! player-lamp player-lamp! player-condition! player-gold player-gold!
-  creature-hp creature-hp! creature-at! creature-condition! creature-name
+  creature-hp creature-hp! creature-at! creature-condition! creature-name creature-r creature-c state-blow!
   item-make item-form item-class item-name item-prop item-prop1 item-count item-count! item-charges
   item-charges! item-enchant item-enchant! item-letter item-letter! item-r item-c item-at! item-class? item-class-in?
   state-say! state-tell! state-roll state-chance? state-creature-at state-items-at state-free?
@@ -503,7 +503,9 @@
         (def n (%it-bolt! g cr (List ref 0 a) (List ref 1 a)))
         (player-hp! p (if (< (player-hpmax p) (+ (player-hp p) n)) (player-hpmax p) (+ (player-hp p) n)))))))
 
-; A wand zapped along DR DC.
+; A wand zapped along DR DC.  A bolt that reaches a creature is kept as
+; a blow for a front end to show: a kill, a hit for the harm it did, or
+; a touch when it did none.
 (def items-zap!
   (fn (_ g it dr dc)
     (def p (game-player g))
@@ -515,7 +517,13 @@
       (#t (do (item-charges! it (- (item-charges it) 1))
               (items-know! g it)
               (if (if (null? f) #t (null? cr)) (state-tell! g (lit nothing-happens) "Nothing happens." ())
-                (f g cr (rest e))))))))
+                (do (def r (creature-r cr))
+                    (def c (creature-c cr))
+                    (def hp (creature-hp cr))
+                    (f g cr (rest e))
+                    (def n (- hp (creature-hp cr)))
+                    (state-blow! g (player-r p) (player-c p) r c
+                      (match ((< (creature-hp cr) 1) (lit kill)) ((< 0 n) (lit hit)) (#t (lit touch))) n (lit bolt)))))))))
 
 ; Food eaten fills the player to the most the set's (hunger ...) gives
 ; (2000), and never empties one fuller than that, come from a set that

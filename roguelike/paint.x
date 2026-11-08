@@ -291,13 +291,84 @@
 
 ; --- blows ---------------------------------------------------------------------
 
-; A turn's blows, (blow FX FY TX TY HOW N BY-PLAYER?) ops (frame.x),
-; shown over %pt-blow-frames frames after the turn: the striker lunges
-; toward its target, a blow that lands flashes the target white (the
-; player's) or red (a creature's), the player's kill bursts where the
-; creature was, and the damage, or "miss", rises from the target.  Each
-; a frame's step, by frame K.
+; A turn's blows, (blow FX FY TX TY HOW N BY-PLAYER? WHAT) ops
+; (frame.x), shown over %pt-blow-frames frames after the turn: the
+; striker lunges toward its target, a blow that lands flashes the
+; target white (the player's) or red (a creature's), the player's kill
+; bursts where the creature was, and the damage, or "miss", rises from
+; the target.  A blow with WHAT, what flew, has no lunge: WHAT flies
+; from the striker to the target over %pt-flight-frames frames first,
+; and the rest follows.  Each a frame's step, by frame K.
 (def %pt-blow-frames 8)
+(def %pt-flight-frames 4)
+; The frame blow B's landing is shown from.
+(def %pt-start (fn (_ b) (if (null? (List ref 8 b)) 0 %pt-flight-frames)))
+; The frame after the last of BLOWS is shown.
+(def %pt-blows-end
+  (fn (_ blows) (List fold (fn (_ n b) ((fn (_ e) (if (int< n e) e n)) (int+ (%pt-start b) %pt-blow-frames))) 0 blows)))
+
+; What flew in blow B, (blow FX FY TX TY HOW N BY-PLAYER? WHAT), drawn
+; on C at frame K of its flight, its Y moved up by DY: a stone and its
+; dust, a bolt's streak of light, a gout of flame swelling as it goes.
+(def %pt-stone (list 196 182 152))
+(def %pt-stone-edge (list 52 44 36))
+(def %pt-stone-dust (list 130 118 100))
+(def %pt-bolt (list 130 210 255))
+(def %pt-bolt-core (list 255 255 255))
+(def %pt-flame (list 230 92 24))
+(def %pt-flame-mid (list 255 160 50))
+(def %pt-flame-core (list 255 236 140))
+
+; A round blob of radius R at X Y on C in COLOUR: rows narrowing from
+; the middle, a diamond with its corners filled.
+(def %pt-blob!
+  (fn (_ c x y r colour)
+    ((fn (self i)
+       (when (int< i (int+ r 1))
+         (do (def w (int- r (int/ i 2)))
+             (%pt-fill! Canvas c (int- x w) (int- y i) (int+ 1 (int* 2 w)) 1 colour)
+             (%pt-fill! Canvas c (int- x w) (int+ y i) (int+ 1 (int* 2 w)) 1 colour)
+             (self (int+ i 1)))))
+     0)))
+
+; A line of pixels from A to B, (X . Y) each, on C in COLOUR.
+(def %pt-line!
+  (fn (_ c a b colour)
+    (def dx (int- (first b) (first a)))
+    (def dy (int- (rest b) (rest a)))
+    (def n ((fn (_ x y) (if (int< x y) y x)) (if (int< dx 0) (int- 0 dx) dx) (if (int< dy 0) (int- 0 dy) dy)))
+    ((fn (self i)
+       (when (int< i (int+ n 1))
+         (do (%pt-fill! Canvas c (int+ (first a) (if (int= n 0) 0 (int/ (int* dx i) n)))
+                                 (int+ (rest a) (if (int= n 0) 0 (int/ (int* dy i) n))) 1 1 colour)
+             (self (int+ i 1)))))
+     0)))
+
+(def %pt-missile!
+  (fn (_ c b k dy)
+    (def fx (int+ (List ref 1 b) 8))
+    (def fy (int+ (int- (List ref 2 b) dy) 8))
+    (def dx (int- (List ref 3 b) (List ref 1 b)))
+    (def dyy (int- (List ref 4 b) (List ref 2 b)))
+    (def at (fn (_ i) (pair (int+ fx (int/ (int* dx i) %pt-flight-frames)) (int+ fy (int/ (int* dyy i) %pt-flight-frames)))))
+    (def head (at (int+ k 1)))
+    (def tail (at k))
+    (def mid (pair (int/ (int+ (first head) (first tail)) 2) (int/ (int+ (rest head) (rest tail)) 2)))
+    (def what (List ref 8 b))
+    (match
+      ((eq? what (lit bolt))
+        (do (%pt-line! c tail head %pt-bolt)
+            (%pt-blob! c (first head) (rest head) 1 %pt-bolt-core)))
+      ((eq? what (lit breath))
+        (do (%pt-blob! c (first tail) (rest tail) (int+ k 1) %pt-flame)
+            (%pt-blob! c (first mid) (rest mid) (int+ k 2) %pt-flame)
+            (%pt-blob! c (first head) (rest head) (int+ k 3) %pt-flame-mid)
+            (%pt-blob! c (first head) (rest head) (int+ 1 (int/ k 2)) %pt-flame-core)))
+      (#t
+        (do (%pt-fill! Canvas c (first tail) (rest tail) 1 1 %pt-stone-dust)
+            (%pt-fill! Canvas c (first mid) (rest mid) 1 1 %pt-stone-dust)
+            (%pt-blob! c (first head) (rest head) 2 %pt-stone-edge)
+            (%pt-blob! c (first head) (rest head) 1 %pt-stone))))))
 (def %pt-lunge-by (Vector of 2 4 5 4 2 1 0 0))
 (def %pt-flash-by (Vector of 230 190 140 90 40 0 0 0))
 (def %pt-burst-by (Vector of 1 2 4 5 6 5 3 0))
@@ -378,35 +449,45 @@
 (def %pt-shade-ink (list 0 0 0))
 
 ; BLOWS drawn on C at frame K over OPS, the frame's, their Y moved up
-; by DY, in FONT.
+; by DY, in FONT: what flew still in flight, the rest each at its own
+; frame since it landed.
 (def %pt-blows!
   (fn (self c ops blows k dy font)
     (unless (null? blows)
       (do (def b (first blows))
-          (def tx (List ref 3 b))
-          (def ty (List ref 4 b))
-          (def how (List ref 5 b))
-          (def mine (List ref 7 b))
-          (def y (int- ty dy))
-          (unless (eq? how (lit miss))
-            ((fn (_ pic)
-               (if (if (null? pic) #t (if mine (eq? how (lit kill)) #f))
-                 (%pt-star! c (int+ tx 8) (int+ y 8) (Vector ref k %pt-burst-by) (if mine %pt-dealt-ink %pt-hurt-ink))
-                 (%pt-stamp! Canvas c tx y (first (rest pic)) 0 0 frame-tile-size frame-tile-size
-                   ((fn (_ a) (if mine (list 255 255 255 a) (list 255 70 50 a))) (Vector ref k %pt-flash-by)))))
-             (%pt-top-picture ops tx ty ())))
-          (def s (if (eq? how (lit miss)) "miss" (Str8 str (List ref 6 b))))
+          (def j (int- k (%pt-start b)))
+          (match
+            ((int< j 0) (%pt-missile! c b k dy))
+            ((int< j %pt-blow-frames) (%pt-landed! c ops b j dy font))
+            (#t ()))
+          (self c ops (rest blows) k dy font)))))
+(def %pt-landed!
+  (fn (_ c ops b k dy font)
+    (def tx (List ref 3 b))
+    (def ty (List ref 4 b))
+    (def how (List ref 5 b))
+    (def mine (List ref 7 b))
+    (def y (int- ty dy))
+    (unless (eq? how (lit miss))
+      ((fn (_ pic)
+         (if (if (null? pic) #t (if mine (eq? how (lit kill)) #f))
+           (%pt-star! c (int+ tx 8) (int+ y 8) (Vector ref k %pt-burst-by) (if mine %pt-dealt-ink %pt-hurt-ink))
+           (%pt-stamp! Canvas c tx y (first (rest pic)) 0 0 frame-tile-size frame-tile-size
+             ((fn (_ a) (if mine (list 255 255 255 a) (list 255 70 50 a))) (Vector ref k %pt-flash-by)))))
+       (%pt-top-picture ops tx ty ())))
+    ; A touch, or a blow that did no harm, writes nothing.
+    (unless (if (eq? how (lit miss)) #f (int< (List ref 6 b) 1))
+      (do (def s (if (eq? how (lit miss)) "miss" (Str8 str (List ref 6 b))))
           (def x (int- (int+ tx 8) (int* 4 (Str8 length s))))
           (def ny (int- y (int+ 2 (int* 2 k))))
           (%pt-text! Canvas c (int+ x 1) (int+ ny 1) s %pt-shade-ink font)
-          (%pt-text! Canvas c x ny s (match ((eq? how (lit miss)) %pt-miss-ink) (mine %pt-dealt-ink) (#t %pt-hurt-ink)) font)
-          (self c ops (rest blows) k dy font)))))
+          (%pt-text! Canvas c x ny s (match ((eq? how (lit miss)) %pt-miss-ink) (mine %pt-dealt-ink) (#t %pt-hurt-ink)) font)))))
 
 ; Whether painter P has a turn's blows, or a step, still to show.
 (def paint-animating?
   (fn (_ p)
     (match
-      ((if (int< (Vector ref 9 p) %pt-blow-frames) (not (null? (%pt-blow-ops (%pt-over p)))) #f) #t)
+      ((int< (Vector ref 9 p) (%pt-blows-end (%pt-blow-ops (%pt-over p)))) #t)
       ((int< (Vector ref 12 p) %pt-glide-frames) (List any? %pt-stepped? (%pt-over p)))
       (#t #f))))
 ; Whether OP is a walking thing's tile op come from another cell.
@@ -617,8 +698,9 @@
     (def s (Vector ref 0 p))
     (def font (Vector ref 2 p))
     (def k (Vector ref 9 p))
-    (def blows (if (int< k %pt-blow-frames) (%pt-blow-ops (%pt-over p)) ()))
-    (def over (%pt-motion (%pt-over p) blows k (Vector ref 12 p)))
+    (def blows ((fn (_ all) (if (int< k (%pt-blows-end all)) all ())) (%pt-blow-ops (%pt-over p))))
+    ; Only a blow in hand lunges.
+    (def over (%pt-motion (%pt-over p) (List filter (fn (_ b) (null? (List ref 8 b))) blows) k (Vector ref 12 p)))
     (def work (Vector ref 5 p))
     (def lw (first work))
     (def lh (first (rest work)))

@@ -36,7 +36,12 @@ screen's pixel, the art's scale: a line holds 52 letters.
   striker lunges toward its target and eases back, a blow that lands
   flashes the target (white for the player's, red for a creature's),
   the player's kill bursts where the creature was, and the damage, or
-  "miss", rises from the target.
+  "miss", rises from the target.  What flies flies first, from the
+  striker to the target in about a quarter of a second, with no lunge:
+  a thrown stone and its dust (a knocker's), a wand's bolt as a streak
+  of light, breath as a gout of flame swelling as it goes.  A bolt that
+  does no harm (a slowing, a banishing) flashes its target and writes
+  nothing.
 - **Overlays**: a list looked at, the items a question can take, a
   choice, a page read, a talker's words, the world map and the end of
   the game lie over the level on a panel, as the terminal lays them
