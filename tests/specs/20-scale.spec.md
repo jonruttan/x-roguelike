@@ -82,3 +82,18 @@ the level's scale.
 ```
 ---
     ((#t #t #t) (#t #t #t) (#t #t #t) (#t #t #t) (#t #t #t) (#t #t #t) (#t #t #t) (#t #t #t) (#t #t #t) (#t #t #t) (#t #t #t))
+
+## the valley
+
+### the valley is drawn at 21, and the town's ground stands on its hub at its own size, 23 cells by 6, walled, its door on the west face where the road runs in, every open cell reached from it
+
+```roguelike
+(def g (spec-game-on (spec-valley) 4 ()))
+(def m (game-map g))
+(def walls (%spec-count m (fn (_ r c) (if (< 7 r) (if (< r 14) (if (< 27 c) (< c 51) #f) #f) #f))))
+(def walled (%spec-count m (fn (_ r c) (if (= (map-tile m r c) tile-wall) (if (< 7 r) (if (< r 14) (if (< 27 c) (< c 51) #f) #f) #f) #f))))
+(write (list (data-get (game-set g) 'scale 1) (map-down m) (game-door g "3,2") walls walled
+             (= (map-tile m 11 27) tile-floor) (spec-connected? m)))
+```
+---
+    (21 (11 . 28) "Kettle" 138 137 #t #t)

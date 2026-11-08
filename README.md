@@ -164,7 +164,9 @@ a cell.  Every size a style takes -- a room, a house, a field, a
 gallery, a scar -- is in metres, and comes out in cells at the level's
 scale, never less than one, so one plan draws true at every scale; a
 scale off the sequence is refused when the set is read.  A band's or
-an interior's scale is in front of the set's.
+an interior's scale is in front of the set's, and an interior that
+names none is at 1.  `kettle`'s valley is at
+21, a screen near enough 1700 metres by 750, and `town` at 2.
 
 What a cell is and how it is drawn are kept apart.  `roguelike/map`
 reports each cell's kind of terrain -- floor, wall, door, water,
@@ -186,7 +188,9 @@ region that is a descent is gone down into, stairs and all, and the
 stairs up out of its first level come back onto the door, open with or
 without the region's goal.  A region that is a world of screens is
 gone into on its hub, and a step off its edge comes back out onto the
-door.  Regions go inside regions: `kettle` joins `town`, Kettle itself,
+door; where its screens, each at its own scale, fit on the screen the
+door is on, its ground is drawn there walled at its size, the door on
+the west face on the middle row.  Regions go inside regions: `kettle` joins `town`, Kettle itself,
 whose door is on the valley's hub, and `town` joins `delve`, the pit on
 its pithead going down into the Delve.  `(start NAME)` begins the game
 through the door NAME on the hub: a game of `kettle` begins on

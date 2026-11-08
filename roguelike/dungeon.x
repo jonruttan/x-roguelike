@@ -634,7 +634,8 @@
 
 ; Fields: closes hedged about either side of a road.  The road runs the
 ; width of the level along the middle row, so that it meets the road on
-; the next screen, a hedge each side of it with a gate here and there.
+; the next screen, a hedge each side of it, its first gate (gate-first
+; LO HI) metres in and each after it (gate-gap LO HI) metres on.
 ; Above and below it, inside a headland two cells wide round the edge,
 ; the ground is cut into closes: a piece longer than (close W H) metres
 ; is halved across its longer side by a hedge with a gate in it.  Of
@@ -679,14 +680,16 @@
     (def scale (%dg-scale params))
     (def close (%dg-extent params scale (lit close) 16 10))
     (def trees (first (%dg-p params (lit trees) (list 8))))
+    (def gap (%dg-across params scale (lit gate-gap) 10 24))
+    (def gate (%dg-across params scale (lit gate-first) 3 12))
     (%dg-fill! m 0 0 (- rows 1) (- cols 1) tile-floor)
     (List for-each
       (fn (_ r)
         (%dg-fill! m r 2 r (- cols 3) tile-hedge)
         ((fn (self c)
            (when (< c (- cols 3))
-             (do (map-set! m r c tile-gate) (self (+ c (%dg-roll rng (scale-across scale 10) (scale-across scale 24)))))))
-         (%dg-roll rng (scale-across scale 3) (scale-across scale 12))))
+             (do (map-set! m r c tile-gate) (self (+ c (%dg-draw rng gap))))))
+         (%dg-draw rng gate)))
       (list (- mr 1) (+ mr 1)))
     (%dg-closes! rng m 2 2 (- mr 2) (- cols 3) (first close) (rest close))
     (%dg-closes! rng m (+ mr 2) 2 (- rows 3) (- cols 3) (first close) (rest close))
@@ -700,11 +703,11 @@
 ; and bog in the low ground.  (edges LO HI) edges, each a line of rock
 ; (edge-length LO HI) metres long running east, a row up or down now
 ; and then, with a gap here and there where a sheep track climbs
-; through, and boulders on the ground below it; (bogs LO HI) bogs, each
-; a wander over (bog-size LO HI) square metres of wet ground with pools
-; in it; (gorse LO HI) clumps of gorse, each a wander over (gorse-size
-; LO HI) square metres.  Two cells round the edge are left clear, and
-; ground cut off is filled.
+; through, and boulders (boulder-drop LO HI) metres below it; (bogs LO
+; HI) bogs, each a wander over (bog-size LO HI) square metres of wet
+; ground with pools in it; (gorse LO HI) clumps of gorse, each a wander
+; over (gorse-size LO HI) square metres.  Two cells round the edge are
+; left clear, and ground cut off is filled.
 (def %dg-hills!
   (fn (_ rng m params)
     (def rows (map-rows m))
@@ -712,6 +715,7 @@
     (def edges (%dg-range params (lit edges) 2 4))
     (def scale (%dg-scale params))
     (def span (%dg-across params scale (lit edge-length) 20 50))
+    (def fall (%dg-down params scale (lit boulder-drop) 4 6))
     (def bogs (%dg-range params (lit bogs) 1 3))
     (def bog (%dg-area params scale (lit bog-size) 40 120))
     (def gorse (%dg-range params (lit gorse) 3 6))
@@ -725,7 +729,7 @@
                   (do (unless (= (rng int 14) 0) (map-set! m r c tile-edge))
                       (when (= (rng int 7) 0)
                         ((fn (_ br bc) (when (inner? br bc) (map-set! m br bc tile-edge)))
-                         (+ r (%dg-roll rng (scale-down scale 4) (scale-down scale 6))) (+ c (- (rng int 3) 1))))
+                         (+ r (%dg-draw rng fall)) (+ c (- (rng int 3) 1))))
                       (self2 (%dg-clamp 2 (+ r (if (= (rng int 9) 0) (- (rng int 3) 1) 0)) (- rows 3)) (+ c 1) (- k 1)))))
               (%dg-roll rng 3 (- rows 6)) (%dg-roll rng 2 (- cols 20)) (%dg-draw rng span))
              (self (- n 1)))))
@@ -752,11 +756,13 @@
 
 ; The rim: short grass on the limestone, with scars, shakeholes and the
 ; well-keepers' ruins.  (scars LO HI) scars, each a straight cliff of
-; bare rock, along a row or down a column, a gap or two in it;
-; (holes LO HI) shakeholes, round hollows open to the dark; (ruins LO
-; HI) ruins, each the dressed walls of a building, (fallen PERCENT) of
-; them down; (stones LO HI) rows of standing stones.  Two cells round
-; the edge are left clear, and ground cut off is filled.
+; bare rock, (scar-across LO HI) metres along a row or (scar-down LO
+; HI) down a column, a gap or two in it; (holes LO HI) shakeholes,
+; round hollows open to the dark; (ruins LO HI) ruins, each the dressed
+; walls of a building (ruin-width LO HI) by (ruin-depth LO HI) metres,
+; (fallen PERCENT) of them down; (stones LO HI) rows of standing
+; stones, (stone-gap M) metres apart.  Two cells round the edge are
+; left clear, and ground cut off is filled.
 (def %dg-rim!
   (fn (_ rng m params)
     (def rows (map-rows m))
@@ -767,6 +773,11 @@
     (def stones (%dg-range params (lit stones) 0 2))
     (def fallen (first (%dg-p params (lit fallen) (list 30))))
     (def scale (%dg-scale params))
+    (def scar-w (%dg-across params scale (lit scar-across) 15 40))
+    (def scar-h (%dg-down params scale (lit scar-down) 10 24))
+    (def rw (%dg-across params scale (lit ruin-width) 6 14))
+    (def rd (%dg-down params scale (lit ruin-depth) 8 14))
+    (def apart (scale-across scale (first (%dg-p params (lit stone-gap) (list 2)))))
     (def times (fn (_ n f) ((fn (self n) (when (< 0 n) (do (f) (self (- n 1))))) n)))
     (%dg-fill! m 0 0 (- rows 1) (- cols 1) tile-floor)
     (times (%dg-draw rng scars)
@@ -774,12 +785,12 @@
         (if (rng bool)
           (do (def r (%dg-roll rng 3 (- rows 4)))
               (def c0 (%dg-roll rng 2 (int/ cols 2)))
-              (def c1 (%dg-min (- cols 3) (+ c0 (%dg-roll rng (scale-across scale 15) (scale-across scale 40)))))
+              (def c1 (%dg-min (- cols 3) (+ c0 (%dg-draw rng scar-w))))
               (def gap (%dg-roll rng c0 c1))
               (map-each! r c0 r c1 (fn (_ r c) (unless (if (< (- gap 1) c) (< c (+ gap 2)) #f) (map-set! m r c tile-scar)))))
           (do (def c (%dg-roll rng 4 (- cols 5)))
               (def r0 (%dg-roll rng 2 (int/ rows 2)))
-              (def r1 (%dg-min (- rows 3) (+ r0 (%dg-roll rng (scale-down scale 10) (scale-down scale 24)))))
+              (def r1 (%dg-min (- rows 3) (+ r0 (%dg-draw rng scar-h))))
               (map-each! r0 c r1 c (fn (_ r c) (map-set! m r c tile-scar)))))))
     (times (%dg-draw rng holes)
       (fn (_)
@@ -790,8 +801,8 @@
           (List for-each (fn (_ d) (map-set! m (+ r (first d)) (+ c (rest d)) tile-rock)) %dg-four))))
     (times (%dg-draw rng ruins)
       (fn (_)
-        (def w (%dg-roll rng (scale-across scale 6) (scale-across scale 14)))
-        (def h (%dg-roll rng (scale-down scale 8) (scale-down scale 14)))
+        (def w (%dg-draw rng rw))
+        (def h (%dg-draw rng rd))
         (def r0 (%dg-roll rng 2 (- rows (+ h 2))))
         (def c0 (%dg-roll rng 2 (- cols (+ w 2))))
         (def r1 (+ r0 (- h 1)))
@@ -803,7 +814,7 @@
     (times (%dg-draw rng stones)
       (fn (_)
         (def r (%dg-roll rng 3 (- rows 4)))
-        ((fn (self c n) (when (< 0 n) (do (map-set! m r c tile-dressed) (self (+ c (scale-across scale 2)) (- n 1)))))
+        ((fn (self c n) (when (< 0 n) (do (map-set! m r c tile-dressed) (self (+ c apart) (- n 1)))))
          (%dg-roll rng 3 (- cols 20)) (%dg-roll rng 4 7))))
     (%dg-reach! m 0 0 tile-scar)
     (map-rooms! m ())
