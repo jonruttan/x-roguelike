@@ -46,7 +46,8 @@ name for a creature.
 | Group | Names | Count |
 |---|---|---|
 | ground | `floor` `wall` `door` `passage` `down` `up` `trap` | 7 |
-| the player | `player` | 1 |
+| the player | `player`, and its poses `attack` `hit` `dead` | 1 to 4 |
+| marks | `mark-confused` `mark-blind` `mark-held` `mark-hasted` `mark-slowed` `mark-seeing` `mark-hungry` `mark-weak` `mark-fainting` `mark-wounded` | up to 10 |
 | items | `potion` `scroll` `wand` `ring` `weapon` `armour` `food` `gold` `goal`, and `page` `token` where the set has them | 9 to 11 |
 | creatures | every `(creature NAME ...)` of the set, talkers each their own | classic 17, delve 23, kettle 28 |
 | bands | a band's own `wall` and `floor`, where its place differs | delve 3, kettle 4, town 1 |
@@ -108,6 +109,16 @@ files of `data/SET` alone, so the terminal game never reads these.
   walk is drawn only for a step; a tile with frames and no walk still
   fidgets.  The players and the Delve's guardians walk; the rest of
   the living fidget.
+- `(pose P)`: the player struck a blow (`attack`), took one (`hit`)
+  or is `dead`, drawn in place of the player for that moment, its
+  frames played once.  A pose is never a variant.
+- `mark-NAME`: drawn over the player while it is in that state, mostly
+  clear, with frames as any tile; several are drawn at once.  `slowed`
+  is the cold's touch as much as a potion's; `fainting` is starving
+  too, where the set starves; `wounded` is under a third of its hit
+  points.  The marks are in each set's own colours, in `marks.xon`,
+  and the poses in `poses.xon`.  A missing pose or mark is the plain
+  player.
 
 ## Walls
 
