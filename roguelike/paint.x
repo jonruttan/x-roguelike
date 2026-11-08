@@ -227,13 +227,107 @@
       (do (when (eq? (first (first ops)) (lit glint)) (%pt-glint! c (first ops) dy tick))
           (self c (rest ops) dy tick)))))
 
-; A painter: [SCREEN LAYER FONT SCENE PANEL WORK ZOOM], the scene the
-; last turn's, the panel the art's nine-piece picture (a tile form) or
-; nil, WORK the level drawn and lit at the tile's size before it is
-; shown at ZOOM, LAYER and WORK the view's size.
+; --- blows ---------------------------------------------------------------------
+
+; A turn's blows, (blow FX FY TX TY HOW N BY-PLAYER?) ops (frame.x),
+; shown over %pt-blow-frames frames after the turn: the striker lunges
+; toward its target, a blow that lands flashes the target white (the
+; player's) or red (a creature's), the player's kill bursts where the
+; creature was, and the damage, or "miss", rises from the target.  Each
+; a frame's step, by frame K.
+(def %pt-blow-frames 8)
+(def %pt-lunge-by (Vector of 2 4 5 3 1 0 0 0))
+(def %pt-flash-by (Vector of 230 190 140 90 40 0 0 0))
+(def %pt-burst-by (Vector of 1 2 4 5 6 5 3 0))
+(def %pt-stamp! (method-of Canvas (lit stamp!)))
+(def %pt-sign (fn (_ n) (if (int< n 0) -1 (if (int< 0 n) 1 0))))
+(def %pt-blow-ops (fn (self ops) (match ((null? ops) ()) ((eq? (first (first ops)) (lit blow)) (pair (first ops) (self (rest ops)))) (#t (self (rest ops))))))
+
+; OPS with each tile and glyph standing where a blow of BLOWS was struck
+; from moved toward its target by frame K's lunge.
+(def %pt-lunge
+  (fn (_ ops blows k)
+    (def by (Vector ref k %pt-lunge-by))
+    (def step
+      (fn (self op bs)
+        (if (null? bs) op
+          (do (def b (first bs))
+              (def fx (first (rest b)))
+              (def fy (first (rest (rest b))))
+              (if (if (int= fx (first (rest op))) (int= fy (first (rest (rest op)))) #f)
+                (pair (first op)
+                  (pair (int+ fx (int* by (%pt-sign (int- (List ref 3 b) fx))))
+                    (pair (int+ fy (int* by (%pt-sign (int- (List ref 4 b) fy)))) (rest (rest (rest op))))))
+                (self op (rest bs)))))))
+    (List map (fn (_ op) (if (match ((eq? (first op) (lit tile)) #t) ((eq? (first op) (lit glyph)) #t) (#t #f)) (step op blows) op)) ops)))
+
+; The picture of the last tile of OPS at X Y, what is drawn on top
+; there, or nil.
+(def %pt-top-picture
+  (fn (self ops x y found)
+    (if (null? ops) found
+      (self (rest ops) x y
+        ((fn (_ op)
+           (if (if (eq? (first op) (lit tile)) (if (int= x (first (rest op))) (int= y (first (rest (rest op)))) #f) #f)
+             ((fn (_ pic) (if (null? pic) found pic)) (%pt-find (rest (first (rest (rest (rest op))))) (lit picture)))
+             found))
+         (first ops))))))
+
+; A star of arms N at X Y on C in COLOUR.
+(def %pt-star!
+  (fn (_ c x y n colour)
+    (%pt-fill! Canvas c x y 1 1 colour)
+    ((fn (self i)
+       (when (int< i (int+ n 1))
+         (do (%pt-fill! Canvas c (int- x i) y 1 1 colour) (%pt-fill! Canvas c (int+ x i) y 1 1 colour)
+             (%pt-fill! Canvas c x (int- y i) 1 1 colour) (%pt-fill! Canvas c x (int+ y i) 1 1 colour)
+             (self (int+ i 1)))))
+     1)))
+
+(def %pt-hurt-ink (list 255 90 70))
+(def %pt-dealt-ink (list 255 224 110))
+(def %pt-miss-ink (list 180 180 180))
+(def %pt-shade-ink (list 0 0 0))
+
+; BLOWS drawn on C at frame K over OPS, the frame's, their Y moved up
+; by DY, in FONT.
+(def %pt-blows!
+  (fn (self c ops blows k dy font)
+    (unless (null? blows)
+      (do (def b (first blows))
+          (def tx (List ref 3 b))
+          (def ty (List ref 4 b))
+          (def how (List ref 5 b))
+          (def mine (List ref 7 b))
+          (def y (int- ty dy))
+          (unless (eq? how (lit miss))
+            ((fn (_ pic)
+               (if (if (null? pic) #t (if mine (eq? how (lit kill)) #f))
+                 (%pt-star! c (int+ tx 8) (int+ y 8) (Vector ref k %pt-burst-by) (if mine %pt-dealt-ink %pt-hurt-ink))
+                 (%pt-stamp! Canvas c tx y (first (rest pic)) 0 0 frame-tile-size frame-tile-size
+                   ((fn (_ a) (if mine (list 255 255 255 a) (list 255 70 50 a))) (Vector ref k %pt-flash-by)))))
+             (%pt-top-picture ops tx ty ())))
+          (def s (if (eq? how (lit miss)) "miss" (Str8 str (List ref 6 b))))
+          (def x (int- (int+ tx 8) (int* 4 (Str8 length s))))
+          (def ny (int- y (int+ 2 (int* 2 k))))
+          (%pt-text! Canvas c (int+ x 1) (int+ ny 1) s %pt-shade-ink font)
+          (%pt-text! Canvas c x ny s (match ((eq? how (lit miss)) %pt-miss-ink) (mine %pt-dealt-ink) (#t %pt-hurt-ink)) font)
+          (self c ops (rest blows) k dy font)))))
+
+; Whether painter P has a turn's blows still to show.
+(def paint-animating?
+  (fn (_ p) (if (int< (Vector ref 7 p) %pt-blow-frames) (not (null? (%pt-blow-ops (%pt-over p)))) #f)))
+; Painter P a frame on in showing the blows.
+(def paint-step! (fn (_ p) (do (Vector set! 7 (int+ 1 (Vector ref 7 p)) p) p)))
+
+; A painter: [SCREEN LAYER FONT SCENE PANEL WORK ZOOM BLOW], the scene
+; the last turn's, the panel the art's nine-piece picture (a tile form)
+; or nil, WORK the level drawn and lit at the tile's size before it is
+; shown at ZOOM, LAYER and WORK the view's size, BLOW the frame the
+; turn's blows are shown at.
 (def paint-make
   (fn (_ font)
-    (paint-zoom! (Vector of (Canvas make paint-width paint-height) () font () () () 0) paint-zoom-first)))
+    (paint-zoom! (Vector of (Canvas make paint-width paint-height) () font () () () 0 %pt-blow-frames) paint-zoom-first)))
 (def paint-screen (fn (_ p) (Vector ref 0 p)))
 (def %pt-over (fn (_ p) (rest (rest (Vector ref 3 p)))))
 (def paint-zoom (fn (_ p) (Vector ref 6 p)))
@@ -263,6 +357,7 @@
     (%pt-ops! layer (first (rest scene)) frame-level-y (Vector ref 2 p) 0)
     (Vector set! 3 scene p)
     (Vector set! 4 (frame-named a (lit panel) 0) p)
+    (Vector set! 7 0 p)
     p))
 
 ; TEXT in lines of at most eighty letters, broken at a space.
@@ -305,7 +400,9 @@
   (fn (_ p g tick)
     (def s (Vector ref 0 p))
     (def font (Vector ref 2 p))
-    (def over (%pt-over p))
+    (def k (Vector ref 7 p))
+    (def blows (if (int< k %pt-blow-frames) (%pt-blow-ops (%pt-over p)) ()))
+    (def over (if (null? blows) (%pt-over p) (%pt-lunge (%pt-over p) blows k)))
     (def work (Vector ref 5 p))
     (def lw (first work))
     (def lh (first (rest work)))
@@ -318,6 +415,7 @@
                        (List filter (fn (_ op) (eq? (first op) (lit light))) over) tick)
       frame-tile-size)
     (%pt-glints! work over frame-level-y tick)
+    (%pt-blows! work over blows k frame-level-y font)
     (Canvas nine! s 0 frame-level-y (int* zoom lw) (int* zoom lh) work 0 0 0 0)
     (Canvas fill! s 0 0 paint-width frame-level-y %pt-black)
     (Canvas fill! s 0 (+ frame-level-y %pt-area-h) paint-width (- paint-height (+ frame-level-y %pt-area-h)) %pt-black)
@@ -339,4 +437,4 @@
 
 (provide roguelike/paint
   paint-width paint-height paint-art paint-arts paint-font paint-make paint-screen paint-turn! paint-frame! paint-flickers?
-  paint-zoom paint-zoom! paint-zoom-least paint-zoom-most paint-zoom-first)
+  paint-zoom paint-zoom! paint-zoom-least paint-zoom-most paint-zoom-first paint-animating? paint-step!)

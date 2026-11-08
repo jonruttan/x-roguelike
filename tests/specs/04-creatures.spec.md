@@ -61,6 +61,25 @@ what runs, what dies, and the messages that outrun the row.
 ---
     (#t #t 2 #t)
 
+### each blow of the turn is kept for a front end: who struck from where, at whom, how, for how much
+
+```roguelike
+(import roguelike/state game-blows)
+(def g (spec-calm 5 ()))
+(def open (spec-open g))
+(def p (game-player g))
+(def cr (spec-place! g "cave rat" (first (rest open)) (rest (rest open)) 1 'awake))
+(spec-press-until g (first open) (fn (_) (null? (game-creatures g))) 50)
+(def b (first (game-blows g)))
+(def gone (game-blows g))
+(game-key! g ".")
+(write (list (first b) (= (List ref 1 b) (player-r p)) (= (List ref 2 b) (player-c p))
+             (= (List ref 3 b) (first (rest open))) (= (List ref 4 b) (rest (rest open)))
+             (List ref 5 b) (< 0 (List ref 6 b)) (List length gone) (game-blows g)))
+```
+---
+    ('blow #t #t #t #t 'kill #t 1 ())
+
 ### a skittish creature badly hurt runs
 
 ```roguelike

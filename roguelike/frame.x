@@ -24,7 +24,7 @@
 (import roguelike/items items-glyph)
 (import roguelike/map map-terrain map-kinds map-rows map-cols map-tile map-seen? map-visible? map-in? map-opaque? tile-rock)
 (import roguelike/state game-map game-player game-floor game-creatures game-traps
-  player-r player-c item-r item-c item-class creature-r creature-c creature-name creature-glyph game-set)
+  player-r player-c item-r item-c item-class creature-r creature-c creature-name creature-glyph game-set game-blows)
 (import roguelike/creatures creatures-shown?)
 (import roguelike/traps trap-r trap-c trap-found?)
 
@@ -405,7 +405,24 @@
       (List append (if (null? moving) () (List filter in? level))
         things (list (frame-view m cam)) (frame-lights m cam (List append level things))
         (if (null? at) () (list (List append (list (lit light) (int+ (first at) 8) (int+ (rest at) 8)) %fr-lantern)))
-        (frame-glints g cam))))))
+        (frame-glints g cam) (frame-blows g cam))))))
+
+; The turn's blows whose target is in view under camera CAM, oldest
+; first, each (blow FX FY TX TY HOW N BY-PLAYER?): the pixel places of
+; who struck (the target's when the striker is out of view) and of whom,
+; HOW hit, miss or kill, N the damage, and whether the player struck.
+(def frame-blows
+  (fn (_ g cam)
+    (def p (game-player g))
+    (List flat-map
+      (fn (_ b)
+        (def to (frame-place cam (List ref 3 b) (List ref 4 b)))
+        (def from ((fn (_ f) (if (null? f) to f)) (frame-place cam (List ref 1 b) (List ref 2 b))))
+        (if (null? to) ()
+          (list (list (lit blow) (first from) (rest from) (first to) (rest to) (List ref 5 b) (List ref 6 b)
+                      (if (= (List ref 1 b) (player-r p)) (= (List ref 2 b) (player-c p)) #f)))))
+      (List reverse (game-blows g)))))
+
 
 ; The places, (X . Y), of the cells of OPS with a tile that moves.
 (def %fr-moving-cells
@@ -441,4 +458,4 @@
 (provide roguelike/frame
   frame-tile-size frame-view-rows frame-view-cols frame-view! frame-level-y
   frame-art frame-art-band frame-named frame-seed frame-wall-parts frame-camera frame-cell frame-level
-  frame-place frame-things frame-view frame-lights frame-glints frame-flicker frame-light-map frame-scene)
+  frame-place frame-things frame-view frame-lights frame-glints frame-blows frame-flicker frame-light-map frame-scene)
