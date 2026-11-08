@@ -34,6 +34,19 @@ Scores keep in `~/.x-roguelike/scores`.
     ?                 the keys                 Esc       stop asking
     Ctrl-L            draw the screen again
 
+In a window (`-w`), F11 or Alt-Enter switches to fullscreen and back,
+and a gamepad plays too:
+
+    left stick, d-pad  move, in eight directions; held, it keeps moving
+    A  pick up         B  stop asking (Esc)
+    X  your pack       Y  explore
+    LB go up (<)       RB go down (>)
+    left stick click   rest           right stick click  search
+    Start  the keys    Back  the map of the world
+
+A command that asks for a thing, such as quaff or wear, takes its
+answer from the keyboard.
+
 The first row says what happened; the last is your standing: the
 level, gold, hit points, strength, experience, and how hungry you are.
 A lit room is seen whole from its door; a dark one, and a passage, a

@@ -6,6 +6,8 @@
 ; by 360 screen shown whole in an SDL window, and played with the same
 ; keys: a key pressed is handed to the game as the terminal would hand
 ; it, a letter as its string and an arrow, enter or escape by name.
+; A gamepad's events become the same keys through roguelike/pad, and
+; F11 or Alt-Enter switches the window to fullscreen and back.
 ; The screen is drawn again after every key, and about twelve times a
 ; second while a light flickers.
 ;
@@ -25,6 +27,7 @@
 (import roguelike/game game-key! game-explore!)
 (import roguelike/paint paint-width paint-height paint-make paint-screen paint-turn! paint-frame! paint-flickers?
   paint-zoom paint-zoom!)
+(import roguelike/pad pad-make pad-key pad-event? pad-fullscreen? pad-fullscreen!)
 
 ; A frame's wait while a light flickers, and the wait for a key when
 ; nothing moves, in microseconds.
@@ -34,6 +37,13 @@
 ; SDL's shift bits, and what a shifted key types on a US keyboard: the
 ; character after each unshifted one in this string.
 (def %wn-shift-mod 3)
+
+; F11, and enter with alt held, switch the window to fullscreen and back.
+(def %wn-f11 1073741892)
+(def %wn-alt-mod 768)
+
+; The wall clock in milliseconds, for a held gamepad direction.
+(def %wn-ms (fn (_) ((fn (_ t) (+ (* 1000 (first t)) (/ (rest t) 1000))) (Sys time-of-day))))
 (def %wn-shifted "1!2@3#4$5%6^7&8*9(0)-_=+[{]}\\|;:'\",<.>/?`~")
 
 (def %wn-char
@@ -51,7 +61,7 @@
     (if (if (int< 96 code) (int< code 123) #f) (- code 32)
       ((fn (self i) (match ((int< n (int+ i 2)) code) ((int= (at i) code) (at (int+ i 1))) (#t (self (int+ i 2))))) 0))))
 
-; The art for game G's place and band, from cache A, [ARTS KEY ART]:
+; The art for game G's place and band, from cache A, [ARTS KEY ART PAD]:
 ; ARTS answers a place's art (see window-play), KEY is "PLACE/BAND" of
 ; the art made last, made again only when either changes.
 (def %wn-art
@@ -72,20 +82,31 @@
 ; key the game has no use for.
 (def window-key
   (fn (_ code mod)
+    (if (if (= code %wn-f11) #t (if (= code 13) (not (= 0 (int& mod %wn-alt-mod))) #f)) (lit fullscreen)
     (if (if (int< 31 code) (int< code 127) #f)
       (%wn-char (if (= 0 (int& mod %wn-shift-mod)) code (%wn-shift code)))
-      ((fn (_ hit) (if (null? hit) () (rest hit))) (List find (fn (_ e) (= (first e) code)) %wn-named)))))
+      ((fn (_ hit) (if (null? hit) () (rest hit))) (List find (fn (_ e) (= (first e) code)) %wn-named))))))
 
 ; Game G played in window WIN with art A and painter P until it ends or
-; the window is closed; a closed window saves the game.
+; the window is closed; a closed window saves the game.  A gamepad's
+; events go to its state, the fourth of A, and come back as keys.
 (def %wn-loop
   (fn (self g a p win tick)
-    (def e (Sdl poll))
-    (def key (if (null? e) () (if (eq? (first e) (lit key-down)) (window-key (List ref 1 e) (List ref 2 e)) ())))
+    (def pad (Vector ref 3 a))
+    (def ev (Sdl poll))
+    (def key (if (if (null? ev) #f (eq? (first ev) (lit key-down)))
+               (window-key (List ref 1 ev) (List ref 2 ev))
+               (pad-key pad ev (%wn-ms))))
+    (def e (if (pad-event? ev) () ev))
     (match
       ((not (null? (game-over g))) ())
       ((if (null? e) #f (if (eq? (first e) (lit quit)) #t (eq? (first e) (lit close))))
         (game-over! g (lit saved)))
+      ((eq? key (lit fullscreen))
+        (do (pad-fullscreen! pad (not (pad-fullscreen? pad)))
+            (Sdl fullscreen! win (pad-fullscreen? pad))
+            (Sdl show! win (List ref 2 (paint-screen p)))
+            (self g a p win tick)))
       ; + or = shows the level larger, - smaller: the window's, not the
       ; game's, so no turn passes.
       ((not (int= 0 (%wn-zoom-step key)))
@@ -105,6 +126,8 @@
       ; Any other event -- a resize, the window shown again -- may have
       ; lost what was presented: the frame is presented again.
       ((not (null? e)) (do (Sdl show! win (List ref 2 (paint-screen p))) (self g a p win tick)))
+      ; A gamepad event that is no key yet: the next one at once.
+      ((not (null? ev)) (self g a p win tick))
       ((game-exploring? g)
         (do (game-explore! g)
             (paint-turn! p g (%wn-art a g))
@@ -133,7 +156,7 @@
 ; with its own set's pictures.
 (def window-play
   (fn (_ g arts font scale zoom)
-    (def a (Vector of arts "" ()))
+    (def a (Vector of arts "" () (pad-make)))
     (def win (Sdl scaling! (Sdl open "x-roguelike" paint-width paint-height scale) (lit fit)))
     (def failed
       (guard (e e)
