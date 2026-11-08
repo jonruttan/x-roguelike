@@ -22,7 +22,7 @@
 (import x/sys/gc)
 (import x/type/vector)
 (import x/core/doors int& int+ int< int= str-make str->ptr ptr-set! str-byte-ref char->int str-byte-len)
-(import roguelike/state game-over game-over! game-exploring? game-exploring! game-band band-name)
+(import roguelike/state game-over game-over! game-exploring? game-exploring! game-band band-name game-place)
 (import roguelike/frame frame-art)
 (import roguelike/game game-key! game-explore!)
 (import roguelike/paint paint-width paint-height paint-make paint-screen paint-turn! paint-frame! paint-flickers?
@@ -61,14 +61,16 @@
     (if (if (int< 96 code) (int< code 123) #f) (- code 32)
       ((fn (self i) (match ((int< n (int+ i 2)) code) ((int= (at i) code) (at (int+ i 1))) (#t (self (int+ i 2))))) 0))))
 
-; The art for game G's band, from cache A, [FORMS BAND ART PAD]: made again
-; only when the band changes.
+; The art for game G's place and band, from cache A, [ARTS KEY ART PAD]:
+; ARTS answers a place's art (see window-play), KEY is "PLACE/BAND" of
+; the art made last, made again only when either changes.
 (def %wn-art
   (fn (_ a g)
+    (def place (game-place g))
     (def b ((fn (_ b) (if (null? b) () (band-name b))) (game-band g)))
-    (unless (if (null? (Vector ref 2 a)) #f
-              ((fn (_ was) (if (str? b) (if (str? was) (str=? b was) #f) (null? was))) (Vector ref 1 a)))
-      (do (Vector set! 1 b a) (Vector set! 2 (frame-art (Vector ref 0 a) b) a)))
+    (def key (Str8 append place "/" (if (str? b) b "")))
+    (unless (if (null? (Vector ref 2 a)) #f (str=? key (Vector ref 1 a)))
+      (do (Vector set! 1 key a) (Vector set! 2 (frame-art ((Vector ref 0 a) place) b) a)))
     (Vector ref 2 a)))
 
 (def %wn-named
@@ -145,13 +147,16 @@
   (fn (_ key)
     (if (str? key) (match ((str=? key "+") 1) ((str=? key "=") 1) ((str=? key "-") -1) (#t 0)) 0)))
 
-; Game G played in a window, its art from FORMS (from paint-art) and
-; FONT (from paint-font), at SCALE times the screen's size, the level
-; shown at ZOOM, nil for the painter's first: nil, or what was raised
-; while it was played, the window closed either way.
+; Game G played in a window, its art from ARTS and FONT (from
+; paint-font), at SCALE times the screen's size, the level shown at
+; ZOOM, nil for the painter's first: nil, or what was raised while it
+; was played, the window closed either way.  ARTS takes a place, ""
+; for the set the game began on or a region's name (game-place), and
+; answers that place's art (from paint-art), so each region is drawn
+; with its own set's pictures.
 (def window-play
-  (fn (_ g forms font scale zoom)
-    (def a (Vector of forms () () (pad-make)))
+  (fn (_ g arts font scale zoom)
+    (def a (Vector of arts "" () (pad-make)))
     (def win (Sdl scaling! (Sdl open "x-roguelike" paint-width paint-height scale) (lit fit)))
     (def failed
       (guard (e e)

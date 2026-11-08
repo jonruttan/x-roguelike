@@ -100,3 +100,26 @@ each frame that layer, what stands on it, the light and the text.
 ```
 ---
     ((1 20 40 640) (3 7 14 224) (4 5 10 160) (4 5 10 160) (1 20 40 640) (2 10 20 320))
+
+
+## each place's art
+
+### a region is drawn with its own set's art, the world's behind it for what it does not draw; each made once
+
+```roguelike
+(import roguelike/paint paint-arts)
+(def spec-arts (paint-arts "data/kettle"))
+(def spec-tiles-named
+  (fn (_ art n) (List filter (fn (_ f) (if (pair? f) (if (eq? (first f) 'tile) (equal? (List ref 1 f) n) #f) #f)) art)))
+(def spec-own-floors (List length (spec-tiles-named (paint-art (data-load "data/town/art")) 'floor)))
+(def spec-light (fn (_ art) (rest (List find (fn (_ p) (if (pair? p) (eq? (first p) 'light) #f)) (first (spec-tiles-named art 'player))))))
+(def town (spec-arts "town"))
+(write (list (= spec-own-floors (List length (spec-tiles-named town 'floor)))
+             (List length (spec-tiles-named town "farm dog"))
+             (List length (spec-tiles-named (spec-arts "") "farm dog"))
+             (spec-light (spec-arts "delve"))
+             (spec-light (spec-arts ""))
+             (eq? town (spec-arts "town"))))
+```
+---
+    (#t 1 1 (255 196 118 5) (255 200 130 5) #t)
