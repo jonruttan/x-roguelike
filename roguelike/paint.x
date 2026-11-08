@@ -411,7 +411,7 @@
       (#t #f))))
 ; Whether OP is a walking thing's tile op come from another cell.
 (def %pt-stepped?
-  (fn (_ op) (if (eq? (first op) (lit tile)) (if (null? (rest (rest (rest (rest (rest op)))))) #f (pair? (List ref 5 op))) #f)))
+  (fn (_ op) (if (eq? (first op) (lit tile)) (if (int< 5 (List length op)) (pair? (List ref 5 op)) #f) #f)))
 ; Painter P a frame on in showing the blows and the steps.
 (def paint-step!
   (fn (_ p) (do (Vector set! 9 (int+ 1 (Vector ref 9 p)) p) (Vector set! 12 (int+ 1 (Vector ref 12 p)) p) p)))

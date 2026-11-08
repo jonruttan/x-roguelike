@@ -176,3 +176,18 @@ each frame that layer, what stands on it, the light and the text.
 ```
 ---
     (#t 5 #t #f)
+
+### a step shown with an item in view: the item's tile, which does not walk, stays put
+
+```roguelike
+(game-key! g (first (spec-open g)))
+(state-clear-messages! g)
+(paint-turn! p g fa)
+(def s (Vector ref 3 p))
+(def walker (List find (fn (_ op) (if (eq? (first op) 'tile) (< 5 (List length op)) #f)) (rest (rest s))))
+(def item (List take 4 walker))
+(Vector set! 3 (pair (first s) (pair (first (rest s)) (pair item (rest (rest s))))) p)
+(write (list (paint-animating? p) (pair? (paint-frame! p g 0))))
+```
+---
+    (#t #t)
