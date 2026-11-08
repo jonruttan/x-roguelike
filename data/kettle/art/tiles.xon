@@ -10,69 +10,69 @@
 (size 16 16)
 
 (colour "." 0 0 0 0)
-(colour "k" 16 13 12)
+(colour "k" 33 25 22)
 ; gritstone, soot-dark in the town, weathered paler on the edges
-(colour "d" 38 34 32)
-(colour "r" 62 56 50)
-(colour "R" 86 78 68)
-(colour "h" 124 112 94)
+(colour "d" 72 63 58)
+(colour "r" 112 100 85)
+(colour "R" 147 131 110)
+(colour "h" 193 174 142)
 ; stone slate
-(colour "n" 34 36 42)
-(colour "N" 60 64 72)
+(colour "n" 62 67 82)
+(colour "N" 103 112 129)
 ; setts and their joints
-(colour "e" 30 28 27)
-(colour "f" 62 58 54)
-(colour "F" 82 77 70)
+(colour "e" 58 53 49)
+(colour "f" 110 103 93)
+(colour "F" 140 131 116)
 ; grass, hedge, hay, gorse, haws
-(colour "v" 30 40 24)
-(colour "s" 42 52 30)
-(colour "g" 58 70 40)
-(colour "G" 76 88 50)
-(colour "a" 92 106 56)
-(colour "H" 150 138 86)
-(colour "X" 196 168 64)
+(colour "v" 53 77 37)
+(colour "s" 74 97 44)
+(colour "g" 100 125 56)
+(colour "G" 127 151 67)
+(colour "a" 148 173 70)
+(colour "H" 217 202 112)
+(colour "X" 247 227 37)
 ; clay, mud, a cart track
-(colour "u" 72 55 42)
-(colour "m" 74 60 44)
-(colour "M" 100 84 62)
-(colour "y" 132 98 66)
+(colour "u" 132 95 65)
+(colour "m" 134 104 67)
+(colour "M" 168 139 92)
+(colour "y" 207 155 89)
 ; heather, peat, bog
-(colour "E" 70 48 62)
-(colour "j" 118 76 104)
-(colour "b" 42 34 28)
-(colour "z" 50 54 36)
+(colour "E" 129 80 113)
+(colour "j" 194 119 173)
+(colour "b" 82 62 48)
+(colour "z" 90 98 55)
 ; limestone, yew
-(colour "q" 104 102 96)
-(colour "l" 150 148 136)
-(colour "A" 196 192 178)
-(colour "x" 24 34 28)
+(colour "q" 167 163 152)
+(colour "l" 213 210 195)
+(colour "A" 242 239 228)
+(colour "x" 40 67 51)
 ; water
-(colour "w" 34 48 58)
-(colour "W" 70 96 110)
+(colour "w" 55 89 112)
+(colour "W" 107 160 182)
 ; timber, iron, rust, wool and cloth
-(colour "t" 66 47 32)
-(colour "T" 98 74 50)
-(colour "V" 122 94 64)
-(colour "i" 50 52 56)
-(colour "I" 92 94 98)
-(colour "J" 128 124 116)
-(colour "O" 100 58 34)
-(colour "U" 102 80 60)
-(colour "c" 52 56 62)
-(colour "C" 82 88 96)
-(colour "D" 132 44 36)
+(colour "t" 125 82 44)
+(colour "T" 169 124 69)
+(colour "V" 196 151 87)
+(colour "i" 89 93 103)
+(colour "I" 150 153 161)
+(colour "J" 194 188 175)
+(colour "O" 177 97 37)
+(colour "U" 173 132 89)
+(colour "c" 90 100 113)
+(colour "C" 135 146 161)
+(colour "D" 220 62 40)
 ; skin, bone and paper, lamp light, coin
-(colour "p" 168 132 108)
-(colour "P" 120 90 76)
-(colour "B" 200 190 164)
-(colour "Q" 214 164 86)
-(colour "L" 246 220 156)
-(colour "o" 176 138 58)
-(colour "Y" 228 196 110)
+(colour "p" 234 192 153)
+(colour "P" 194 144 115)
+(colour "B" 245 238 213)
+(colour "Q" 253 220 87)
+(colour "L" 255 250 191)
+(colour "o" 239 200 40)
+(colour "Y" 254 241 122)
 ; shade, a panel's ground
 (colour "S" 0 0 0 110)
 (colour "K" 0 0 0 55)
-(colour "Z" 18 15 13 232)
+(colour "Z" 37 29 23 232)
 
 ; --- the ground: the set's own ----------------------------------------------
 
@@ -473,6 +473,402 @@
   "....mkkkkkkm...."
   "................"
   "................"))
+
+; --- Kettle: the closes round the town --------------------------------------
+
+; The town's own ground outside its door: garden closes and kitchen
+; plots behind the terraces, kale, leeks and onions in them, hedges
+; black with the town's soot, the washing out on them, a flagged causey
+; to the town's door.
+
+; The top: a garden hedge from above, soot in it, a haw or two.
+(tile wall (band "Kettle") (part top) (weight 6) (rows
+  "vsvdgvsvvdsvgvvs"
+  "svgavvdsgvDsvavv"
+  "vvsvsvgvdvavvvsv"
+  "gvsdvvvsvvvdsgvv"
+  "vvavgvvsvsgvvvds"
+  "svdvvsvavvdvvavv"
+  "vvgvvdvvvgsvvsvv"
+  "vsvvasvvsvvdgvsv"
+  "vdvvvvgvvvvavvvv"
+  "gvsvavvdvsvvvvsg"
+  "vvvdvvvsgvsvavvv"
+  "svavvgvvvdvsvvvv"
+  "vvvsvdvavvgvvsvd"
+  "vgvvvsvsvvdvavvs"
+  "vdvavvvgvsvvvvvv"
+  "svvsvsvvdvavvgvv"))
+
+; ... a dry-stone wall, its stones black with soot.
+(tile wall (band "Kettle") (part top) (weight 2) (rows
+  "rdkkdrRkdrdkrRdk"
+  "drkrdRdkdRrkrddk"
+  "kkdrrkkrdrkddkkR"
+  "rdRkkdRdkkdrRdkr"
+  "ddkrdrkkdRdrkdrd"
+  "kkdRdkrdRdkkdrkk"
+  "drdkkRdrkkrdRkdr"
+  "drkdrdkkRddkkdrd"
+  "rdkrdrkkdrdrkdRd"
+  "kkdRdkrdRdkkdrkk"
+  "Rddkkrdrkkrdrkdr"
+  "drkdRdkkdRrkkdrd"
+  "rdrkdrdkrRdkdRrk"
+  "drkrdRdkdrrkrddk"
+  "kkdrrkkrdrkddkkd"
+  "rdRkkdRdkkdrRdkr"))
+(tile wall (band "Kettle") (part n) (rows
+  "aGaaGaaaGaaGaaaG"
+  "GgGGgGGgGGGgGGgG"
+  ".g..g...g.g...g."
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"))
+
+(tile wall (band "Kettle") (part e) (rows
+  ".............gGa"
+  "..............Ga"
+  ".............gGa"
+  "..............Ga"
+  "..............gG"
+  ".............gGa"
+  "..............Ga"
+  "..............Ga"
+  ".............gGa"
+  "..............ga"
+  "..............Ga"
+  ".............gGa"
+  "..............Ga"
+  "..............GG"
+  ".............gGa"
+  "..............Ga"))
+
+(tile wall (band "Kettle") (part w) (rows
+  "aGg............."
+  "aG.............."
+  "aGg............."
+  "aG.............."
+  "Gg.............."
+  "aGg............."
+  "aG.............."
+  "aG.............."
+  "aGg............."
+  "ag.............."
+  "aG.............."
+  "aGg............."
+  "aG.............."
+  "GG.............."
+  "aGg............."
+  "aG.............."))
+
+(tile wall (band "Kettle") (part ne) (rows
+  ".............Gaa"
+  "..............Ga"
+  "...............G"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"))
+
+(tile wall (band "Kettle") (part nw) (rows
+  "aaG............."
+  "aG.............."
+  "G..............."
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"))
+
+(tile wall (band "Kettle") (part se) (rows
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "...............G"
+  "..............Ga"
+  ".............Gaa"))
+
+(tile wall (band "Kettle") (part sw) (rows
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "G..............."
+  "aG.............."
+  "aaG............."))
+
+(tile wall (band "Kettle") (part face-w) (rows
+  "................"
+  "ka.............."
+  "kG.............."
+  "ka.............."
+  "kG.............."
+  "kg.............."
+  "kg.............."
+  "ks.............."
+  "ks.............."
+  "kv.............."
+  "kv.............."
+  "kv.............."
+  "ks.............."
+  "kG.............."
+  "kg.............."
+  "kk.............."))
+
+(tile wall (band "Kettle") (part face-e) (rows
+  "................"
+  ".............ask"
+  ".............Gsk"
+  ".............Gsk"
+  ".............gsk"
+  ".............gsk"
+  ".............ssk"
+  "..............sk"
+  "..............sk"
+  ".............vvk"
+  ".............vvk"
+  ".............vvk"
+  "..............sk"
+  ".............gsk"
+  ".............gsk"
+  "..............kk"))
+
+
+; The face: a clipped garden hedge on a footing of sooty stone.
+(tile wall (band "Kettle") (part face) (weight 8) (rows
+  "vsvavvsvdvsvavvs"
+  "aGaaGaGaaGaaGaGa"
+  "GgGaDGgGGGaGdgGG"
+  "gGggGGgggGagGgGg"
+  "ggsgGgdsggggsgGg"
+  "sgggsggggsGgDgsg"
+  "vsgssgsvsgsssgsv"
+  "svvsvvsvvsvsvvsv"
+  "vvkvvsvkvvvsvkvv"
+  "kkkkkkkkkkkkkkkk"
+  "RrdkRrrdkRhrdkRr"
+  "rddkrddrkrddrkdd"
+  "kkkkkkkkkkkkkkkk"
+  "hrRdkRrrdkRrRdkR"
+  "uuuuuuuuuuuuuuuu"
+  "kkkkkkkkkkkkkkkk"))
+
+; ... the washing out on it: a shirt and a blue apron pegged over the
+; hedge, lifting in the wind.
+(tile wall (band "Kettle") (part face) (weight 3) (rows
+  "vsvakkkkkvsvavvs"
+  "aGakBBBBBkaGkkkk"
+  "GgkBBBBBBBkkCCCk"
+  "gGkBkBBBkBkkCCCk"
+  "ggkkkBBBkkkkCCCk"
+  "sgggkBBBkggkCcCk"
+  "vsgskBBBksskCCCk"
+  "svvskBBBkvvkCCCk"
+  "vvkvkkkkkvvskkkv"
+  "kkkkkkkkkkkkkkkk"
+  "RrdkRrrdkRhrdkRr"
+  "rddkrddrkrddrkdd"
+  "kkkkkkkkkkkkkkkk"
+  "hrRdkRrrdkRrRdkR"
+  "uuuuuuuuuuuuuuuu"
+  "kkkkkkkkkkkkkkkk")
+  (frames 4 (rows
+  "vsvavkkkkkvvavvs"
+  "aGaakBBBBBkGkkkk"
+  "GgakBBBBBBBkCCCk"
+  "gGkBBkBBBkBkCCCk"
+  "ggkkkkBBBkkkCCCk"
+  "sgggskBBBkgkCcCk"
+  "vsgsskBBBkskCCCk"
+  "svvsskBBBkvkCCCk"
+  "vvkvvkkkkkvkkkkv"
+  "kkkkkkkkkkkkkkkk"
+  "RrdkRrrdkRhrdkRr"
+  "rddkrddrkrddrkdd"
+  "kkkkkkkkkkkkkkkk"
+  "hrRdkRrrdkRrRdkR"
+  "uuuuuuuuuuuuuuuu"
+  "kkkkkkkkkkkkkkkk")))
+
+; ... a dry-stone wall, soot-black, lichen on its coping.
+(tile wall (band "Kettle") (part face) (weight 4) (rows
+  "vsvavvsvvvsvavvs"
+  "kaRkhRkaGkRhkaRk"
+  "kRrkRrkrRkRrkRrk"
+  "kkkkkkkkkkkkkkkk"
+  "rdRkdrRdrkrdRdkd"
+  "ddrkrddrdkddrdkr"
+  "kkkkkkkkkkkkkkkk"
+  "dRrdkdRrrkdRrdRk"
+  "rddrkrddrkrdddrk"
+  "kkkkkkkkkkkkkkkk"
+  "rdkRddrdkdRrdkdR"
+  "ddkdrdrdkrddrkdr"
+  "kkkkkkkkkkkkkkkk"
+  "dRrdkdrRddkdRrdk"
+  "rddrkrdrddkrddrk"
+  "kkkkkkkkkkkkkkkk"))
+
+; Cropped grass by the town, worn bare where the children play.
+(tile floor (band "Kettle") (weight 8) (rows
+  "GGgGGGaGGgGGGGgG"
+  "GgGGaGGGGGGgGaGG"
+  "GGGGGgGGaGGGGGGg"
+  "aGGgGGGGGGgGGGGG"
+  "GGGGGGaGgGGGGaGG"
+  "GgGaGGGGGGGGgGGG"
+  "GGGGgGGGGaGGGGGg"
+  "GaGGGGgGGGGGaGGG"
+  "GGgGGGGGaGGgGGGG"
+  "GGGGaGGGGGGGGGaG"
+  "gGGGGGGgGGaGGGGG"
+  "GGaGGgGGGGGGgGGG"
+  "GGGGGGGaGGgGGGGa"
+  "GgGGaGGGGGGGGaGG"
+  "GGGGGgGGGaGGGGGG"
+  "aGGgGGGGGGGgGGgG"))
+
+; ... a kitchen plot: kale in a row, leeks earthed up, the soil dark.
+(tile floor (band "Kettle") (weight 4) (rows
+  "mumumumumumumumu"
+  "ukssku.kssk.ksks"
+  "ksWsskksWsskksWs"
+  "sWsWsksWsWsksWsW"
+  "kssskmkssskmksss"
+  "mkgkmmmkgkmmmkgk"
+  "mumumumumumumumu"
+  "umumumumumumumum"
+  "aGkaGkaGkaGkaGka"
+  "aGkaGkaGkaGkaGka"
+  "BlkBlkBlkBlkBlkB"
+  "BlkBlkBlkBlkBlkB"
+  "MMMMMMMMMMMMMMMM"
+  "mumumumumumumumu"
+  "umumumumumumumum"
+  "mumumumumumumumu"))
+
+; ... onions lifted and laid out on the soil to dry.
+(tile floor (band "Kettle") (weight 2) (rows
+  "mumumumumumumumu"
+  "umumumumumumumum"
+  "mugaumumugamumum"
+  "kyYykmumkyYykmum"
+  "kyoykmumkyoykumu"
+  "mkkkmumumkkkmumu"
+  "umumugaumumumuga"
+  "umumkyYykumumkyY"
+  "mumukyoykmumumky"
+  "umumukkkmumumumk"
+  "mugaumumumugamum"
+  "kyYykumumumkyYyk"
+  "kyoykmumumukyoyk"
+  "mkkkmumumumukkkm"
+  "umumumumumumumum"
+  "mumumumumumumumu"))
+
+; ... the causey: flags laid along the way to the town's door.
+(tile floor (band "Kettle") (weight 3) (rows
+  "GGgGGGaGGgGGGGgG"
+  "GgGGaGGGGGGgGaGG"
+  "eeeeeeeeeeeeeeee"
+  "FFFfeFFFFFeFFfFe"
+  "FfFFeFfFFFeFFFFe"
+  "FFFFeFFFfFeFfFFe"
+  "fFFFeFFFFFefFFFe"
+  "eeeeeeeeeeeeeeee"
+  "FFeFFFFfFeFFFFfF"
+  "FfeFFFFFFeFfFFFF"
+  "FFeFfFFFFeFFFFfF"
+  "FFeFFFfFFeFFfFFF"
+  "eeeeeeeeeeeeeeee"
+  "GgGGaGGGGGGgGaGG"
+  "GGGGGgGGGaGGGGGG"
+  "aGGgGGGGGGGgGGgG"))
+
+; ... an ash heap off the town's grates, clinker in it, a broken crock.
+(tile floor (band "Kettle") (rows
+  "GGgGGGaGGgGGGGgG"
+  "GgGGaGJJJJGgGaGG"
+  "GGGJJIJJkJJJGGGg"
+  "aGJJkIJJJIJJJGGG"
+  "GJIJJJJkJJJIJJGG"
+  "GJJJIJJJJIJOOJJG"
+  "JJkJJJIJJJJOkOJG"
+  "GJJIJJJJkJJJJJJG"
+  "GJJJJIJJJJIJkJJJ"
+  "GGJkJJJJIJJJJJJG"
+  "gGJJJIJJJJkJJJGG"
+  "GGGJJJJJIJJJJGGG"
+  "GGGGGJJJJJJGGGGa"
+  "GgGGaGGGGGGGGaGG"
+  "GGGGGgGGGaGGGGGG"
+  "aGGgGGGGGGGgGGgG"))
+
+; A gate in a garden hedge: a five-bar gate of oak, hung open.
+(tile door (band "Kettle") (rows
+  "GGgGGGaGGgGGGGgG"
+  "GkkGaGGGGGGgGaGG"
+  "GtTkkkkkkkkkkkGg"
+  "atTVVVVVVVVVVVkG"
+  "GtTkkkkkkkkkkkkG"
+  "GtTTTTTTTTTTTTkG"
+  "GtTkkkkkkkkkkkkg"
+  "GtTVVVVVVVVVVVkG"
+  "GtTkkkkkkkkkkkkG"
+  "GtTTTTTTTTTTTTkG"
+  "gtTkkkkkkkkkkkkG"
+  "GtTVVVVVVVVVVVkG"
+  "GtTkkkkkkkkkkkkG"
+  "GkkGaGGGGGGGGaGG"
+  "GGGGGgGGGaGGGGGG"
+  "aGGgGGGGGGGgGGgG"))
 
 ; --- The Farms --------------------------------------------------------------
 
@@ -1639,7 +2035,24 @@
   ".kQLkkuukuukkTk."
   ".kLLk.kuk.kukT.."
   "..kk..kkk.kkkT.."
-  "......kkk.kkkk.."))
+  "......kkk.kkkk..")
+  (frames 4 (rows
+  "................"
+  "......kkkk...k.."
+  ".....kUUUUk.kVk."
+  "......kpPPk.kTk."
+  "......kPpPk.kTk."
+  ".......kPk..kTk."
+  ".....kHHHHkkpTk."
+  "...kucCCcCCckTk."
+  "...kucCCcCCckTk."
+  "...kuccCcCcckTk."
+  "..kPkcCcCcCckTk."
+  "..kikcCckCcckTk."
+  ".kLLkkuukuukkTk."
+  ".kQLk.kuk.kukT.."
+  "..kk..kkk.kkkT.."
+  "......kkk.kkkk..")))
 
 ; --- what lies about --------------------------------------------------------
 

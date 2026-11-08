@@ -44,7 +44,7 @@ name for a creature.
 | the player | `player` | 1 |
 | items | `potion` `scroll` `wand` `ring` `weapon` `armour` `food` `gold` `goal`, and `page` `token` where the set has them | 9 to 11 |
 | creatures | every `(creature NAME ...)` of the set, talkers each their own | classic 17, delve 23, kettle 28 |
-| bands | a band's own `wall` and `floor`, where its place differs | delve 3, kettle 3, town 1 |
+| bands | a band's own `wall` and `floor`, where its place differs | delve 3, kettle 4, town 1 |
 | the screen | `panel` (a nine-piece frame), `shadow` | 2 |
 
 Shared by every set, in `art/` at the top of the bundle: the font (the
@@ -83,6 +83,12 @@ files of `data/SET` alone, so the terminal game never reads these.
   on the ground.
 - `(part P)`: one piece of a tile, put together by its neighbours (see
   **Walls**).  A name with no parts is drawn whole.
+- `(frames TICKS (rows ...) ...)`: the tile moves.  Its own rows are
+  the first picture, each `(rows ...)` here the next, every one held
+  TICKS of the window's ticks (about twelve a second), round and round:
+  a flame, a drip, washing in the wind.  Each cell starts the round at
+  its own place, so two flames never move together.  A front-end that
+  does not move tiles draws the first picture.
 
 ## Walls
 

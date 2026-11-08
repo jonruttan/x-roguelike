@@ -4,52 +4,52 @@
 ; cloth.  The ground is in tiles.xon, which names "." clear.
 
 ; outline, wool and leather
-(colour "0" 18 15 14)
-(colour "1" 52 40 32)
-(colour "2" 84 62 44)
-(colour "3" 120 92 62)
+(colour "0" 37 29 25)
+(colour "1" 100 72 51)
+(colour "2" 151 106 63)
+(colour "3" 194 148 84)
 ; skin, grey hair
-(colour "4" 166 128 104)
-(colour "5" 118 88 72)
-(colour "6" 140 134 122)
+(colour "4" 232 188 147)
+(colour "5" 192 142 109)
+(colour "6" 206 198 179)
 ; grey wool, iron
-(colour "7" 44 44 48)
-(colour "8" 74 74 78)
-(colour "9" 100 104 110)
-(colour "!" 168 170 168)
+(colour "7" 80 80 90)
+(colour "8" 127 127 135)
+(colour "9" 158 166 176)
+(colour "!" 225 227 225)
 ; linen, tallow, flour
-(colour "?" 188 178 150)
-(colour "%" 140 130 108)
-(colour "&" 214 208 190)
+(colour "?" 240 232 200)
+(colour "%" 207 194 158)
+(colour "&" 249 246 234)
 ; flame
-(colour "*" 250 210 120)
-(colour "+" 214 130 50)
+(colour "*" 255 247 134)
+(colour "+" 255 187 14)
 ; fustian greens, red cloth
-(colour "=" 46 58 42)
-(colour "@" 78 92 58)
-(colour "~" 128 46 36)
-(colour "^" 92 40 34)
+(colour "=" 79 106 69)
+(colour "@" 128 156 84)
+(colour "~" 215 65 40)
+(colour "^" 171 62 48)
 ; the Guild's blue broadcloth, black mourning and good coats
-(colour ":" 52 60 82)
-(colour "<" 80 90 118)
-(colour ">" 30 28 32)
+(colour ":" 87 106 151)
+(colour "<" 128 148 195)
+(colour ">" 56 53 62)
 ; wood, wicker, brass
-(colour "/" 96 70 44)
-(colour "|" 132 102 66)
-(colour "`" 170 140 70)
-(colour "$" 190 150 70)
+(colour "/" 168 118 56)
+(colour "|" 206 161 87)
+(colour "`" 235 203 70)
+(colour "$" 246 211 62)
 ; marsh gas
-(colour "'" 170 220 180 200)
-(colour "," 110 170 140 110)
+(colour "'" 217 252 227 200)
+(colour "," 152 233 199 110)
 ; hide and fur, eye-shine
-(colour "-" 132 96 60)
-(colour "_" 96 94 88)
-(colour "#" 220 200 120)
+(colour "-" 208 152 75)
+(colour "_" 157 153 142)
+(colour "#" 253 244 142)
 ; adder, hornet, boar
-(colour "[" 40 36 30)
-(colour "]" 128 116 80)
-(colour "{" 196 160 50)
-(colour "}" 62 50 42)
+(colour "[" 77 67 51)
+(colour "]" 198 179 112)
+(colour "{" 248 220 2)
+(colour "}" 115 89 69)
 
 ; --- the farms and the road --------------------------------------------------
 

@@ -4,27 +4,27 @@
 ; recoloured; the faces, floors, doors and stairs are each place's own.
 
 ; colours: the Flood's water, silt and ochre; the Old Works' limestone; the Heart's glassy rock, dripstone and cold light
-(colour "*" 166 102 44)
-(colour "+" 92 100 102)
-(colour "=" 20 30 40)
-(colour "~" 118 148 156)
-(colour "@" 74 66 50)
-(colour ":" 42 40 37)
-(colour "^" 78 74 66)
-(colour "<" 112 106 94)
-(colour ">" 156 148 130)
-(colour "/" 188 180 160)
-(colour "|" 64 60 54)
-(colour "`" 126 119 104)
-(colour "'" 100 95 84)
-(colour "," 13 15 21)
-(colour "_" 28 32 42)
-(colour "$" 56 64 80)
-(colour "#" 150 184 200)
-(colour "[" 150 144 128)
-(colour "]" 92 88 80)
-(colour "{" 100 166 186)
-(colour "}" 16 30 40)
+(colour "*" 238 156 23)
+(colour "+" 147 162 166)
+(colour "=" 31 58 82)
+(colour "~" 170 213 222)
+(colour "@" 131 115 79)
+(colour ":" 79 74 67)
+(colour "^" 135 127 109)
+(colour "<" 178 168 146)
+(colour ">" 219 210 186)
+(colour "/" 239 233 213)
+(colour "|" 115 106 92)
+(colour "`" 193 182 157)
+(colour "'" 163 155 134)
+(colour "," 23 29 46)
+(colour "_" 49 60 85)
+(colour "$" 95 112 144)
+(colour "#" 201 237 247)
+(colour "[" 214 207 185)
+(colour "]" 153 146 129)
+(colour "{" 132 229 244)
+(colour "}" 22 58 84)
 
 ; --- The Flood ---------------------------------------------------------------
 
@@ -211,7 +211,41 @@
   "o*oo*oo~o*oo**o*"
   "=wwwWwWWWwwWww=w"
   "w~www~W~W~wwwwww"
-  "kkkkkkkkkkkkkkkk"))
+  "kkkkkkkkkkkkkkkk")
+  (frames 3 (rows
+  "dddnddddddnddddd"
+  "+hR+hhRkhhR+hRh+"
+  "RRrRRRRkRRrRRRRR"
+  "R+RRRRk~kRRRRoRR"
+  "RRRrRRRRRRRrRo*R"
+  "rRRRRRRWRRkRROOr"
+  "rrrrrrrrrrkrr*or"
+  "ddrdddd~ddrddOdd"
+  "dkdddddWdkddkodd"
+  "nnNnnnnnnnnnNOnn"
+  "nNnnnnn~nnnn+onN"
+  "knnnnnnWnnnnnOnk"
+  "o*oo*oooo*oo**o*"
+  "=wwwWwWWWwwWww=w"
+  "w~www~W~W~wwwwww"
+  "kkkkkkkkkkkkkkkk")
+   (rows
+  "dddnddddddnddddd"
+  "+hR+hhRkhhR+hRh+"
+  "RRrRRRRkRRrRRRRR"
+  "R+RRRRkWkRRRRoRR"
+  "RRRrRRRRRRRrRo*R"
+  "rRRRRRRRRRkRROOr"
+  "rrrrrrrWrrkrr*or"
+  "ddrdddddddrddOdd"
+  "dkddddd~dkddkodd"
+  "nnNnnnnWnnnnNOnn"
+  "nNnnnnnnnnnn+onN"
+  "knnnnnn~nnnnnOnk"
+  "o*oo*ooWo*oo**o*"
+  "=wwwWwWWWwwWww=w"
+  "w~www~W~W~wwwwww"
+  "kkkkkkkkkkkkkkkk")))
 
 ; ... a fan of ochre crust, where the iron water ran down for weeks.
 (tile wall (band "The Flood") (part face) (weight 2) (rows
@@ -1133,7 +1167,24 @@
   "_,,#{#,__$$__,,_"
   "__#_#$__,,_#$___"
   ",,,_,,,,_,,,,_,,"
-  "kkkkkkkkkkkkkkkk"))
+  "kkkkkkkkkkkkkkkk")
+  (frames 6 (rows
+  ",,,_,,,,,,_,,,,,"
+  "$#$$_$$$$$$_$#$$"
+  "__$___,__$$___,_"
+  "_$$__,,_$___$$__"
+  "$__,,__$__{#{__$"
+  "_,,_{$$__{#{__{_"
+  "_,__$__,{#{_$_,_"
+  "__$$_,,{##{__,__"
+  ",__,,_{#{_,__$$_"
+  "_$$_,{#{,__,,___"
+  "__,,{##{_,,_$__,"
+  ",__{#{__,,__,_$_"
+  "_,,{#{,__$$__,,_"
+  "__{_{$__,,_{$___"
+  ",,,_,,,,_,,,,_,,"
+  "kkkkkkkkkkkkkkkk")))
 
 ; ... light from the rock, pooled in a hollow of it.
 (tile wall (band "The Heart") (part face) (light 110 180 215 3) (flicker 8) (rows
