@@ -137,12 +137,12 @@
 
 ; The game over: the epitaph said, a score kept, a save removed.
 (def %cl-finish!
-  (fn (_ g set)
+  (fn (_ g set name)
     (def how (game-over g))
     (match
-      ((eq? how (lit saved)) (do (save-write! g (save-path "save")) (%cl-say 1 "Saved.  Play again to take it up.\n") 0))
-      (#t (do (when (File exists? (save-path "save")) (File unlink (save-path "save")))
-              (save-score! (save-path "scores") (game-score g) (game-deepest g)
+      ((eq? how (lit saved)) (do (save-write! g (save-path name "save")) (%cl-say 1 "Saved.  Play again to take it up.\n") 0))
+      (#t (do (when (File exists? (save-path name "save")) (File unlink (save-path name "save")))
+              (save-score! (save-path name "scores") (game-score g) (game-deepest g)
                 (Str8 append (match ((eq? how (lit won)) "won") ((eq? how (lit quit)) "quit") (#t (game-epitaph g)))
                   (%cl-chosen-text g)))
               (%cl-say 1 (Str8 append
@@ -157,8 +157,10 @@
   (fn (_ opts)
     (if (null? (Opts value opts "-S")) (+ 1 (rest (Sys time-of-day))) (%cl-to-int (Opts value opts "-S")))))
 
+; The name --set gives, classic when none.
+(def %cl-set-name (fn (_ opts) (Opts value opts "-s" "classic")))
 ; The set --set names, under the data directory.
-(def %cl-set (fn (_ opts) (data-load (Str8 append (%cl-data-dir opts) "/" (Opts value opts "-s" "classic")))))
+(def %cl-set (fn (_ opts) (data-load (Str8 append (%cl-data-dir opts) "/" (%cl-set-name opts)))))
 
 ; The choices --choose gives, (GROUP NAME) each; a word without an = raises.
 (def %cl-picks
@@ -193,11 +195,11 @@
   (fn (_ opts)
     (def dir (Str8 append (%cl-data-dir opts) "/" (Opts value opts "-s" "classic")))
     (def set (data-load dir))
-    (def saved (save-read (save-path "save") set 24 80))
+    (def saved (save-read (save-path (%cl-set-name opts) "save") set 24 80))
     (def g (if (null? saved) (game-make (data-choose set (%cl-picks opts)) (%cl-seed opts) 24 80) saved))
     (def zoom (if (null? (Opts value opts "-z")) () (%cl-to-int (Opts value opts "-z"))))
     (def failed (window-play g (paint-arts dir) (paint-font (%cl-art-dir)) 2 zoom))
-    (if (null? failed) (%cl-finish! g set)
+    (if (null? failed) (%cl-finish! g set (%cl-set-name opts))
       (do (%cl-say 2 (Str8 append "x-roguelike: " (%cl-err-text failed) "\n")) 1))))
 
 (def %cl-play
@@ -212,7 +214,7 @@
       (#t (do
         (def set (%cl-set opts))
         (def picks (%cl-picks opts))
-        (def saved (save-read (save-path "save") set (rest size) (first size)))
+        (def saved (save-read (save-path (%cl-set-name opts) "save") set (rest size) (first size)))
         (def g (if (null? saved) (game-make (data-choose set picks) (%cl-seed opts) (rest size) (first size)) saved))
         (def screen (Screen make (rest size) (first size)))
         (def token (Term raw! 0))
@@ -220,12 +222,12 @@
         (def failed (guard (e e) (do (%cl-loop g screen (%cl-reader)) ())))
         (Term emit 1 (Str8 append (%cl-esc "[0m") (%cl-esc "[?25h") (%cl-esc "[?1049l")))
         (Term restore! 0 token)
-        (if (null? failed) (%cl-finish! g set)
+        (if (null? failed) (%cl-finish! g set (%cl-set-name opts))
           (do (%cl-say 2 (Str8 append "x-roguelike: " (%cl-err-text failed) "\n")) 1)))))))
 
 (def %cl-scores
-  (fn (_)
-    (def rows (save-scores (save-path "scores")))
+  (fn (_ name)
+    (def rows (save-scores (save-path name "scores")))
     (if (null? rows) (%cl-say 1 "No games yet.\n")
       (List for-each (fn (_ row) (%cl-say 1 (Str8 append row "\n"))) rows))
     0))
@@ -246,7 +248,7 @@
       ((not (null? bad-pick)) (do (%cl-say 2 (Str8 append "x-roguelike: " bad-pick "\n")) 2))
       ((null? words) (guard (e (do (%cl-say 2 (Str8 append "x-roguelike: " (%cl-err-text e) "\n")) 1)) (if (Opts on? opts "-w") (%cl-window opts) (%cl-play opts))))
       ((str=? (first words) "play") (guard (e (do (%cl-say 2 (Str8 append "x-roguelike: " (%cl-err-text e) "\n")) 1)) (if (Opts on? opts "-w") (%cl-window opts) (%cl-play opts))))
-      ((str=? (first words) "scores") (%cl-scores))
+      ((str=? (first words) "scores") (%cl-scores (%cl-set-name opts)))
       (#t (do (%cl-say 2 (Str8 append "x-roguelike: no such command: " (first words) "\n" (Opts usage roguelike-options))) 2)))))
 
 (provide roguelike/cli roguelike-main roguelike-options roguelike-version)

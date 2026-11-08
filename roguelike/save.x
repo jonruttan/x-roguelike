@@ -50,12 +50,15 @@
   item-make item-form item-class item-name item-count item-charges item-enchant item-letter item-letter!
   item-r item-c item-at! state-say!)
 
-; ~/.x-roguelike/NAME, the directory made.
+; ~/.x-roguelike/SET/NAME, the directories made: each set its own save
+; and scores, as a save does not say which set it was played on.  SET
+; is the set's name, the last part of a path given for it.
 (def save-path
-  (fn (_ name)
+  (fn (_ set name)
     (def home (Sys getenv "HOME"))
-    (def dir (Str8 append (if (null? home) "." home) "/.x-roguelike"))
-    (unless (File exists? dir) (guard (e ()) (File mkdir dir)))
+    (def top (Str8 append (if (null? home) "." home) "/.x-roguelike"))
+    (def dir (Str8 append top "/" (List fold (fn (_ last part) (if (str=? part "") last part)) "classic" (Str8 split "/" set))))
+    (List for-each (fn (_ d) (unless (File exists? d) (guard (e ()) (File mkdir d)))) (list top dir))
     (Str8 append dir "/" name)))
 
 ; --- writing -----------------------------------------------------------------

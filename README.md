@@ -9,12 +9,12 @@ and `town` are the four shipped, the last two worlds of screens rather
 than a descent.
 
     x -l roguelike -- [-s NAME] [-c GROUP=NAME]... [-S N] [-d DIR] [play]
-    x -l roguelike -- scores
+    x -l roguelike -- [-s NAME] scores
 
 The goal lies on the deepest level.  Held, it opens the stairs up, and
 every level climbed is made again, roused and hostile; the surface is
 the win.  `S` saves a game for the next sitting; the save is read once.
-Scores keep in `~/.x-roguelike/scores`.
+Each set keeps its own save and scores, in `~/.x-roguelike/NAME/`.
 
 ## Keys
 
