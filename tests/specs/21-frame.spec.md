@@ -167,3 +167,31 @@ takes, a wall in parts by its neighbours, and the camera on the player.
 ```
 ---
     (#t "@")
+
+## marks
+
+### a sleeper has its sleep drawn over it; a held creature and a confused player their marks, which move with them
+
+```roguelike
+(import roguelike/paint paint-art)
+(import roguelike/frame frame-art frame-scene)
+(import roguelike/state creature-condition! player-condition!)
+(def g (spec-game-on (spec-set-named "delve") 3 ()))
+(game-creatures! g ())
+(def fa (frame-art (paint-art (data-load "data/delve/art")) ()))
+(def pl (game-player g))
+(def sleeper (spec-place! g "mine rat" (player-r pl) (- (player-c pl) 2) 5 'asleep))
+(def held (spec-place! g "mine rat" (player-r pl) (- (player-c pl) 4) 5 'awake))
+(creature-condition! held 'held 5)
+(player-condition! pl 'confused 5)
+(def ops (rest (rest (frame-scene g fa))))
+(def marks (List filter (fn (_ op) (if (eq? (first op) 'tile) (if (< 5 (List length op)) (eq? (List ref 5 op) 'mark) #f) #f)) ops))
+(def mark-of (fn (_ who) (List find (fn (_ op) (same? (first (List ref 4 op)) who)) marks)))
+(write (list (List length (List filter (fn (_ op) (eq? (first op) 'sleep)) ops))
+             (List length marks)
+             (first (List ref 3 (mark-of held)))
+             (first (List ref 3 (mark-of 'player)))
+             (null? (mark-of sleeper))))
+```
+---
+    (1 2 'mark-held 'mark-confused #t)

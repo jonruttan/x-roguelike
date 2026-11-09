@@ -24,7 +24,9 @@
 (import roguelike/items items-glyph)
 (import roguelike/map map-terrain map-kinds map-rows map-cols map-tile map-seen? map-visible? map-in? map-opaque? tile-rock)
 (import roguelike/state game-map game-player game-floor game-creatures game-traps
-  player-r player-c item-r item-c item-class creature-r creature-c creature-name creature-glyph game-set game-blows)
+  player-r player-c player-conditions item-r item-c item-class creature-r creature-c creature-name creature-glyph
+  creature-state creature-condition game-set game-blows)
+(import roguelike/draw draw-hunger)
 (import roguelike/creatures creatures-shown?)
 (import roguelike/traps trap-r trap-c trap-found?)
 
@@ -235,9 +237,49 @@
                                   (%fr-put a cam (item-r it) (item-c it) (item-class it) #f (items-glyph g it) ()) ()))
         (game-floor g))
       (List flat-map (fn (_ cr) (if (creatures-shown? g cr)
-                                  (%fr-put a cam (creature-r cr) (creature-c cr) (creature-name cr) #t (creature-glyph cr) cr) ()))
+                                  (List append
+                                    (%fr-put a cam (creature-r cr) (creature-c cr) (creature-name cr) #t (creature-glyph cr) cr)
+                                    (%fr-marks a cam (creature-r cr) (creature-c cr) cr (%fr-creature-states cr)))
+                                  ()))
         (game-creatures g))
-      (%fr-put a cam (player-r p) (player-c p) (lit player) #t (data-glyph set (lit player) "@") (lit player)))))
+      (%fr-put a cam (player-r p) (player-c p) (lit player) #t (data-glyph set (lit player) "@") (lit player))
+      (%fr-marks a cam (player-r p) (player-c p) (lit player) (%fr-player-states g)))))
+
+; --- marks ----------------------------------------------------------------------
+
+; The states a mark is drawn for over a creature: asleep, and the
+; conditions it is under.
+(def %fr-creature-marks (list (lit held) (lit slowed)))
+(def %fr-creature-states
+  (fn (_ cr)
+    (List append (if (eq? (creature-state cr) (lit asleep)) (list (lit asleep)) ())
+                 (List filter (fn (_ name) (< 0 (creature-condition cr name))) %fr-creature-marks))))
+; The player's: each condition it is under, and its hunger.
+(def %fr-player-states
+  (fn (_ g)
+    (def hunger (draw-hunger g))
+    (List append (List map first (List filter (fn (_ c) (< 0 (rest c))) (player-conditions (game-player g))))
+                 (match ((str=? hunger "Hungry") (list (lit hungry)) )
+                        ((str=? hunger "Weak") (list (lit weak)))
+                        ((str=? hunger "") ())
+                        (#t (list (lit fainting)))))))
+
+; The marks over the thing WHO at R C under camera CAM for STATES, from
+; art A: each state's mark-STATE picture as a tile op, (tile X Y PICTURE
+; (WHO R . C) mark), that moves with WHO and goes round its pictures
+; whatever WHO does; asleep, where the art has no mark-asleep, as (sleep
+; X Y SEED), drawn by the front-end; a state with neither, nothing.
+(def %fr-marks
+  (fn (_ a cam r c who states)
+    (def at (frame-place cam r c))
+    (if (null? at) ()
+      (List flat-map
+        (fn (_ name)
+          (def pic (frame-named a (Str8 ->sym (Str8 append "mark-" (symbol->str name))) 0))
+          (match ((not (null? pic)) (list (list (lit tile) (first at) (rest at) pic (pair who (pair r c)) (lit mark))))
+                 ((eq? name (lit asleep)) (list (list (lit sleep) (first at) (rest at) (+ (* r 7) (* c 13)))))
+                 (#t ())))
+        states))))
 
 ; --- what is lit ----------------------------------------------------------------
 

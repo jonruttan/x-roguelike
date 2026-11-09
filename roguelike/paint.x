@@ -211,7 +211,7 @@
     (match
       ((if (null? ws) #f (int< age (%pt-round ws))) (%pt-cycle ws tick seed))
       ((null? ps) (%pt-find props (lit picture)))
-      ((null? mode) (%pt-cycle ps tick seed))
+      ((if (null? mode) #t (eq? mode (lit mark))) (%pt-cycle ps tick seed))
       ((if (eq? mode (lit moving)) (int< age (%pt-round ps)) #f) (%pt-cycle ps tick seed))
       (#t (%pt-fidget ps tick seed)))))
 (def %pt-length (fn (self l n) (if (null? l) n (self (rest l) (int+ n 1)))))
@@ -288,6 +288,29 @@
     (unless (null? ops)
       (do (when (eq? (first (first ops)) (lit glint)) (%pt-glint! c (first ops) dy tick))
           (self c (rest ops) dy tick)))))
+
+; A sleep op, (sleep X Y SEED), drawn on C at TICK in FONT, its Y moved
+; up by DY: two small z letters drifting up and right from the
+; sleeper's head, each round twenty-four ticks, fading as they rise,
+; out of step with every other sleeper's.
+(def %pt-sleep-ink (Vector of (list 214 230 255) (list 170 190 225) (list 120 136 170)))
+(def %pt-sleep!
+  (fn (_ c op dy tick font)
+    (def x (List ref 1 op))
+    (def y (int- (List ref 2 op) dy))
+    (def t (int% (int+ tick (List ref 3 op)) 24))
+    (List for-each
+      (fn (_ j)
+        (def u (int% (int+ t (int* j 12)) 24))
+        (when (int< u 18)
+          (%pt-text! Canvas c (int+ x (int+ 6 (int/ u 4))) (int- (int+ y 2) (int/ u 3)) "z"
+            (Vector ref (int/ u 6) %pt-sleep-ink) font)))
+      (list 0 1))))
+(def %pt-sleeps!
+  (fn (self c ops dy tick font)
+    (unless (null? ops)
+      (do (when (eq? (first (first ops)) (lit sleep)) (%pt-sleep! c (first ops) dy tick font))
+          (self c (rest ops) dy tick font)))))
 
 ; --- blows ---------------------------------------------------------------------
 
@@ -535,7 +558,9 @@
 ; made (tile X Y PICTURE MODE FROM): moving when WAS, the (WHO R . C) of
 ; the turn before, has WHO elsewhere, still otherwise; FROM the pixels
 ; (DX . DY) to the cell it stepped from, or nil when it did not step
-; there from a cell beside it.
+; there from a cell beside it.  A mark, (tile X Y PICTURE (WHO R . C)
+; mark), is made MODE mark: it moves with WHO and goes round its
+; pictures.
 (def %pt-modes
   (fn (_ ops was)
     (List map
@@ -547,7 +572,8 @@
              (def dc (if (null? before) 0 (int- (rest (rest before)) (rest (rest at)))))
              (def moved (not (if (int= dr 0) (int= dc 0) #f)))
              (def beside (if (int< (int* dr dr) 2) (int< (int* dc dc) 2) #f))
-             (list (lit tile) (first (rest op)) (first (rest (rest op))) (List ref 3 op) (if moved (lit moving) (lit still))
+             (list (lit tile) (first (rest op)) (first (rest (rest op))) (List ref 3 op)
+                   (match ((if (int< 5 (List length op)) (eq? (List ref 5 op) (lit mark)) #f) (lit mark)) (moved (lit moving)) (#t (lit still)))
                    (if (if moved beside #f) (pair (int* dc frame-tile-size) (int* dr frame-tile-size)) ())))
            (List ref 4 op))))
       ops)))
@@ -716,6 +742,7 @@
                        (List filter (fn (_ op) (eq? (first op) (lit light))) over) tick)
       frame-tile-size)
     (%pt-glints! work over frame-level-y tick)
+    (%pt-sleeps! work over frame-level-y tick font)
     (%pt-blows! work over blows k frame-level-y font)
     (Canvas nine! s 0 paint-level-y (int* zoom lw) (int* zoom lh) work 0 0 0 0)
     (%pt-top! s (Vector ref 10 p) font (draw-top g) (not (null? (game-ask g))))
@@ -795,11 +822,11 @@
     (%pt-show! s foot (int- paint-height (int* %pt-scale (int+ %pt-pitch 8))))
     s))
 
-; Whether the last turn's scene has a light that flickers, a glint or a
-; tile that moves: whether the frame changes with the tick.
+; Whether the last turn's scene has a light that flickers, a glint, a
+; sleeper or a tile that moves: whether the frame changes with the tick.
 (def paint-flickers?
   (fn (_ p)
-    (List any? (fn (_ op) (match ((eq? (first op) (lit light)) (< 0 (List ref 7 op))) ((eq? (first op) (lit glint)) #t)
+    (List any? (fn (_ op) (match ((eq? (first op) (lit light)) (< 0 (List ref 7 op))) ((eq? (first op) (lit glint)) #t) ((eq? (first op) (lit sleep)) #t)
                                  ((eq? (first op) (lit tile))
                                    ((fn (_ props) (not (if (null? (%pt-find props (lit pictures))) (null? (%pt-find props (lit walking))) #f))) (rest (List ref 3 op))))
                                  (#t #f)))
