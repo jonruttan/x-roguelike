@@ -216,7 +216,8 @@
 
 ; --- the rows above and below -----------------------------------------------
 
-(def %dr-hunger
+; The player's hunger as the standing shows it, "" when fed.
+(def draw-hunger
   (fn (_ g)
     (def f (player-food (game-player g)))
     (def spec (game-param g (lit hunger) (list 1300 300 150)))
@@ -254,7 +255,7 @@
       "  Str:" (Str8 str (player-str p)) "(" (Str8 str (player-strmax p)) ")"
       "  Arm:" (Str8 str (state-defence g))
       "  Exp:" (Str8 str (player-level p)) "/" (Str8 str (player-exp p))
-      "  " (%dr-hunger g) ((fn (_ s) (if (str=? s "") "" (Str8 append " " s))) (%dr-lamp g)) " " (%dr-conditions g))))
+      "  " (draw-hunger g) ((fn (_ s) (if (str=? s "") "" (Str8 append " " s))) (%dr-lamp g)) " " (%dr-conditions g))))
 
 (def %dr-top
   (fn (_ g)
@@ -319,6 +320,6 @@
           (if (game-screens? g) () (game-depth g))
           (player-hp p) (player-hpmax p) (player-gold p) (player-str p) (player-strmax p)
           (state-defence g) (player-level p)
-          (Str8 join " " (List filter (fn (_ s) (not (str=? s ""))) (list (%dr-hunger g) (%dr-lamp g) (%dr-conditions g)))))))
+          (Str8 join " " (List filter (fn (_ s) (not (str=? s ""))) (list (draw-hunger g) (%dr-lamp g) (%dr-conditions g)))))))
 
-(provide roguelike/draw game-draw! draw-top draw-status draw-standing draw-overlay)
+(provide roguelike/draw game-draw! draw-top draw-status draw-standing draw-overlay draw-hunger)

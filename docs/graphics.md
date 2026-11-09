@@ -27,6 +27,12 @@ screen's pixel, the art's scale: a line holds 52 letters.
   dimmed, rock black.  Found traps and items where they were seen;
   creatures only in view; the player last.  A warm glow round the
   player stands for the lamp.
+- **Marks**: what a creature or the player is under is drawn over it,
+  from the set's `mark-NAME` pictures, moving with it and going round
+  their pictures: a creature held or slowed; the player confused,
+  blind, held, hasted, slowed, seeing, hungry, weak or fainting.  A
+  creature asleep has two small z letters drifting up from it, fading
+  as they rise, unless the set draws a `mark-asleep`.
 - **Steps**: a thing that stepped to a cell beside it glides there
   from the cell it left, over its shadow, in about a quarter of a
   second: quick off the mark, slowing, a pixel past and back.  Its
