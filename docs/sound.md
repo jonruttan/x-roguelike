@@ -104,3 +104,17 @@ as a drum does.
 under the music and sounds heard at random, once in EVERY ms or so. A
 place is a band's name, a region's, or `"default"`. `(music-gain PCT)`
 and `(music-echo MS FEEDBACK WET)` are the music's loudness and room.
+
+`(fight "PLACE" "SONG")` is the place's fight song: a blow struck either
+way brings it in, and it plays until `(fight-turns N)` turns pass without
+one, or until a turn ends with no creature awake and in sight.
+`(boss "NAME" "SONG")` is a band's guardian's theme (the band's
+`(guardian NAME)`, on the band's last level): it starts once the guardian
+is awake and seen, or within `(boss-near N)` cells, and plays until the
+guardian dies or the level is left. A guardian's theme comes before a
+fight song, and a fight song before the place's music. A change of music
+is made at once.
+
+A voice's `(detune CENTS)` is for a few cents off a note, to thicken it:
+the mixer's detune is near enough only for small amounts, so an interval
+is written as a note of its own.

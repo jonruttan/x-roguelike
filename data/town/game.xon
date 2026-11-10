@@ -60,6 +60,10 @@
 ; Its (enter "TEXT") is said at a door of it, and its (keeper NAME LINE
 ; ...) stands inside unless the chain sends them out and, walked into,
 ; says the lines.
+; A building with (sells (CLASS NAME) ...) or (buys CLASS ...) keeps a
+; shop at its keeper's counter, at its (rate SELL BUY) percent of what
+; a thing is worth, 100 and 50 unless given (shops.x): the Guild's shop
+; sells dear and pays poorly.
 ;
 ; A plan's characters: # a wall, . a floor, + a door, a blank no part of
 ; the building (the street shows through), and any other the kind of
@@ -91,6 +95,7 @@
           "%,,,,,,,,,,,%"
           "%%%%%%=%%%%%%")
     (enter "The inn: carriers' talk, and stables for the packhorse trains.")
+    (sells (food "cheese") (food "bread")) (buys food)
     (keeper "innkeeper" "Carriers still come over the pass, fewer each month." "The yard takes a packhorse train, when there is one."))
   (building "the pump-house" (size 8 9)
     (enter "The pump-house, the Guild's: the pump's rods come up through it.")))
@@ -113,6 +118,7 @@
           "#....#"
           "######")
     (enter "The smithy: the forge cold for want of coal.")
+    (sells (weapon "hatchet") (weapon "billhook")) (buys weapon armour)
     (keeper "smith" "Every iron thing the pit uses, I made, and the forge is cold." "Bring me coal and I'll shoe your horse."))
   (interior "pit" (depth 1 1) (chance 100) (region "delve")
     (enter "The winding shaft: the cage gone, ladders down into the dark, and water loud below.")))
@@ -133,6 +139,7 @@
           "#..+,,,%"
           "##+#%=%%")
     (enter "The tannery, and its reek.")
+    (sells (armour "waxed coat") (armour "leather jerkin")) (buys armour)
     (keeper "tanner" "Bark from the woods and hides from the farms; the reek is mine."))
   (building "the ropewalk" (size 80 6)
     (enter "The ropewalk, long and low, the hemp hanks hung.")))
@@ -149,6 +156,7 @@
     (keeper "chapel warden" "The Long Row: every stone with the same day on it." "The dead who cannot go down are in the water, the chapel says."))
   (building "the bakehouse" (size 8 9)
     (enter "The bakehouse, the town's common oven, warm one day in three.")
+    (sells (food "bread")) (buys food)
     (keeper "baker" "No coal, so it's wood, and the oven lit one day in three.")))
 (screen "Guild Street" (0 1)
   (enter "Guild Street: the Guild hall, the White Church, the Guild's shop.")
@@ -166,7 +174,10 @@
     (keeper "deacon" "The Guild's families worship here, as the Plain does."))
   (building "the Guild's shop" (size 12 9)
     (enter "The Guild's shop, open and selling dear, on credit against wages.")
+    (sells (potion "mending") (potion "clear sight") (scroll "survey") (scroll "blink")) (buys potion scroll wand ring)
+    (rate 150 40)
     (keeper "Guild clerk" "Tickets, good only here, and the shop takes them still." "On credit against wages, and the wages don't come."))
   (building "the chandler's" (size 8 9)
     (enter "The chandler's: tallow candles and lamp oil, and the smell of fat.")
+    (sells (oil "oil flask")) (buys oil)
     (keeper "chandler" "Tallow from the farms' fat; the street smells of it, I know.")))

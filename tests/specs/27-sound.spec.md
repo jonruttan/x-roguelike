@@ -24,6 +24,22 @@ device.
 ---
     (#t #t #t #t)
 
+### every fight and guardian's theme is a song, every band has a fight, and every guardian a theme
+
+```roguelike
+(def spec-set (data-load "data/delve"))
+(def spec-song? (fn (_ n) (List any? (fn (_ s) (str=? (first s) n)) (data-all spec-set 'song))))
+(def spec-named? (fn (_ head n) (List any? (fn (_ f) (str=? (first f) n)) (data-all spec-set head))))
+(def spec-bands (data-all spec-set 'band))
+(write (list (List all? (fn (_ f) (spec-song? (List ref 1 f))) (data-all spec-set 'fight))
+             (List all? (fn (_ f) (spec-song? (List ref 1 f))) (data-all spec-set 'boss))
+             (List all? (fn (_ b) (spec-named? 'fight (first b))) spec-bands)
+             (List all? (fn (_ b) (spec-named? 'boss (data-prop1 b 'guardian ""))) spec-bands)
+             (< 0 (data-get spec-set 'fight-turns 0))))
+```
+---
+    (#t #t #t #t #t)
+
 ### every cue, footstep, heartbeat and random sound names a sound of the set
 
 ```roguelike

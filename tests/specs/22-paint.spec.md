@@ -214,3 +214,24 @@ each frame that layer, what stands on it, the light and the text.
 ```
 ---
     (12 #t)
+
+## the chart
+
+### the chart in the level's bottom right corner; a pointer at the edge toward each creature in view off the screen
+
+```roguelike
+(import roguelike/state player-condition!)
+(def g (spec-game-on (spec-set-named "delve") 3 ()))
+(paint-zoom! p 2)
+(paint-turn! p g fa)
+(def red (fn (_ s) (List length (List filter (fn (_ y) (List any? (fn (_ x) (equal? (Canvas pixel s x y) '(230 80 60 255))) (List range 4 24)))
+                                   (List range paint-level-y 320)))))
+(def s (paint-frame! p g 0))
+(def rim (Canvas pixel s 472 268))
+(def calm (red s))
+(player-condition! (game-player g) 'seeing 50)
+(paint-turn! p g fa)
+(write (list rim calm (< 0 (red (paint-frame! p g 0)))))
+```
+---
+    ((92 80 64 255) 0 #t)
