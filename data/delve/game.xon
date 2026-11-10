@@ -57,7 +57,9 @@
 
 ; The lamp: half an hour of oil when full, lit full at the start or the
 ; first turn below; said when ten minutes are left; out, the cells
-; beside are all there is to see.  An oil flask fills it.
+; beside are all there is to see.  A level of the first band takes some
+; five minutes (tools/balance.x): the lamp holds six, the warning comes
+; with two left, and a flask (items.xon) is one.
 (lamp 1800 600)
 
 ; Traps a level, hidden until stepped on or searched out beside; the

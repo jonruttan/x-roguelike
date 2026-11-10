@@ -210,7 +210,7 @@ lit full at the start, or the first turn in the set when come from one
 without.  It burns on the clock, says when LOW seconds are left and
 when it goes out, and out, sight is the cells beside.  An `(item oil
 NAME (oil N))` is N seconds of it, poured in with `f` to FULL at the
-most.  `delve` holds half an hour, and its flasks ten minutes each:
+most.  `delve` holds half an hour, and its flasks five minutes each:
 under it the lamp is what runs out, and food lasts the day.
 
 What a cell is and how it is drawn are kept apart.  `roguelike/map`

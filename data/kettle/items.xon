@@ -25,7 +25,7 @@
 
 (item food "bread" (rarity 14) (depth 0 5) (nutrition 21600))
 (item food "cheese" (rarity 8) (depth 0 5) (nutrition 14400))
-(item oil "oil flask" (rarity 6) (depth 0 5) (oil 600))
+(item oil "oil flask" (rarity 6) (depth 0 5) (oil 300))
 
 (guise wand "ash" "hazel" "elm" "yew")
 (guise ring "tin" "horn" "bone" "silver")
