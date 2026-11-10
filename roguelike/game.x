@@ -506,7 +506,7 @@
 
 ; A step DR DC, a blow at what stands there, or a word with it when it
 ; talks: whether a turn passed.  Confused, the step goes any way; held,
-; nowhere.  A wall takes no turn.
+; a step goes nowhere, though a blow still lands.  A wall takes no turn.
 (def %gm-move!
   (fn (_ g dr dc)
     (def p (game-player g))
@@ -515,8 +515,8 @@
     (def c (+ (player-c p) (rest d)))
     (def cr (state-creature-at g r c))
     (match
-      ((< 0 (player-condition p (lit held))) (do (state-tell! g (lit held-still) "You are held fast and cannot move." ()) #t))
       ((not (null? cr)) (if (creature-trait? cr (lit talks)) (quests-talk! g cr) (do (combat-player-attacks! g cr) #t)))
+      ((< 0 (player-condition p (lit held))) (do (state-tell! g (lit held-still) "You are held fast and cannot move." ()) #t))
       ((not (map-in? (game-map g) r c))
         (if (if (game-screens? g) (null? (game-inside g)) #f) (%gm-cross! g (first d) (rest d)) #f))
       ((not (map-walkable? (game-map g) r c)) #f)

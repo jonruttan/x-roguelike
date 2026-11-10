@@ -22,7 +22,9 @@
 ;   hit chance    clamp(70 + 5 level - 5 defence, 5, 95)       combat.x
 ;   hurt a turn   a = its hit chance x its mean attack x speed (fast 2, slow 1/2)
 ;   turns to kill T = mean over its hit points of E(h),
-;                 E(h) = 1/p + avg over the dice x of E(h - x - bonus)
+;                 E(h) = 1/p + avg over the dice x of E(h - x - bonus);
+;                 one that regenerates H / (H/T - 1/3), H its mean hit
+;                 points, or 999 when it mends as fast   odds.x
 ;   one fight     a T
 ;   a pack of k   a T k(k+1)/2 all beside, a T k one at a time
 ;   most beaten   the largest k whose cost stays under the hit points
@@ -49,7 +51,7 @@
 (import x/num/float)
 (import roguelike/data data-load data-all data-one data-prop data-prop1 data-trait?)
 (import roguelike/state state-covers?)
-(import roguelike/odds odds-hit odds-mid odds-kill odds-hurt odds-aim)
+(import roguelike/odds odds-hit odds-mid odds-kill odds-hurt odds-aim odds-regen)
 (import roguelike/combat combat-str-bonus combat-chill combat-dazzle)
 
 (def %md-env
@@ -262,8 +264,9 @@
     (def kh (data-prop kind (lit hp) (list 1 6)))
     (def you (%md-hit (List ref 2 who) (data-prop1 kind (lit defence) 3)))
     (def armour (if (null? (List ref 1 gear)) 0 (data-prop1 (List ref 1 gear) (lit armour) 0)))
-    (def t-bare (/ (%md-kill you (List ref 3 who) bonus kh) (%md-aim kind 0)))
-    (def t-armed (/ (if (null? (first gear)) (%md-kill you (List ref 3 who) bonus kh) (%md-kill you (data-prop (first gear) (lit damage) (list 1 2)) bonus kh))
+    (def mend (fn (_ t) (if (data-trait? kind (lit regen)) (odds-regen t (%md-mid kh)) t)))
+    (def t-bare (/ (mend (%md-kill you (List ref 3 who) bonus kh)) (%md-aim kind 0)))
+    (def t-armed (/ (mend (if (null? (first gear)) (%md-kill you (List ref 3 who) bonus kh) (%md-kill you (data-prop (first gear) (lit damage) (list 1 2)) bonus kh)))
                     (%md-aim kind armour)))
     (def one-bare (* (%md-hurt kind 0) t-bare))
     (def one-armed (* (%md-hurt kind armour) t-armed))
