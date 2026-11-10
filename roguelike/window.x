@@ -30,7 +30,7 @@
 (import roguelike/paint paint-width paint-height paint-make paint-screen paint-turn! paint-frame! paint-flickers?
   paint-zoom paint-zoom! paint-animating? paint-step! paint-menu!)
 (import roguelike/pad pad-make pad-key pad-event? pad-fullscreen? pad-fullscreen!)
-(import roguelike/sound sound-make sound-pump! sound-collect? sound-turn! sound-volume! sound-close)
+(import roguelike/sound sound-make sound-pump! sound-collect? sound-turn! sound-volume! sound-cue! sound-close)
 (import roguelike/menu menu-make menu-chosen menu-key)
 (import roguelike/options options-names options-get options-set options-step options-line options-path options-read options-write!)
 
@@ -147,9 +147,30 @@
     (unless (eq? (pad-fullscreen? pad) (int= 1 (options-get o (lit fullscreen))))
       (do (pad-fullscreen! pad (int= 1 (options-get o (lit fullscreen))))
           (Sdl fullscreen! win (pad-fullscreen? pad))))
-    (sound-volume! (Vector ref 4 a) (options-get o (lit music)) (options-get o (lit effects)))
+    (if (int= 1 (options-get o (lit mute)))
+      (sound-volume! (Vector ref 4 a) 0 0)
+      (sound-volume! (Vector ref 4 a) (options-get o (lit music)) (options-get o (lit effects))))
     (guard (e ()) (options-write! o (options-path)))))
 (def %wn-option! (fn (_ a name v) (Vector set! 5 (options-set (Vector ref 5 a) name v) a)))
+
+; What KEY asks of the sound: mute for M, -1 for [ (quieter), 1 for ]
+; (louder), else nil.
+(def %wn-sound-key
+  (fn (_ key)
+    (if (str? key) (match ((str=? key "M") (lit mute)) ((str=? key "[") -1) ((str=? key "]") 1) (#t ())) ())))
+
+; The sound of A muted or brought back for WHAT mute, else the music and
+; the sounds both a step quieter or louder by WHAT, -1 or 1, and heard
+; again; the change is kept and put to work, and a louder or quieter one
+; is heard at once.
+(def %wn-sound!
+  (fn (_ a p g win what)
+    (if (eq? what (lit mute))
+      (%wn-option! a (lit mute) (int- 1 (options-get (Vector ref 5 a) (lit mute))))
+      (do (%wn-option! a (lit mute) 0)
+          (Vector set! 5 (options-step (options-step (Vector ref 5 a) (lit music) what) (lit effects) what) a)))
+    (%wn-apply! a p g win)
+    (unless (eq? what (lit mute)) (sound-cue! (Vector ref 4 a) (lit volume)))))
 
 ; What the foot of a menu says, as the gamepad's buttons or the keys,
 ; whichever was used last: ((NAME . WHAT) ...).
@@ -261,6 +282,11 @@
             (%wn-apply! a p g win)
             (Sdl show! win (List ref 2 (paint-frame! p g tick)))
             (Heap collect)
+            (self g a p win tick)))
+      ; M mutes the sound or brings it back, [ and ] make it quieter and
+      ; louder: the window's too, so no turn passes.
+      ((if (null? (%wn-sound-key key)) #f (null? (game-ask g)))
+        (do (%wn-sound! a p g win (%wn-sound-key key))
             (self g a p win tick)))
       ; The frame goes on screen before the heap is collected: the
       ; collect's cost comes after the key's answer, not before it.

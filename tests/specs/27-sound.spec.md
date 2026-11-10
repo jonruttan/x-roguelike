@@ -38,6 +38,21 @@ device.
 ---
     (#t #t #t #t)
 
+### every cry names a sound of the set and a creature of it, and there is a default
+
+```roguelike
+(def spec-set (data-load "data/delve"))
+(def spec-sound? (fn (_ n) (List any? (fn (_ s) (str=? (first s) n)) (data-all spec-set 'sound))))
+(def spec-kind? (fn (_ n) (List any? (fn (_ k) (str=? (first k) n)) (data-all spec-set 'creature))))
+(def spec-cries (data-all spec-set 'cry))
+(write (list (List all? (fn (_ c) (spec-sound? (List ref 1 c))) spec-cries)
+             (List all? (fn (_ c) (if (str=? (first c) "default") #t (spec-kind? (first c)))) spec-cries)
+             (List any? (fn (_ c) (str=? (first c) "default")) spec-cries)
+             (< 0 (data-get spec-set 'cry-falloff 0))))
+```
+---
+    (#t #t #t #t)
+
 ### every sound renders to frames
 
 ```roguelike
