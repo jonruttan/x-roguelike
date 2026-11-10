@@ -71,8 +71,8 @@
 (import roguelike/items items-goal-held?)
 (import roguelike/traps traps-found-at)
 (import roguelike/game game-make game-key! game-frontier?)
-(import roguelike/combat combat-player-dice combat-player-level combat-chill)
-(import roguelike/odds odds-hit odds-swings odds-regen odds-hurt)
+(import roguelike/combat combat-player-dice combat-player-level combat-chill combat-dazzle)
+(import roguelike/odds odds-hit odds-swings odds-regen odds-hurt odds-aim)
 
 (def %bl-say (fn (_ text) (Sys fd-write 1 text)))
 (def %bl-env
@@ -306,14 +306,16 @@
 
 ; The hit points a fight with CR is likely to cost the player: the swings
 ; to take what CR has left, by the game's odds (odds.x), its regeneration
-; counted, times what it does a turn at its speed and, cold, slowing the
-; player.
+; counted and, dazzling, its spoiling the player's aim, times what it
+; does a turn at its speed and, cold, slowing the player.
 (def %bl-cost
   (fn (_ g cr)
     (def hp (creature-hp cr))
     (def t (odds-swings (odds-hit (combat-player-level g) (creature-prop1 cr (lit defence) 3)) (combat-player-dice g) 0 hp))
     (def speed (match ((creature-trait? cr (lit fast)) (lit fast)) ((creature-trait? cr (lit slow)) (lit slow)) (#t ())))
-    (* (if (creature-trait? cr (lit regen)) (odds-regen t hp) t)
+    (def aim (odds-aim (creature-prop1 cr (lit level) 1) (state-defence g) speed
+                       (if (creature-trait? cr (lit dazzle)) combat-dazzle 0)))
+    (* (/ (if (creature-trait? cr (lit regen)) (odds-regen t hp) t) aim)
        (odds-hurt (creature-prop1 cr (lit level) 1) (creature-prop cr (lit attack) (list 1 2)) (state-defence g) speed
                   (if (creature-trait? cr (lit cold)) combat-chill 0)))))
 ; Whether the fight with CR is likely lost: it costs all the player has.
