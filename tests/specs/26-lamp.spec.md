@@ -76,17 +76,17 @@ pours N seconds in with f, to FULL at the most.
 
 ## filling
 
-### a flask pours ten minutes in, the lamp full at the most, picking it up and pouring each a second
+### a flask pours five minutes in, the lamp full at the most, picking it up and pouring each a second
 
 ```roguelike
 (def g (spec-game-on (spec-set-named "delve") 4 ()))
 (def p (game-player g))
 (game-creatures! g ())
 (def pour (fn (_ oil) (player-lamp! p oil) (spec-drop-here! g "oil flask") (game-key! g ",") (game-key! g "f") (game-key! g "a") (player-lamp p)))
-(write (list (pour 100) (first (game-messages g)) (pour 1500)))
+(write (list (pour 100) (first (game-messages g)) (pour 1700)))
 ```
 ---
-    (698 "You fill your lamp." 1799)
+    (398 "You fill your lamp." 1799)
 
 ### where the set has no lamp there is none to fill, and the flask is kept
 

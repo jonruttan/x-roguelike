@@ -60,7 +60,7 @@
 (import roguelike/state
   game-set game-depth game-deepest game-map game-player game-creatures game-pack game-over game-epitaph game-turn
   game-ask game-messages game-band band-name game-param
-  player-r player-c player-hp player-hpmax player-str player-food player-weapon player-armour player-condition
+  player-r player-c player-hp player-hpmax player-str player-food player-lamp player-weapon player-armour player-condition
   item-class item-name item-prop item-prop1 item-enchant item-letter item-r item-c game-floor
   creature-r creature-c creature-state creature-trait? creature-hp creature-prop creature-prop1 state-defence state-adjacent? state-dist state-shortfall state-creature-at state-items-at
   game-quest-state game-screens? game-screen game-screen-key game-hub game-chain game-inside state-creature-named
@@ -170,7 +170,8 @@
 ; giver here has been talked to since the level was explored, 5 the
 ; hostile creatures met, 6 the turn a weapon was first held, 7 the count
 ; met by then, 8 the items left lying because they would not come up, 9
-; the cells beside the unseen already stood on here, a vector by cell.
+; the cells beside the unseen already stood on here, a vector by cell,
+; 10 oil flasks poured, 11 turns taken with the lamp out.
 
 ; Where the player stands, as text: the depth, or on a world of screens
 ; the screen and any interior.
@@ -186,7 +187,8 @@
 
 (def %bl-answer!
   (fn (_ g q)
-    (game-key! g (match ((eq? (first q) (lit choose)) "a") ((eq? (first q) (lit yn)) "n") (#t (lit escape))))))
+    (game-key! g (match ((eq? (first q) (lit choose)) "a") ((eq? (first q) (lit yn)) "n")
+                        ((eq? (first q) (lit more)) (lit enter)) ((eq? (first q) (lit look)) (lit enter)) (#t (lit escape))))))
 
 (def %bl-use! (fn (_ g key it) (game-key! g key) (game-key! g (item-letter it))))
 
@@ -366,6 +368,14 @@
       ((if (null? shown) #f (%bl-toward-creature! g shown)) ())
       (#t (game-key! g "s")))))
 
+; Whether to pour the flask OIL into the lamp under the set's (lamp FULL
+; LOW): with it out, or with room for the whole flask.
+(def %bl-pour?
+  (fn (_ g oil lamp)
+    (def n (player-lamp (game-player g)))
+    (match ((null? oil) #f) ((null? lamp) #f) ((= n 0) #t) ((< n 0) #f)
+           (#t (not (< (- (List ref 0 lamp) n) (item-prop1 oil (lit oil) 600)))))))
+
 (def %bl-turn!
   (fn (_ g s who)
     (def p (game-player g))
@@ -373,6 +383,8 @@
     (def foe (%bl-beside g %bl-hostile?))
     (def potion (%bl-in-pack g (fn (_ it) (if (eq? (item-class it) (lit potion)) (Str8 includes? "mending" (item-name it)) #f))))
     (def food (%bl-in-pack g (%bl-of-class (lit food))))
+    (def oil (%bl-in-pack g (%bl-of-class (lit oil))))
+    (def lamp (game-param g (lit lamp) ()))
     (def hungry (List ref 1 (game-param g (lit hunger) (list 1300 300 150))))
     (def weapon (%bl-best g (lit weapon) %bl-weapon-worth))
     (def armour (%bl-best g (lit armour) %bl-armour-worth))
@@ -390,6 +402,8 @@
           (%bl-toward-creature! g foe)))
       ((if (null? food) #f (< (player-food p) hungry))
         (do (%bl-use! g "e" food) (Vector set! 3 (+ 1 (Vector ref 3 s)) s)))
+      ((%bl-pour? g oil lamp)
+        (do (%bl-use! g "f" oil) (Vector set! 10 (+ 1 (Vector ref 10 s)) s)))
       ((if (null? shown) (%bl-under? p (%bl-at who (lit rest))) #f) (game-key! g "s"))
       ((if (null? weapon) #f (if (same? weapon (player-weapon p)) #f (< 0 (%bl-weapon-worth g weapon))))
         (%bl-use! g "w" weapon))
@@ -525,7 +539,7 @@
     (list (game-depth g) (game-turn g) (player-hp p) (player-hpmax p)
           (if (null? w) 0 (%bl-weapon-worth g w))
           (if (null? (player-armour p)) 0 (%bl-armour-worth g (player-armour p)))
-          (player-food p))))
+          (player-food p) (player-lamp p) (List length (List filter (%bl-of-class (lit oil)) (game-pack g))))))
 
 ; One game from SEED to its end or CAP turns: (SEED HOW EPITAPH DEEPEST
 ; TURNS POTIONS FOODS ARRIVALS WEAPON-TURN MET), the turn a weapon was
@@ -616,13 +630,13 @@
     (def g (%bl-start set play))
     (unless (str=? path "") (File write-all path ""))
     (def kept (Vector of (str=? path "")))
-    (def s (Vector of #f "" 0 0 #f () () 0 () ()))
+    (def s (Vector of #f "" 0 0 #f () () 0 () () 0 0))
     (def arrivals (Vector of (list (%bl-arrival g))))
     (def loop
       (fn (self turn stalled)
         (def depth (game-depth g))
         (unless (match ((not (null? (game-over g))) #t) ((< cap (game-turn g)) #t) ((str=? path "") #f) (#t (Vector ref 0 kept)))
-          (do (if (< 30 stalled) (game-key! g ".") (%bl-turn! g s who))
+          (do (if (if (< 30 stalled) (null? (game-ask g)) #f) (game-key! g ".") (%bl-turn! g s who))
               (%bl-met! g s)
               (when trace? (%bl-trace g))
               (unless (if (Vector ref 0 kept) #t (null? (%bl-boss-shown g boss)))
@@ -633,7 +647,8 @@
     (loop 0 0)
     (list seed (if (null? (game-over g)) (lit capped) (game-over g)) (game-epitaph g) (game-deepest g) (game-turn g)
           (Vector ref 2 s) (Vector ref 3 s) (List reverse (Vector ref 0 arrivals))
-          (Vector ref 6 s) (if (null? (Vector ref 6 s)) (List length (Vector ref 5 s)) (Vector ref 7 s)))))
+          (Vector ref 6 s) (if (null? (Vector ref 6 s)) (List length (Vector ref 5 s)) (Vector ref 7 s))
+          (Vector ref 10 s) (Vector ref 11 s))))
 
 ; The numbers in the words of S.
 (def %bl-nums (fn (_ s) (List map %bl-int (List reject (fn (_ w) (str=? w "")) (Str8 split " " s)))))
@@ -678,7 +693,7 @@
           (unless (null? cr)
             (do (def hp (creature-prop cr (lit hp) (list 1 1)))
                 (creature-hp! cr (state-roll (game-rng g) (first hp) (List ref 1 hp)))))
-          (def s (Vector of #f "" 0 0 #f () () 0 () ()))
+          (def s (Vector of #f "" 0 0 #f () () 0 () () 0 0))
           (def depth (game-depth g))
           (def start (game-turn g))
           (def loop
@@ -687,7 +702,7 @@
                      ((not (= depth (game-depth g))) (lit left))
                      ((not (List any? (fn (_ c) (same? c cr)) (game-creatures g))) (lit beat))
                      ((< (+ start cap) (game-turn g)) (lit capped))
-                     (#t (do (if (< 30 stalled) (game-key! g ".") (%bl-turn! g s who))
+                     (#t (do (if (if (< 30 stalled) (null? (game-ask g)) #f) (game-key! g ".") (%bl-turn! g s who))
                              (Heap collect)
                              (self (game-turn g) (if (= turn (game-turn g)) (+ stalled 1) 0)))))))
           (def outcome (if (null? cr) () (loop start 0)))
@@ -790,12 +805,13 @@
       (%bl-line (%bl-num d) (%bl-num (List length rows))
                 (%bl-num (%bl-mean (List map (fn (_ a) (int/ (* 100 (List ref 2 a)) (List ref 3 a))) rows)))
                 (%bl-num (if (< d 1) 0 (- (%bl-mean-of 1 rows) (%bl-mean-of 1 (%bl-arrivals-at games (- d 1))))))
-                (%bl-num (%bl-mean-of 4 rows)) (%bl-num (%bl-mean-of 5 rows)) (%bl-num (%bl-mean-of 6 rows))))))
+                (%bl-num (%bl-mean-of 4 rows)) (%bl-num (%bl-mean-of 5 rows)) (%bl-num (%bl-mean-of 6 rows))
+                (%bl-num (%bl-mean-of 7 rows)) (%bl-num (%bl-mean-of 8 rows))))))
 
 (def %bl-arrivals
   (fn (_ set games)
     (%bl-line "On arrival at each level (over the games that got there)")
-    (%bl-line " level  games   hp%  turns  weapon armour   food")
+    (%bl-line " level  games   hp%  turns  weapon armour   food   lamp flasks")
     (List for-each (fn (_ d) (%bl-arrival-row games d)) (%bl-levels games))))
 
 (def %bl-first-weapon
@@ -822,7 +838,8 @@
     (%bl-line "")
     (%bl-arrivals set games)
     (%bl-line "")
-    (%bl-line "A game, on average: turns " (mean 4) "  potions drunk " (mean 5) "  foods eaten " (mean 6))))
+    (%bl-line "A game, on average: turns " (mean 4) "  potions drunk " (mean 5) "  foods eaten " (mean 6)
+              "  flasks poured " (mean 10) "  turns dark " (mean 11))))
 
 ; --- the run -----------------------------------------------------------------
 
