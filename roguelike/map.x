@@ -16,7 +16,7 @@
 (module roguelike/map)
 
 (import x/type/vector)
-(import x/core/doors str-make ptr-set! ptr-ref str->ptr int* int+ int< int/ obj-make obj-ref obj-set!)
+(import x/core/doors str-make ptr-set! ptr-ref str->ptr int* int+ int- int< int= int/ obj-make obj-ref obj-set!)
 
 ; --- terrain -----------------------------------------------------------------
 
@@ -43,6 +43,10 @@
 (def tile-edge 14)
 (def tile-bog 15)
 (def tile-scar 16)
+; No cell's byte, so a code past the last: what a building's cells are
+; drawn as from outside it
+; (see roofs, below).
+(def tile-roof 18)
 
 ; (CODE NAME SORT-OF PASSABLE? OPAQUE?) for every kind.
 (def map-terrain
@@ -71,8 +75,10 @@
         ; Wet ground that bears a foot.
         (list tile-bog (lit bog) (lit floor) #t #f)
         ; A limestone scar: a cliff of bare rock.
-        (list tile-scar (lit scar) (lit wall) #f #t)))
-(def map-kinds 17)
+        (list tile-scar (lit scar) (lit wall) #f #t)
+        ; The roof over a building, seen from outside it.
+        (list tile-roof (lit roof) (lit wall) #f #t)))
+(def map-kinds 19)
 
 ; Each kind's passable and opaque flags in a vector by code, read through
 ; the object doors: sight asks a cell thousands of times a turn.
@@ -87,7 +93,8 @@
 ; A level is a vector: 0 rows, 1 columns, 2 the tiles, 3 the seen flags,
 ; 4 the visible flags, 5 the rooms, 6 the stairs down (R . C), 7 the
 ; stairs up, 8 the named places, (NAME R0 C0 R1 C1) each, walls and
-; all.  Its slots are read through the object doors, not the class: a
+; all, 9 the roofs, a buffer or nil, 10 the roof that is off, 11 the
+; roofs in view, a flag each, worked afresh each turn.  Its slots are read through the object doors, not the class: a
 ; cell's flag is asked for thousands of times a turn.
 (def %mp-get (fn (_ m k) (obj-ref m (int+ k 1))))
 (def %mp-put! (fn (_ m k x) (obj-set! m (int+ k 1) x)))
@@ -114,7 +121,8 @@
 
 (def map-make
   (fn (_ rows cols)
-    (def m (Vector make 9 ()))
+    (def m (Vector make 12 ()))
+    (%mp-put! m 10 0)
     (%mp-put! m 0 rows)
     (%mp-put! m 1 cols)
     (Vector set! 2 (%mp-buffer (int* rows cols)) m)
@@ -173,6 +181,93 @@
 (def %mp-rows! (fn (self r r1 c0 c1 f) (unless (< r1 r) (do (%mp-cols! c0 c1 r f) (self (+ r 1) r1 c0 c1 f)))))
 (def map-each! (fn (_ r0 c0 r1 c1 f) (%mp-rows! r0 r1 c0 c1 f)))
 
+; --- roofs -------------------------------------------------------------------
+
+; A level with buildings has one more buffer, a byte a cell: the roof
+; the cell is under, 1 to 255, a number a building, or 0 for the sky.
+; The roof the player stands under is off, and that building is in view
+; whole; every other roof with a cell in view is in view whole, and its
+; cells are drawn as roof, all but its doors.  A level with no building
+; has no such buffer.
+(def map-roof-at
+  (fn (_ m r c)
+    (def roofs (%mp-get m 9))
+    (if (null? roofs) 0 (if (map-in? m r c) (ptr-ref (str->ptr roofs) (%mp-off m r c) 1) 0))))
+; The cell at R C put under roof ID.
+(def map-roof!
+  (fn (_ m r c id)
+    (when (null? (%mp-get m 9))
+      (do (%mp-put! m 9 (%mp-buffer (int* (map-rows m) (map-cols m))))
+          (%mp-put! m 11 (%mp-buffer 256))))
+    (when (map-in? m r c) (ptr-set! (str->ptr (%mp-get m 9)) (%mp-off m r c) id 1))))
+; Whether M has roofs at all.
+(def map-roofs? (fn (_ m) (not (null? (%mp-get m 9)))))
+; The roof that is off, the one the player stands under, or 0.
+(def map-roof-off (fn (_ m) (%mp-get m 10)))
+; Whether R C is under a roof that is on, its door or not.
+(def map-covered?
+  (fn (_ m r c)
+    (def id (map-roof-at m r c))
+    (if (int= id 0) #f (not (int= id (%mp-get m 10))))))
+(def %mp-roof-ptr (fn (_ m) ((fn (_ roofs) (if (null? roofs) () (str->ptr roofs))) (%mp-get m 9))))
+; Whether cell I of N, COLS a row, under roof ID in the roofs RP, has a
+; side that is not: a door there is a way in from outside, and one
+; with none is a door between rooms.
+(def %mp-edge?
+  (fn (_ rp i cols n id)
+    (def out? (fn (_ j) (if (int< j 0) #t (if (int< j n) (not (int= (ptr-ref rp j 1) id)) #t))))
+    (match ((out? (int- i cols)) #t) ((out? (int+ i cols)) #t) ((out? (int- i 1)) #t) (#t (out? (int+ i 1))))))
+; The kind cell I is drawn as, for a walk of the buffers: its terrain
+; in the tiles T, or the roof over it; RP the roofs or nil, OFF the
+; roof that is off, COLS a row and N the cells.  A door into a building
+; shows through its roof.
+(def %mp-kind
+  (fn (_ t rp off i cols n)
+    (def k (ptr-ref t i 1))
+    (if (null? rp) k
+      ((fn (_ id)
+         (match ((int= id 0) k) ((int= id off) k)
+                ((int= k tile-door) (if (%mp-edge? rp i cols n id) k tile-roof))
+                (#t tile-roof)))
+       (ptr-ref rp i 1)))))
+; The kind the cell at R C is drawn as: its terrain, or the roof over it.
+(def map-shown
+  (fn (_ m r c)
+    (if (map-in? m r c)
+      (%mp-kind (str->ptr (%mp-get m 2)) (%mp-roof-ptr m) (%mp-get m 10) (%mp-off m r c) (map-cols m) (int* (map-rows m) (map-cols m)))
+      tile-rock)))
+; Whether R C is drawn as roof: under one that is on, and no door into
+; the building.
+(def map-roofed? (fn (_ m r c) (int= (map-shown m r c) tile-roof)))
+
+; The roofs of M from R C, where the player stands, after the light:
+; the roof over R C off, and every cell of that building, and of each
+; building with a cell in view, in view and seen.
+(def %mp-roofs-light!
+  (fn (_ m r c)
+    (def rp (%mp-roof-ptr m))
+    (unless (null? rp)
+      (do (def n (int* (map-rows m) (map-cols m)))
+          (def seen (str->ptr (%mp-get m 3)))
+          (def vis (str->ptr (%mp-get m 4)))
+          (def near (str->ptr (%mp-get m 11)))
+          (%mp-zero! near 0 256)
+          (def under (if (map-in? m r c) (ptr-ref rp (%mp-off m r c) 1) 0))
+          (%mp-put! m 10 under)
+          (ptr-set! near under 1 1)
+          ((fn (self i)
+             (when (int< i n)
+               (do (when (int= (ptr-ref vis i 1) 1) (ptr-set! near (ptr-ref rp i 1) 1 1))
+                   (self (int+ i 1)))))
+           0)
+          ((fn (self i)
+             (when (int< i n)
+               (do (def id (ptr-ref rp i 1))
+                   (unless (int= id 0)
+                     (when (int= (ptr-ref near id 1) 1) (do (ptr-set! vis i 1 1) (ptr-set! seen i 1 1))))
+                   (self (int+ i 1)))))
+           0)))))
+
 ; --- lighting ----------------------------------------------------------------
 
 (def %mp-mark! (fn (_ m r c) (%mp-flag! m 4 r c 1) (%mp-flag! m 3 r c 1)))
@@ -185,7 +280,8 @@
     (map-each! (- r 1) (- c 1) (+ r 1) (+ c 1) (fn (_ rr cc) (%mp-mark! m rr cc)))
     (def room (map-room-at m r c))
     (when (if (null? room) #f (room-lit? room))
-      (map-each! (room-r0 room) (room-c0 room) (room-r1 room) (room-c1 room) (fn (_ rr cc) (%mp-mark! m rr cc))))))
+      (map-each! (room-r0 room) (room-c0 room) (room-r1 room) (room-c1 room) (fn (_ rr cc) (%mp-mark! m rr cc))))
+    (%mp-roofs-light! m r c)))
 
 ; Whether tile T stops sight.
 (def map-opaque? (fn (_ t) (obj-ref %mp-opaque (int+ t 1))))
@@ -291,7 +387,8 @@
                (when (%mp-ray-clear? t base (rest more))
                  ((fn (_ i) (ptr-set! vis i 1 1) (ptr-set! seen i 1 1)) (int+ base (first more)))))
              (self (rest l)))))
-     (%mp-rays radius cols))))
+     (%mp-rays radius cols))
+    (%mp-roofs-light! m r c)))
 
 ; --- drawing -----------------------------------------------------------------
 
@@ -305,10 +402,13 @@
     (def seen (str->ptr (%mp-get m 3)))
     (def out (str->ptr buf))
     (def base (int* r cols))
+    (def rp (%mp-roof-ptr m))
+    (def off (%mp-get m 10))
+    (def n (int* (map-rows m) cols))
     ((fn (self c any?)
        (if (int< c cols)
          (if (= (ptr-ref seen (int+ base c) 1) 1)
-           (do (ptr-set! out c (obj-ref bytes (int+ (ptr-ref t (int+ base c) 1) 1)) 1) (self (int+ c 1) #t))
+           (do (ptr-set! out c (obj-ref bytes (int+ (%mp-kind t rp off (int+ base c) cols n) 1)) 1) (self (int+ c 1) #t))
            (do (ptr-set! out c 32 1) (self (int+ c 1) any?)))
          any?))
      0 #f)))
@@ -336,7 +436,7 @@
   (fn (_ m r c classes)
     (def i (int+ (int* r (map-cols m)) c))
     (if (= (ptr-ref (str->ptr (%mp-get m 3)) i 1) 1)
-      (int+ (int* 2 (obj-ref classes (int+ (ptr-ref (str->ptr (%mp-get m 2)) i 1) 1)))
+      (int+ (int* 2 (obj-ref classes (int+ (%mp-kind (str->ptr (%mp-get m 2)) (%mp-roof-ptr m) (%mp-get m 10) i (map-cols m) (int* (map-rows m) (map-cols m))) 1)))
             (ptr-ref (str->ptr (%mp-get m 4)) i 1))
       -1)))
 
@@ -348,10 +448,13 @@
     (def seen (str->ptr (%mp-get m 3)))
     (def vis (str->ptr (%mp-get m 4)))
     (def base (int* r cols))
+    (def rp (%mp-roof-ptr m))
+    (def off (%mp-get m 10))
+    (def n (int* (map-rows m) cols))
     (def look
       (fn (_ i)
         (if (= (ptr-ref seen i 1) 1)
-          (int+ (int* 2 (obj-ref classes (int+ (ptr-ref t i 1) 1))) (ptr-ref vis i 1))
+          (int+ (int* 2 (obj-ref classes (int+ (%mp-kind t rp off i cols n) 1))) (ptr-ref vis i 1))
           -1)))
     (def k (look (int+ base c)))
     ((fn (self c) (if (if (int< c cols) (= (look (int+ base c)) k) #f) (self (int+ c 1)) c)) (int+ c 1))))
@@ -364,8 +467,9 @@
 
 (provide roguelike/map
   tile-rock tile-floor tile-wall tile-door tile-passage tile-down tile-up
-  tile-water tile-pillar tile-fall tile-dressed tile-hedge tile-gate tile-thicket tile-edge tile-bog tile-scar
+  tile-water tile-pillar tile-fall tile-dressed tile-hedge tile-gate tile-thicket tile-edge tile-bog tile-scar tile-roof
   map-terrain map-kinds map-look map-look-run
+  map-roof-at map-roof! map-roof-off map-covered? map-roofed? map-shown map-roofs?
   map-make map-rows map-cols map-rooms map-rooms! map-down map-down! map-up map-up! map-places map-places! map-place-at
   map-in? map-tile map-set! map-seen? map-seen! map-visible? map-passable? map-walkable?
   room-r0 room-c0 room-r1 room-c1 room-lit? room-covers? room-inside? room-centre map-room-at

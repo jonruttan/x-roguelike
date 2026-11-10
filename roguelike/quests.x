@@ -25,7 +25,7 @@
 (import x/type/vector)
 (import roguelike/data data-all data-prop data-prop1)
 (import x/core/doors int/)
-(import roguelike/map map-rows map-cols map-tile map-seen? map-each! map-places tile-rock tile-floor)
+(import roguelike/map map-rows map-cols map-tile map-seen? map-each! map-places map-roof-at tile-rock tile-floor)
 (import roguelike/dungeon dungeon-spot)
 (import roguelike/state
   game-rng game-set game-forms game-turn game-depth game-map game-player game-creatures game-creatures! game-floor game-floor!
@@ -214,13 +214,15 @@
     (List flat-map (fn (_ b) (List map (fn (_ k) (pair (first b) k)) (data-all (rest b) (lit keeper))))
       (data-all (game-forms g) (lit building)))))
 (def %qs-chain-giver? (fn (_ g name) (List any? (fn (_ q) (str=? (%qs-giver q) name)) (List map rest (game-chain g)))))
-; A free floor cell inside the place P, (NAME R0 C0 R1 C1), the middle
-; one of them, or nil.
+; A free floor cell under the roof of the place P, (NAME R0 C0 R1 C1),
+; the middle one of them, or nil.
 (def %qs-inside
   (fn (_ g p)
-    (def cells (List flat-map (fn (_ r) (List map (fn (_ c) (pair r c)) (List range (+ (List ref 2 p) 1) (List ref 4 p))))
-                 (List range (+ (List ref 1 p) 1) (List ref 3 p))))
-    (def free (List filter (fn (_ at) (if (= (map-tile (game-map g) (first at) (rest at)) tile-floor) (state-free? g (first at) (rest at)) #f)) cells))
+    (def m (game-map g))
+    (def cells (List flat-map (fn (_ r) (List map (fn (_ c) (pair r c)) (List range (List ref 2 p) (+ (List ref 4 p) 1))))
+                 (List range (List ref 1 p) (+ (List ref 3 p) 1))))
+    (def in? (fn (_ at) (if (= (map-tile m (first at) (rest at)) tile-floor) (< 0 (map-roof-at m (first at) (rest at))) #f)))
+    (def free (List filter (fn (_ at) (if (in? at) (state-free? g (first at) (rest at)) #f)) cells))
     (if (null? free) () (List ref (int/ (List length free) 2) free))))
 ; Each keeper on the level just made, inside their building.
 (def quests-keepers!

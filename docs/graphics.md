@@ -85,6 +85,7 @@ name for a creature.
 | items | `potion` `scroll` `wand` `ring` `weapon` `armour` `food` `gold` `goal`, and `oil` `page` `token` where the set has them | 9 to 12 |
 | creatures | every `(creature NAME ...)` of the set, talkers each their own | classic 17, delve 23, kettle 28 |
 | bands | a band's own `wall` and `floor`, where its place differs | delve 3, kettle 4, town 1 |
+| roofs | `roof`, where the set lays a town | town |
 | the screen | `panel` (a nine-piece frame), `shadow` | 2 |
 
 Shared by every set, in `art/` at the top of the bundle: the font (the
@@ -169,6 +170,21 @@ seen; anything else is open.
 
 Variants and weights hold within a part: a face may be propped,
 seeping, chalked or hung with a lamp.
+
+## Roofs
+
+A town's buildings and houses are under roofs (see the README, `(plan
+...)`).  A cell under a roof that is on, a door into it apart, is drawn from
+the set's `roof` pictures and nothing that stands or lies there is
+drawn; the roof the player stands under is off, and that building's
+cells are drawn as they are.  In the terminal a roofed cell is the
+`(glyph roof "^")`.
+
+A roof is put together as a wall is, a neighbour solid when it is under
+a roof that is on: `top` for the slates, with the `n` `e` `w` rims for
+the ridge and the verges, and `face`, the eaves over the building's
+front, where the cell to the south is open.  A set with no `roof` draws
+its `wall` there.
 
 ## Light
 

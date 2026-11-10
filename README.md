@@ -131,10 +131,35 @@ between the rows, each terrace `(terrace-length LO HI)` along with
 `(lane LO HI)` between, its houses `(house-width LO HI)` each with a
 door onto the street; two cells round the edge are street, and the
 `(square W H)` in the middle is left clear.  Each `(building NAME
-(size W D) . PROPS)` the level names is laid from its plan round the
-square, W metres along and D deep, walled, its door toward the
-square, on the first side it fits; the terraces keep off them, and
-its door, stood on, says its `(enter "TEXT")`.  Its `(keeper NAME
+(size W D) . PROPS)` the level names is laid round the square, W
+metres along and D deep, walled, its door toward the square, on the
+first side it fits; the terraces keep off them, and its door, stood
+on, says its `(enter "TEXT")`.  A building is put together from tiles
+by a `(plan "ROW" ...)` in place of its size, a character a cell, laid
+as it is drawn: `#` a wall, `.` a floor, `+` a door, a blank no part
+of it, and any other character the kind of terrain a `(cell "C"
+KIND)` names, the building's own or the level's, so a mill has its
+race and a tannery its pits:
+
+    (cell "," floor open)
+    (cell "%" wall open)
+    (cell "=" gate open)
+    (building "the inn"
+      (plan "#############"
+            "#.....#.....#"
+            "#.....+.....+"
+            "#.....#.....#"
+            "###+#########"
+            "%,,,,,,,,,,,%"
+            "%%%%%%=%%%%%%")
+      (enter "The inn: carriers' talk, and stables for the packhorse trains."))
+
+Every building, and every house of a terrace, is under a roof.  From
+outside it is drawn as roof, `(glyph roof "^")`, all but the doors into it, the
+whole of it once any of it is seen, and nobody and nothing in it is
+drawn; standing in it, a door of it included, its roof is off and the
+whole inside is in view.  A cell that is `(cell "C" KIND open)` is open
+to the sky and never roofed: a yard, its wall and its gate.  Its `(keeper NAME
 LINE ...)` stands inside, unless the chain gives NAME a screen of its
 own, and walked into with nothing to ask says a LINE, the next each
 turn.  In a world of screens the bands run from
