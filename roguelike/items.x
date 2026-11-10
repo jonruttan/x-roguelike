@@ -357,6 +357,7 @@
   (fn (_ g it)
     (if (< 1 (item-count it)) (item-count! it (- (item-count it) 1))
       (do (state-remove-pack! g it) (item-letter! it ())))))
+(def items-use-up! (fn (_ g it) (%it-consume! g it)))
 
 ; --- effects -----------------------------------------------------------------
 
@@ -588,4 +589,4 @@
   items-new items-spawn! items-place-sure! items-place-caches! items-place-goal! items-goal-held? items-page-named items-place-pages!
   items-known? items-know! items-name items-worn
   items-glyph items-pack-lines items-by-letter items-pickup! items-drop! items-quaff! items-read! items-target items-zap!
-  items-eat! items-fill! items-wield! items-wear! items-take-off! items-put-on! items-remove! items-teleport!)
+  items-eat! items-fill! items-wield! items-wear! items-take-off! items-put-on! items-remove! items-teleport! items-use-up!)

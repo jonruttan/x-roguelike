@@ -34,7 +34,7 @@ the next each turn.  The town's buildings each name theirs.
 
 ## the lines
 
-### a keeper walked into says a line of theirs, and walked into again the next
+### a keeper walked into says a line of theirs, over the counter where they keep a shop, and walked into again the next
 
 ```roguelike
 (def g (spec-game-on (spec-set-named "kettle") 4 ()))
@@ -49,10 +49,10 @@ the next each turn.  The town's buildings each name theirs.
 (spec-settle! g)
 (game-key! g key)
 (def two (List ref 3 (game-ask g)))
-(write (list (List length one) (List includes? (first one) mine) (List includes? (first two) mine) (not (str=? (first one) (first two)))))
+(write (list (List includes? (first one) mine) (List includes? (first two) mine) (not (str=? (first one) (first two)))))
 ```
 ---
-    (1 #t #t #t)
+    (#t #t #t)
 
 ### a keeper with no lines, or a quest's giver, still speaks as before
 

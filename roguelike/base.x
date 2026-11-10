@@ -35,6 +35,7 @@
 (import roguelike/items items-name items-new items-known? items-spawn!)
 (import roguelike/traps trap-make trap-found?)
 (import roguelike/chain chain-where)
+(import roguelike/shops shops-kept? shops-open!)
 (import roguelike/game game-make game-key! game-explore! game-more! game-score game-score-lines game-score-text game-help)
 (import roguelike/draw game-draw!)
 (import roguelike/save save-write! save-read save-score! save-scores)
@@ -62,5 +63,5 @@
   creature-name creature-glyph creature-trait? creature-carried state-a-kind item-make item-name item-count item-charges
   item-enchant item-letter item-letter! item-r item-c item-at!
   item-class state-say! state-dist state-adjacent?
-  items-name items-new items-known? items-spawn! creatures-kinds creatures-place! trap-make trap-found? chain-where
+  items-name items-new items-known? items-spawn! creatures-kinds creatures-place! trap-make trap-found? chain-where shops-kept? shops-open!
   save-write! save-read save-score! save-scores)

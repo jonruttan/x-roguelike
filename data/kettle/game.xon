@@ -39,6 +39,11 @@
 ; and each door gone through, and the ledger brought home.
 (score (gold 1) (quests 100) (screens 10) (places 25) (won 1000))
 
+; What a thing is worth in gold at a counter, by its class; an item's own
+; (price N) is in front of this.  A shop asks and pays its (rate SELL
+; BUY) percent of it (shops.x).
+(worth (potion 12) (scroll 14) (wand 40) (ring 50) (weapon 16) (armour 20) (food 4) (oil 5))
+
 (player 14 16)
 (unarmed 1 3)
 

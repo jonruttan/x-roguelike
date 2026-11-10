@@ -34,6 +34,7 @@
   item-make item-name item-class? item-at! item-letter!
   state-tell! state-roll state-free? state-items-at state-remove-pack!)
 (import roguelike/items items-new items-pickup! items-name)
+(import roguelike/shops shops-kept? shops-open!)
 
 ; The quests of the set in force, then the chain's, which belong to the
 ; screens of the world.
@@ -183,14 +184,18 @@
       (game-ask! g (list (lit choose) "Which will you take?" pick (List append (data-prop q (lit done) ()) (list "" choices)))))))
 
 ; The giver CR walked into: its quest opened, pressed, met, or over, a
-; keeper with no quest or one over saying a line.  A turn passes.
+; keeper with no quest or one over saying a line, over the counter when
+; their building keeps a shop (shops.x).  A turn passes.
 (def quests-talk!
   (fn (_ g cr)
     (def q (List find (fn (_ q) (str=? (%qs-giver q) (creature-name cr))) (%qs-quests g)))
     (def state (if (null? q) (lit done) (game-quest-state g (%qs-name q))))
     (def subs (list (pair "name" (creature-name cr))))
     (def lines (%qs-lines g (creature-name cr)))
+    (def shop (%qs-shop g (creature-name cr)))
     (match
+      ((if (eq? state (lit done)) (not (null? shop)) #f)
+        (shops-open! g (creature-name cr) shop (if (null? lines) "" (List ref (% (game-turn g) (List length lines)) lines))))
       ((if (eq? state (lit done)) (not (null? lines)) #f)
         (%qs-look! g cr (list (List ref (% (game-turn g) (List length lines)) lines))))
       ((null? q) (state-tell! g (lit no-words) "The {name} has nothing to say." subs))
@@ -237,5 +242,12 @@
   (fn (_ g name)
     (def bk (List find (fn (_ bk) (str=? (List ref 1 bk) name)) (%qs-keepers g)))
     (if (null? bk) () (rest (rest bk)))))
+; The forms of the building the keeper NAME keeps a shop in, among the
+; forms in force, or nil.
+(def %qs-shop
+  (fn (_ g name)
+    (def b (List find (fn (_ b) (List any? (fn (_ k) (str=? (first k) name)) (data-all (rest b) (lit keeper))))
+             (data-all (game-forms g) (lit building))))
+    (match ((null? b) ()) ((shops-kept? (rest b)) (rest b)) (#t ()))))
 
 (provide roguelike/quests quests-place! quests-talk! quests-keepers!)

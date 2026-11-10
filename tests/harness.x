@@ -32,7 +32,7 @@
   creature-make creature-r creature-c creature-at! creature-hp creature-hp! creature-state creature-state!
   creature-name creature-glyph creature-trait? creature-carried state-a-kind item-make item-name item-count item-charges item-enchant item-letter item-letter! item-r item-c item-at!
   item-class state-say! state-dist state-adjacent?
-  items-name items-new items-known? items-spawn! creatures-kinds creatures-place! trap-make trap-found? chain-where
+  items-name items-new items-known? items-spawn! creatures-kinds creatures-place! trap-make trap-found? chain-where shops-kept? shops-open!
   save-write! save-read save-score! save-scores)
 (import x/sys/gc)
 (import x/sys/file)
@@ -113,9 +113,14 @@
 
 ; --- placing things ----------------------------------------------------------
 
-; G's set's item form named NAME; its creature kind named NAME; its
+; G's set's item form named NAME, or with none the form of the set the
+; game began on; its creature kind named NAME; its
 ; trap kind named NAME.
-(def spec-item (fn (_ g name) (List find (fn (_ f) (str=? (List ref 1 f) name)) (data-all (game-set g) 'item))))
+(def spec-item
+  (fn (_ g name)
+    (def named (fn (_ f) (str=? (List ref 1 f) name)))
+    ((fn (_ here) (if (null? here) (List find named (data-all (game-top-set g) (lit item))) here))
+     (List find named (data-all (game-set g) (lit item))))))
 (def spec-creature (fn (_ g name) (List find (fn (_ k) (str=? (first k) name)) (data-all (game-set g) 'creature))))
 (def spec-trap (fn (_ g name) (List find (fn (_ k) (str=? (first k) name)) (data-all (game-set g) 'trap))))
 
