@@ -21,7 +21,9 @@
 ; Tension, 0 to 100, is what the player has to fear: a creature awake
 ; and near, and the wounds already taken.  It quickens the music and
 ; brings in its tension layer, and past a threshold a heartbeat is
-; heard, faster and louder as it rises.
+; heard, faster and louder as it rises.  A blow struck either way brings
+; in the place's fight music until the fighting stops, and a band's
+; guardian, awake and near, its own.
 ;
 ; @author [Jon Ruttan](jonruttan@gmail.com)
 ; @copyright 2026 Jon Ruttan
@@ -34,9 +36,10 @@
 (import x/audio/tracker)
 (import x/core/doors int* int+ int- int/ int< int= int& obj-make obj-ref obj-set!)
 (import roguelike/data data-all data-one data-get)
-(import roguelike/state game-set game-player game-depth game-map game-creatures game-pack game-over game-blows
+(import roguelike/state game-set game-player game-depth game-map game-creatures game-pack game-over game-blows game-turn
   game-band band-name game-place game-below? game-param player-r player-c player-hp player-hpmax player-level player-gold
-  player-food player-lamp player-conditions creature-r creature-c creature-state creature-name state-dist state-ring?)
+  player-food player-lamp player-conditions creature-r creature-c creature-state creature-name state-dist state-ring?
+  band-to band-prop1 state-creature-named)
 (import roguelike/map map-tile map-terrain)
 (import roguelike/creatures creatures-shown?)
 
@@ -57,7 +60,9 @@
 ; (%sd-glance), 9 the random state, 10 blocks since a collect, 11 the
 ; place the music is for, 12 the place's random sounds, 13 how loud
 ; the turn's sounds are, a percentage (sound-volume!), 14 the creatures
-; as they stood (%sd-states).
+; as they stood (%sd-states), 15 and 16 the rank and name of the song
+; last asked for (%sd-music!), 17 the turns left of a fight, 18 the
+; guardian fought, or nil, 19 the game's turn last heard (%sd-turned?).
 
 (def %sd-vector-type ((prim-ref (lit type) (lit of)) (Vector make 0 ())))
 (def %sd-get (fn (_ s k) (obj-ref s (int+ k 1))))
@@ -240,9 +245,79 @@
     (def t (%sd-get s k))
     (match
       ((null? song) (unless (null? t) (Tracker stop! t)))
-      ((null? t) (%sd-put! s k (Tracker play! (Tracker tension! (Tracker make song) (%sd-get s 7)) (%sd-get s 1))))
+      ((null? t) (%sd-put! s k (%sd-tracker-make s song)))
       ((str=? (Tracker name t) (first (rest song))) ())
       (#t (Tracker song! t song)))))
+
+(def %sd-tracker-make
+  (fn (_ s song) (Tracker play! (Tracker tension! (Tracker make song) (%sd-get s 7)) (%sd-get s 1))))
+
+; The guardian of G's band, on the band's last level and alive, or nil.
+(def %sd-guardian
+  (fn (_ g)
+    (def b (game-band g))
+    (def name (if (null? b) "" (if (= (game-depth g) (band-to b)) (band-prop1 b (lit guardian) "") "")))
+    (if (str=? name "") () (state-creature-named g name))))
+
+; The guardian S is fighting on G, or nil: one awake and seen, or within
+; the set's (boss-near N) cells, is fought until it dies or is left.
+(def %sd-boss
+  (fn (_ s g)
+    (def gd (%sd-guardian g))
+    (def p (game-player g))
+    (def on
+      (match ((null? gd) ())
+             ((same? gd (%sd-get s 18)) gd)
+             ((eq? (creature-state gd) (lit asleep)) ())
+             ((creatures-shown? g gd) gd)
+             ((int< (data-get (%sd-get s 0) (lit boss-near) 8)
+                    (state-dist (player-r p) (player-c p) (creature-r gd) (creature-c gd))) ())
+             (#t gd)))
+    (%sd-put! s 18 on)
+    on))
+
+; The music G wants: a guardian fought, its (boss NAME SONG); a blow
+; struck in the last (fight-turns N) turns, the place's (fight PLACE
+; SONG); else the place's (music PLACE SONG), each "default" for the
+; rest.  A louder one starts at once, cutting in; a quieter one waits
+; for the pattern playing to end.
+(def %sd-music!
+  (fn (_ s g)
+    (def set (%sd-get s 0))
+    (def key (%sd-get s 11))
+    (def boss (%sd-boss s g))
+    (def wants
+      (List filter (fn (_ w) (not (null? (rest w))))
+        (list (pair 2 (if (null? boss) () (%sd-for set (lit boss) (creature-name boss))))
+              (pair 1 (if (int< 0 (%sd-get s 17)) (%sd-for set (lit fight) key) ()))
+              (pair 0 (%sd-for set (lit music) key)))))
+    (def rank (if (null? wants) 0 (first (first wants))))
+    (def song (if (null? wants) () (%sd-song set (List ref 1 (rest (first wants))))))
+    (def name (if (null? song) "" (first (rest song))))
+    (def t (%sd-get s 4))
+    (unless (if (str=? name (%sd-get s 16)) #t (not (null? (game-over g))))
+      (do (match
+            ((null? song) (do (unless (null? t) (Tracker stop! t)) (%sd-put! s 4 ())))
+            ((if (null? t) #t (int< (%sd-get s 15) rank))
+              (do (unless (null? t) (Tracker stop! t)) (%sd-put! s 4 (%sd-tracker-make s song))))
+            (#t (Tracker song! t song)))
+          (%sd-put! s 15 rank)
+          (%sd-put! s 16 name)))))
+
+; Whether a turn has passed on G since S last heard it: a key the game
+; held back, at a --More--, passes none, and leaves the last turn's
+; blows standing.
+(def %sd-turned? (fn (_ s g) (not (= (game-turn g) (%sd-get s 19)))))
+
+; The turns left of a fight: the set's (fight-turns N) after a blow
+; struck either way, one fewer each turn without.
+(def %sd-fight!
+  (fn (_ s g)
+    (when (%sd-turned? s g)
+      (%sd-put! s 17
+        (if (null? (game-blows g))
+          (if (int< 0 (%sd-get s 17)) (int- (%sd-get s 17) 1) 0)
+          (data-get (%sd-get s 0) (lit fight-turns) 8))))))
 
 (def %sd-place!
   (fn (_ s g)
@@ -250,8 +325,6 @@
     (unless (str=? key (%sd-get s 11))
       (do (def set (%sd-get s 0))
           (%sd-put! s 11 key)
-          (def music (%sd-for set (lit music) key))
-          (%sd-tracker! s 4 (if (null? music) () (%sd-song set (List ref 1 music))))
           (def amb (%sd-for set (lit ambience) key))
           (def bed (if (null? amb) () (List find (fn (_ p) (if (pair? p) (eq? (first p) (lit bed)) #f)) (rest amb))))
           (%sd-tracker! s 5 (if (null? bed) () (%sd-song set (List ref 1 bed))))
@@ -303,7 +376,7 @@
         (if at-player
           (%sd-cue s (match ((eq? how (lit miss)) (lit dodged)) (#t (lit struck))) (%sd-side (player-c p) (List ref 2 b)))
           (%sd-cue s how (%sd-side (player-c p) (List ref 4 b)))))
-      (game-blows g))))
+      (if (%sd-turned? s g) (game-blows g) ()))))
 
 ; G's creatures and how each stands, ((CREATURE . STATE) ...).
 (def %sd-states (fn (_ g) (List map (fn (_ cr) (pair cr (creature-state cr))) (game-creatures g))))
@@ -379,8 +452,8 @@
             (def m (Mixer make %sd-rate %sd-block))
             (Mixer gain! m (data-get set (lit music-gain) 80))
             (List for-each (fn (_ e) (Mixer echo! m (List ref 0 e) (List ref 1 e) (List ref 2 e))) (data-all set (lit music-echo)))
-            (def s (obj-make %sd-vector-type 16))
-            (obj-set! s 0 15)
+            (def s (obj-make %sd-vector-type 21))
+            (obj-set! s 0 20)
             (%sd-put! s 0 set)
             (%sd-put! s 1 m)
             (%sd-put! s 2 (Sdl audio-open %sd-rate 2))
@@ -396,8 +469,14 @@
             (%sd-put! s 12 ())
             (%sd-put! s 13 100)
             (%sd-put! s 14 (%sd-states g))
+            (%sd-put! s 15 0)
+            (%sd-put! s 16 "")
+            (%sd-put! s 17 0)
+            (%sd-put! s 18 ())
+            (%sd-put! s 19 (game-turn g))
             (%sd-tension! s g)
             (%sd-place! s g)
+            (%sd-music! s g)
             (Mixer source! m (%sd-heart s) 0)
             (Mixer source! m (%sd-randoms s) %sd-rate)
             (sound-pump! s)
@@ -435,6 +514,9 @@
           (%sd-put! s 14 (%sd-states g))
           (%sd-tension! s g)
           (%sd-place! s g)
+          (%sd-fight! s g)
+          (%sd-music! s g)
+          (%sd-put! s 19 (game-turn g))
           (sound-pump! s)))))
 
 ; Sound S played with the music at MUSIC percent of the set's own
@@ -446,6 +528,9 @@
       (do (Mixer gain! (%sd-get s 1) (int/ (int* music (data-get (%sd-get s 0) (lit music-gain) 80)) 100))
           (%sd-put! s 13 effects)))))
 
+; The name of the song S last asked for (%sd-music!), "" for none.
+(def sound-music (fn (_ s) (if (null? s) "" (%sd-get s 16))))
+
 ; The set's cue for EVENT played now, ahead: what the window plays for
 ; what is no turn, a change of loudness.
 (def sound-cue! (fn (_ s event) (unless (null? s) (%sd-cue s event 0))))
@@ -456,4 +541,4 @@
       (do (Sdl audio-close (%sd-get s 2))
           (List for-each (fn (_ st) (Sdl audio-close st)) (%sd-get s 3))))))
 
-(provide roguelike/sound sound-make sound-pump! sound-collect? sound-turn! sound-volume! sound-cue! sound-close)
+(provide roguelike/sound sound-make sound-pump! sound-collect? sound-turn! sound-volume! sound-cue! sound-music sound-close)
