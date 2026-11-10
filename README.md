@@ -41,8 +41,8 @@ the saved game, start a new one, set the options, or quit.  The options
 are the zoom, fullscreen, and how loud the music and the sounds are;
 they are kept in `~/.x-roguelike/options` for every set.  Esc, when the
 game is not asking anything, pauses it: back to the game, the options,
-the keys, or save and quit.  F11 or Alt-Enter switches to fullscreen
-and back, and a gamepad plays too:
+the keys, or save and quit.  Alt-Enter (Option-Return on a Mac)
+switches to fullscreen and back, and a gamepad plays too:
 
     left stick, d-pad  move, in eight directions; held, it keeps moving
     A  pick up, or go on past a message (Enter)

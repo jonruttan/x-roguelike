@@ -7,7 +7,7 @@
 ; keys: a key pressed is handed to the game as the terminal would hand
 ; it, a letter as its string and an arrow, enter or escape by name.
 ; A gamepad's events become the same keys through roguelike/pad, and
-; F11 or Alt-Enter switches the window to fullscreen and back.
+; Alt-Enter switches the window to fullscreen and back.
 ; The screen is drawn again after every key, and about twelve times a
 ; second while a light flickers.  The game is heard as well as seen
 ; (roguelike/sound): its music is kept fed each time round the loop,
@@ -45,7 +45,9 @@
 ; character after each unshifted one in this string.
 (def %wn-shift-mod 3)
 
-; F11, and enter with alt held, switch the window to fullscreen and back.
+; Enter with alt held (option on a Mac) switches the window to fullscreen
+; and back, the same key on every system; F11 too where the system lets
+; it through (a Mac shows the desktop on it).
 (def %wn-f11 1073741892)
 (def %wn-alt-mod 768)
 
@@ -89,7 +91,10 @@
 ; key the game has no use for.
 (def window-key
   (fn (_ code mod)
-    (if (if (= code %wn-f11) #t (if (= code 13) (not (= 0 (int& mod %wn-alt-mod))) #f)) (lit fullscreen)
+    (if (match ((= code %wn-f11) #t)
+               ((= code 13) (not (= 0 (int& mod %wn-alt-mod))))
+               (#t #f))
+      (lit fullscreen)
     (if (if (int< 31 code) (int< code 127) #f)
       (%wn-char (if (= 0 (int& mod %wn-shift-mod)) code (%wn-shift code)))
       ((fn (_ hit) (if (null? hit) () (rest hit))) (List find (fn (_ e) (= (first e) code)) %wn-named))))))
@@ -101,14 +106,34 @@
 
 ; The next event and the key it is, (EVENT . KEY): a gamepad's events
 ; go to its state and come back as keys.  Whether the key came from the
-; gamepad is kept in A.
+; gamepad is kept in A.  A held fullscreen key switches once.
 (def %wn-input
   (fn (_ a)
     (def ev (Sdl poll))
     (def typed? (if (null? ev) #f (eq? (first ev) (lit key-down))))
-    (def key (if typed? (window-key (List ref 1 ev) (List ref 2 ev)) (pad-key (Vector ref 3 a) ev (%wn-ms))))
+    (def typed (if typed? (window-key (List ref 1 ev) (List ref 2 ev)) ()))
+    (def key (if typed?
+               (if (if (eq? typed (lit fullscreen)) (List ref 3 ev) #f) () typed)
+               (pad-key (Vector ref 3 a) ev (%wn-ms))))
     (unless (null? key) (Vector set! 6 (not typed?) a))
+    (%wn-follow! a ev)
     (pair ev key)))
+
+; SDL's word that window went fullscreen or came back from it, by any
+; hand: ours, the system's key for it, or the window's own button.
+(def %wn-to-full 535)
+(def %wn-from-full 536)
+
+; What window says of fullscreen, in event EV, kept in A's gamepad state
+; and options, so the next switch goes the other way from where the
+; window is, not from where it was last asked to be.
+(def %wn-follow!
+  (fn (_ a ev)
+    (def to (if (if (null? ev) #f (eq? (first ev) (lit other))) (List ref 1 ev) ()))
+    (when (if (null? to) #f (if (int= to %wn-to-full) #t (int= to %wn-from-full)))
+      (do (pad-fullscreen! (Vector ref 3 a) (int= to %wn-to-full))
+          (%wn-option! a (lit fullscreen) (if (int= to %wn-to-full) 1 0))
+          (guard (e ()) (options-write! (Vector ref 5 a) (options-path)))))))
 (def %wn-closed? (fn (_ e) (if (null? e) #f (if (eq? (first e) (lit quit)) #t (eq? (first e) (lit close))))))
 
 ; The options of A put to work on window WIN, painter P and game G: the
@@ -323,6 +348,10 @@
   (fn (_ saved fresh arts font scale zoom title)
     (def o (options-read (options-path)))
     (def a (Vector of arts "" () (pad-make) () (if (null? zoom) o (options-set o (lit zoom) zoom)) #f))
+    ; Fullscreen on a Mac stays on the desktop's Space: a Space of its
+    ; own slides in, and a switch back before the slide ends leaves an
+    ; empty screen with the window gone.
+    (Sdl hint! "SDL_VIDEO_MAC_FULLSCREEN_SPACES" "0")
     (def win (Sdl scaling! (Sdl open title paint-width paint-height scale) (lit fit)))
     (def played (Vector of ()))
     (def failed

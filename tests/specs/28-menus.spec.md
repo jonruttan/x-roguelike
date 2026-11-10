@@ -83,3 +83,15 @@ options kept between games, and the menu drawn over the dimmed level.
 ```
 ---
     (#t #t #t #t #t)
+
+## fullscreen
+
+### Alt-Enter, either alt, and F11 ask for fullscreen; enter and f alone do not
+
+```roguelike
+(import roguelike/window window-key)
+(write (list (window-key 13 256) (window-key 13 512) (window-key 1073741892 0)
+             (window-key 13 0) (window-key 102 0)))
+```
+---
+    ('fullscreen 'fullscreen 'fullscreen 'enter "f")
