@@ -44,7 +44,7 @@
 (import roguelike/state
   game-rng game-set game-depth game-depth! game-map game-map! game-player game-creatures game-creatures!
   game-floor game-floor! game-pack game-turn game-turn! game-ask game-ask! game-over game-over! game-traps game-traps! game-told game-told! game-clock game-clock!
-  game-exploring game-exploring! game-below? game-go-below! game-go-above! game-top-set
+  game-exploring game-exploring! game-below? game-go-below! game-go-above! game-top-set game-top-param game-level-param1
   game-screen game-screen! game-kept-level game-keep! game-screens? game-world-cols game-world-rows game-hub
   game-screen-distance game-screen-in? game-screen-key game-door game-inside game-inside! game-level-key
   game-screen-form game-screen-name game-regions game-region game-home game-place
@@ -306,7 +306,7 @@
 ; the goal given there.
 (def %gm-home!
   (fn (_ g)
-    (def goal (first (data-one (game-top-set g) (lit goal) (list "the prize" "*" 20))))
+    (def goal (first (game-top-param g (lit goal) (list "the prize" "*" 20))))
     (when (match ((not (null? (game-over g))) #f)
                  ((not (List any? (fn (_ it) (if (item-class? it (lit goal)) (str=? (item-name it) goal) #f)) (game-pack g))) #f)
                  (#t (%gm-at-home? g)))
@@ -384,7 +384,7 @@
 (def %gm-seconds
   (fn (_ g)
     (def in (game-inside g))
-    (scale-seconds (scale-rung (if (null? in) (data-get (game-forms g) (lit scale) 1) (interiors-prop1 g in (lit scale) 1))))))
+    (scale-seconds (scale-rung (if (null? in) (game-level-param1 g (lit scale) 1) (interiors-prop1 g in (lit scale) 1))))))
 
 ; How many times every N seconds comes round from the clock at WAS to
 ; the clock at NOW.
