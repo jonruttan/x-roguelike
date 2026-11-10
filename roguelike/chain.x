@@ -18,12 +18,15 @@
 ; "kind"); each link stands a screen farther from the hub than the one
 ; before, and the chain is (chain LO HI) links at most.  Every link
 ; becomes a (quest ...) form kept in the game and read with the set's
-; own.  A set without scenes, or without a world of screens, has no
-; chain.
+; own, with its (found "TEXT"), where its giver stands as it is said
+; from the hub, and, for a want that lies on the ground, its
+; (lies-found "TEXT"), so the way can be said from another region of
+; the world (see quests-errands).  A set without scenes, or without a
+; world of screens, has no chain.
 
 (module roguelike/chain)
 
-(import roguelike/data data-all data-get data-prop data-prop1)
+(import roguelike/data data-all data-get data-prop data-prop1 data-region)
 (import roguelike/scale scale-rung)
 (import roguelike/state
   game-rng game-set game-chain! game-hub game-world-cols game-world-rows game-screen-distance game-param
@@ -46,7 +49,7 @@
 ; The point of the compass EX metres east and EY metres south lie at,
 ; north up: the nearer of the eight, a way between two of them taken
 ; as the one it is within a sixteenth of the circle of.
-(def %ch-compass
+(def chain-compass
   (fn (_ ex ey)
     (def ax (%ch-abs ex))
     (def ay (%ch-abs ey))
@@ -55,6 +58,14 @@
     (match ((< (* 1000 ay) (* 414 ax)) ew)
            ((< (* 1000 ax) (* 414 ay)) ns)
            (#t (Str8 append ns "-" ew)))))
+(def %ch-same? (fn (_ a b) (if (= (first a) (first b)) (= (rest a) (rest b)) #f)))
+; The point of the compass screen TO lies at from screen FROM, (X . Y)
+; each, the screens measured in metres at the set's scale.
+(def chain-way
+  (fn (_ g from to)
+    (def sc (scale-rung (data-get (game-set g) (lit scale) 1)))
+    (chain-compass (* (- (first to) (first from)) (* (game-cols g) (first sc)))
+                   (* (- (rest to) (rest from)) (* (- (game-rows g) 2) (rest sc))))))
 ; The band screen X Y lies in, by its distance from the hub, or nil.
 (def %ch-band
   (fn (_ g x y)
@@ -66,13 +77,10 @@
 ; "up in the hills, north-east of here", or "right here".
 (def chain-where
   (fn (_ g from to)
-    (def sc (scale-rung (data-get (game-set g) (lit scale) 1)))
-    (def ex (* (- (first to) (first from)) (* (game-cols g) (first sc))))
-    (def ey (* (- (rest to) (rest from)) (* (- (game-rows g) 2) (rest sc))))
     (def b (%ch-band g (first to) (rest to)))
     (def place (if (null? b) "" (data-prop1 b (lit where) "")))
-    (def way (Str8 append (%ch-compass ex ey) " of here"))
-    (match ((if (= ex 0) (= ey 0) #f) "right here")
+    (def way (Str8 append (chain-way g from to) " of here"))
+    (match ((%ch-same? from to) "right here")
            ((str=? place "") way)
            (#t (Str8 append place ", " way)))))
 
@@ -86,7 +94,6 @@
     (if (if (null? cands) #t (not (< (List length used) n))) (list scene)
       (pair scene (self g scenes ((game-rng g) choice cands) (pair (first scene) used) n)))))
 
-(def %ch-same? (fn (_ a b) (if (= (first a) (first b)) (= (rest a) (rest b)) #f)))
 ; The screens at distance D from the hub not among USED, or, with none
 ; left there, nearer in, never the hub.
 (def %ch-ring
@@ -126,8 +133,9 @@
     (def carrier (if (null? token) () (data-prop token (lit carrier) ())))
     (List append
       (list (lit quest) (first scene) (%ch-giver scene)
-            (list (lit screen) (first at) (rest at)) (list (lit wants) (lit bring) want))
-      (if find? (list (list (lit lies) (first next) (rest next))) ())
+            (list (lit screen) (first at) (rest at)) (list (lit wants) (lit bring) want)
+            (list (lit found) (chain-where g (game-hub g) at)))
+      (if find? (list (list (lit lies) (first next) (rest next)) (list (lit lies-found) (chain-where g (game-hub g) next))) ())
       (if (if find? (not (null? carrier)) #f) (list (pair (lit carrier) carrier)) ())
       (list (lines (lit ask)) (lines (lit again)) (lines (lit done)) (list (lit rewards) reward)))))
 
@@ -151,16 +159,23 @@
 
 ; Quest Q, the first link, moved home (see game-home): where home is in
 ; a region, onto its hub there, a (region NAME) beside its (screen X Y);
-; its {where} still counts from the hub of the set's world.
+; its {where} still counts from the hub of the set's world, and it is
+; found in the screen there, by its name where the region names it.
 (def %ch-home
   (fn (_ g q)
     (def home (game-home g))
+    (def x (List ref 1 home))
+    (def y (rest (rest home)))
+    (def named
+      (fn (_) (List find (fn (_ s) (def at (List ref 1 s)) (if (= (first at) x) (= (List ref 1 at) y) #f))
+                (data-all (data-region (game-set g) (first home)) (lit screen)))))
+    (def move
+      (fn (_ s f)
+        (match ((not (pair? f)) f)
+               ((eq? (first f) (lit screen)) (list (lit screen) x y))
+               ((eq? (first f) (lit found)) (if (null? s) f (list (lit found) (Str8 append "in " (first s)))))
+               (#t f))))
     (if (str=? (first home) "") q
-      (List append
-        (List map (fn (_ f) (if (if (pair? f) (eq? (first f) (lit screen)) #f)
-                              (list (lit screen) (List ref 1 home) (rest (rest home)))
-                              f))
-          q)
-        (list (list (lit region) (first home)))))))
+      ((fn (_ s) (List append (List map (fn (_ f) (move s f)) q) (list (list (lit region) (first home))))) (named)))))
 
-(provide roguelike/chain chain-build! chain-where)
+(provide roguelike/chain chain-build! chain-where chain-way chain-compass)

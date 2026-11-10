@@ -23,16 +23,19 @@
 (module roguelike/quests)
 
 (import x/type/vector)
-(import roguelike/data data-all data-prop data-prop1)
+(import roguelike/data data-all data-get data-prop data-prop1)
 (import x/core/doors int/)
+(import roguelike/scale scale-rung)
+(import roguelike/chain chain-where chain-compass)
 (import roguelike/map map-rows map-cols map-tile map-seen? map-each! map-places map-roof-at tile-rock tile-floor)
 (import roguelike/dungeon dungeon-spot)
 (import roguelike/state
   game-rng game-set game-forms game-turn game-depth game-map game-player game-creatures game-creatures! game-floor game-floor!
   game-pack game-ask! game-quest-state game-quest-state! game-placed? game-placed! game-chain game-screen game-below? game-region game-world-all
-  player-r player-c creature-make creature-name creature-carried!
-  item-make item-name item-class? item-at! item-letter!
-  state-tell! state-roll state-free? state-items-at state-remove-pack!)
+  game-place
+  player-r player-c creature-make creature-name creature-carried creature-carried! creature-r creature-c
+  item-make item-name item-class? item-at! item-letter! item-r item-c
+  state-tell! state-text state-roll state-free? state-items-at state-remove-pack! state-creature-named)
 (import roguelike/items items-new items-pickup! items-name)
 (import roguelike/shops shops-kept? shops-open!)
 
@@ -252,4 +255,128 @@
              (data-all (game-forms g) (lit building))))
     (match ((null? b) ()) ((shops-kept? (rest b)) (rest b)) (#t ()))))
 
-(provide roguelike/quests quests-place! quests-talk! quests-keepers!)
+; --- finding them ------------------------------------------------------------
+
+; An errand with a screen of its own leads somewhere while it is not
+; over: the first of the chain, not yet asked, to its giver; one open,
+; to what it wants, where that lies or with whoever gives it; one whose
+; want is in the pack, back to its giver.  The map marks the screen and
+; says the way (quests-leads, quests-errands), and the screen itself,
+; come onto, says which way the one looked for stands (quests-sighted!).
+
+; Where Q's giver stands: (REGION X Y FOUND), FOUND the words for it
+; from another region of the world.
+(def %qs-stands
+  (fn (_ q)
+    (def at (data-prop q (lit screen) ()))
+    (list (data-prop1 q (lit region) "") (first at) (List ref 1 at) (data-prop1 q (lit found) ""))))
+; The first of Q's wants not in the pack, or nil.
+(def %qs-missing (fn (_ g q) (List find (fn (_ n) (not (%qs-has? g n))) (%qs-items q))))
+; Where the thing NAME that Q wants is: where it lies, or with the quest
+; that gives it, or nil.
+(def %qs-source
+  (fn (_ g q name)
+    (def lies (data-prop q (lit lies) ()))
+    (def giver (List find (fn (_ o) (List any? (fn (_ r) (if (< (List length r) 2) #f (str=? (List ref 1 r) name))) (data-prop o (lit rewards) ())))
+                 (%qs-quests g)))
+    (match ((not (null? lies)) (list "" (first lies) (List ref 1 lies) (data-prop1 q (lit lies-found) "")))
+           ((null? giver) ())
+           ((null? (data-prop giver (lit screen) ())) ())
+           (#t (%qs-stands giver)))))
+; Where each errand leads, (KIND Q WANT . PLACE) each: KIND asks, fetch,
+; back, or owes with its reward still to choose; PLACE as %qs-stands
+; gives it.
+(def %qs-leads
+  (fn (_ g)
+    (def chain (List map rest (game-chain g)))
+    (def first? (fn (_ q) (if (null? chain) #f (str=? (%qs-name q) (%qs-name (first chain))))))
+    (def lead
+      (fn (_ q)
+        (def state (game-quest-state g (%qs-name q)))
+        (def want (%qs-missing g q))
+        (def held (if (null? (%qs-items q)) "" (first (%qs-items q))))
+        (match ((null? (data-prop q (lit screen) ())) ())
+               ((eq? state (lit done)) ())
+               ((null? state) (if (first? q) (pair (lit asks) (pair q (pair "" (%qs-stands q)))) ()))
+               ((eq? state (lit reward)) (pair (lit owes) (pair q (pair held (%qs-stands q)))))
+               ((null? want) (pair (lit back) (pair q (pair held (%qs-stands q)))))
+               (#t ((fn (_ at) (if (null? at) () (pair (lit fetch) (pair q (pair want at))))) (%qs-source g q want))))))
+    (List reject null? (List map lead (%qs-quests g)))))
+(def %qs-lead-place (fn (_ l) (rest (rest (rest l)))))
+; Whether the place P is in the world stood in.
+(def %qs-in-world? (fn (_ g p) (if (null? (game-screen g)) #f (str=? (first p) (game-place g)))))
+
+; The screens of the world stood in that an errand leads to, (X . Y) each.
+(def quests-leads
+  (fn (_ g)
+    (List map (fn (_ p) (pair (List ref 1 p) (List ref 2 p)))
+      (List filter (fn (_ p) (%qs-in-world? g p)) (List map %qs-lead-place (%qs-leads g))))))
+
+; The way to the place P as it is said from where the player stands: in
+; the world stood in, the screen by its name where the set names it and
+; which way it lies; from another region, the place's own words.
+(def %qs-way
+  (fn (_ g p)
+    (def here (game-screen g))
+    (def to (pair (List ref 1 p) (List ref 2 p)))
+    (def named (List find (fn (_ s) (def at (List ref 1 s)) (if (= (first at) (first to)) (= (List ref 1 at) (rest to)) #f))
+                 (data-all (game-set g) (lit screen))))
+    (match ((not (%qs-in-world? g p)) (List ref 3 p))
+           ((if (= (first here) (first to)) (= (rest here) (rest to)) #f) "right here")
+           ((null? named) (chain-where g here to))
+           (#t (Str8 append "in " (first named) ", " (chain-where g here to))))))
+
+; What the errands in hand are, a line each, for the map.
+(def quests-errands
+  (fn (_ g)
+    (List map
+      (fn (_ l)
+        (def q (List ref 1 l))
+        (def subs (list (pair "giver" (%qs-giver q)) (pair "want" (List ref 2 l)) (pair "where" (%qs-way g (%qs-lead-place l)))))
+        (match ((eq? (first l) (lit asks)) (state-text g (lit errand-asks) "! The {giver} is asking for help: {where}." subs))
+               ((eq? (first l) (lit back)) (state-text g (lit errand-back) "! The {giver} is waiting for {want}: {where}." subs))
+               ((eq? (first l) (lit owes)) (state-text g (lit errand-owes) "! The {giver} has something for you: {where}." subs))
+               (#t (state-text g (lit errand-fetch) "! For the {giver}, {want}: {where}." subs))))
+      (%qs-leads g))))
+
+; On the screen come onto, which way each one an errand looks for
+; stands from the player: a giver whose errand is not over, and what an
+; open errand wants, lying here or in a carrier's keeping.  One a step
+; away is not pointed at.
+(def quests-sighted!
+  (fn (_ g)
+    (def p (game-player g))
+    (def sc (scale-rung (data-get (game-set g) (lit scale) 1)))
+    (def abs (fn (_ n) (if (< n 0) (- 0 n) n)))
+    (def far? (fn (_ r c) (if (< 1 (abs (- r (player-r p)))) #t (< 1 (abs (- c (player-c p)))))))
+    (def way (fn (_ r c) (chain-compass (* (- c (player-c p)) (first sc)) (* (- r (player-r p)) (rest sc)))))
+    (def token? (fn (_ it name) (if (null? it) #f (if (item-class? it (lit token)) (str=? (item-name it) name) #f))))
+    (def person!
+      (fn (_ q)
+        (def cr (state-creature-named g (%qs-giver q)))
+        (unless (if (null? cr) #t (not (far? (creature-r cr) (creature-c cr))))
+          (state-tell! g (lit sought-person) "You make out the {name} to the {way}."
+            (list (pair "name" (%qs-giver q)) (pair "way" (way (creature-r cr) (creature-c cr))))))))
+    (def thing!
+      (fn (_ name)
+        (def it (List find (fn (_ it) (token? it name)) (game-floor g)))
+        (def cr (List find (fn (_ cr) (token? (creature-carried cr) name)) (game-creatures g)))
+        (match
+          ((not (null? it))
+            (when (far? (item-r it) (item-c it))
+              (state-tell! g (lit sought-thing) "You make out {name} to the {way}."
+                (list (pair "name" name) (pair "way" (way (item-r it) (item-c it)))))))
+          ((not (null? cr))
+            (state-tell! g (lit sought-carried) "The {carrier} to the {way} has {name}."
+              (list (pair "name" name) (pair "carrier" (creature-name cr)) (pair "way" (way (creature-r cr) (creature-c cr))))))
+          (#t ()))))
+    (List for-each
+      (fn (_ q)
+        (def state (game-quest-state g (%qs-name q)))
+        (unless (if (null? (data-prop q (lit screen) ())) #t (eq? state (lit done)))
+          (do (when (%qs-here? g q) (person! q))
+              (when (if (eq? state (lit open)) (%qs-on-screen? g q (lit lies)) #f)
+                (List for-each (fn (_ name) (unless (%qs-has? g name) (thing! name))) (%qs-items q))))))
+      (%qs-quests g))))
+
+(provide roguelike/quests quests-place! quests-talk! quests-keepers! quests-leads quests-errands quests-sighted!)

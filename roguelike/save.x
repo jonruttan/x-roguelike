@@ -96,8 +96,9 @@
 
 ; The chain, a link's quest form flattened to a form a line, since a
 ; xon form holds atoms only: (link NAME GIVER X Y WANT LX LY CARRIER
-; CLASS REWARD), LX LY -1 with no (lies ...) and CARRIER "" with none,
-; then its (link-ask LINE ...), (link-again ...) and (link-done ...).
+; CLASS REWARD FOUND LIES-FOUND REGION), LX LY -1 with no (lies ...) and
+; CARRIER, LIES-FOUND and REGION "" with none, the last three absent
+; from a save made before they were kept; then its (link-ask LINE ...), (link-again ...) and (link-done ...).
 (def %sv-chain-forms
   (fn (_ g)
     (List flat-map
@@ -109,7 +110,8 @@
           (list (List append (list (lit link) (List ref 0 rec) (List ref 1 rec))
                              (prop (lit screen) (list -1 -1)) (list (List ref 1 (prop (lit wants) (list (lit bring) ""))))
                              (prop (lit lies) (list -1 -1)) (prop (lit carrier) (list ""))
-                             (list (symbol->str (first reward)) (List ref 1 reward))))
+                             (list (symbol->str (first reward)) (List ref 1 reward))
+                             (prop (lit found) (list "")) (prop (lit lies-found) (list "")) (prop (lit region) (list ""))))
           (list (pair (lit link-ask) (prop (lit ask) ())) (pair (lit link-again) (prop (lit again) ()))
                 (pair (lit link-done) (prop (lit done) ())))))
       (game-chain g))))
@@ -257,14 +259,19 @@
          (if (not (eq? (first f) (lit link))) (self (rest forms))
            (do (def a (rest f))
                (def after (fn (_ head) (def hit (List find (fn (_ x) (eq? (first x) head)) (rest forms))) (if (null? hit) () (rest hit))))
+               (def more (fn (_ i) (if (< i (List length a)) (List ref i a) "")))
+               (def kept (fn (_ key text) (if (str=? text "") () (list (list key text)))))
                (pair (List append
                        (list (lit quest) (List ref 0 a) (List ref 1 a)
                              (list (lit screen) (List ref 2 a) (List ref 3 a)) (list (lit wants) (lit bring) (List ref 4 a)))
+                       (kept (lit found) (more 10))
                        (if (< (List ref 5 a) 0) () (list (list (lit lies) (List ref 5 a) (List ref 6 a))))
+                       (kept (lit lies-found) (more 11))
                        (if (str=? (List ref 7 a) "") () (list (list (lit carrier) (List ref 7 a))))
                        (list (pair (lit ask) (after (lit link-ask))) (pair (lit again) (after (lit link-again)))
                              (pair (lit done) (after (lit link-done)))
-                             (list (lit rewards) (list (Str8 ->sym (List ref 8 a)) (List ref 9 a)))))
+                             (list (lit rewards) (list (Str8 ->sym (List ref 8 a)) (List ref 9 a))))
+                       (kept (lit region) (more 12)))
                      (self (rest forms))))))
        (first forms)))))
 ; The trap saved as ARGS, (R C NAME FOUND), or nil for a kind the set lacks.
