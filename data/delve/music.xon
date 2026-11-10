@@ -193,7 +193,8 @@
 ; A blow struck either way brings in the place's fight song, at once,
 ; until (fight-turns N) turns pass without one; then the place's own
 ; song comes back at the end of the pattern.  Each is in its band's key,
-; quick, with a drum; its tension layer is the hi-hat.
+; fast, 150 to 180 beats a minute, with a drum; its tension layer is
+; the hi-hat.
 
 (fight-turns 8)
 (fight "default" "galleries-fight")
@@ -202,7 +203,7 @@
 (fight "The Old Works" "works-fight")
 (fight "The Heart" "heart-fight")
 
-(song "galleries-fight" (bpm 132) (rows 2) (tension-bpm 18)
+(song "galleries-fight" (bpm 172) (rows 2) (tension-bpm 24)
   (instrument kick (wave sine) (hz 70) (slide 38) (env (0 0) (2 90) (140 0)) (release 40) (gain 58))
   (instrument snare (wave noise) (hz 1) (cut 45) (env (0 0) (1 60) (120 0)) (release 40) (gain 30))
   (instrument bass (wave reed) (cut 16) (env (0 0) (4 60) (200 40) (600 0)) (release 120) (gain 40))
@@ -225,7 +226,7 @@
     (hats  "C4 .  C4 .  C4 .  C4 .  C4 .  C4 .  C4 .  C4 C4"))
   (order fa fa fb fa))
 
-(song "flood-fight" (bpm 126) (rows 2) (tension-bpm 18)
+(song "flood-fight" (bpm 164) (rows 2) (tension-bpm 24)
   (instrument kick (wave sine) (hz 64) (slide 34) (env (0 0) (2 90) (160 0)) (release 40) (gain 58))
   (instrument splash (wave noise) (hz 1) (cut 22) (env (0 0) (2 55) (220 0)) (release 60) (gain 32) (pan -20))
   (instrument bass (wave hollow) (cut 14) (env (0 0) (6 60) (300 35) (700 0)) (release 150) (gain 42))
@@ -249,7 +250,7 @@
     (hats   "C4 C4 .  C4 C4 .  C4 C4 .  C4 C4 .  C4 C4 .  C4"))
   (order wa wa wb wa))
 
-(song "works-fight" (bpm 138) (rows 2) (tension-bpm 16)
+(song "works-fight" (bpm 180) (rows 2) (tension-bpm 22)
   (instrument kick (wave sine) (hz 72) (slide 40) (env (0 0) (2 90) (120 0)) (release 40) (gain 56))
   (instrument clank (wave noise) (hz 1) (cut 60) (env (0 0) (1 50) (70 0)) (release 30) (gain 28) (pan 20))
   (instrument bass (wave reed) (cut 12) (env (0 0) (3 60) (180 40) (500 0)) (release 100) (gain 40))
@@ -272,7 +273,7 @@
     (hats  "C4 C4 C4 C4 C4 C4 C4 C4 C4 C4 C4 C4 C4 C4 C4 C4"))
   (order ka ka kb ka))
 
-(song "heart-fight" (bpm 112) (rows 2) (tension-bpm 20)
+(song "heart-fight" (bpm 152) (rows 2) (tension-bpm 24)
   (instrument beat (wave sine) (hz 58) (slide 32) (env (0 0) (3 95) (180 0)) (release 40) (gain 62))
   (instrument bass (wave hollow) (cut 12) (env (0 0) (8 60) (400 40) (900 0)) (release 200) (gain 40))
   (instrument choir (wave warm) (cut 16) (env (0 0) (400 30) (1500 0)) (release 600) (gain 20)
