@@ -195,3 +195,26 @@ takes, a wall in parts by its neighbours, and the camera on the player.
 ```
 ---
     (1 2 'mark-held 'mark-confused #t)
+
+## poses
+
+### the player's blow carries its attack pose, a blow taken its hit pose; dead is drawn in place of the player
+
+```roguelike
+(import roguelike/state state-blow! state-clear-messages! game-over!)
+(def player-op (fn (_) (List find (fn (_ op) (if (eq? (first op) 'tile) (if (< 4 (List length op)) (eq? (first (List ref 4 op)) 'player) #f) #f))
+                                (List filter (fn (_ op) (eq? (first (List ref 3 op)) 'player)) (List filter (fn (_ op) (eq? (first op) 'tile)) (rest (rest (frame-scene g fa))))))))
+(def pose-of (fn (_ op) (if (< 5 (List length op)) (%probe-pose (List ref 1 (List ref 5 op))) ())))
+(def %probe-pose (fn (_ t) ((fn (_ p) (if (null? p) () (List ref 1 p))) (List find (fn (_ x) (if (pair? x) (eq? (first x) 'pose) #f)) (rest t)))))
+(state-clear-messages! g)
+(def calm (pose-of (player-op)))
+(state-blow! g (player-r pl) (player-c pl) (player-r pl) (- (player-c pl) 1) 'miss 0 ())
+(def struck (pose-of (player-op)))
+(state-blow! g (player-r pl) (- (player-c pl) 1) (player-r pl) (player-c pl) 'hit 2 ())
+(def taken (pose-of (player-op)))
+(state-clear-messages! g)
+(game-over! g 'dead)
+(write (list calm struck taken (%probe-pose (List ref 3 (player-op))) (List length (player-op))))
+```
+---
+    (() 'attack 'hit 'dead 5)

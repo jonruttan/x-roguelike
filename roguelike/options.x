@@ -4,10 +4,11 @@
 ;
 ; What a player sets in the window and keeps from one game to the next:
 ; the zoom the level is shown at, fullscreen or not, and how loud the
-; music and the sounds are.  They are the window's, not a set's, so one
-; file keeps them for every set: ~/.x-roguelike/options, a form a line.
+; music and the sounds are, and whether both are muted.  They are the
+; window's, not a set's, so one file keeps them for every set:
+; ~/.x-roguelike/options, a form a line.
 ;
-;     (zoom 2) (fullscreen 0) (music 80) (effects 100)
+;     (zoom 2) (fullscreen 0) (music 80) (effects 100) (mute 0)
 ;
 ; Options are an association list, (NAME . VALUE) each, every option
 ; there: one read from a file missing some takes the rest from the
@@ -28,7 +29,8 @@
   (list (list (lit zoom) "Zoom" 1 4 1 2)
         (list (lit fullscreen) "Fullscreen" 0 1 1 0)
         (list (lit music) "Music" 0 100 10 80)
-        (list (lit effects) "Sounds" 0 100 10 100)))
+        (list (lit effects) "Sounds" 0 100 10 100)
+        (list (lit mute) "Mute" 0 1 1 0)))
 (def %op-of (fn (_ name) (List find (fn (_ o) (eq? (first o) name)) %op-all)))
 (def %op-held (fn (_ o v) (if (int< v (List ref 2 o)) (List ref 2 o) (if (int< (List ref 3 o) v) (List ref 3 o) v))))
 

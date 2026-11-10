@@ -24,6 +24,22 @@ device.
 ---
     (#t #t #t #t)
 
+### every fight and guardian's theme is a song, every band has a fight, and every guardian a theme
+
+```roguelike
+(def spec-set (data-load "data/delve"))
+(def spec-song? (fn (_ n) (List any? (fn (_ s) (str=? (first s) n)) (data-all spec-set 'song))))
+(def spec-named? (fn (_ head n) (List any? (fn (_ f) (str=? (first f) n)) (data-all spec-set head))))
+(def spec-bands (data-all spec-set 'band))
+(write (list (List all? (fn (_ f) (spec-song? (List ref 1 f))) (data-all spec-set 'fight))
+             (List all? (fn (_ f) (spec-song? (List ref 1 f))) (data-all spec-set 'boss))
+             (List all? (fn (_ b) (spec-named? 'fight (first b))) spec-bands)
+             (List all? (fn (_ b) (spec-named? 'boss (data-prop1 b 'guardian ""))) spec-bands)
+             (< 0 (data-get spec-set 'fight-turns 0))))
+```
+---
+    (#t #t #t #t #t)
+
 ### every cue, footstep, heartbeat and random sound names a sound of the set
 
 ```roguelike
@@ -34,6 +50,21 @@ device.
              (List all? (fn (_ c) (spec-sound? (List ref 1 c))) (data-all spec-set 'footstep))
              (spec-sound? (first (data-one spec-set 'heart ())))
              (List all? spec-sound? spec-randoms)))
+```
+---
+    (#t #t #t #t)
+
+### every cry names a sound of the set and a creature of it, and there is a default
+
+```roguelike
+(def spec-set (data-load "data/delve"))
+(def spec-sound? (fn (_ n) (List any? (fn (_ s) (str=? (first s) n)) (data-all spec-set 'sound))))
+(def spec-kind? (fn (_ n) (List any? (fn (_ k) (str=? (first k) n)) (data-all spec-set 'creature))))
+(def spec-cries (data-all spec-set 'cry))
+(write (list (List all? (fn (_ c) (spec-sound? (List ref 1 c))) spec-cries)
+             (List all? (fn (_ c) (if (str=? (first c) "default") #t (spec-kind? (first c)))) spec-cries)
+             (List any? (fn (_ c) (str=? (first c) "default")) spec-cries)
+             (< 0 (data-get spec-set 'cry-falloff 0))))
 ```
 ---
     (#t #t #t #t)

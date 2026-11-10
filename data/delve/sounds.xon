@@ -159,6 +159,74 @@
   (voice (wave warm) (note "G4") (at 300) (env (0 0) (200 40) (3300 0)) (pan 40))
   (voice (wave glass) (note "C6") (at 450) (env (0 0) (10 30) (3000 0))))
 
+; The lamp: a wick catching, the flame guttering, and going out.
+(sound "lamp-lit" (gain 30)
+  (voice (wave noise) (hz 1) (cut 40) (env (0 0) (2 50) (30 0)))
+  (voice (wave noise) (hz 1) (cut 8) (at 20) (env (0 0) (80 40) (500 0)))
+  (voice (wave warm) (note "A3") (at 40) (cut 30) (env (0 0) (150 20) (700 0))))
+
+(sound "lamp-low" (gain 30)
+  (voice (wave noise) (hz 1) (cut 6) (env (0 0) (40 40) (120 10) (200 35) (330 5) (420 30) (700 0)))
+  (voice (wave reed) (note "F3") (slide "E3") (cut 15) (env (0 0) (100 15) (700 0))))
+
+(sound "lamp-out" (gain 36) (echo 300 30 25)
+  (voice (wave noise) (hz 1) (cut 12) (env (0 0) (10 50) (200 0)))
+  (voice (wave hollow) (note "D3") (slide "A2") (cut 20) (at 80) (env (0 0) (60 35) (1600 0))))
+
+; Creatures woken, heard whether they are seen or not: a cry for each
+; kind that has one, and the rest the default's.  Far off, quieter.
+(sound "cry-squeal" (vary 120) (gain 32)
+  (voice (wave thin) (note "E6") (slide "A5") (env (0 0) (8 45) (40 30) (120 0)))
+  (voice (wave thin) (note "F6") (slide "B5") (at 150) (env (0 0) (8 35) (90 0))))
+
+(sound "cry-croak" (vary 60) (gain 40)
+  (voice (wave reed) (note "A2") (slide "F2") (cut 18) (env (0 0) (20 55) (80 30) (110 50) (260 0)))
+  (voice (wave noise) (hz 1) (cut 4) (env (0 0) (20 30) (240 0))))
+
+(sound "cry-whine" (vary 200) (gain 24)
+  (voice (wave glass) (note "C#7") (slide "D7") (env (0 0) (200 30) (900 0)) (pan -30))
+  (voice (wave glass) (note "D7") (detune 18) (slide "C#7") (env (0 0) (250 25) (900 0)) (pan 30)))
+
+(sound "cry-knock" (vary 40) (gain 38) (echo 210 35 30)
+  (voice (wave hollow) (note "G2") (cut 20) (env (0 0) (1 60) (60 0)))
+  (voice (wave hollow) (note "G2") (cut 20) (at 190) (env (0 0) (1 55) (60 0)))
+  (voice (wave hollow) (note "G2") (cut 20) (at 380) (env (0 0) (1 50) (60 0))))
+
+(sound "cry-moan" (vary 80) (gain 30) (echo 400 45 40)
+  (voice (wave hollow) (note "D4") (slide "A3") (cut 22) (env (0 0) (300 40) (1400 0)))
+  (voice (wave hollow) (note "F4") (slide "C4") (detune 9) (cut 22) (env (0 0) (350 25) (1400 0))))
+
+(sound "cry-wet" (vary 70) (gain 34)
+  (voice (wave noise) (hz 1) (cut 10) (env (0 0) (30 45) (90 15) (140 40) (380 0)))
+  (voice (hz 130) (slide 70) (env (0 0) (30 30) (300 0))))
+
+(sound "cry-mutter" (vary 50) (gain 30) (echo 320 35 30)
+  (voice (wave reed) (note "C3") (cut 14) (env (0 0) (60 35) (160 15) (240 35) (400 10) (480 30) (800 0)))
+  (voice (wave reed) (note "Eb3") (cut 14) (at 90) (env (0 0) (80 20) (600 0))))
+
+(sound "cry-chitter" (vary 150) (gain 26)
+  (voice (wave thin) (note "B6") (env (0 0) (2 40) (25 0)))
+  (voice (wave thin) (note "A6") (at 50) (env (0 0) (2 40) (25 0)))
+  (voice (wave thin) (note "C7") (at 95) (env (0 0) (2 40) (25 0)))
+  (voice (wave thin) (note "B6") (at 140) (env (0 0) (2 35) (25 0))))
+
+(sound "cry-grind" (vary 30) (gain 40)
+  (voice (wave noise) (hz 1) (cut 3) (env (0 0) (150 55) (900 0)))
+  (voice (wave reed) (note "B1") (slide "A1") (cut 12) (env (0 0) (150 40) (1000 0))))
+
+(sound "cry-roar" (gain 50) (echo 480 50 40)
+  (voice (wave reed) (note "E2") (slide "B1") (cut 30) (env (0 0) (120 60) (500 45) (1800 0)))
+  (voice (wave noise) (hz 1) (cut 6) (env (0 0) (150 50) (1600 0)))
+  (voice (wave hollow) (note "E1") (env (0 0) (200 50) (2000 0))))
+
+(sound "cry-stir" (vary 100) (gain 28)
+  (voice (wave noise) (hz 1) (cut 14) (env (0 0) (40 35) (90 10) (130 30) (300 0)))
+  (voice (wave reed) (note "G3") (slide "D3") (cut 16) (env (0 0) (60 20) (350 0))))
+
+; The sounds made louder or quieter: a tap on glass, at the new loudness.
+(sound "tick" (gain 34)
+  (voice (wave glass) (note "D6") (env (0 0) (1 45) (70 0))))
+
 ; What sets each sound off: a turn's events by name.
 (cue "step" "step-stone")
 (cue "miss" "swing")
@@ -180,6 +248,37 @@
 (cue "relieved" "relieved")
 (cue "died" "died")
 (cue "won" "won")
+(cue "volume" "tick")
+(cue "lamp-lit" "lamp-lit")
+(cue "lamp-low" "lamp-low")
+(cue "lamp-out" "lamp-out")
+
+; A woken creature's cry, by its kind; quieter by 8 percent a cell away.
+(cry-falloff 8)
+(cry "default" "cry-stir")
+(cry "mine rat" "cry-squeal")
+(cry "pit ferret" "cry-squeal")
+(cry "drip toad" "cry-croak")
+(cry "gas mote" "cry-whine")
+(cry "glow-midge" "cry-whine")
+(cry "knocker" "cry-knock")
+(cry "gallery shade" "cry-moan")
+(cry "drowned shade" "cry-moan")
+(cry "fireman" "cry-moan")
+(cry "lantern eel" "cry-wet")
+(cry "silt crayfish" "cry-wet")
+(cry "great leech" "cry-wet")
+(cry "undertow" "cry-roar")
+(cry "old 'un" "cry-mutter")
+(cry "ossuary priest" "cry-mutter")
+(cry "cave bat" "cry-chitter")
+(cry "rust golem" "cry-grind")
+(cry "warder" "cry-roar")
+(cry "glister" "cry-whine")
+(cry "Old Man" "cry-roar")
+
+; Steps taken with a ring of stealth on: at 40 percent.
+(stealth-steps 40)
 
 ; --- fear ----------------------------------------------------------------------
 

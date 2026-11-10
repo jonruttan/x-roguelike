@@ -25,7 +25,7 @@
 (import roguelike/map map-terrain map-kinds map-rows map-cols map-tile map-seen? map-visible? map-in? map-opaque? tile-rock)
 (import roguelike/state game-map game-player game-floor game-creatures game-traps
   player-r player-c player-conditions item-r item-c item-class creature-r creature-c creature-name creature-glyph
-  creature-state creature-condition game-set game-blows)
+  creature-state creature-condition game-set game-blows game-over)
 (import roguelike/draw draw-hunger)
 (import roguelike/creatures creatures-shown?)
 (import roguelike/traps trap-r trap-c trap-found?)
@@ -242,8 +242,48 @@
                                     (%fr-marks a cam (creature-r cr) (creature-c cr) cr (%fr-creature-states cr)))
                                   ()))
         (game-creatures g))
-      (%fr-put a cam (player-r p) (player-c p) (lit player) #t (data-glyph set (lit player) "@") (lit player))
+      (%fr-posed a (%fr-put a cam (player-r p) (player-c p) (lit player) #t (data-glyph set (lit player) "@") (lit player))
+                 (%fr-player-pose g))
       (%fr-marks a cam (player-r p) (player-c p) (lit player) (%fr-player-states g)))))
+
+; --- poses ----------------------------------------------------------------------
+
+; The picture of NAME in POSE, (tile NAME (pose POSE) ...), or nil.
+(def frame-pose
+  (fn (_ a name pose)
+    (List find (fn (_ t) (eq? (%fr-prop1 t (lit pose)) pose)) (%fr-named (List ref 1 a) name))))
+
+; The player's pose in game G: dead when the game ended in its death;
+; else hit when a blow landed on it this turn, attack when it struck
+; one; else nil.
+(def %fr-player-pose
+  (fn (_ g)
+    (def p (game-player g))
+    (def at? (fn (_ r c) (if (= r (player-r p)) (= c (player-c p)) #f)))
+    (def blows (game-blows g))
+    (match
+      ((eq? (game-over g) (lit dead)) (lit dead))
+      ((List any? (fn (_ b) (if (at? (List ref 3 b) (List ref 4 b)) (not (eq? (List ref 5 b) (lit miss))) #f)) blows) (lit hit))
+      ((List any? (fn (_ b) (at? (List ref 1 b) (List ref 2 b))) blows) (lit attack))
+      (#t ()))))
+
+; OPS, the player's from %fr-put, posed POSE from art A: dead drawn in
+; place of its picture; any other pose, a blow's, carried on its tile
+; op, (tile X Y PICTURE (WHO R . C) (pose PICTURE)), for the front-end
+; to draw while the turn's blows are shown.  A pose the art has none of
+; is no pose.
+(def %fr-posed
+  (fn (_ a ops pose)
+    (def pic (if (null? pose) () (frame-pose a (lit player) pose)))
+    (if (null? pic) ops
+      (List map
+        (fn (_ op)
+          (if (if (eq? (first op) (lit tile)) (if (< 4 (List length op)) (eq? (first (List ref 3 op)) (lit player)) #f) #f)
+            (if (eq? pose (lit dead))
+              (list (lit tile) (List ref 1 op) (List ref 2 op) pic (List ref 4 op))
+              (list (lit tile) (List ref 1 op) (List ref 2 op) (List ref 3 op) (List ref 4 op) (list (lit pose) pic)))
+            op))
+        ops))))
 
 ; --- marks ----------------------------------------------------------------------
 
