@@ -60,7 +60,7 @@
 ; (%sd-glance), 9 the random state, 10 blocks since a collect, 11 the
 ; place the music is for, 12 the place's random sounds, 13 how loud
 ; the turn's sounds are, a percentage (sound-volume!), 14 the creatures
-; as they stood (%sd-states), 15 and 16 the rank and name of the song
+; as they stood (%sd-states), 15 unused, 16 the name of the song
 ; last asked for (%sd-music!), 17 the turns left of a fight, 18 the
 ; guardian fought, or nil, 19 the game's turn last heard (%sd-turned?).
 
@@ -279,29 +279,25 @@
 ; The music G wants: a guardian fought, its (boss NAME SONG); a blow
 ; struck in the last (fight-turns N) turns, the place's (fight PLACE
 ; SONG); else the place's (music PLACE SONG), each "default" for the
-; rest.  A louder one starts at once, cutting in; a quieter one waits
-; for the pattern playing to end.
+; rest.  The change is made at once, the song playing stopped and its
+; notes left to fade.
 (def %sd-music!
   (fn (_ s g)
     (def set (%sd-get s 0))
     (def key (%sd-get s 11))
     (def boss (%sd-boss s g))
     (def wants
-      (List filter (fn (_ w) (not (null? (rest w))))
-        (list (pair 2 (if (null? boss) () (%sd-for set (lit boss) (creature-name boss))))
-              (pair 1 (if (int< 0 (%sd-get s 17)) (%sd-for set (lit fight) key) ()))
-              (pair 0 (%sd-for set (lit music) key)))))
-    (def rank (if (null? wants) 0 (first (first wants))))
-    (def song (if (null? wants) () (%sd-song set (List ref 1 (rest (first wants))))))
+      (List filter (fn (_ w) (not (null? w)))
+        (list (if (null? boss) () (%sd-for set (lit boss) (creature-name boss)))
+              (if (int< 0 (%sd-get s 17)) (%sd-for set (lit fight) key) ())
+              (%sd-for set (lit music) key))))
+    (def song (if (null? wants) () (%sd-song set (List ref 1 (first wants)))))
     (def name (if (null? song) "" (first (rest song))))
     (def t (%sd-get s 4))
     (unless (if (str=? name (%sd-get s 16)) #t (not (null? (game-over g))))
       (do (match
             ((null? song) (do (unless (null? t) (Tracker stop! t)) (%sd-put! s 4 ())))
-            ((if (null? t) #t (int< (%sd-get s 15) rank))
-              (do (unless (null? t) (Tracker stop! t)) (%sd-put! s 4 (%sd-tracker-make s song))))
-            (#t (Tracker song! t song)))
-          (%sd-put! s 15 rank)
+            (#t (do (unless (null? t) (Tracker stop! t)) (%sd-put! s 4 (%sd-tracker-make s song)))))
           (%sd-put! s 16 name)))))
 
 ; Whether a turn has passed on G since S last heard it: a key the game
@@ -309,15 +305,27 @@
 ; blows standing.
 (def %sd-turned? (fn (_ s g) (not (= (game-turn g) (%sd-get s 19)))))
 
+; Whether a creature on G is awake, hunting, and in sight.
+(def %sd-foes?
+  (fn (_ g)
+    (List any?
+      (fn (_ cr)
+        (match ((eq? (creature-state cr) (lit asleep)) #f)
+               ((eq? (creature-state cr) (lit wandering)) #f)
+               (#t (creatures-shown? g cr))))
+      (game-creatures g))))
+
 ; The turns left of a fight: the set's (fight-turns N) after a blow
-; struck either way, one fewer each turn without.
+; struck either way; none once no foe is left in sight, the fight won
+; or the foe gone; else one fewer each turn without a blow.
 (def %sd-fight!
   (fn (_ s g)
     (when (%sd-turned? s g)
       (%sd-put! s 17
-        (if (null? (game-blows g))
-          (if (int< 0 (%sd-get s 17)) (int- (%sd-get s 17) 1) 0)
-          (data-get (%sd-get s 0) (lit fight-turns) 8))))))
+        (match ((not (null? (game-blows g))) (data-get (%sd-get s 0) (lit fight-turns) 8))
+               ((not (%sd-foes? g)) 0)
+               ((int< 0 (%sd-get s 17)) (int- (%sd-get s 17) 1))
+               (#t 0))))))
 
 (def %sd-place!
   (fn (_ s g)
