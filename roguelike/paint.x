@@ -421,19 +421,22 @@
 ; PICTURE MODE (DX . DY)), the pixels it is drawn off its cell by, the
 ; way back to FROM still to go and its lunge; a glyph standing where a
 ; blow was struck from moved by its lunge.  The cell stays the op's, so
-; a picture keeps the variant of its cell while it moves.
+; a picture keeps the variant of its cell while it moves.  While POSED,
+; the turn's blows still shown, a tile op with a pose, (tile X Y PICTURE
+; MODE FROM POSED), is drawn as POSED, going round its pictures.
 (def %pt-motion
-  (fn (_ ops blows kb kg)
+  (fn (_ ops blows kb kg posed)
     (def gb (if (int< kg %pt-glide-frames) (Vector ref kg %pt-glide-by) 0))
     (def lb (fn (_ x y) (if (int< kb %pt-blow-frames) (%pt-lunge-at x y blows kb) ())))
     (List map
       (fn (_ op)
         (def x (List ref 1 op))
         (def y (List ref 2 op))
+        (def pose (if posed (int< 6 (List length op)) #f))
         (match
           ((if (eq? (first op) (lit tile)) (not (null? (rest (rest (rest (rest op)))))) #f)
             ((fn (_ from lunge)
-               (list (lit tile) x y (List ref 3 op) (List ref 4 op)
+               (list (lit tile) x y (if pose (List ref 6 op) (List ref 3 op)) (if pose (lit mark) (List ref 4 op))
                      (pair (int+ (if (null? from) 0 (int/ (int* gb (first from)) 16)) (if (null? lunge) 0 (first lunge)))
                            (int+ (if (null? from) 0 (int/ (int* gb (rest from)) 16)) (if (null? lunge) 0 (rest lunge))))))
              (List ref 5 op) (lb x y)))
@@ -560,7 +563,8 @@
 ; (DX . DY) to the cell it stepped from, or nil when it did not step
 ; there from a cell beside it.  A mark, (tile X Y PICTURE (WHO R . C)
 ; mark), is made MODE mark: it moves with WHO and goes round its
-; pictures.
+; pictures.  A blow's pose, (tile X Y PICTURE (WHO R . C) (pose POSED)),
+; is made (tile X Y PICTURE MODE FROM POSED).
 (def %pt-modes
   (fn (_ ops was)
     (List map
@@ -572,9 +576,12 @@
              (def dc (if (null? before) 0 (int- (rest (rest before)) (rest (rest at)))))
              (def moved (not (if (int= dr 0) (int= dc 0) #f)))
              (def beside (if (int< (int* dr dr) 2) (int< (int* dc dc) 2) #f))
-             (list (lit tile) (first (rest op)) (first (rest (rest op))) (List ref 3 op)
-                   (match ((if (int< 5 (List length op)) (eq? (List ref 5 op) (lit mark)) #f) (lit mark)) (moved (lit moving)) (#t (lit still)))
-                   (if (if moved beside #f) (pair (int* dc frame-tile-size) (int* dr frame-tile-size)) ())))
+             (def kind (if (int< 5 (List length op)) (List ref 5 op) ()))
+             (List append
+               (list (lit tile) (first (rest op)) (first (rest (rest op))) (List ref 3 op)
+                     (match ((eq? kind (lit mark)) (lit mark)) (moved (lit moving)) (#t (lit still)))
+                     (if (if moved beside #f) (pair (int* dc frame-tile-size) (int* dr frame-tile-size)) ()))
+               (if (pair? kind) (list (List ref 1 kind)) ())))
            (List ref 4 op))))
       ops)))
 ; The (WHO R . C) of each walking thing's tile op of OPS.
@@ -726,7 +733,8 @@
     (def k (Vector ref 9 p))
     (def blows ((fn (_ all) (if (int< k (%pt-blows-end all)) all ())) (%pt-blow-ops (%pt-over p))))
     ; Only a blow in hand lunges.
-    (def over (%pt-motion (%pt-over p) (List filter (fn (_ b) (null? (List ref 8 b))) blows) k (Vector ref 12 p)))
+    (def over (%pt-motion (%pt-over p) (List filter (fn (_ b) (null? (List ref 8 b))) blows) k (Vector ref 12 p)
+                              (not (null? blows))))
     (def work (Vector ref 5 p))
     (def lw (first work))
     (def lh (first (rest work)))

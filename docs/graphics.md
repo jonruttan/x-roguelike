@@ -33,6 +33,11 @@ screen's pixel, the art's scale: a line holds 52 letters.
   blind, held, hasted, slowed, seeing, hungry, weak or fainting.  A
   creature asleep has two small z letters drifting up from it, fading
   as they rise, unless the set draws a `mark-asleep`.
+- **Poses**: the player is drawn in the set's `(pose attack)` while its
+  blow is shown, in `(pose hit)` while a blow that landed on it is
+  shown (hit over attack when both), going round the pose's pictures,
+  and in `(pose dead)` once dead.  A set with no pose draws the player
+  as ever.
 - **Steps**: a thing that stepped to a cell beside it glides there
   from the cell it left, over its shadow, in about a quarter of a
   second: quick off the mark, slowing, a pixel past and back.  Its
