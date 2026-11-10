@@ -27,6 +27,17 @@ screen's pixel, the art's scale: a line holds 52 letters.
   dimmed, rock black.  Found traps and items where they were seen;
   creatures only in view; the player last.  A warm glow round the
   player stands for the lamp.
+- **The chart**: the whole level, small, in the level's bottom right
+  corner, two pixels a cell: what has been seen, brighter where in
+  view, walls lighter than the ground; the ways down and up, doors,
+  and in teal the ground beside what is not yet seen, still to
+  explore, so a chart with no teal has nothing left; the creatures in
+  view in red and the player blinking white.  It steps aside while a
+  creature stands under it.
+- **Off the screen**: a creature in view whose cell is off the screen
+  (at a close zoom the player sees further than the screen shows) has
+  a red arrowhead at the level's edge, where the line from the player
+  to it leaves the screen, pointing its way.
 - **Marks**: what a creature or the player is under is drawn over it,
   from the set's `mark-NAME` pictures, moving with it and going round
   their pictures: a creature held or slowed; the player confused,
