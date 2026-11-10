@@ -22,7 +22,7 @@ options kept between games, and the menu drawn over the dimmed level.
              (List map (fn (_ n) (options-line o n)) options-names)))
 ```
 ---
-    (('zoom 'fullscreen 'music 'effects) (2 0 80 100) 4 100 70 0 ("Zoom         2" "Fullscreen   Off" "Music        80%" "Sounds       100%"))
+    (('zoom 'fullscreen 'music 'effects 'mute) (2 0 80 100 0) 4 100 70 0 ("Zoom         2" "Fullscreen   Off" "Music        80%" "Sounds       100%" "Mute         Off"))
 
 ### kept and read back; a file missing some, or with a value out of range, takes the defaults' and the range's
 
@@ -40,7 +40,7 @@ options kept between games, and the menu drawn over the dimmed level.
              (List map (fn (_ n) (options-get (options-read path) n)) options-names)))
 ```
 ---
-    ((3 0 80 40) (2 0 100 100) (2 0 80 100))
+    ((3 0 80 40 0) (2 0 100 100 0) (2 0 80 100 0))
 
 
 ## the menu

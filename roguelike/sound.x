@@ -15,7 +15,8 @@
 ; music.  What a turn sounded like is read from the game before and after
 ; it: a step, a blow (game-blows), and every change in the player's state
 ; the set gives a cue: hurt, healed, weak, stronger, hungry, poisoned,
-; up or down the stairs, into a new band.
+; up or down the stairs, into a new band, the lamp lit, low or out.  A
+; creature the turn woke cries out, seen or not, quieter the further off.
 ;
 ; Tension, 0 to 100, is what the player has to fear: a creature awake
 ; and near, and the wounds already taken.  It quickens the music and
@@ -35,7 +36,7 @@
 (import roguelike/data data-all data-one data-get)
 (import roguelike/state game-set game-player game-depth game-map game-creatures game-pack game-over game-blows
   game-band band-name game-place game-below? game-param player-r player-c player-hp player-hpmax player-level player-gold
-  player-food player-conditions creature-r creature-c creature-state state-dist)
+  player-food player-lamp player-conditions creature-r creature-c creature-state creature-name state-dist state-ring?)
 (import roguelike/map map-tile map-terrain)
 (import roguelike/creatures creatures-shown?)
 
@@ -55,7 +56,8 @@
 ; ((KEY . (REGION . BYTES)) ...), 7 the tension, 8 the game as it was
 ; (%sd-glance), 9 the random state, 10 blocks since a collect, 11 the
 ; place the music is for, 12 the place's random sounds, 13 how loud
-; the turn's sounds are, a percentage (sound-volume!).
+; the turn's sounds are, a percentage (sound-volume!), 14 the creatures
+; as they stood (%sd-states).
 
 (def %sd-vector-type ((prim-ref (lit type) (lit of)) (Vector make 0 ())))
 (def %sd-get (fn (_ s k) (obj-ref s (int+ k 1))))
@@ -126,16 +128,22 @@
 
 ; Sound NAME played now on a turn's stream, at one of three pitches and
 ; one of three places, -1 left, 0 ahead, 1 right.
-(def %sd-play!
-  (fn (_ s name side)
+(def %sd-play! (fn (_ s name side) (%sd-play-at! s name side 100)))
+
+; Sound NAME played as %sd-play! does at PCT percent of the turn's
+; loudness, to the nearest tenth, so that a sound far off is rendered
+; at only a few loudnesses.
+(def %sd-play-at!
+  (fn (_ s name side pct)
     (def set (%sd-get s 0))
     (def f (%sd-sound set name))
-    (unless (if (null? f) #t (int< (%sd-get s 13) 1))
+    (def vol (int* 10 (int/ (int+ (int/ (int* (%sd-get s 13) pct) 100) 5) 10)))
+    (unless (if (null? f) #t (int< vol 1))
       (do (def vary (%sd-prop1 f (lit vary) 0))
           (def pick (int- (%sd-random! s 3) 1))
-          (def key (Str8 append name "/" (Str8 str pick) "/" (Str8 str side) "/" (Str8 str (%sd-get s 13))))
+          (def key (Str8 append name "/" (Str8 str pick) "/" (Str8 str side) "/" (Str8 str vol)))
           (def b (%sd-bytes s key
-                   (fn (_) (Mixer render %sd-rate (%sd-louder (%sd-voices f (int* pick vary) (int* side 55)) (%sd-get s 13))
+                   (fn (_) (Mixer render %sd-rate (%sd-louder (%sd-voices f (int* pick vary) (int* side 55)) vol)
                                      (List map rest (%sd-props f (lit echo)))))))
           (Sdl audio-put! (%sd-free-stream s) (first b) (rest b))))))
 
@@ -253,13 +261,13 @@
 ; --- a turn heard --------------------------------------------------------------
 
 ; What of G a turn's sounds are told from: (R C DEPTH HP HPMAX LEVEL
-; ITEMS GOLD FOOD CONDITIONS OVER PLACE).
+; ITEMS GOLD FOOD CONDITIONS OVER PLACE LAMP).
 (def %sd-glance
   (fn (_ g)
     (def p (game-player g))
     (list (player-r p) (player-c p) (game-depth g) (player-hp p) (player-hpmax p) (player-level p)
           (List length (game-pack g)) (player-gold p) (player-food p)
-          (List map first (player-conditions p)) (game-over g) (%sd-place-key g))))
+          (List map first (player-conditions p)) (game-over g) (%sd-place-key g) (player-lamp p))))
 
 (def %sd-cue
   (fn (_ s event side)
@@ -282,7 +290,8 @@
     (def f (%sd-named (%sd-get s 0) (lit footstep) (%sd-terrain-name g (player-r p) (player-c p))))
     (def d (%sd-named (%sd-get s 0) (lit footstep) "default"))
     (def hit (if (null? f) d f))
-    (unless (null? hit) (%sd-play! s (List ref 1 hit) 0))))
+    (unless (null? hit)
+      (%sd-play-at! s (List ref 1 hit) 0 (if (state-ring? g (lit stealth)) (data-get (%sd-get s 0) (lit stealth-steps) 40) 100)))))
 
 (def %sd-blows!
   (fn (_ s g)
@@ -295,6 +304,31 @@
           (%sd-cue s (match ((eq? how (lit miss)) (lit dodged)) (#t (lit struck))) (%sd-side (player-c p) (List ref 2 b)))
           (%sd-cue s how (%sd-side (player-c p) (List ref 4 b)))))
       (game-blows g))))
+
+; G's creatures and how each stands, ((CREATURE . STATE) ...).
+(def %sd-states (fn (_ g) (List map (fn (_ cr) (pair cr (creature-state cr))) (game-creatures g))))
+
+; The cry of each creature asleep in WAS, G's creatures before the turn
+; (%sd-states), that the turn woke, seen or not: the set's (cry KIND
+; SOUND), or its (cry "default" SOUND), quieter by (cry-falloff PCT) a
+; cell away, unheard when that comes to nothing.
+(def %sd-cries!
+  (fn (_ s g was)
+    (def set (%sd-get s 0))
+    (def p (game-player g))
+    (def fall (data-get set (lit cry-falloff) 8))
+    (List for-each
+      (fn (_ w)
+        (def cr (first w))
+        (when (if (eq? (rest w) (lit asleep))
+                (if (eq? (creature-state cr) (lit asleep)) #f (List any? (fn (_ x) (same? x cr)) (game-creatures g)))
+                #f)
+          (do (def c (%sd-for set (lit cry) (creature-name cr)))
+              (def d (state-dist (player-r p) (player-c p) (creature-r cr) (creature-c cr)))
+              (def pct (int- 100 (int* fall (int- d 1))))
+              (unless (if (null? c) #t (int< pct 1))
+                (%sd-play-at! s (List ref 1 c) (%sd-side (player-c p) (creature-c cr)) pct)))))
+      was)))
 
 (def %sd-changed!
   (fn (_ s g was now)
@@ -320,6 +354,12 @@
     (unless (List all? (fn (_ c) (List includes? c (at was 9))) (at now 9)) (%sd-cue s (lit afflicted) 0))
     (unless (List all? (fn (_ c) (List includes? c (at now 9))) (at was 9)) (%sd-cue s (lit relieved) 0))
     (unless (str=? (at was 11) (at now 11)) (%sd-cue s (lit arrived) 0))
+    (def lamp (game-param g (lit lamp) ()))
+    (unless (null? lamp)
+      (match ((if (int< (at was 12) 1) (int< 0 (at now 12)) #f) (%sd-cue s (lit lamp-lit) 0))
+             ((if (int< 0 (at was 12)) (int< (at now 12) 1) #f) (%sd-cue s (lit lamp-out) 0))
+             ((if (int< (List ref 1 lamp) (at was 12)) (not (int< (List ref 1 lamp) (at now 12))) #f) (%sd-cue s (lit lamp-low) 0))
+             (#t ())))
     (when (if (null? (at was 10)) (not (null? (at now 10))) #f)
       (do (%sd-cue s (if (eq? (at now 10) (lit won)) (lit won) (lit died)) 0)
           (unless (null? (%sd-get s 4)) (Tracker stop! (%sd-get s 4)))))))
@@ -339,8 +379,8 @@
             (def m (Mixer make %sd-rate %sd-block))
             (Mixer gain! m (data-get set (lit music-gain) 80))
             (List for-each (fn (_ e) (Mixer echo! m (List ref 0 e) (List ref 1 e) (List ref 2 e))) (data-all set (lit music-echo)))
-            (def s (obj-make %sd-vector-type 15))
-            (obj-set! s 0 14)
+            (def s (obj-make %sd-vector-type 16))
+            (obj-set! s 0 15)
             (%sd-put! s 0 set)
             (%sd-put! s 1 m)
             (%sd-put! s 2 (Sdl audio-open %sd-rate 2))
@@ -355,6 +395,7 @@
             (%sd-put! s 11 "")
             (%sd-put! s 12 ())
             (%sd-put! s 13 100)
+            (%sd-put! s 14 (%sd-states g))
             (%sd-tension! s g)
             (%sd-place! s g)
             (Mixer source! m (%sd-heart s) 0)
@@ -390,6 +431,8 @@
       (do (def now (%sd-glance g))
           (%sd-changed! s g (%sd-get s 8) now)
           (%sd-put! s 8 now)
+          (%sd-cries! s g (%sd-get s 14))
+          (%sd-put! s 14 (%sd-states g))
           (%sd-tension! s g)
           (%sd-place! s g)
           (sound-pump! s)))))
@@ -403,10 +446,14 @@
       (do (Mixer gain! (%sd-get s 1) (int/ (int* music (data-get (%sd-get s 0) (lit music-gain) 80)) 100))
           (%sd-put! s 13 effects)))))
 
+; The set's cue for EVENT played now, ahead: what the window plays for
+; what is no turn, a change of loudness.
+(def sound-cue! (fn (_ s event) (unless (null? s) (%sd-cue s event 0))))
+
 (def sound-close
   (fn (_ s)
     (unless (null? s)
       (do (Sdl audio-close (%sd-get s 2))
           (List for-each (fn (_ st) (Sdl audio-close st)) (%sd-get s 3))))))
 
-(provide roguelike/sound sound-make sound-pump! sound-collect? sound-turn! sound-volume! sound-close)
+(provide roguelike/sound sound-make sound-pump! sound-collect? sound-turn! sound-volume! sound-cue! sound-close)
