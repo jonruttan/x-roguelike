@@ -218,3 +218,25 @@ takes, a wall in parts by its neighbours, and the camera on the player.
 ```
 ---
     (() 'attack 'hit 'dead 5)
+
+## the chart
+
+### the whole level a byte a cell; the player's cell in view, or the way up it came down; the creatures shown, none till they are seen
+
+```roguelike
+(import roguelike/frame frame-chart)
+(import roguelike/map map-rows map-cols)
+(def g (spec-game-on (spec-set-named "delve") 3 ()))
+(def m (game-map g))
+(def pl (game-player g))
+(def ch (frame-chart g))
+(def code (fn (_ r c) (str-byte-ref (List ref 3 ch) (+ (* r (map-cols m)) c))))
+(def unseen (List length (List filter (fn (_ i) (= 0 (str-byte-ref (List ref 3 ch) i))) (List range 0 (* (map-rows m) (map-cols m))))))
+(player-condition! pl 'seeing 50)
+(write (list (first ch) (= (List ref 1 ch) (map-rows m)) (= (List ref 2 ch) (map-cols m))
+             (equal? (List ref 4 ch) (pair (player-r pl) (player-c pl)))
+             (List any? (fn (_ n) (= n (code (player-r pl) (player-c pl)))) '(2 6 8))
+             (< 0 unseen) (null? (List ref 5 ch)) (pair? (List ref 5 (frame-chart g)))))
+```
+---
+    ('chart #t #t #t #t #t #t #t)

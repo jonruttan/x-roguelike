@@ -524,19 +524,20 @@
   (fn (_ p) (do (Vector set! 9 (int+ 1 (Vector ref 9 p)) p) (Vector set! 12 (int+ 1 (Vector ref 12 p)) p) p)))
 
 ; A painter: [SCREEN LAYER FONT SCENE PANEL WORK ZOOM WHERE SHOWN BLOW
-; TOP STANDING GLIDE], the scene the last turn's, the panel the art's
+; TOP STANDING GLIDE CHART], the scene the last turn's, the panel the art's
 ; nine-piece picture (a tile form) or nil, WORK the level drawn and lit
 ; at the tile's size before it is shown at ZOOM, LAYER and WORK the
 ; view's size; WHERE each walking thing's (WHO R . C) on the last turn,
 ; SHOWN the tick that turn was first shown at, or -1 before it is; BLOW
 ; the frame the turn's blows are shown at; TOP and STANDING the strips
 ; the messages and the standing are drawn on, TOP a pair: two lines and
-; three; GLIDE the frame the turn's steps are shown at.
+; three; GLIDE the frame the turn's steps are shown at; CHART the
+; turn's chart, (CANVAS . OP), or nil.
 (def paint-make
   (fn (_ font)
     (paint-zoom! (Vector of (Canvas make paint-width paint-height) () font () () () 0 () -1 %pt-blow-frames
                             (pair (Canvas make %pt-strip-w %pt-top-h) (Canvas make %pt-strip-w (int+ %pt-top-h %pt-pitch)))
-                            (Canvas make %pt-strip-w %pt-stand-h) %pt-glide-frames)
+                            (Canvas make %pt-strip-w %pt-stand-h) %pt-glide-frames ())
                  paint-zoom-first)))
 (def paint-screen (fn (_ p) (Vector ref 0 p)))
 (def %pt-over (fn (_ p) (rest (rest (Vector ref 3 p)))))
@@ -606,6 +607,7 @@
     (Vector set! 4 (frame-named a (lit panel) 0) p)
     (Vector set! 9 0 p)
     (Vector set! 12 0 p)
+    (Vector set! 13 ((fn (_ op) (if (null? op) () (%pt-chart op))) (List find (fn (_ op) (eq? (first op) (lit chart))) over)) p)
     p))
 
 ; TEXT in lines of at most N letters, broken at a space.
@@ -753,10 +755,133 @@
     (%pt-sleeps! work over frame-level-y tick font)
     (%pt-blows! work over blows k frame-level-y font)
     (Canvas nine! s 0 paint-level-y (int* zoom lw) (int* zoom lh) work 0 0 0 0)
+    (%pt-chart! s (Vector ref 13 p) zoom tick)
     (%pt-top! s (Vector ref 10 p) font (draw-top g) (not (null? (game-ask g))))
     (%pt-standing! s (Vector ref 11 p) font (draw-standing g))
     (%pt-overlay! s (Vector ref 4 p) font (draw-overlay g))
     s))
+
+; --- the chart ----------------------------------------------------------------
+
+; The whole level, small, in the level's bottom right corner: a cell
+; %pt-chart-cell pixels square in a rim a pixel wide, each cell in the
+; ink of what is known of it (frame-chart's codes), the creatures shown
+; red, the player blinking white.
+(def %pt-chart-cell 2)
+(def %pt-chart-gap 6)
+(def %pt-chart-inks
+  (Vector of (list 10 9 8 200) (list 70 62 52 235) (list 112 102 86 245) (list 130 118 100 245)
+             (list 196 182 156 255) (list 255 224 110 255) (list 170 196 255 255) (list 168 112 64 255)
+             (list 96 200 176 255)))
+(def %pt-chart-rim (list 92 80 64 255))
+(def %pt-chart-who (list 230 80 60 255))
+(def %pt-chart-me (list 255 255 255 255))
+
+; The chart of chart op OP, (chart ROWS COLS BYTES (PR . PC) ((R . C)
+; ...)), drawn once a turn: (CANVAS . OP).
+(def %pt-chart
+  (fn (_ op)
+    (def rows (List ref 1 op))
+    (def cols (List ref 2 op))
+    (def bp (str->ptr (List ref 3 op)))
+    (def k %pt-chart-cell)
+    (def c (Canvas make (int+ 2 (int* k cols)) (int+ 2 (int* k rows))))
+    (%pt-fill! Canvas c 0 0 (first c) (first (rest c)) %pt-chart-rim)
+    ((fn (self i n)
+       (when (int< i n)
+         (do (%pt-fill! Canvas c (int+ 1 (int* k (int% i cols))) (int+ 1 (int* k (int/ i cols))) k k
+               (Vector ref (ptr-ref bp i 1) %pt-chart-inks))
+             (self (int+ i 1) n))))
+     0 (int* rows cols))
+    (List for-each (fn (_ at) (%pt-fill! Canvas c (int+ 1 (int* k (rest at))) (int+ 1 (int* k (first at))) k k %pt-chart-who))
+      (List ref 5 op))
+    (pair c op)))
+
+; Whether Q, (X . Y), lies in the rectangle X Y W H.
+(def %pt-inside?
+  (fn (_ q x y w h)
+    (if (int< (first q) x) #f (if (int< (rest q) y) #f (if (int< (first q) (int+ x w)) (int< (rest q) (int+ y h)) #f)))))
+
+; The chart CH, (CANVAS . OP) or nil, drawn on screen S at ZOOM and
+; TICK: in the corner unless a creature shown stands under it there;
+; and, for each creature shown whose middle is off the level's area, a
+; pointer toward it.
+(def %pt-chart!
+  (fn (_ s ch zoom tick)
+    (unless (null? ch)
+      (do (def op (rest ch))
+          (def t (int* frame-tile-size zoom))
+          (def at (List ref 4 op))
+          ; The player's middle: the camera keeps it in the view's middle cell.
+          (def x0 (int+ (int* t (int/ (frame-view-cols) 2)) (int/ t 2)))
+          (def y0 (int+ paint-level-y (int+ (int* t (int/ (frame-view-rows) 2)) (int/ t 2))))
+          (def places (List map (fn (_ q) (pair (int+ x0 (int* t (int- (rest q) (rest at)))) (int+ y0 (int* t (int- (first q) (first at))))))
+                        (List ref 5 op)))
+          (def w (first (first ch)))
+          (def h (first (rest (first ch))))
+          (def cx (int- paint-width (int+ w %pt-chart-gap)))
+          (def cy (int- %pt-stand-y (int+ h %pt-chart-gap)))
+          (unless (List any? (fn (_ q) (%pt-inside? q cx cy w h)) places)
+            (do (%pt-blend! Canvas s cx cy (first ch) 0 0 w h)
+                (when (int< (int% tick 8) 5)
+                  (%pt-fill! Canvas s (int+ cx (int+ 1 (int* %pt-chart-cell (rest at)))) (int+ cy (int+ 1 (int* %pt-chart-cell (first at))))
+                    %pt-chart-cell %pt-chart-cell %pt-chart-me))))
+          (List for-each
+            (fn (_ q) (unless (%pt-inside? q 0 paint-level-y paint-width %pt-area-h) (%pt-pointer! s x0 y0 q tick)))
+            places)))))
+
+; A pointer on screen S from X0 Y0, the player's middle, toward Q, (X .
+; Y), off the level's area: a red arrowhead %pt-pointer-in pixels inside
+; the area's edge where the line to Q leaves it, nodding toward Q.
+(def %pt-pointer-in 12)
+(def %pt-pointer-ink (list 230 80 60))
+(def %pt-nod (Vector of 0 1 2 1))
+(def %pt-abs (fn (_ n) (if (int< n 0) (int- 0 n) n)))
+(def %pt-least (fn (_ a b) (if (int< a b) a b)))
+; Of the way (D . E), D's part of the nearest of the eight ways, in
+; tenths: 10, 7 on a diagonal, or 0, signed.
+(def %pt-unit
+  (fn (_ d e)
+    (def a (%pt-abs d))
+    (def b (%pt-abs e))
+    (if (int< (int* a 5) (int* b 2)) 0 (int* (%pt-sign d) (if (int< (int* b 5) (int* a 2)) 10 7)))))
+; The share of D, in 1024ths, that takes O to LO or HI the way D goes.
+(def %pt-reach
+  (fn (_ d lo hi o)
+    (match ((int< 0 d) (int/ (int* (int- hi o) 1024) d)) ((int< d 0) (int/ (int* (int- lo o) 1024) d)) (#t 1024))))
+(def %pt-pointer!
+  (fn (_ s x0 y0 q tick)
+    (def dx (int- (first q) x0))
+    (def dy (int- (rest q) y0))
+    (def f (%pt-least (%pt-least 1024 (%pt-reach dx %pt-pointer-in (int- paint-width %pt-pointer-in) x0))
+                      (%pt-reach dy (int+ paint-level-y %pt-pointer-in) (int- %pt-stand-y %pt-pointer-in) y0)))
+    (def ux (%pt-unit dx dy))
+    (def uy (%pt-unit dy dx))
+    (def nod (Vector ref (int% (int/ tick 2) 4) %pt-nod))
+    (def x (int+ (int+ x0 (int/ (int* dx f) 1024)) (int/ (int* ux nod) 10)))
+    (def y (int+ (int+ y0 (int/ (int* dy f) 1024)) (int/ (int* uy nod) 10)))
+    (%pt-arrow! s x y ux uy 1 %pt-black)
+    (%pt-arrow! s x y ux uy 0 %pt-pointer-ink)))
+
+; An arrowhead on S at X Y pointing along (UX . UY), in tenths, grown by
+; G pixels all round, in INK: its tip 5 pixels ahead, its base 3 behind
+; and 10 across.  A row at a time.
+(def %pt-arrow!
+  (fn (_ s x y ux uy g ink)
+    (def r (int+ 6 (int* 2 g)))
+    (def tip (int+ 50 (int* 14 g)))
+    (def base (int- -30 (int* 10 g)))
+    (List for-each
+      (fn (_ v)
+        (def us (List filter
+                  (fn (_ u)
+                    (def a (int+ (int* u ux) (int* v uy)))
+                    (if (int< a base) #f
+                      (if (int< tip a) #f (not (int< (int* (int- tip a) 5) (int* (%pt-abs (int- (int* v ux) (int* u uy))) 8))))))
+                  (List range (int- 0 r) (int+ r 1))))
+        (unless (null? us)
+          (%pt-fill! Canvas s (int+ x (first us)) (int+ y v) (int+ 1 (int- (List last us) (first us))) 1 ink)))
+      (List range (int- 0 r) (int+ r 1)))))
 
 ; --- menus --------------------------------------------------------------------
 
