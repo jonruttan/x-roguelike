@@ -49,8 +49,8 @@
 (import x/num/float)
 (import roguelike/data data-load data-all data-one data-prop data-prop1 data-trait?)
 (import roguelike/state state-covers?)
-(import roguelike/odds odds-hit odds-mid odds-kill odds-hurt)
-(import roguelike/combat combat-str-bonus combat-chill)
+(import roguelike/odds odds-hit odds-mid odds-kill odds-hurt odds-aim)
+(import roguelike/combat combat-str-bonus combat-chill combat-dazzle)
 
 (def %md-env
   (fn (_ name default)
@@ -95,12 +95,16 @@
     (def sizes (%md-upto pack))
     (/ (%md-f (List length (List filter (fn (_ n) (< k n)) sizes))) (List length sizes))))
 
+(def %md-speed (fn (_ kind) (match ((data-trait? kind (lit fast)) (lit fast)) ((data-trait? kind (lit slow)) (lit slow)) (#t ()))))
 ; Hurt a turn from KIND beside a player of DEFENCE.
 (def %md-hurt
   (fn (_ kind defence)
-    (odds-hurt (data-prop1 kind (lit level) 1) (data-prop kind (lit attack) (list 1 2)) defence
-               (match ((data-trait? kind (lit fast)) (lit fast)) ((data-trait? kind (lit slow)) (lit slow)) (#t ()))
+    (odds-hurt (data-prop1 kind (lit level) 1) (data-prop kind (lit attack) (list 1 2)) defence (%md-speed kind)
                (if (data-trait? kind (lit cold)) combat-chill 0))))
+; The share of the player's swings that reach KIND, at DEFENCE.
+(def %md-aim
+  (fn (_ kind defence)
+    (odds-aim (data-prop1 kind (lit level) 1) defence (%md-speed kind) (if (data-trait? kind (lit dazzle)) combat-dazzle 0))))
 
 ; --- a level's creatures and items ----------------------------------------------
 
@@ -258,8 +262,9 @@
     (def kh (data-prop kind (lit hp) (list 1 6)))
     (def you (%md-hit (List ref 2 who) (data-prop1 kind (lit defence) 3)))
     (def armour (if (null? (List ref 1 gear)) 0 (data-prop1 (List ref 1 gear) (lit armour) 0)))
-    (def t-bare (%md-kill you (List ref 3 who) bonus kh))
-    (def t-armed (if (null? (first gear)) t-bare (%md-kill you (data-prop (first gear) (lit damage) (list 1 2)) bonus kh)))
+    (def t-bare (/ (%md-kill you (List ref 3 who) bonus kh) (%md-aim kind 0)))
+    (def t-armed (/ (if (null? (first gear)) (%md-kill you (List ref 3 who) bonus kh) (%md-kill you (data-prop (first gear) (lit damage) (list 1 2)) bonus kh))
+                    (%md-aim kind armour)))
     (def one-bare (* (%md-hurt kind 0) t-bare))
     (def one-armed (* (%md-hurt kind armour) t-armed))
     (def open (fn (_ one) (%md-most (fn (_ k) (/ (* one (* k (+ k 1))) 2)) hp)))
@@ -286,7 +291,7 @@
     (%md-head set depth who gear)
     (%md-level-lines set depth kinds)
     (%md-titles)
-    (List for-each (fn (_ k) (%md-kind-row set depth k who gear rung)) kinds)
+    (List for-each (fn (_ k) (%md-kind-row set depth k who gear rung) (Heap collect)) kinds)
     (unless (null? guardian) (%md-kind-row set depth guardian who gear (%md-rung set (+ i 1))))
     (%md-line "")))
 

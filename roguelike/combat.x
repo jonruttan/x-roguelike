@@ -12,8 +12,8 @@
 ; creature's (attack LO HI).  A weapon that asks more strength than the
 ; player has lands five less a point short.  A blow on a sleeper always
 ; lands, and does the set's (surprise N) times the damage.  A
-; creature's traits act when its blow lands: venom weakens, sticky
-; holds, dazzle confuses, cold slows, drain takes vigour, thief takes a
+; creature's traits act when its blow lands: venom weakens and dazzle
+; confuses, each three blows in ten, sticky holds, cold slows, drain takes vigour, thief takes a
 ; thing from the pack and runs.
 
 (module roguelike/combat)
@@ -142,6 +142,10 @@
 ; The turns a cold blow slows the player; slowed, every creature acts
 ; twice a turn (game.x).
 (def combat-chill 4)
+; The turns a dazzling blow confuses the player, and the percentage of
+; blows that do.
+(def combat-dazzle 4)
+(def combat-dazzle-chance 30)
 
 ; CR's traits, after its blow lands.
 (def %cb-trait!
@@ -151,7 +155,9 @@
     (match
       ((eq? trait (lit venom)) (when (state-chance? rng 30) (%cb-weaken! g 1)))
       ((eq? trait (lit sticky)) (do (player-condition! p (lit held) 3) (state-tell! g (lit held) "You are held fast!" ())))
-      ((eq? trait (lit dazzle)) (do (player-condition! p (lit confused) 4) (state-tell! g (lit dazzled) "Your head swims." ())))
+      ((eq? trait (lit dazzle))
+        (when (state-chance? rng combat-dazzle-chance)
+          (do (player-condition! p (lit confused) combat-dazzle) (state-tell! g (lit dazzled) "Your head swims." ()))))
       ((eq? trait (lit cold)) (do (player-condition! p (lit slowed) combat-chill) (state-tell! g (lit chilled) "A chill slows your limbs." ())))
       ((eq? trait (lit drain))
         (when (< 5 (player-hpmax p))
@@ -174,4 +180,4 @@
           (combat-hurt-player! g n (Str8 append "killed by a " (creature-name cr)))))))
 
 (provide roguelike/combat
-  combat-chance combat-hit? combat-chill combat-str-bonus combat-player-dice combat-player-level combat-exp-for combat-kill! combat-player-attacks! combat-hurt-player! combat-creature-attacks!)
+  combat-chance combat-hit? combat-chill combat-dazzle combat-dazzle-chance combat-str-bonus combat-player-dice combat-player-level combat-exp-for combat-kill! combat-player-attacks! combat-hurt-player! combat-creature-attacks!)
