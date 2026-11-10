@@ -126,14 +126,14 @@ each the art's size, held TICKS a picture.
 ---
     (() 159)
 
-### town's art is whole, the town's walls and setts with it
+### town's art is whole, the town's walls, setts and roofs with it
 
 ```roguelike
 (def art (data-load "data/town/art"))
 (write (list (art-problems (spec-set-named "town") art) (List length (data-all art 'tile))))
 ```
 ---
-    (() 59)
+    (() 66)
 
 
 ## the font

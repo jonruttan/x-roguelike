@@ -12,7 +12,7 @@
 ; placed, what the set made sure of,
 ; the chain, the choices it was played with, the level's traps by
 ; their kind's name, its tiles and seen flags as strings of digits, its
-; rooms, named places and stairs; then, in a world of screens, the
+; rooms, named places, roofs and stairs; then, in a world of screens, the
 ; doors laid, the interior stood in, the regions stood in through doors,
 ; each with the screen and depth at its door, whose the level in hand
 ; then is, and each other level kept, screen or interior, after
@@ -28,12 +28,13 @@
 (import x/sys/posix)
 (import x/sys/file)
 (import x/codec/xon)
+(import x/core/doors int/)
 (import roguelike/data data-all data-region data-prop data-choices data-chosen data-choose)
 (import roguelike/items items-page-named)
 (import roguelike/traps trap-make trap-r trap-c trap-name trap-found?)
 (import roguelike/map
   map-make map-rows map-cols map-tile map-set! map-seen? map-seen! map-rooms map-rooms! map-places map-places! map-down map-down!
-  map-up map-up! map-each! map-light!)
+  map-up map-up! map-each! map-light! map-roofs? map-roof-at map-roof!)
 (import roguelike/state
   game-set game-depth game-depth! game-map game-map! game-player game-creatures game-creatures!
   game-floor game-floor! game-pack game-pack! game-turn game-turn! game-clock game-clock! game-known game-known! game-told game-told! game-deepest
@@ -76,6 +77,16 @@
     (map-each! 0 0 (- rows 1) (- cols 1)
       (fn (_ r c) (Vector set! 0 (pair (+ 48 (if flag? (if (map-seen? m r c) 1 0) (map-tile m r c))) (Vector ref 0 out)) out)))
     (bytes->str (List reverse (Vector ref 0 out)))))
+; M's roofs, two characters a cell from "0" up, sixteen to each: the
+; cell's roof over 16, then what is left.
+(def %sv-roofs
+  (fn (_ m)
+    (def out (Vector of ()))
+    (map-each! 0 0 (- (map-rows m) 1) (- (map-cols m) 1)
+      (fn (_ r c)
+        (def id (map-roof-at m r c))
+        (Vector set! 0 (pair (+ 48 (% id 16)) (pair (+ 48 (int/ id 16)) (Vector ref 0 out))) out)))
+    (bytes->str (List reverse (Vector ref 0 out)))))
 (def %sv-worn
   (fn (_ p)
     (list (lit worn)
@@ -111,6 +122,7 @@
     (List append
       (list (list (lit level) (map-rows m) (map-cols m) (%sv-digits m #f) (%sv-digits m #t))
             (pair (lit stairs) (List append (%sv-at (map-down m)) (%sv-at (map-up m)))))
+      (if (map-roofs? m) (list (list (lit roofs) (%sv-roofs m))) ())
       (List map (fn (_ room) (list (lit room) (List ref 0 room) (List ref 1 room) (List ref 2 room) (List ref 3 room) (if (List ref 4 room) 1 0))) (map-rooms m))
       (List map (fn (_ place) (pair (lit place) place)) (map-places m))
       (List map (fn (_ it) (%sv-item (lit floor) it)) items)
@@ -207,6 +219,14 @@
     (%sv-digits! m (List ref 3 args) #t)
     (map-rooms! m (List map (fn (_ r) (list (List ref 0 r) (List ref 1 r) (List ref 2 r) (List ref 3 r) (= 1 (List ref 4 r)))) (%sv-all forms (lit room))))
     (map-places! m (%sv-all forms (lit place)))
+    ((fn (_ text)
+       (unless (null? text)
+         (map-each! 0 0 (- (map-rows m) 1) (- (map-cols m) 1)
+           (fn (_ r c)
+             (def i (* 2 (+ (* r (map-cols m)) c)))
+             (def id (+ (* 16 (- (Char ->int (Str8 ref i text)) 48)) (- (Char ->int (Str8 ref (+ i 1) text)) 48)))
+             (when (< 0 id) (map-roof! m r c id))))))
+     ((fn (_ f) (if (null? f) () (first f))) (%sv-one forms (lit roofs))))
     (def st (%sv-one forms (lit stairs)))
     (unless (< (List ref 0 st) 0) (map-down! m (pair (List ref 0 st) (List ref 1 st))))
     (unless (< (List ref 2 st) 0) (map-up! m (pair (List ref 2 st) (List ref 3 st))))

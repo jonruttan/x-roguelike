@@ -7,6 +7,7 @@
 (glyph wall "#")
 (glyph door "+")
 (glyph passage ".")
+(glyph roof "^")
 (glyph down ">")
 (glyph up "<")
 (glyph player "@")

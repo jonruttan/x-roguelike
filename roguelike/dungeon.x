@@ -23,7 +23,7 @@
 (import roguelike/map
   tile-rock tile-floor tile-wall tile-door tile-passage tile-down tile-up
   tile-water tile-pillar tile-fall tile-dressed tile-hedge tile-gate tile-thicket tile-edge tile-bog tile-scar
-  map-make map-rows map-cols map-rooms map-rooms! map-places! map-down map-down! map-up!
+  map-make map-rows map-cols map-rooms map-rooms! map-places! map-down map-down! map-up! map-roof! map-terrain
   map-tile map-set! map-in? map-passable? map-opaque? room-r0 room-c0 room-r1 room-c1 room-centre map-each!
   map-fill-unreached!)
 (import roguelike/scale scale-rung scale-across scale-down scale-area)
@@ -311,43 +311,57 @@
 ; door in its front or its back, onto the street.  Two cells round the
 ; edge are street, and the (square W H) metres in the middle is left
 ; clear, a cell of street round it.  The buildings the level names,
-; (building NAME (size W D) . PROPS), are laid from their plans round
-; the square, each walled, its door toward the square, and kept as the
+; (building NAME (size W D) . PROPS) or (building NAME (plan "ROW" ...)
+; . PROPS), are laid round the square, one of a size walled with its
+; door toward the square, one of a plan as it is drawn, and kept as the
 ; level's named places; the terraces keep off the square and the
 ; buildings round it.  A terrace too shallow at its scale
 ; for a room inside its walls is drawn solid, each house a door in its
-; front or its back.  No rooms and no stairs: a screen is left by its
-; edges.
+; front or its back.  Every building and every house is under a roof
+; (see map.x).  No rooms and no stairs: a screen is left by its edges.
+
+; A roof is a number, 1 to 255, a building: IDS counts those given, and
+; past 255 they come round again.
+(def %dg-roof-id
+  (fn (_ ids)
+    (def n (Vector ref 0 ids))
+    (Vector set! 0 (+ n 1) ids)
+    (+ 1 (% n 255))))
+; Every cell from R0 C0 to R1 C1 under the roof ID.
+(def %dg-roof! (fn (_ m r0 c0 r1 c1 id) (map-each! r0 c0 r1 c1 (fn (_ r c) (map-roof! m r c id)))))
 
 ; The houses of the terrace walled from R0 C0 to R1 C1, from column X:
-; a wall at the end of each but the last, and each a door.
+; a wall at the end of each but the last, each a door, and each under a
+; roof of its own, the wall it shares its neighbour's.
 (def %dg-houses!
-  (fn (self rng m r0 c0 r1 c1 x width)
+  (fn (self rng m r0 c0 r1 c1 x width ids)
     (def w (+ x (%dg-draw rng width)))
     (def end (if (< (- c1 3) w) c1 w))
     (when (< end c1) (map-each! (+ r0 1) end (- r1 1) end (fn (_ r c) (map-set! m r c tile-wall))))
     (map-set! m (if (rng bool) r0 r1) (%dg-roll rng (+ x 1) (- end 1)) tile-door)
-    (when (< end c1) (self rng m r0 c0 r1 c1 end width))))
+    (%dg-roof! m r0 x r1 (if (< end c1) (- end 1) c1) (%dg-roof-id ids))
+    (when (< end c1) (self rng m r0 c0 r1 c1 end width ids))))
 ; The houses of the solid terrace from R0 C0 to R1 C1, from column X:
-; each a door.
+; each a door, and a roof.
 (def %dg-fronts!
-  (fn (self rng m r0 r1 x c1 width)
+  (fn (self rng m r0 r1 x c1 width ids)
     (unless (< c1 x)
       (do (def end (%dg-min c1 (+ x (- (%dg-draw rng width) 1))))
           (map-set! m (if (rng bool) r0 r1) (%dg-roll rng x end) tile-door)
-          (self rng m r0 r1 (+ end 1) c1 width)))))
+          (%dg-roof! m r0 x r1 end (%dg-roof-id ids))
+          (self rng m r0 r1 (+ end 1) c1 width ids)))))
 (def %dg-terrace!
-  (fn (_ rng m r0 c0 r1 c1 width)
+  (fn (_ rng m r0 c0 r1 c1 width ids)
     (when (< 4 (- c1 c0))
       (if (< (- r1 r0) 2)
         (do (%dg-fill! m r0 c0 r1 c1 tile-wall)
-            (%dg-fronts! rng m r0 r1 c0 c1 width))
+            (%dg-fronts! rng m r0 r1 c0 c1 width ids))
         (do (%dg-carve-room! m (list r0 c0 r1 c1 #f))
-            (%dg-houses! rng m r0 c0 r1 c1 c0 (pair (%dg-max 2 (first width)) (%dg-max 2 (rest width)))))))))
+            (%dg-houses! rng m r0 c0 r1 c1 c0 (pair (%dg-max 2 (first width)) (%dg-max 2 (rest width))) ids))))))
 ; A row of terraces from R0 to R1, from column C, kept off the columns
 ; SC0 to SC1 when SQUARE? (the row reaches the square).
 (def %dg-terraces!
-  (fn (self rng m params scale r0 r1 c square? sc0 sc1)
+  (fn (self rng m params scale r0 r1 c square? sc0 sc1 ids)
     (def last (- (map-cols m) 3))
     (when (< (+ c 4) last)
       (do (def len (%dg-across params scale (lit terrace-length) 14 28))
@@ -355,20 +369,69 @@
           (def width (%dg-across params scale (lit house-width) 4 8))
           (def lane (%dg-across params scale (lit lane) 1 3))
           (if (if square? (if (< c (+ sc1 2)) (< (- sc0 2) e) #f) #f)
-            (do (%dg-terrace! rng m r0 c r1 (- sc0 2) width)
-                (self rng m params scale r0 r1 (+ sc1 2) square? sc0 sc1))
-            (do (%dg-terrace! rng m r0 c r1 e width)
-                (self rng m params scale r0 r1 (+ e (+ 1 (%dg-draw rng lane))) square? sc0 sc1)))))))
-; The buildings PARAMS names, (building NAME (size W D) . PROPS), W
-; metres along and D deep, walls and all, each as (NAME W . D) in cells
-; at SCALE, three at least each way so there is a floor inside.
+            (do (%dg-terrace! rng m r0 c r1 (- sc0 2) width ids)
+                (self rng m params scale r0 r1 (+ sc1 2) square? sc0 sc1 ids))
+            (do (%dg-terrace! rng m r0 c r1 e width ids)
+                (self rng m params scale r0 r1 (+ e (+ 1 (%dg-draw rng lane))) square? sc0 sc1 ids)))))))
+
+; A building's plan, (plan "ROW" ...), is drawn a character a cell: #
+; a wall, . a floor, + a door, a blank no part of it, and any other
+; character the kind of terrain a (cell "C" KIND) names, the building's
+; own before the level's.  A cell is under the building's roof unless
+; its (cell "C" KIND open) says it is open to the sky: a yard, a race.
+; The cells FORMS name, (CHAR CODE ROOFED?) each, the three above last.
+(def %dg-legend
+  (fn (_ forms)
+    (def code
+      (fn (_ f)
+        (def t (List find (fn (_ t) (eq? (List ref 1 t) (List ref 2 f))) map-terrain))
+        (if (null? t) (Err raise (lit arg) "a plan's cell is a kind of terrain" f) (first t))))
+    (List append
+      (List map (fn (_ f) (list (List ref 1 f) (code f) (not (List any? (fn (_ x) (eq? x (lit open))) (rest (rest (rest f)))))))
+        (List filter (fn (_ f) (if (pair? f) (eq? (first f) (lit cell)) #f)) forms))
+      (list (list "#" tile-wall #t) (list "." tile-floor #t) (list "+" tile-door #t)))))
+; A plan's ROW as its cells, (CODE ROOFED?) each, nil for a blank.
+(def %dg-plan-row
+  (fn (_ legend row)
+    (List map
+      (fn (_ j)
+        (def ch (Str8 sub j 1 row))
+        (if (str=? ch " ") ()
+          ((fn (_ hit) (if (null? hit) (Err raise (lit arg) "a plan's character is #, ., +, a blank or a (cell ...)" ch) (rest hit)))
+           (List find (fn (_ l) (str=? (first l) ch)) legend))))
+      (List range 0 (Str8 length row)))))
+; The buildings PARAMS names, each (NAME W H PLAN) in cells at SCALE:
+; (building NAME (size W D) . PROPS), W metres along and D deep, walls
+; and all, three cells at least each way so there is a floor inside,
+; its PLAN nil; or (building NAME (plan "ROW" ...) . PROPS), as wide as
+; its longest row and as deep as its rows, PLAN its rows of cells.
 (def %dg-buildings
   (fn (_ params scale)
     (List map
       (fn (_ b)
-        (def size ((fn (_ s) (if (null? s) (list 10 8) (rest s))) (Assoc find (lit size) (rest (rest b)))))
-        (pair (List ref 1 b) (pair (%dg-max 3 (scale-across scale (first size))) (%dg-max 3 (scale-down scale (List ref 1 size))))))
+        (def props (rest (rest b)))
+        (def plan (Assoc find (lit plan) props))
+        (def size ((fn (_ s) (if (null? s) (list 10 8) (rest s))) (Assoc find (lit size) props)))
+        (if (null? plan)
+          (list (List ref 1 b) (%dg-max 3 (scale-across scale (first size))) (%dg-max 3 (scale-down scale (List ref 1 size))) ())
+          ((fn (_ rows) (list (List ref 1 b) (List fold (fn (_ w row) (%dg-max w (List length row))) 1 rows) (List length rows) rows))
+           ((fn (_ legend) (List map (fn (_ row) (%dg-plan-row legend row)) (rest plan))) (%dg-legend (List append props params))))))
       (List filter (fn (_ f) (if (pair? f) (eq? (first f) (lit building)) #f)) params))))
+; The PLAN's cells laid on M from R0 C0, as drawn, those under its roof
+; under the roof ID.
+(def %dg-lay!
+  (fn (_ m r0 c0 plan id)
+    ((fn (self r rows)
+       (unless (null? rows)
+         (do ((fn (across c cells)
+                (unless (null? cells)
+                  (do (unless (null? (first cells))
+                        (do (map-set! m r c (first (first cells)))
+                            (when (List ref 1 (first cells)) (map-roof! m r c id))))
+                      (across (+ c 1) (rest cells)))))
+              c0 (first rows))
+             (self (+ r 1) (rest rows)))))
+     r0 plan)))
 ; The cells, (R0 C0 R1 C1), a building W by H stands on along SIDE of
 ; the square SR0 SC0 SR1 SC1, from CUR along that side, a cell of street
 ; between it and the square.
@@ -388,14 +451,16 @@
            ((eq? side (lit s)) (pair (List ref 0 s) col))
            ((eq? side (lit w)) (pair row (List ref 3 s)))
            (#t (pair row (List ref 1 s))))))
-; The BUILDINGS, (NAME W . H) each, walled round the square SR0 SC0 SR1
-; SC1 of M in order: each on the first of its north, south, west and
-; east sides it fits along, the sides filled from the square's corner
-; outward with a cell of street between one building and the next, two
-; cells round the edge kept clear; a building that fits nowhere is left
-; out.  The places laid, (NAME R0 C0 R1 C1) each.
+; The BUILDINGS, (NAME W H PLAN) each, laid round the square SR0 SC0
+; SR1 SC1 of M in order: each on the first of its north, south, west
+; and east sides it fits along, the sides filled from the square's
+; corner outward with a cell of street between one building and the
+; next, two cells round the edge kept clear; a building that fits
+; nowhere is left out.  One with no plan is walled, its door toward the
+; square; a plan is laid as it is drawn.  Each is under a roof of its
+; own from IDS.  The places laid, (NAME R0 C0 R1 C1) each.
 (def %dg-raise!
-  (fn (_ m buildings sr0 sc0 sr1 sc1)
+  (fn (_ m buildings sr0 sc0 sr1 sc1 ids)
     (def rows (map-rows m))
     (def cols (map-cols m))
     (def sides (list (lit n) (lit s) (lit w) (lit e)))
@@ -404,13 +469,17 @@
     (List reverse
       (List fold
         (fn (_ placed b)
-          (def site (fn (_ i) (%dg-site (List ref i sides) (Vector ref i cur) (first (rest b)) (rest (rest b)) sr0 sc0 sr1 sc1)))
+          (def site (fn (_ i) (%dg-site (List ref i sides) (Vector ref i cur) (List ref 1 b) (List ref 2 b) sr0 sc0 sr1 sc1)))
           (def i (List find (fn (_ i) (if (in? (site i)) (List all? (fn (_ p) (%dg-apart? (rest p) (site i))) placed) #f)) (List range 0 4)))
           (if (null? i) placed
             (do (def s (site i))
                 (def door (%dg-site-door (List ref i sides) s))
-                (%dg-box! m (List ref 0 s) (List ref 1 s) (List ref 2 s) (List ref 3 s) tile-wall)
-                (map-set! m (first door) (rest door) tile-door)
+                (def id (%dg-roof-id ids))
+                (if (null? (List ref 3 b))
+                  (do (%dg-box! m (List ref 0 s) (List ref 1 s) (List ref 2 s) (List ref 3 s) tile-wall)
+                      (map-set! m (first door) (rest door) tile-door)
+                      (%dg-roof! m (List ref 0 s) (List ref 1 s) (List ref 2 s) (List ref 3 s) id))
+                  (%dg-lay! m (List ref 0 s) (List ref 1 s) (List ref 3 b) id))
                 (Vector set! i (+ 2 (if (< i 2) (List ref 3 s) (List ref 2 s))) cur)
                 (pair (pair (first b) s) placed))))
         () buildings))))
@@ -425,7 +494,8 @@
     (def sc0 (int/ (- cols (first sq)) 2))
     (def sr1 (+ sr0 (- (rest sq) 1)))
     (def sc1 (+ sc0 (- (first sq) 1)))
-    (def places (%dg-raise! m (%dg-buildings params scale) sr0 sc0 sr1 sc1))
+    (def ids (Vector of 0))
+    (def places (%dg-raise! m (%dg-buildings params scale) sr0 sc0 sr1 sc1 ids))
     (def bound (fn (_ k start pick) (List fold (fn (_ a p) (pick a (List ref k p))) start places)))
     (def mr0 (bound 1 sr0 %dg-min))
     (def mc0 (bound 2 sc0 %dg-min))
@@ -436,7 +506,7 @@
     ((fn (self r)
        (def r1 (+ r (- (%dg-draw rng depth) 1)))
        (when (< r1 (- rows 2))
-         (do (%dg-terraces! rng m params scale r r1 2 (if (< r (+ mr1 2)) (< (- mr0 2) r1) #f) mc0 mc1)
+         (do (%dg-terraces! rng m params scale r r1 2 (if (< r (+ mr1 2)) (< (- mr0 2) r1) #f) mc0 mc1 ids)
              (self (+ r1 (+ 1 (%dg-draw rng street)))))))
      2)
     (map-rooms! m ())

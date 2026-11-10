@@ -940,6 +940,144 @@
   "kRRRRRRRRRRRRRRk"))
 
 
+; --- the roofs ---------------------------------------------------------------
+
+; A building seen from outside it: stone slates in courses, the joints
+; broken course to course, put together as a wall is (docs/graphics.md,
+; Roofs).  The top: slates seen from above.
+(tile roof (part top) (weight 8) (rows
+  "FFFFFFFeFFFFFFFe"
+  "FfFFFFFeFFfFFFFe"
+  "fffffffefffffffe"
+  "kkkkkkkkkkkkkkkk"
+  "FFFeFFFFFFFeFFFF"
+  "FFFeFFfFFFFeFfFF"
+  "fffefffffffeffff"
+  "kkkkkkkkkkkkkkkk"
+  "FFFFFFFeFFFFFFFe"
+  "FFFfFFFeFFFFFfFe"
+  "fffffffefffffffe"
+  "kkkkkkkkkkkkkkkk"
+  "FFFeFFFFFFFeFFFF"
+  "FfFeFFFFFfFeFFFF"
+  "fffefffffffeffff"
+  "kkkkkkkkkkkkkkkk"))
+
+; ... moss in the joints, and a slate slipped.
+(tile roof (part top) (rows
+  "FFFFFFFeFFFFFFFe"
+  "FfFFFFFeFFfFFFFe"
+  "fffffffsffffvffe"
+  "kkkkkkkkkkkkkkkk"
+  "FFFeFFFFFFFeFFFF"
+  "FFFeFFfFFFFeFfFF"
+  "fffefffffffekkkk"
+  "kkkvkkkkkkkeFFFF"
+  "FFFFFFFeFFFFFFfe"
+  "FFFfFFFeFFFFffFe"
+  "fsfffffefffffffe"
+  "kkkkkkkkkkkkkkkk"
+  "FFFeFFFFFFFeFFFF"
+  "FfFeFFFFFfFeFFFF"
+  "fffefffvfffeffff"
+  "kkkkkkkkkkkkkkkk"))
+
+; The ridge, along a roof's north edge.
+(tile roof (part n) (rows
+  "FFFFFFFFFFFFFFFF"
+  "RRRRRReRRRRRReRR"
+  "kkkkkkkkkkkkkkkk"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"))
+
+; The verges, east and west.
+(tile roof (part e) (rows
+  "..............Rk"
+  "..............Rk"
+  "..............Rk"
+  "..............ek"
+  "..............Rk"
+  "..............Rk"
+  "..............Rk"
+  "..............ek"
+  "..............Rk"
+  "..............Rk"
+  "..............Rk"
+  "..............ek"
+  "..............Rk"
+  "..............Rk"
+  "..............Rk"
+  "..............ek"))
+
+(tile roof (part w) (rows
+  "kR.............."
+  "kR.............."
+  "kR.............."
+  "ke.............."
+  "kR.............."
+  "kR.............."
+  "kR.............."
+  "ke.............."
+  "kR.............."
+  "kR.............."
+  "kR.............."
+  "ke.............."
+  "kR.............."
+  "kR.............."
+  "kR.............."
+  "ke.............."))
+
+; The front, where the street lies south: the eaves, and the gritstone
+; under them.
+(tile roof (part face) (weight 10) (rows
+  "FFFeFFFFFFFeFFFF"
+  "FfFeFFFFFfFeFFFF"
+  "fffefffffffeffff"
+  "kkkkkkkkkkkkkkkk"
+  "ddddddeddddddedd"
+  "drddrdeddrdrdedd"
+  "eeeeeeeeeeeeeeee"
+  "rrerrrrrrerrrrrr"
+  "rRerRrRrrerRrRrr"
+  "eeeeeeeeeeeeeeee"
+  "RRRRReRRRRRReRRR"
+  "RhRrReRRhRrReRhR"
+  "eeeeeeeeeeeeeeee"
+  "RReRRRRhReRRRRRe"
+  "dddddddddddddddd"
+  "kkkkkkkkkkkkkkkk"))
+
+; ... a sash window under the eaves, unlit.
+(tile roof (part face) (weight 4) (rows
+  "FFFeFFFFFFFeFFFF"
+  "FfFeFFFFFfFeFFFF"
+  "fffefffffffeffff"
+  "kkkkkkkkkkkkkkkk"
+  "drddhhhhhhhhdedd"
+  "eeeekkkkkkkkeeee"
+  "rrerkNniinNkrrrr"
+  "rRerknniinnkrRrr"
+  "eeeekiiiiiikeeee"
+  "RRRRknniinnkeRRR"
+  "RhRrknniinnkReRh"
+  "eeeekiiiiiikeeee"
+  "RReRhhhhhhhhRRRe"
+  "eeeeeeeeeeeeeeee"
+  "dddddddddddddddd"
+  "kkkkkkkkkkkkkkkk"))
+
+
 ; --- who walks there ---------------------------------------------------------
 
 ; One of Kettle's people about the streets: flat cap, muffler, a long

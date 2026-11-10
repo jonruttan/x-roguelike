@@ -32,7 +32,7 @@
 (import x/type/vector)
 (import x/core/doors int/)
 (import roguelike/data data-all data-prop data-prop1 data-trait?)
-(import roguelike/map map-visible? map-tile map-down tile-door)
+(import roguelike/map map-visible? map-roofed? map-tile map-down tile-door)
 (import roguelike/dungeon dungeon-spot)
 (import roguelike/state
   game-rng game-set game-depth game-map game-player game-creatures game-creatures! game-turn game-param game-param1
@@ -362,12 +362,13 @@
               (creature-tick! cr))))
       (game-creatures g))))
 
-; Whether CR is drawn: in view, and not invisible unless the player sees
-; the unseen.
+; Whether CR is drawn: in view, under no roof, and not invisible, unless
+; the player sees the unseen.
 (def creatures-shown?
   (fn (_ g cr)
     (match ((< 0 (player-condition (game-player g) (lit seeing))) #t)
            ((not (map-visible? (game-map g) (creature-r cr) (creature-c cr))) #f)
+           ((map-roofed? (game-map g) (creature-r cr) (creature-c cr)) #f)
            ((creature-trait? cr (lit invisible)) #f)
            (#t #t))))
 

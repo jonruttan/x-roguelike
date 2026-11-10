@@ -23,7 +23,7 @@
 (import roguelike/data data-all data-glyph)
 (import roguelike/items items-glyph)
 (import roguelike/map map-terrain map-kinds map-rows map-cols map-tile map-seen? map-visible? map-in? map-opaque? map-walkable?
-  tile-rock tile-down tile-up tile-door)
+  tile-rock tile-down tile-up tile-door tile-roof map-shown map-covered? map-roofed?)
 (import roguelike/state game-map game-player game-floor game-creatures game-traps
   player-r player-c player-conditions item-r item-c item-class creature-r creature-c creature-name creature-glyph
   creature-state creature-condition game-set game-blows game-over)
@@ -152,21 +152,28 @@
 
 ; --- the level --------------------------------------------------------------
 
-; Whether the cell at R C of M is solid to the walls beside it: opaque,
-; off the map, or not yet seen.
+; Whether the cell at R C of M is solid to the walls beside it: opaque
+; as it is drawn, off the map, or not yet seen.
 (def %fr-solid?
-  (fn (_ m r c) (if (map-in? m r c) (if (map-seen? m r c) (map-opaque? (map-tile m r c)) #t) #t)))
+  (fn (_ m r c) (if (map-in? m r c) (if (map-seen? m r c) (map-opaque? (map-shown m r c)) #t) #t)))
+; Whether the cell at R C of M is solid to the roof beside it: under a
+; roof that is on, its door too.
+(def %fr-covered? (fn (_ m r c) (if (map-in? m r c) (map-covered? m r c) #f)))
+; Whether what lies at R C of M is drawn: seen, and under no roof.
+(def %fr-seen? (fn (_ m r c) (if (map-seen? m r c) (not (map-roofed? m r c)) #f)))
 
 ; What to draw for the cell at R C of M with art A, at X Y: the
 ; ground's picture, or a wall's parts, or the shade a wall's face
-; casts; a cell not seen, or off the map, is a fill of the dark.
+; casts; under a roof that is on, the roof's parts, put together as a
+; wall's are, by the roofed cells beside it; a cell not seen, or off
+; the map, is a fill of the dark.
 (def frame-cell
   (fn (_ a m r c x y)
     (if (map-in? m r c) (%fr-cell a m r c x y)
       (list (list (lit fill) x y frame-tile-size frame-tile-size)))))
 (def %fr-cell
   (fn (_ a m r c x y)
-    (def t (map-tile m r c))
+    (def t (map-shown m r c))
     (def pics (Vector ref t (first a)))
     (def seed (+ (* r 80) c))
     ; The parts PARTS put, in order, in front of ACC.
@@ -177,6 +184,7 @@
            (%fr-pick pics (first parts) seed)))))
     (match ((not (map-seen? m r c)) (list (list (lit fill) x y frame-tile-size frame-tile-size)))
            ((= t tile-rock) (list (list (lit fill) x y frame-tile-size frame-tile-size)))
+           ((= t tile-roof) (puts (frame-wall-parts (fn (_ dr dc) (%fr-covered? m (+ r dr) (+ c dc)))) ()))
            ((map-opaque? t) (puts (frame-wall-parts (fn (_ dr dc) (%fr-solid? m (+ r dr) (+ c dc)))) ()))
            ((%fr-solid? m (- r 1) c) (puts (list () (lit shade)) ()))
            (#t (puts (list ()) ())))))
@@ -232,10 +240,10 @@
     (def p (game-player g))
     (def set (game-set g))
     (List append
-      (List flat-map (fn (_ t) (if (if (trap-found? t) (map-seen? m (trap-r t) (trap-c t)) #f)
+      (List flat-map (fn (_ t) (if (if (trap-found? t) (%fr-seen? m (trap-r t) (trap-c t)) #f)
                                  (%fr-put a cam (trap-r t) (trap-c t) (lit trap) #f (data-glyph set (lit trap) "^") ()) ()))
         (game-traps g))
-      (List flat-map (fn (_ it) (if (map-seen? m (item-r it) (item-c it))
+      (List flat-map (fn (_ it) (if (%fr-seen? m (item-r it) (item-c it))
                                   (%fr-put a cam (item-r it) (item-c it) (item-class it) #f (items-glyph g it) ()) ()))
         (game-floor g))
       (List flat-map (fn (_ cr) (if (creatures-shown? g cr)
@@ -542,7 +550,8 @@
     (def m (game-map g))
     (List flat-map
       (fn (_ it)
-        (def at (if (map-visible? m (item-r it) (item-c it)) (frame-place cam (item-r it) (item-c it)) ()))
+        (def at (if (if (map-visible? m (item-r it) (item-c it)) (not (map-roofed? m (item-r it) (item-c it))) #f)
+                  (frame-place cam (item-r it) (item-c it)) ()))
         (if (null? at) ()
           (list (list (lit glint) (first at) (rest at) (int+ (int* (item-r it) 7) (int* (item-c it) 13))
                       (eq? (item-class it) (lit gold))))))
@@ -553,10 +562,10 @@
 ; What the chart shows of the cell at R C of M: 0 not seen, 1 ground
 ; seen, 2 ground in view, 3 wall seen, 4 wall in view, 5 the way down,
 ; 6 the way up, 7 a door, 8 ground beside what is not yet seen, still
-; to explore.
+; to explore.  A cell under a roof that is on is the roof, a wall.
 (def %fr-chart-code
   (fn (_ m r c)
-    (def t (map-tile m r c))
+    (def t (map-shown m r c))
     (def lit? (map-visible? m r c))
     (match ((not (map-seen? m r c)) 0)
            ((= t tile-down) 5)

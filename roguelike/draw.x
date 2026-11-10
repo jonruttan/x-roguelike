@@ -12,7 +12,8 @@
 ; screens.  Cells seen are drawn dim, cells in view plain, in
 ; the band's (colour N) where the set has bands, or in the colour the
 ; set gives the cell's kind of terrain; found traps and items
-; where they were seen, creatures only in view, the player last.
+; where they were seen, creatures only in view, the player last.  A
+; cell under a roof that is on is drawn as roof, and nothing on it.
 ; A list being looked at -- the pack, the keys, what someone says --
 ; lies over the level, and so do the items a question for one can take
 ; and the choice a question offers.
@@ -26,7 +27,7 @@
 (import x/core/doors str-make int& int>>)
 (import roguelike/map
   map-rows map-cols map-tile map-seen? map-visible? map-down map-up map-row-glyphs! map-visible-next map-visible-run
-  map-terrain map-kinds map-look map-look-run tile-down tile-up)
+  map-terrain map-kinds map-look map-look-run map-roofed? tile-down tile-up)
 (import roguelike/state
   game-set game-depth game-map game-player game-creatures game-floor game-pack game-messages game-ask
   game-over game-epitaph game-turn game-traps game-param1 game-screens? game-screen
@@ -59,7 +60,7 @@
 ; glyph of the kind it is a sort of; rock is a blank.
 (def %dr-glyphs
   (list (pair (lit water) "~") (pair (lit fall) ";") (pair (lit hedge) "\"") (pair (lit gate) "+")
-        (pair (lit thicket) "T") (pair (lit bog) ",")))
+        (pair (lit thicket) "T") (pair (lit bog) ",") (pair (lit roof) "^")))
 (def %dr-named (fn (self name l) (if (eq? (List ref 1 (first l)) name) (first l) (self name (rest l)))))
 (def %dr-glyph
   (fn (self forms t)
@@ -184,12 +185,14 @@
     (%dr-stairs! s m (map-down m) bytes tile-down)
     (%dr-stairs! s m (map-up m) bytes tile-up)))
 
+; Whether what lies at R C of M is drawn: seen, and under no roof.
+(def %dr-seen? (fn (_ m r c) (if (map-seen? m r c) (not (map-roofed? m r c)) #f)))
 (def %dr-traps!
   (fn (_ g s)
     (def m (game-map g))
     (def glyph (data-glyph (game-set g) (lit trap) "^"))
     (List for-each
-      (fn (_ t) (when (if (trap-found? t) (map-seen? m (trap-r t) (trap-c t)) #f)
+      (fn (_ t) (when (if (trap-found? t) (%dr-seen? m (trap-r t) (trap-c t)) #f)
                   (screen-put! s (+ (trap-r t) 1) (trap-c t) glyph %dr-trap)))
       (game-traps g))))
 (def %dr-item-style
@@ -198,7 +201,7 @@
   (fn (_ g s)
     (def m (game-map g))
     (List for-each
-      (fn (_ it) (when (map-seen? m (item-r it) (item-c it))
+      (fn (_ it) (when (%dr-seen? m (item-r it) (item-c it))
                    (screen-put! s (+ (item-r it) 1) (item-c it) (%dr-item-glyph it (Vector ref 2 %dr-cache)) (%dr-item-style it))))
       (game-floor g))))
 (def %dr-creatures!
