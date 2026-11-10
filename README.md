@@ -135,7 +135,16 @@ square, on the first side it fits; the terraces keep off them, and
 its door, stood on, says its `(enter "TEXT")`.  Its `(keeper NAME
 LINE ...)` stands inside, unless the chain gives NAME a screen of its
 own, and walked into with nothing to ask says a LINE, the next each
-turn.  In a world of screens the bands run from
+turn.  A building with `(sells (CLASS NAME) ...)` or `(buys CLASS
+...)` keeps a shop: its keeper, walked into, puts up the counter,
+where a letter buys the thing beside it, `s` sells one thing of a
+class the keeper takes, and any other key leaves.  A thing is worth
+its item's `(price N)`, or its class's in the world's `(worth (CLASS
+N) ...)`, in gold, and the shop asks and pays its `(rate SELL BUY)`
+percent of that, 100 and 50 unless given; a thing worth nothing, worn
+or in hand is not bought.  `town`'s inn, bakehouse, smithy, tannery
+and chandler's keep shops, and the Guild's shop sells dear.  In a
+world of screens the bands run from
 the hub, ring 0, and any form a band names besides its own -- a level
 knob, a level style -- is in front of the set's on its screens, so
 `kettle`'s first band, "Kettle", lays hedged fields round the town's
