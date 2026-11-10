@@ -64,8 +64,8 @@
   items-by-letter items-pickup!
   items-drop! items-quaff! items-read! items-zap! items-eat! items-fill! items-wield! items-wear! items-take-off!
   items-put-on! items-remove!)
-(import roguelike/quests quests-place! quests-talk! quests-keepers!)
-(import roguelike/chain chain-build!)
+(import roguelike/quests quests-place! quests-talk! quests-keepers! quests-leads quests-errands quests-sighted!)
+(import roguelike/chain chain-build! chain-way)
 (import roguelike/traps traps-found-at traps-place! traps-step! traps-search!)
 (import roguelike/interiors interiors-door! interiors-params interiors-prop1)
 (import roguelike/data data-all data-one data-get data-region)
@@ -220,6 +220,7 @@
           ((fn (_ land) (player-at! (game-player g) (first land) (rest land))) (%gm-landing g at))
           (%gm-light! g)
           (%gm-note-floor! g)))
+    (quests-sighted! g)
     (%gm-keep! g)))
 
 ; Through the door of the screen stood on into the interior NAME behind
@@ -333,18 +334,55 @@
            ((game-below? g) (do (%gm-keep! g) (%gm-come-up! g) #t))
            (#t (do (state-tell! g (lit edge) "The world ends here." ()) #f)))))
 
-; The world as rows of screens: @ the one stood on, . one visited.
+; Where the player stands in the world, for the map.  In a world that
+; names its screens, each of them, which way it lies and who keeps a
+; building there, but for those the chain has sent out; in one that
+; does not, the band stood in and which way it lies from the hub's.
+(def %gm-whereabouts
+  (fn (_ g)
+    (def here (game-screen g))
+    (def hub (game-hub g))
+    (def out (List map (fn (_ q) (List ref 2 q)) (game-chain g)))
+    (def keepers
+      (fn (_ s)
+        (List reject (fn (_ n) (List includes? n out))
+          (List flat-map (fn (_ b) (List map first (data-all (rest b) (lit keeper)))) (data-all (rest (rest s)) (lit building))))))
+    (def named
+      (fn (_ s)
+        (def at (pair (first (List ref 1 s)) (List ref 1 (List ref 1 s))))
+        (def here? (if (= (first at) (first here)) (= (rest at) (rest here)) #f))
+        (def who (keepers s))
+        (Str8 append (first s) ", " (if here? "here" (chain-way g here at))
+          (if (null? who) "" (Str8 append ": " (Str8 join ", " who))))))
+    (def screens (data-all (game-set g) (lit screen)))
+    (def b (game-band g))
+    (def bands (data-all (game-set g) (lit band)))
+    (def subs (fn (_) (list (pair "band" (first b)) (pair "way" (chain-way g hub here)) (pair "hub" (first (first bands))))))
+    (match ((not (null? screens)) (List map named screens))
+           ((null? b) ())
+           ((if (= (first here) (first hub)) (= (rest here) (rest hub)) #f) (list (state-text g (lit map-hub) "You are in {band}." (subs))))
+           (#t (list (state-text g (lit map-here) "You are in {band}, {way} of {hub}." (subs)))))))
+
+; The world as rows of screens: @ the one stood on, ! one an errand
+; leads to, . one visited; then where that is, and the errands in hand.
 (def %gm-world-lines
   (fn (_ g)
     (def here (game-screen g))
-    (List map
-      (fn (_ y)
-        (Str8 join " "
-          (List map (fn (_ x) (match ((if (= x (first here)) (= y (rest here)) #f) "@")
-                                     ((not (null? (game-kept-level g (game-screen-key g x y)))) ".")
-                                     (#t " ")))
-                    (List range 0 (game-world-cols g)))))
-      (List range 0 (game-world-rows g)))))
+    (def leads (quests-leads g))
+    (def errands (quests-errands g))
+    (def at? (fn (_ p x y) (if (= x (first p)) (= y (rest p)) #f)))
+    (List append
+      (List map
+        (fn (_ y)
+          (Str8 join " "
+            (List map (fn (_ x) (match ((at? here x y) "@")
+                                       ((List any? (fn (_ p) (at? p x y)) leads) "!")
+                                       ((not (null? (game-kept-level g (game-screen-key g x y)))) ".")
+                                       (#t " ")))
+                      (List range 0 (game-world-cols g)))))
+        (List range 0 (game-world-rows g)))
+      (pair "" (%gm-whereabouts g))
+      (if (null? errands) () (pair "" errands)))))
 
 ; A game on SET from SEED, ROWS by COLS, its chain of quests drawn from
 ; the set's scenes: on level 1, or on the hub screen of a world of
@@ -370,6 +408,7 @@
     (game-told! g ())
     (%gm-tales! g)
     (%gm-enter-band! g)
+    (when (game-screens? g) (quests-sighted! g))
     (Heap collect)
     g))
 

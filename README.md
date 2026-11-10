@@ -194,6 +194,17 @@ gives; the goal laid in Kettle's square is the win.  A quest a set writes
 by hand may stand on a `(screen X Y)` in place of a level, its tokens
 on a `(lies X Y)`.
 
+An errand not over leads somewhere: the first of the chain, not yet
+asked, to its giver; one open, to what it wants, where that lies or
+with whoever gives it; one whose want is in the pack, back to its
+giver.  The map marks that screen with `!` and says the way under it,
+a line an errand; it says too where the player is: in a world that
+names its screens, each of them, which way it lies and who keeps a
+building there, and in one that does not, the band stood in and which
+way it lies from the hub.  A screen come onto says which way the one
+looked for stands: "You make out the night watchman to the
+north-east."
+
 Behind some doors is a place of its own.  `(interior NAME . PROPS)`
 is one: a screen made at a depth its `(depth LO HI)` covers lays a
 door to it when its `(chance PERCENT)` comes up, the first of the

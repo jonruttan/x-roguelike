@@ -50,7 +50,7 @@ descents, and their specs stand.
              (player-r p) (player-c p) (game-messages g) (List ref 23 (spec-screen g))))
 ```
 ---
-    (3 2 3 2 0 ("Guild clerk") 11 27 ("Kettle's square, by the well-head.  Someone here knows where the Guild's ledger is; ask about.") "Screen:3,2  Gold:0  Hp:14(14)  Str:16(16)  Arm:0  Exp:1/0")
+    (3 2 3 2 0 ("Guild clerk") 11 27 ("Kettle's square, by the well-head.  Someone here knows where the Guild's ledger is; ask about." "You make out the Guild clerk to the south-west.") "Screen:3,2  Gold:0  Hp:14(14)  Str:16(16)  Arm:0  Exp:1/0")
 
 ## the edges
 
@@ -111,7 +111,7 @@ descents, and their specs stand.
 ---
     (#f #t #t #t 3 2 79 2)
 
-### m lays the map of the world over the screen, @ where you stand and . where you have been; a descent has none
+### m lays the map of the world over the screen, @ where you stand, ! where an errand leads and . where you have been; a descent has none
 
 ```roguelike
 (def g (spec-game-on (spec-valley) 4 ()))
@@ -125,7 +125,7 @@ descents, and their specs stand.
              (game-messages d) (game-turn d)))
 ```
 ---
-    ("The valley:  --Enter--" "" "" "       . @" "" 1 ("You know only the level you stand on.") 0)
+    ("The valley:  --Enter--" "" "" "       ! @" "" 1 ("You know only the level you stand on.") 0)
 
 ## the goal
 
