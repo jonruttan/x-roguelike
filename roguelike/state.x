@@ -45,18 +45,38 @@
 ; newest first, each (blow FROM-R FROM-C TO-R TO-C HOW N WHAT): who
 ; struck from where at whom, HOW hit, miss, kill or touch (no harm
 ; meant), N the damage, WHAT nil for a blow in hand or what flew: shot,
-; breath or bolt.
+; breath or bolt, 36 the set's forms kept by their head, (HEAD . ARGS-OF-
+; EACH) each, as they are asked for, 37 the same of the forms the level
+; in hand is made by.  Neither is saved: each is found again.
 ; Every slot here is read through the object doors, not the class: a
 ; class send costs some two hundred objects, and a turn reads thousands.
 (def %st-ref (fn (_ v k) (obj-ref v (int+ k 1))))
 (def %st-set! (fn (_ v k x) (obj-set! v (int+ k 1) x)))
 (def %st-get (fn (_ g k) (%st-ref g k)))
 (def %st-put! (fn (_ g k x) (%st-set! g k x)))
+; A set is some hundreds of forms and a turn asks it some twenty
+; things, so what is asked is kept: the ARGS of every form headed HEAD
+; among (FORMS g), found by a walk the first time and held in slot K
+; after.  What is kept is let go when what it was found in changes: the
+; level's with the depth or the screen, both with the set.
+(def %st-kept-find
+  (fn (self l head)
+    (match ((null? l) ())
+           ((eq? (first (first l)) head) (first l))
+           (#t (self (rest l) head)))))
+(def %st-kept
+  (fn (_ g k head forms)
+    (def hit (%st-kept-find (%st-get g k) head))
+    (if (null? hit)
+      ((fn (_ all) (%st-put! g k (pair (pair head all) (%st-get g k))) all) (data-all (forms g) head))
+      (rest hit))))
+(def %st-level-changed! (fn (_ g) (%st-put! g 37 ())))
+(def %st-set-changed! (fn (_ g) (%st-put! g 36 ()) (%st-put! g 37 ())))
 (def game-rng (fn (_ g) (%st-get g 0)))
 (def game-rng! (fn (_ g rng) (%st-put! g 0 rng)))
 (def game-set (fn (_ g) (%st-get g 1)))
 (def game-depth (fn (_ g) (%st-get g 2)))
-(def game-depth! (fn (_ g n) (%st-put! g 2 n)))
+(def game-depth! (fn (_ g n) (%st-put! g 2 n) (%st-level-changed! g)))
 (def game-map (fn (_ g) (%st-get g 3)))
 (def game-map! (fn (_ g m) (%st-put! g 3 m)))
 (def game-player (fn (_ g) (%st-get g 4)))
@@ -111,7 +131,7 @@
 (def game-exploring? (fn (_ g) (not (null? (%st-get g 25)))))
 (def game-exploring! (fn (_ g n) (%st-put! g 25 n)))
 (def game-screen (fn (_ g) (%st-get g 26)))
-(def game-screen! (fn (_ g at) (%st-put! g 26 at)))
+(def game-screen! (fn (_ g at) (%st-put! g 26 at) (%st-level-changed! g)))
 (def game-kept (fn (_ g) (%st-get g 27)))
 ; The level kept under KEY, or nil.
 (def game-kept-level
@@ -124,8 +144,12 @@
     (%st-put! g 27 (pair (pair key level) (List reject (fn (_ p) (str=? (first p) key)) (%st-get g 27))))))
 
 ; The set's parameter HEAD, its values, or DEFAULT's.
-(def game-param (fn (_ g head default) (data-one (game-set g) head default)))
-(def game-param1 (fn (_ g head default) (data-get (game-set g) head default)))
+(def %st-one (fn (_ all default) (if (null? all) default (first all))))
+(def %st-one1 (fn (_ all default) (def args (%st-one all ())) (if (null? args) default (first args))))
+; The ARGS of every form of the set headed HEAD, kept.
+(def game-all (fn (_ g head) (%st-kept g 36 head game-set)))
+(def game-param (fn (_ g head default) (%st-one (game-all g head) default)))
+(def game-param1 (fn (_ g head default) (%st-one1 (game-all g head) default)))
 
 ; The set's (world SHAPE ...): descent, a line of levels joined by
 ; stairs, each made anew, which is the default; or (screens W H), a
@@ -189,13 +213,18 @@
 ; The set the game began on, below or not.
 (def game-top-set
   (fn (_ g) (def l (%st-get g 32)) (if (null? l) (game-set g) (List ref 1 (List ref (- (List length l) 1) l)))))
+; Its parameter HEAD, its values, or DEFAULT's: kept, when it is the
+; set in force.
+(def game-top-param
+  (fn (_ g head default) (if (game-below? g) (data-one (game-top-set g) head default) (game-param g head default))))
 ; Into the region NAME, whose forms are FORMS: the set, the screen and
 ; the depth at the door kept, to come back to.
 (def game-go-below!
   (fn (_ g name forms)
     (%st-put! g 32 (pair (list name (game-set g) (game-screen g) (game-depth g)) (%st-get g 32)))
     (%st-put! g 1 forms)
-    (%st-put! g 26 ())))
+    (%st-put! g 26 ())
+    (%st-set-changed! g)))
 ; The ARGS of every form headed HEAD in the whole world: the set the
 ; game began on, then each of its regions, so a thing carried from one
 ; into the other is still known by its form.
@@ -225,7 +254,8 @@
     (%st-put! g 32 (rest (%st-get g 32)))
     (%st-put! g 1 (List ref 1 door))
     (%st-put! g 26 (List ref 2 door))
-    (%st-put! g 2 (List ref 3 door))))
+    (%st-put! g 2 (List ref 3 door))
+    (%st-set-changed! g)))
 ; The key the level in hand is kept under: its screen's, or, inside,
 ; that with a > after it; in a descent, which keeps none, the path.
 (def game-level-key
@@ -258,6 +288,10 @@
     (def b (game-band g))
     (def s (game-screen-form g))
     (List append (if (null? s) () (rest (rest s))) (if (null? b) () (rest (rest b))) (game-set g))))
+; The ARGS of every form among them headed HEAD, kept, and the first's
+; first argument, or DEFAULT.
+(def game-level-all (fn (_ g head) (%st-kept g 37 head game-forms)))
+(def game-level-param1 (fn (_ g head default) (%st-one1 (game-level-all g head) default)))
 
 ; --- the player --------------------------------------------------------------
 
@@ -427,7 +461,7 @@
 
 (def game-new
   (fn (_ set seed rows cols)
-    (def g (Vector make 36 ()))
+    (def g (Vector make 38 ()))
     (def rng (Random sw seed))
     (%st-put! g 0 rng)
     (%st-put! g 1 set)
@@ -481,8 +515,9 @@
 ; not say it, the set the game began on's, or DEFAULT, filled with SUBS.
 (def state-text
   (fn (_ g key default subs)
-    (def find (fn (_ set) (List find (fn (_ args) (eq? (first args) key)) (data-all set (lit message)))))
-    (def hit ((fn (_ h) (if (if (null? h) (game-below? g) #f) (find (game-top-set g)) h)) (find (game-set g))))
+    (def find (fn (_ all) (List find (fn (_ args) (eq? (first args) key)) all)))
+    (def hit ((fn (_ h) (if (if (null? h) (game-below? g) #f) (find (data-all (game-top-set g) (lit message))) h))
+              (find (game-all g (lit message)))))
     (state-fill (if (null? hit) default (List ref 1 hit)) subs)))
 
 ; Say the set's message KEY, or DEFAULT, filled with SUBS.
@@ -579,14 +614,15 @@
   game-ask game-ask! game-over game-over! game-guises game-known game-known! game-told game-told! game-deepest game-deepest!
   game-log game-rows game-cols game-epitaph game-epitaph! game-seed game-goal-placed? game-goal-placed!
   game-pages-placed game-page-placed! game-quests game-quest-state game-quest-state! game-placed game-placed?
-  game-regions game-region game-below? game-top-set game-world-all game-go-below! game-go-above!
+  game-regions game-region game-below? game-top-set game-top-param game-world-all game-go-below! game-go-above!
   game-screen-form game-screen-name game-home game-place
   game-placed! game-sure game-sure? game-sure! game-traps game-traps! game-exploring game-exploring? game-exploring!
   game-screen game-screen! game-kept game-kept-level game-keep! game-chain game-chain!
   game-doors game-door game-door! game-inside game-inside! game-level-key
   game-world game-screens? game-world-cols game-world-rows game-hub game-screen-distance game-screen-in?
   game-screen-key
-  game-param game-param1 game-band game-band-from band-name band-to band-prop1 game-forms game-new
+  game-all game-param game-param1 game-band game-band-from band-name band-to band-prop1 game-forms
+  game-level-all game-level-param1 game-new
   player-r player-c player-at! player-hp player-hp! player-hpmax player-hpmax! player-str player-str!
   player-strmax player-strmax! player-level player-level! player-exp player-exp! player-gold player-gold!
   player-armour player-armour! player-weapon player-weapon! player-rings player-rings! player-food player-food!

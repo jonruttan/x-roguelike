@@ -159,3 +159,20 @@ its first level comes back onto the door.
 ```
 ---
     ((#t "delve" 1 "The Delve" #t #t #t) #t #t #t "Kettle")
+
+### a rule is the set's in force: the town's sight on the pithead, the Delve's below, the town's again back up
+
+```roguelike
+(def g (spec-to-pithead! (spec-game-on (spec-set-named "kettle") 4 ())))
+(def p (game-player g))
+(def above (game-param1 g 'view 0))
+(def door (map-down (game-map g)))
+(player-at! p (first door) (rest door))
+(game-key! g ">")
+(def below (game-param1 g 'view 0))
+(spec-settle! g)
+(game-key! g "<")
+(write (list above below (game-region g) (game-param1 g 'view 0)))
+```
+---
+    (8 7 "town" 8)
