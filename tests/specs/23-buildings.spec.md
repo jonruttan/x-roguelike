@@ -154,7 +154,25 @@ eye, whole, from inside.  The town set's districts each name theirs.
 ---
     (#t #t #t #t)
 
-### in the window a roofed cell takes the roof's pictures, its top inside and its front where the street lies south; inside, the cell's own
+### a roof is peaked along its longer side: a far slope, a ridge and a near slope, or a west slope, a ridge and an east slope; a ridge with no middle row lies to the north
+
+```roguelike
+(import roguelike/map map-make map-roof! map-roof-pitch)
+(def b23-pm (map-make 12 20))
+(def b23-box! (fn (_ id r0 c0 h w) (List for-each (fn (_ r) (List for-each (fn (_ c) (map-roof! b23-pm r c id)) (List range c0 (+ c0 w)))) (List range r0 (+ r0 h)))))
+(def b23-down (fn (_ c r0 h) (List map (fn (_ r) (map-roof-pitch b23-pm r c)) (List range r0 (+ r0 h)))))
+(def b23-along (fn (_ r c0 w) (List map (fn (_ c) (map-roof-pitch b23-pm r c)) (List range c0 (+ c0 w)))))
+(b23-box! 1 1 1 5 7)
+(b23-box! 2 1 9 4 6)
+(b23-box! 3 6 1 6 3)
+(def b23-first (list (b23-down 3 1 5) (b23-down 10 1 4) (b23-along 8 1 3) (map-roof-pitch b23-pm 0 0)))
+(b23-box! 3 6 4 6 6)
+(write (list b23-first (b23-down 5 6 6)))
+```
+---
+    (((1 1 2 3 3) (1 2 3 3) (4 5 6) 0) (1 1 2 3 3 3))
+
+### in the window a roofed cell takes the roof's pictures: the slope it is on with the rims at the roof's edge, and its front where the street lies south; inside, the cell's own
 
 ```roguelike
 (import roguelike/frame frame-art frame-cell)
@@ -165,12 +183,13 @@ eye, whole, from inside.  The town set's districts each name theirs.
       (frame-cell b23-art b23-gm r c 0 0))))
 (def b23-r (List ref 1 b23-inn))
 (def b23-c (List ref 2 b23-inn))
-(def b23-roofed (list (b23-pics (+ b23-r 2) (+ b23-c 3)) (b23-pics (+ b23-r 4) (+ b23-c 6))))
+(def b23-roofed (List map (fn (_ dr) (b23-pics (+ b23-r dr) (+ b23-c 6))) (List range 0 5)))
+(def b23-verge (b23-pics (+ b23-r 1) b23-c))
 (game-key! b23-g "h")
-(write (list b23-roofed (b23-pics (+ b23-r 2) (+ b23-c 3))))
+(write (list b23-roofed b23-verge (b23-pics (+ b23-r 2) (+ b23-c 3))))
 ```
 ---
-    (((('roof 'top)) (('roof 'face))) (('floor ())))
+    (((('roof 'north) ('roof 'n)) (('roof 'north)) (('roof 'ridge)) (('roof 'top)) (('roof 'face))) (('roof 'north) ('roof 'w)) (('floor ())))
 
 
 ## kept

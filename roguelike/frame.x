@@ -23,7 +23,7 @@
 (import roguelike/data data-all data-glyph)
 (import roguelike/items items-glyph)
 (import roguelike/map map-terrain map-kinds map-rows map-cols map-tile map-seen? map-visible? map-in? map-opaque? map-walkable?
-  tile-rock tile-down tile-up tile-door tile-roof map-shown map-covered? map-roofed?)
+  tile-rock tile-down tile-up tile-door tile-roof map-shown map-covered? map-roofed? map-roof-pitch)
 (import roguelike/state game-map game-player game-floor game-creatures game-traps
   player-r player-c player-conditions item-r item-c item-class creature-r creature-c creature-name creature-glyph
   creature-state creature-condition game-set game-blows game-over)
@@ -73,7 +73,7 @@
     (if (null? vs) () (pair (List fold (fn (_ n t) (+ n (%fr-weight t))) 0 vs) vs))))
 
 (def %fr-parts (list () (lit top) (lit face) (lit n) (lit e) (lit w) (lit ne) (lit nw) (lit se) (lit sw)
-                     (lit face-w) (lit face-e) (lit shade)))
+                     (lit face-w) (lit face-e) (lit shade) (lit north) (lit ridge) (lit west) (lit ridge-ns) (lit east)))
 
 ; A kind's pictures: ((PART . VARIANTS) ...) for each part it has.
 (def %fr-kind
@@ -159,6 +159,21 @@
 ; Whether the cell at R C of M is solid to the roof beside it: under a
 ; roof that is on, its door too.
 (def %fr-covered? (fn (_ m r c) (if (map-in? m r c) (map-covered? m r c) #f)))
+; The parts the roofed cell at R C of M is drawn in, from the roof's
+; pictures PICS: its front where the street lies south; elsewhere the
+; slope it is on (map.x, map-roof-pitch), the roof's top where PICS has
+; no picture of that slope, then the rims where the roof ends north,
+; east and west.
+(def %fr-slopes (list (lit top) (lit north) (lit ridge) (lit top) (lit west) (lit ridge-ns) (lit east)))
+(def %fr-roof-parts
+  (fn (_ pics m r c seed)
+    (def on? (fn (_ dr dc) (%fr-covered? m (+ r dr) (+ c dc))))
+    (def slope (List ref (map-roof-pitch m r c) %fr-slopes))
+    (if (not (on? 1 0)) (list (lit face))
+      (List append (list (if (null? (%fr-pick pics slope seed)) (lit top) slope))
+        (if (on? -1 0) () (list (lit n)))
+        (if (on? 0 1) () (list (lit e)))
+        (if (on? 0 -1) () (list (lit w)))))))
 ; Whether what lies at R C of M is drawn: seen, and under no roof.
 (def %fr-seen? (fn (_ m r c) (if (map-seen? m r c) (not (map-roofed? m r c)) #f)))
 
@@ -184,7 +199,7 @@
            (%fr-pick pics (first parts) seed)))))
     (match ((not (map-seen? m r c)) (list (list (lit fill) x y frame-tile-size frame-tile-size)))
            ((= t tile-rock) (list (list (lit fill) x y frame-tile-size frame-tile-size)))
-           ((= t tile-roof) (puts (frame-wall-parts (fn (_ dr dc) (%fr-covered? m (+ r dr) (+ c dc)))) ()))
+           ((= t tile-roof) (puts (%fr-roof-parts pics m r c seed) ()))
            ((map-opaque? t) (puts (frame-wall-parts (fn (_ dr dc) (%fr-solid? m (+ r dr) (+ c dc)))) ()))
            ((%fr-solid? m (- r 1) c) (puts (list () (lit shade)) ()))
            (#t (puts (list ()) ())))))

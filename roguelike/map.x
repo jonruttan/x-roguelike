@@ -94,8 +94,10 @@
 ; 4 the visible flags, 5 the rooms, 6 the stairs down (R . C), 7 the
 ; stairs up, 8 the named places, (NAME R0 C0 R1 C1) each, walls and
 ; all, 9 the roofs, a buffer or nil, 10 the roof that is off, 11 the
-; roofs in view, a flag each, worked afresh each turn.  Its slots are read through the object doors, not the class: a
-; cell's flag is asked for thousands of times a turn.
+; roofs in view, a flag each, worked afresh each turn, 12 the roofs'
+; slopes, a buffer, or nil until asked for.  Its slots are read through
+; the object doors, not the class: a cell's flag is asked for thousands
+; of times a turn.
 (def %mp-get (fn (_ m k) (obj-ref m (int+ k 1))))
 (def %mp-put! (fn (_ m k x) (obj-set! m (int+ k 1) x)))
 (def map-rows (fn (_ m) (%mp-get m 0)))
@@ -121,7 +123,7 @@
 
 (def map-make
   (fn (_ rows cols)
-    (def m (Vector make 12 ()))
+    (def m (Vector make 13 ()))
     (%mp-put! m 10 0)
     (%mp-put! m 0 rows)
     (%mp-put! m 1 cols)
@@ -199,6 +201,7 @@
     (when (null? (%mp-get m 9))
       (do (%mp-put! m 9 (%mp-buffer (int* (map-rows m) (map-cols m))))
           (%mp-put! m 11 (%mp-buffer 256))))
+    (%mp-put! m 12 ())
     (when (map-in? m r c) (ptr-set! (str->ptr (%mp-get m 9)) (%mp-off m r c) id 1))))
 ; Whether M has roofs at all.
 (def map-roofs? (fn (_ m) (not (null? (%mp-get m 9)))))
@@ -239,6 +242,50 @@
 ; Whether R C is drawn as roof: under one that is on, and no door into
 ; the building.
 (def map-roofed? (fn (_ m r c) (int= (map-shown m r c) tile-roof)))
+
+; A roof is peaked, its ridge along its longer side.  The slope a cell
+; of it is on: 0 under no roof, 1 the far slope of a ridge running east
+; and west, 2 that ridge, 3 its near slope, 4 the west slope of a ridge
+; running north and south, 5 that ridge, 6 its east slope.  A ridge
+; with no middle row lies a row to the north, as it looks from the
+; south.  Worked once for the level, from the roofs, and worked again
+; when a roof is laid.
+(def %mp-run
+  (fn (self m rp id r c dr dc k)
+    (def r1 (int+ r dr))
+    (def c1 (int+ c dc))
+    (if (if (map-in? m r1 c1) (int= (ptr-ref rp (%mp-off m r1 c1) 1) id) #f)
+      (self m rp id r1 c1 dr dc (int+ k 1))
+      k)))
+(def %mp-pitch
+  (fn (_ m rp r c)
+    (def id (ptr-ref rp (%mp-off m r c) 1))
+    (if (int= id 0) 0
+      (do (def n (%mp-run m rp id r c -1 0 0))
+          (def s (%mp-run m rp id r c 1 0 0))
+          (def w (%mp-run m rp id r c 0 -1 0))
+          (def e (%mp-run m rp id r c 0 1 0))
+          (if (int< (int+ w e) (int+ n s))
+            (match ((int< e w) 6) ((int< (int+ w 1) e) 4) (#t 5))
+            (match ((int< s n) 3) ((int< (int+ n 1) s) 1) (#t 2)))))))
+(def %mp-pitches!
+  (fn (_ m rp)
+    (def cols (map-cols m))
+    (def buf (%mp-buffer (int* (map-rows m) cols)))
+    (def p (str->ptr buf))
+    ((fn (self r c)
+       (match ((not (int< r (map-rows m))) ())
+              ((not (int< c cols)) (self (int+ r 1) 0))
+              (#t (do (ptr-set! p (%mp-off m r c) (%mp-pitch m rp r c) 1) (self r (int+ c 1))))))
+     0 0)
+    (%mp-put! m 12 buf)))
+(def map-roof-pitch
+  (fn (_ m r c)
+    (def rp (%mp-roof-ptr m))
+    (match ((null? rp) 0)
+           ((not (map-in? m r c)) 0)
+           (#t (do (when (null? (%mp-get m 12)) (%mp-pitches! m rp))
+                   (ptr-ref (str->ptr (%mp-get m 12)) (%mp-off m r c) 1))))))
 
 ; The roofs of M from R C, where the player stands, after the light:
 ; the roof over R C off, and every cell of that building, and of each
@@ -469,7 +516,7 @@
   tile-rock tile-floor tile-wall tile-door tile-passage tile-down tile-up
   tile-water tile-pillar tile-fall tile-dressed tile-hedge tile-gate tile-thicket tile-edge tile-bog tile-scar tile-roof
   map-terrain map-kinds map-look map-look-run
-  map-roof-at map-roof! map-roof-off map-covered? map-roofed? map-shown map-roofs?
+  map-roof-at map-roof! map-roof-off map-covered? map-roofed? map-shown map-roofs? map-roof-pitch
   map-make map-rows map-cols map-rooms map-rooms! map-down map-down! map-up map-up! map-places map-places! map-place-at
   map-in? map-tile map-set! map-seen? map-seen! map-visible? map-passable? map-walkable?
   room-r0 room-c0 room-r1 room-c1 room-lit? room-covers? room-inside? room-centre map-room-at
