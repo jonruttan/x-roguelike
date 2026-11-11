@@ -191,11 +191,25 @@ drawn; the roof the player stands under is off, and that building's
 cells are drawn as they are.  In the terminal a roofed cell is the
 `(glyph roof "^")`.
 
-A roof is put together as a wall is, a neighbour solid when it is under
-a roof that is on: `top` for the slates, with the `n` `e` `w` rims for
-the ridge and the verges, and `face`, the eaves over the building's
-front, where the cell to the south is open.  A set with no `roof` draws
-its `wall` there.
+A roof is peaked, its ridge along its longer side, and a cell of it is
+drawn by the slope it is on:
+
+| The roof runs | The cell | Drawn |
+|---|---|---|
+| east and west | north of the ridge | `north`, the far slope, in shade |
+| | on the ridge | `ridge` |
+| | south of the ridge | `top`, the near slope |
+| north and south | west of the ridge | `west` |
+| | on the ridge | `ridge-ns` |
+| | east of the ridge | `east` |
+
+A roof as wide as it is deep runs east and west.  A ridge with no
+middle row lies a row north of the middle, or a column west.  Over the
+slope go the `n` `e` `w` rims, the far eaves and the verges, where the
+roof ends that way, a neighbour solid when it is under a roof that is
+on.  Where the cell to the south is open the cell is `face` alone, the
+eaves over the building's front.  A set with no picture of a slope
+draws its `top` there, and a set with no `roof` its `wall`.
 
 ## Light
 
