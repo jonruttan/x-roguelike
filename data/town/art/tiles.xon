@@ -944,7 +944,7 @@
 
 ; A building seen from outside it: stone slates in courses, the joints
 ; broken course to course, put together as a wall is (docs/graphics.md,
-; Roofs).  The top: slates seen from above.
+; Roofs).  The top: the near slope's slates, in the light.
 (tile roof (part top) (weight 8) (rows
   "FFFFFFFeFFFFFFFe"
   "FfFFFFFeFFfFFFFe"
@@ -982,11 +982,106 @@
   "fffefffvfffeffff"
   "kkkkkkkkkkkkkkkk"))
 
-; The ridge, along a roof's north edge.
-(tile roof (part n) (rows
-  "FFFFFFFFFFFFFFFF"
-  "RRRRRReRRRRRReRR"
+; A roof is peaked.  The far slope, in its own shade.
+(tile roof (part north) (rows
+  "dddddddkdddddddk"
+  "dedddddkddeddddk"
+  "eeeeeeekeeeeeeek"
   "kkkkkkkkkkkkkkkk"
+  "dddkdddddddkdddd"
+  "dddkddeddddkdedd"
+  "eeekeeeeeeekeeee"
+  "kkkkkkkkkkkkkkkk"
+  "dddddddkdddddddk"
+  "dddedddkdddddedk"
+  "eeeeeeekeeeeeeek"
+  "kkkkkkkkkkkkkkkk"
+  "dddkdddddddkdddd"
+  "dedkdddddedkdddd"
+  "eeekeeeeeeekeeee"
+  "kkkkkkkkkkkkkkkk"))
+
+; The ridge of a roof running east and west: the far slope, the ridge
+; stones, the near slope.  The near slope is the top, above.
+(tile roof (part ridge) (rows
+  "dddddddkdddddddk"
+  "dedddddkddeddddk"
+  "eeeeeeekeeeeeeek"
+  "kkkkkkkkkkkkkkkk"
+  "dddkdddddddkdddd"
+  "eeekeeeeeeekeeee"
+  "hhhhhhhRhhhhhhhR"
+  "RRRRRRReRRRRRRRe"
+  "rrrrrrrerrrrrrre"
+  "kkkkkkkkkkkkkkkk"
+  "FFFeFFFFFFFeFFFF"
+  "kkkkkkkkkkkkkkkk"
+  "FFFFFFFeFFFFFFFe"
+  "FFFfFFFeFFFFFfFe"
+  "fffffffefffffffe"
+  "kkkkkkkkkkkkkkkk"))
+
+; A roof running north and south: its west slope in shade, its ridge,
+; its east slope.
+(tile roof (part west) (rows
+  "ddekddekddekddek"
+  "deekddekddekdeek"
+  "ddekddekddekddek"
+  "ddekkkkkdeekkkkk"
+  "ddekddekddekddek"
+  "ddekddekddekddek"
+  "ddekdeekddekddek"
+  "kkkkddekkkkkddek"
+  "ddekddekddekddek"
+  "ddekddekddekdeek"
+  "deekddekddekddek"
+  "ddekkkkkddekkkkk"
+  "ddekddekddekddek"
+  "ddekdeekdeekddek"
+  "ddekddekddekddek"
+  "kkkkddekkkkkddek"))
+
+(tile roof (part ridge-ns) (rows
+  "ddekdehRrkFkFFfk"
+  "deekdehRrkFkFFfk"
+  "ddekdehRrkFkFFfk"
+  "ddekkkhRrkekFffk"
+  "ddekdehRrkFkFFfk"
+  "ddekdehRrkFkFFfk"
+  "ddekdehRrkFkFFfk"
+  "kkkkdeReekFkeeek"
+  "ddekdehRrkFkFFfk"
+  "ddekdehRrkFkFFfk"
+  "deekdehRrkFkFFfk"
+  "ddekkkhRrkekFFfk"
+  "ddekdehRrkFkFFfk"
+  "ddekdehRrkFkFffk"
+  "ddekdehRrkFkFFfk"
+  "kkkkdeReekFkeeek"))
+
+(tile roof (part east) (rows
+  "FFfkFFfkFFfkFFfk"
+  "FffkFFfkFFfkFffk"
+  "FFfkFFfkFFfkFFfk"
+  "FFfkeeekFffkeeek"
+  "FFfkFFfkFFfkFFfk"
+  "FFfkFFfkFFfkFFfk"
+  "FFfkFffkFFfkFFfk"
+  "eeekFFfkeeekFFfk"
+  "FFfkFFfkFFfkFFfk"
+  "FFfkFFfkFFfkFffk"
+  "FffkFFfkFFfkFFfk"
+  "FFfkeeekFFfkeeek"
+  "FFfkFFfkFFfkFFfk"
+  "FFfkFffkFffkFFfk"
+  "FFfkFFfkFFfkFFfk"
+  "eeekFFfkeeekFFfk"))
+
+; The far eaves, along a roof's north edge.
+(tile roof (part n) (rows
+  "kkkkkkkkkkkkkkkk"
+  "eeeeeeeeeeeeeeee"
+  "................"
   "................"
   "................"
   "................"

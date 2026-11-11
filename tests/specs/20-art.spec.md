@@ -17,7 +17,7 @@ each the art's size, held TICKS a picture.
 
 ```roguelike
 (def %art-prop (fn (_ t key) (List find (fn (_ p) (if (pair? p) (eq? (first p) key) #f)) (rest t))))
-(def %art-parts '(top face n e s w ne nw se sw out-ne out-nw out-se out-sw face-w face-e shade))
+(def %art-parts '(top face n e s w ne nw se sw out-ne out-nw out-se out-sw face-w face-e shade north ridge west ridge-ns east))
 (def %art-marks '(mark-confused mark-blind mark-held mark-hasted mark-slowed mark-seeing mark-hungry mark-weak mark-fainting mark-wounded))
 (def %art-poses '(attack hit dead))
 (def %art-same? (fn (_ a b) (if (str? a) (if (str? b) (str=? a b) #f) (eq? a b))))
@@ -134,7 +134,7 @@ each the art's size, held TICKS a picture.
 (write (list (art-problems (spec-set-named "town") art) (List length (data-all art 'tile))))
 ```
 ---
-    (() 66)
+    (() 71)
 
 
 ## the font

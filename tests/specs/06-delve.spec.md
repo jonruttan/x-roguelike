@@ -170,6 +170,22 @@ blow on a sleeper -- is in 10-elements.
 ---
     (#t #f #t #f #t)
 
+### a wall opened is seen through from the same place, at the next light
+
+```roguelike
+(import roguelike/map map-set!)
+(def m (spec-level 7 1))
+(def room (first (map-rooms m)))
+(def at (room-centre room))
+(def r (first at))
+(def past (fn (_) (map-light-radius! m r (rest at) 12) (map-visible? m r (+ (room-c1 room) 1))))
+(def shut (past))
+(map-set! m r (room-c1 room) tile-floor)
+(write (list shut (past) (past)))
+```
+---
+    (#f #t #t)
+
 ### a delve game sees by sight: nothing past seven cells is in view
 
 ```roguelike
