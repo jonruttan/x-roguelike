@@ -194,6 +194,7 @@
     (match ((null? path) ())
            ((< most (List length path)) ())
            ((not (state-adjacent? (row (first path)) (col (first path)) (player-r p) (player-c p))) ())
+           ((creatures-door-diagonal? m (player-r p) (player-c p) (- (row (first path)) (player-r p)) (- (col (first path)) (player-c p))) ())
            ((not ((fn (_ last) (goal? (row last) (col last))) (List ref (- (List length path) 1) path))) ())
            ((if (Vector ref 0 %bl-bold) #f (%bl-shunned? g (row (first path)) (col (first path)))) ())
            ((null? (rest path)) path)
