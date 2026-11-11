@@ -297,7 +297,7 @@
 ; kept here, (TAG . CELLS) each, 13 the turn the level was come to, 14
 ; whether its shaft was found barred, 15 the walks not found, 16 the
 ; slow creature last stepped clear of, and where it stood, 17 where the
-; player last was.
+; player last was, 18 how much the pack held at the last talk here.
 
 ; Where the player stands, as text: the depth, or on a world of screens
 ; the screen and any interior.
@@ -373,10 +373,14 @@
 (def %bl-use! (fn (_ g key it) (%bl-key! g key) (%bl-key! g (item-letter it))))
 
 ; Whether to walk into the giver CR: not yet since the level was reached
-; or explored, or holding a token.
+; or explored, or holding a token with a pack not as it was at the last
+; talk here, slot 18 of S: a token this giver does not want changes
+; nothing, and is not offered twice.
 (def %bl-talk?
   (fn (_ g s cr)
-    (if (not (Vector ref 4 s)) #t (not (null? (%bl-in-pack g (%bl-of-class (lit token))))))))
+    (match ((not (Vector ref 4 s)) #t)
+           ((null? (%bl-in-pack g (%bl-of-class (lit token)))) #f)
+           (#t (not (= (Vector ref 18 s) (List length (game-pack g))))))))
 
 ; The items at R C the bot has not given up on.
 (def %bl-given-up? (fn (_ s it) (List any? (fn (_ x) (same? x it)) (Vector ref 8 s))))
@@ -982,7 +986,7 @@
       ((if shoots? (%bl-out-of-line! g shown) #f) ())
       ((not (null? errand)) (%bl-errand! g s errand shown))
       ((if (null? giver) #f (%bl-talk? g s giver))
-        (do (%bl-toward-creature! g s giver) (Vector set! 4 #t s)))
+        (do (%bl-toward-creature! g s giver) (Vector set! 4 #t s) (Vector set! 18 (List length (game-pack g)) s)))
       ((if curious? (%bl-to-frontier! g s) #f) ())
       (curious? (do (%bl-explored! g s) (%bl-descend! g s who shown)))
       (#t (%bl-descend! g s who shown)))))
@@ -1114,7 +1118,7 @@
     (def g (%bl-start set play))
     (unless (str=? path "") (File write-all path ""))
     (def kept (Vector of (str=? path "")))
-    (def s (Vector of #f "" 0 0 #f () () 0 () () 0 0 () 0 #f () () ()))
+    (def s (Vector of #f "" 0 0 #f () () 0 () () 0 0 () 0 #f () () () -1))
     (def arrivals (Vector of (list (%bl-arrival g))))
     (def loop
       (fn (self turn stalled)
@@ -1181,7 +1185,7 @@
           (unless (null? cr)
             (do (def hp (creature-prop cr (lit hp) (list 1 1)))
                 (creature-hp! cr (state-roll (game-rng g) (first hp) (List ref 1 hp)))))
-          (def s (Vector of #f "" 0 0 #f () () 0 () () 0 0 () 0 #f () () ()))
+          (def s (Vector of #f "" 0 0 #f () () 0 () () 0 0 () 0 #f () () () -1))
           (def depth (game-depth g))
           (def start (game-turn g))
           (def loop
