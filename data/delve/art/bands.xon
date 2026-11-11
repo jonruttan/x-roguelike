@@ -342,44 +342,6 @@
   "::::@::::::@::e:"
   ":e::::::::::::::"))
 
-; ... a puddle left standing.
-(tile floor (band "The Flood") (weight 4) (rows
-  "::::@:::::e:::::"
-  ":e::::::::::@:::"
-  "::::eeeeeee:::::"
-  ":::eewwwwwwee:::"
-  "::ewwwWW~wwwwe::"
-  "::ewwwwwwWWwwe::"
-  ":ewwW~wwwwwwwe::"
-  ":ewwwwwwwwwwe:::"
-  "::ewwwwWwwwwe:::"
-  ":::eewwwwwee::::"
-  "::::@eeeee::@:::"
-  "::::::::::::::::"
-  ":::::~::::e:::::"
-  "::@:::::::::::::"
-  "::::::::e:::::@:"
-  ":e::::::::::::::"))
-
-; ... shallow water over the whole road, deeper in the ruts.
-(tile floor (band "The Flood") (weight 1) (rows
-  ":::e::::::e:::::"
-  "::eewwwwwwwee:::"
-  ":ewwwwW~wwwwwe::"
-  "ewwW~ww===wwwwe:"
-  "ewww===wwww=wwwe"
-  "eww=====wwwwWwwe"
-  "ewWw===~=wwwwwwe"
-  "ewwww=====wwW~we"
-  "ewwWwww===wwwwwe"
-  "eww~wwwwwwww=wwe"
-  "ewwwwwW~www===we"
-  ":ewww====wwwwwe:"
-  ":ewwwwwwwWwwwwe:"
-  "::eewwwwwwwwee::"
-  ":::@eeeeeeee::::"
-  "::::::::@:::::::"))
-
 ; ... silt laid down in ripples as the water drew off.
 (tile floor (band "The Flood") (weight 3) (rows
   "::::@:::::e:::::"
@@ -775,7 +737,7 @@
   "..............kk"))
 
 ; Limestone flags, close laid and worn.
-(tile floor (band "The Old Works") (weight 12) (rows
+(tile floor (band "The Old Works") (weight 24) (rows
   "`````'`|``````'`"
   "``'````|````````"
   "```````|```'````"
@@ -794,7 +756,7 @@
   "||||||||||||||||"))
 
 ; ... a flag cracked across and sunk.
-(tile floor (band "The Old Works") (weight 4) (rows
+(tile floor (band "The Old Works") (weight 3) (rows
   "`````'`|``````'`"
   "``'````|````````"
   "``k````|```'````"
@@ -808,25 +770,6 @@
   "`'`|'kkk''''k```"
   "```|'''''kkk``'`"
   "```|''''''''''``"
-  "```|`````````'``"
-  "'''|''''''''''''"
-  "||||||||||||||||"))
-
-; ... a channel cut across a flag, water standing in it.
-(tile floor (band "The Old Works") (weight 3) (rows
-  "`````'`|``````'`"
-  "``'````|````````"
-  "```````|```'````"
-  "`<kkkkkkkkkkkk<`"
-  "`kwwwWwwwwwwwwk`"
-  "`kwW~wwwwWwwwwk`"
-  "`<kkkkkkkkkkkk<`"
-  "||||||||||||||||"
-  "```|```````'````"
-  "```|`'``````````"
-  "`'`|`````'``````"
-  "```|``````````'`"
-  "```|``'`````````"
   "```|`````````'``"
   "'''|''''''''''''"
   "||||||||||||||||"))
@@ -1243,13 +1186,13 @@
   "..............kk"))
 
 ; The cave floor: the same dark rock, worn smooth and wet.
-(tile floor (band "The Heart") (weight 12) (rows
+(tile floor (band "The Heart") (weight 24) (rows
   "__,___$____,____"
   "_,______,_____$_"
   "____$_______,___"
   "__,____,___$____"
   "_____$____,_____"
-  "_$_______#______"
+  "_$_______$______"
   "____,__$_____,__"
   "__,_______,_____"
   "_____#______$___"
@@ -1258,46 +1201,27 @@
   "_____$__,_______"
   "_,_______,___$__"
   "___$__,______,__"
-  "__,_______#_____"
+  "__,_______$_____"
   "_____,____,_____"))
 
 ; ... beaded all over with water, though the air is dry.
-(tile floor (band "The Heart") (weight 4) (rows
+(tile floor (band "The Heart") (weight 2) (rows
   "__,___$#___,____"
-  "_,______,__#__$_"
+  "_,______,__$__$_"
   "__#_$_______,___"
-  "__,____,___$_#__"
+  "__,____,___$_$__"
   "_____$#___,_____"
-  "_$_______#______"
+  "_$_______$______"
   "_#__,__$_____,__"
-  "__,____#__,___#_"
+  "__,____$__,___$_"
   "_____#______$___"
-  "_$____,___,_#___"
+  "_$____,___,_$___"
   "___,_#____$___,_"
-  "_____$__,____#__"
+  "_____$__,____$__"
   "_,__#____,___$__"
-  "___$__,_#____,__"
+  "___$__,_$____,__"
   "__,_______#_____"
-  "_#___,____,___#_"))
-
-; ... a still pool of the stone's water in a hollow.
-(tile floor (band "The Heart") (weight 3) (rows
-  "__,___$____,____"
-  "_,__,,,,,,,,__$_"
-  "___,}}}}}}}},___"
-  "__,}}}}#}}}}},__"
-  "_,}}}}}}}}{}}},_"
-  "_,}}#}}}}}}}}},_"
-  "_,}}}}}}}}}#}},_"
-  "__,}}}}{}}}}},__"
-  "___,}}}}}}}},___"
-  "____,,,,,,,,_$__"
-  "___,______$___,_"
-  "_____$__,_______"
-  "_,_______,___$__"
-  "___$__,______,__"
-  "__,_______#_____"
-  "_____,____,_____"))
+  "_$___,____,___$_"))
 
 ; ... a dripstone boss grown up from the floor.
 (tile floor (band "The Heart") (weight 2) (rows
