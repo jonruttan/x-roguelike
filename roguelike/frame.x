@@ -585,10 +585,11 @@
         (frame-glints g cam) (frame-blows g cam) (list (frame-chart g)))))))
 
 ; The turn's blows whose target is in view under camera CAM, oldest
-; first, each (blow FX FY TX TY HOW N BY-PLAYER? WHAT): the pixel
-; places of who struck (the target's when the striker is out of view)
-; and of whom, HOW hit, miss, kill or touch, N the damage, whether the
-; player struck, and what flew, or nil.
+; first, each (blow FX FY TX TY HOW N BY-PLAYER? WHAT UNSEEN?): the
+; pixel places of who struck (the target's when the striker is out of
+; view) and of whom, HOW hit, miss, kill or touch, N the damage, whether
+; the player struck, what flew, or nil, and whether it was struck from a
+; cell in view with no one drawn there.
 (def frame-blows
   (fn (_ g cam)
     (def p (game-player g))
@@ -596,11 +597,19 @@
       (fn (_ b)
         (def to (frame-place cam (List ref 3 b) (List ref 4 b)))
         (def from ((fn (_ f) (if (null? f) to f)) (frame-place cam (List ref 1 b) (List ref 2 b))))
+        (def mine (if (= (List ref 1 b) (player-r p)) (= (List ref 2 b) (player-c p)) #f))
         (if (null? to) ()
           (list (list (lit blow) (first from) (rest from) (first to) (rest to) (List ref 5 b) (List ref 6 b)
-                      (if (= (List ref 1 b) (player-r p)) (= (List ref 2 b) (player-c p)) #f)
-                      (List ref 7 b)))))
+                      mine (List ref 7 b) (if mine #f (%fr-unseen-at? g (List ref 1 b) (List ref 2 b)))))))
       (List reverse (game-blows g)))))
+; Whether the cell at R C is in view with no one drawn there who stands
+; on it: the striker from it is not seen.
+(def %fr-unseen-at?
+  (fn (_ g r c)
+    (if (map-visible? (game-map g) r c)
+      (not (List any? (fn (_ cr) (if (if (= (creature-r cr) r) (= (creature-c cr) c) #f) (creatures-shown? g cr) #f))
+             (game-creatures g)))
+      #f)))
 
 
 ; The places, (X . Y), of the cells of OPS with a tile that moves.

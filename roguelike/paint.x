@@ -316,14 +316,15 @@
 
 ; --- blows ---------------------------------------------------------------------
 
-; A turn's blows, (blow FX FY TX TY HOW N BY-PLAYER? WHAT) ops
+; A turn's blows, (blow FX FY TX TY HOW N BY-PLAYER? WHAT UNSEEN?) ops
 ; (frame.x), shown over %pt-blow-frames frames after the turn: the
 ; striker lunges toward its target, a blow that lands flashes the
 ; target white (the player's) or red (a creature's), the player's kill
 ; bursts where the creature was, and the damage, or "miss", rises from
 ; the target.  A blow with WHAT, what flew, has no lunge: WHAT flies
 ; from the striker to the target over %pt-flight-frames frames first,
-; and the rest follows.  Each a frame's step, by frame K.
+; and the rest follows.  One UNSEEN stirs the air where it came from.
+; Each a frame's step, by frame K.
 (def %pt-blow-frames 8)
 (def %pt-flight-frames 4)
 ; The frame blow B's landing is shown from.
@@ -471,6 +472,19 @@
              (self (int+ i 1)))))
      1)))
 
+; Where a blow comes from no one drawn, the air stirs: a pale ring
+; widening from the striker's cell, radius by frame, gone by the end.
+(def %pt-stir-ink (list 170 205 225))
+(def %pt-stir-by (Vector of 2 3 4 5 6 7 0 0))
+; A ring of radius R at X Y on C, a diamond's outline; none at 0.
+(def %pt-stir!
+  (fn (_ c x y r)
+    (unless (int= r 0)
+      (do (%pt-line! c (pair (int- x r) y) (pair x (int- y r)) %pt-stir-ink)
+          (%pt-line! c (pair x (int- y r)) (pair (int+ x r) y) %pt-stir-ink)
+          (%pt-line! c (pair (int+ x r) y) (pair x (int+ y r)) %pt-stir-ink)
+          (%pt-line! c (pair x (int+ y r)) (pair (int- x r) y) %pt-stir-ink)))))
+
 (def %pt-hurt-ink (list 255 90 70))
 (def %pt-dealt-ink (list 255 224 110))
 (def %pt-miss-ink (list 180 180 180))
@@ -496,6 +510,8 @@
     (def how (List ref 5 b))
     (def mine (List ref 7 b))
     (def y (int- ty dy))
+    (when (if (int< 9 (List length b)) (List ref 9 b) #f)
+      (%pt-stir! c (int+ (List ref 1 b) 8) (int+ (int- (List ref 2 b) dy) 8) (Vector ref k %pt-stir-by)))
     (unless (eq? how (lit miss))
       ((fn (_ pic)
          (if (if (null? pic) #t (if mine (eq? how (lit kill)) #f))

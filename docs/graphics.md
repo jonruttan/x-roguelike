@@ -69,7 +69,10 @@ screen's pixel, the art's scale: a line holds 52 letters.
   a thrown stone and its dust (a knocker's), a wand's bolt as a streak
   of light, breath as a gout of flame swelling as it goes.  A bolt that
   does no harm (a slowing, a banishing) flashes its target and writes
-  nothing.
+  nothing.  A blow from a cell in view with no one drawn there, an
+  invisible creature's, stirs the air there instead: a pale ring
+  widening from the cell.  The message says "Something unseen hits
+  you." (`unseen-hit`, `unseen-miss`).
 - **Overlays**: a list looked at, the items a question can take, a
   choice, a page read, a talker's words, the world map and the end of
   the game lie over the level on a panel, as the terminal lays them
