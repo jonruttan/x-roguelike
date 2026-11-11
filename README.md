@@ -104,7 +104,8 @@ cells, `(level-style caves)` with `(cave-fill PERCENT)`, `(known CLASS
 ...)`, a first `(hunger ...)` value under one, or `(starve N)` for a hit
 point every N seconds past nothing in place of the faint; `(traps LO HI)`
 a level, of its `(trap NAME MESSAGE (effect ...))` kinds, hurt, hold,
-aggravate or teleport; `(surprise N)` times the damage on a sleeper;
+aggravate or teleport, a teleport never laid where it would leave no
+way from the stairs up to the stairs down; `(surprise N)` times the damage on a sleeper;
 `(strength N)` on a weapon or armour, and `(effect upgrade)` on a
 scroll; `(band NAME TO . PROPS)`,
 one after another from level 1, with `(enter "TEXT")` said on its first
