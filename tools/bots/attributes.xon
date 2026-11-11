@@ -37,3 +37,5 @@
   (greed 15 30) (curiosity 90 100))
 (archetype "diver" "takes the stairs as soon as it knows them"
   (curiosity 0 20) (courage 0 30) (chase 0 4))
+(archetype "master" "plays by every answer it has, rested and ready"
+  (quaff 35 35) (retreat 0 0) (rest 100 100) (ready 100 100) (courage 60 60) (chase 40 40) (greed 30 30) (curiosity 100 100))
