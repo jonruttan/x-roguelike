@@ -109,7 +109,7 @@
 
 ; Whether the bot, with nowhere left to go on a level, has given up
 ; going round what sits there.
-(def %bl-bold (Vector of #f))
+(def %bl-bold (Vector of 0))
 
 ; The cells a walk does not cross, a vector by cell: #t where a creature
 ; stands and where a trap has been found, which a walk may still end
@@ -120,7 +120,7 @@
     (def m (game-map g))
     (List for-each
       (fn (_ cr)
-        (when (if (Vector ref 0 %bl-bold) #f (%bl-sitter? g cr))
+        (when (if (< 0 (Vector ref 0 %bl-bold)) #f (%bl-sitter? g cr))
           (List for-each
             (fn (_ d)
               (def r (+ (creature-r cr) (first (rest d))))
@@ -129,7 +129,7 @@
             %bl-dirs)))
       (game-creatures g))
     (List for-each (fn (_ cr) (Vector set! (+ (* (creature-r cr) cols) (creature-c cr)) #t v)) (game-creatures g))
-    (List for-each (fn (_ t) (when (if (Vector ref 0 %bl-bold) #f (trap-found? t)) (Vector set! (+ (* (trap-r t) cols) (trap-c t)) #t v))) (game-traps g))
+    (List for-each (fn (_ t) (when (if (< 1 (Vector ref 0 %bl-bold)) #f (trap-found? t)) (Vector set! (+ (* (trap-r t) cols) (trap-c t)) #t v))) (game-traps g))
     v))
 
 ; The shortest walk over seen, walkable cells, clear of creatures and
@@ -196,10 +196,10 @@
            ((not (state-adjacent? (row (first path)) (col (first path)) (player-r p) (player-c p))) ())
            ((creatures-door-diagonal? m (player-r p) (player-c p) (- (row (first path)) (player-r p)) (- (col (first path)) (player-c p))) ())
            ((not ((fn (_ last) (goal? (row last) (col last))) (List ref (- (List length path) 1) path))) ())
-           ((if (Vector ref 0 %bl-bold) #f (%bl-shunned? g (row (first path)) (col (first path)))) ())
+           ((if (< 0 (Vector ref 0 %bl-bold)) #f (%bl-shunned? g (row (first path)) (col (first path)))) ())
            ((null? (rest path)) path)
            ((not (null? (state-creature-at g (row (first path)) (col (first path))))) ())
-           ((if (Vector ref 0 %bl-bold) #f (not (null? (traps-found-at g (row (first path)) (col (first path)))))) ())
+           ((if (< 1 (Vector ref 0 %bl-bold)) #f (not (null? (traps-found-at g (row (first path)) (col (first path)))))) ())
            (#t path))))
 
 ; Where the player and every creature stand, as (CELL . SUM): while it
@@ -296,7 +296,8 @@
 ; 10 oil flasks poured, 11 turns taken with the lamp out, 12 the walks
 ; kept here, (TAG . CELLS) each, 13 the turn the level was come to, 14
 ; whether its shaft was found barred, 15 the walks not found, 16 the
-; slow creature last stepped clear of, and where it stood.
+; slow creature last stepped clear of, and where it stood, 17 where the
+; player last was.
 
 ; Where the player stands, as text: the depth, or on a world of screens
 ; the screen and any interior.
@@ -309,26 +310,38 @@
 (def %bl-explored? (fn (_ g s) (if (%bl-here? g s) (Vector ref 0 s) #f)))
 (def %bl-explored! (fn (_ g s) (Vector set! 0 #t s) (Vector set! 1 (%bl-place g) s) (Vector set! 4 #f s)))
 (def %bl-new-level! (fn (_ g s) (Vector set! 0 #f s) (Vector set! 1 (%bl-place g) s) (Vector set! 4 #f s) (Vector set! 9 () s) (Vector set! 12 () s)
-    (Vector set! 13 (game-turn g) s) (Vector set! 14 #f s) (Vector set! 15 () s) (Vector set! 0 #f %bl-bold)))
+    (Vector set! 13 (game-turn g) s) (Vector set! 14 #f s) (Vector set! 15 () s) (Vector set! 17 () s) (Vector set! 0 0 %bl-bold)))
 
-; With nowhere at all to go, the first time on a level: the cells
-; beside the unseen are all to be stood on again, and neither what sits
-; nor a found trap is gone round any longer.  A turn's rest.
+; With nowhere at all to go on a level: the first time, the cells beside
+; the unseen are all to be stood on again and what sits is no longer
+; gone round; the second, a found trap is no longer gone round either.
+; A turn's rest.
 (def %bl-unstick!
   (fn (_ g s)
-    (unless (Vector ref 0 %bl-bold)
+    (def stage (Vector ref 0 %bl-bold))
+    (when (< stage 2)
       (do (Vector set! 9 () s)
           (Vector set! 12 () s)
           (Vector set! 15 () s)
-          (Vector set! 0 #t %bl-bold)))
+          (Vector set! 0 (+ stage 1) %bl-bold)))
     (%bl-key! g "s")))
 ; Bold, a step toward the nearest hostile on ground that has been seen:
 ; one asleep in a passage closes it.  #f with none to reach, or not bold.
 (def %bl-clear-the-way!
   (fn (_ g s)
-    (if (Vector ref 0 %bl-bold)
+    (if (< 0 (Vector ref 0 %bl-bold))
       (%bl-walk! g s (lit blocker) (fn (_ r c) ((fn (_ cr) (if (null? cr) #f (%bl-hostile? cr))) (state-creature-at g r c))))
       #f)))
+; The player thrown somewhere else on the level, more than a step from
+; where slot 17 of S last had them: the walks kept and those not found
+; are for another place, and the bot is no longer bold.
+(def %bl-thrown!
+  (fn (_ g s)
+    (def p (game-player g))
+    (def was (Vector ref 17 s))
+    (when (if (null? was) #f (< 1 (state-dist (first was) (rest was) (player-r p) (player-c p))))
+      (do (Vector set! 12 () s) (Vector set! 15 () s) (Vector set! 0 0 %bl-bold)))
+    (Vector set! 17 (pair (player-r p) (player-c p)) s)))
 
 ; Whether the level has light left to look about by: the turns spent
 ; here, a second each, under the share of the oil in hand, lamp and
@@ -823,6 +836,7 @@
     (def armour (%bl-best g (lit armour) %bl-armour-worth))
     (def shown ((fn (_ cr) (if (null? cr) (%bl-shooter g) cr)) (%bl-shown-hostile g)))
     (unless (%bl-here? g s) (%bl-new-level! g s))
+    (%bl-thrown! g s)
     (match
       ((not (null? q)) (%bl-answer! g q))
       ((if (null? potion) #f (%bl-under? p (%bl-at who (lit quaff))))
@@ -1079,7 +1093,7 @@
     (def g (%bl-start set play))
     (unless (str=? path "") (File write-all path ""))
     (def kept (Vector of (str=? path "")))
-    (def s (Vector of #f "" 0 0 #f () () 0 () () 0 0 () 0 #f () ()))
+    (def s (Vector of #f "" 0 0 #f () () 0 () () 0 0 () 0 #f () () ()))
     (def arrivals (Vector of (list (%bl-arrival g))))
     (def loop
       (fn (self turn stalled)
@@ -1145,7 +1159,7 @@
           (unless (null? cr)
             (do (def hp (creature-prop cr (lit hp) (list 1 1)))
                 (creature-hp! cr (state-roll (game-rng g) (first hp) (List ref 1 hp)))))
-          (def s (Vector of #f "" 0 0 #f () () 0 () () 0 0 () 0 #f () ()))
+          (def s (Vector of #f "" 0 0 #f () () 0 () () 0 0 () 0 #f () () ()))
           (def depth (game-depth g))
           (def start (game-turn g))
           (def loop
