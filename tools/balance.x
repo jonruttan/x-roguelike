@@ -57,7 +57,7 @@
 (import x/num/random)
 (import x/core/doors int/)
 (import roguelike/data data-load data-one data-prop data-all)
-(import roguelike/map map-rows map-cols map-in? map-walkable? map-seen? map-down map-up map-tile tile-down tile-up tile-door)
+(import roguelike/map map-rows map-cols map-in? map-walkable? map-seen? map-down map-up map-tile map-frontier? tile-down tile-up tile-door)
 (import roguelike/state
   game-set game-depth game-deepest game-map game-player game-creatures game-pack game-over game-epitaph game-turn
   game-ask game-messages game-band band-name game-param
@@ -71,7 +71,7 @@
 (import roguelike/creatures creatures-shown? creatures-door-diagonal?)
 (import roguelike/items items-goal-held? items-worn items-target)
 (import roguelike/traps traps-found-at trap-r trap-c trap-found?)
-(import roguelike/game game-make game-key! game-frontier?)
+(import roguelike/game game-make game-key!)
 (import roguelike/combat combat-player-dice combat-player-level combat-chill combat-dazzle)
 (import roguelike/odds odds-hit odds-swings odds-regen odds-hurt odds-aim)
 
@@ -396,7 +396,7 @@
     (when (null? (Vector ref 9 s)) (Vector set! 9 (Vector make (* (map-rows m) cols) #f) s))
     (def spent (Vector ref 9 s))
     (Vector set! (+ (* (player-r p) cols) (player-c p)) #t spent)
-    (%bl-walk! g s (lit frontier) (fn (_ r c) (if (Vector ref (+ (* r cols) c) spent) #f (game-frontier? m r c))))))
+    (%bl-walk! g s (lit frontier) (fn (_ r c) (if (Vector ref (+ (* r cols) c) spent) #f (map-frontier? m r c))))))
 
 ; --- who the bot is ----------------------------------------------------------
 
