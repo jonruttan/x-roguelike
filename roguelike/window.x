@@ -7,7 +7,9 @@
 ; keys: a key pressed is handed to the game as the terminal would hand
 ; it, a letter as its string and an arrow, enter or escape by name.
 ; A gamepad's events become the same keys through roguelike/pad, and
-; Alt-Enter switches the window to fullscreen and back.
+; Alt-Enter switches the window to fullscreen and back.  The mouse
+; dragged, or the right stick, moves the view off the player to look
+; round; any key brings it back.
 ; The screen is drawn again after every key, and about twelve times a
 ; second while a light flickers.  The game is heard as well as seen
 ; (roguelike/sound): its music is kept fed each time round the loop,
@@ -23,11 +25,11 @@
 (import x/sys/posix)
 (import x/sys/gc)
 (import x/type/vector)
-(import x/core/doors int& int+ int- int< int= str-make str->ptr ptr-set! str-byte-ref char->int str-byte-len)
+(import x/core/doors int& int+ int- int* int/ int< int= str-make str->ptr ptr-set! str-byte-ref char->int str-byte-len)
 (import roguelike/state game-over game-over! game-exploring? game-exploring! game-band band-name game-place game-ask)
-(import roguelike/frame frame-art)
+(import roguelike/frame frame-art frame-tile-size frame-pan frame-pan!)
 (import roguelike/game game-key! game-waiting? game-explore!)
-(import roguelike/paint paint-width paint-height paint-make paint-screen paint-turn! paint-frame! paint-flickers?
+(import roguelike/paint paint-width paint-height paint-make paint-screen paint-turn! paint-view! paint-frame! paint-flickers?
   paint-zoom paint-zoom! paint-animating? paint-step! paint-menu!)
 (import roguelike/pad pad-make pad-key pad-event? pad-fullscreen? pad-fullscreen!)
 (import roguelike/sound sound-make sound-pump! sound-collect? sound-turn! sound-volume! sound-cue! sound-close)
@@ -99,17 +101,18 @@
       (%wn-char (if (= 0 (int& mod %wn-shift-mod)) code (%wn-shift code)))
       ((fn (_ hit) (if (null? hit) () (rest hit))) (List find (fn (_ e) (= (first e) code)) %wn-named))))))
 
-; The window's cache A: [ARTS KEY ART PAD SOUND OPTIONS PAD?], ARTS KEY
-; and ART for %wn-art, the gamepad's state, the game's sound or nil, the
-; options (roguelike/options), and whether the last key came from the
-; gamepad, so the prompts show its buttons.
+; The window's cache A: [ARTS KEY ART PAD SOUND OPTIONS PAD? DRAG], ARTS
+; KEY and ART for %wn-art, the gamepad's state, the game's sound or nil,
+; the options (roguelike/options), whether the last key came from the
+; gamepad, so the prompts show its buttons, and the drag under way.
 
-; The next event and the key it is, (EVENT . KEY): a gamepad's events
-; go to its state and come back as keys.  Whether the key came from the
-; gamepad is kept in A.  A held fullscreen key switches once.
+; The next event of window WIN and the key it is, (EVENT . KEY): a
+; gamepad's events go to its state and come back as keys.  Whether the
+; key came from the gamepad is kept in A.  A held fullscreen key
+; switches once.  The mouse is in the screen's pixels.
 (def %wn-input
-  (fn (_ a)
-    (def ev (Sdl poll))
+  (fn (_ a win)
+    (def ev (Sdl poll win))
     (def typed? (if (null? ev) #f (eq? (first ev) (lit key-down))))
     (def typed (if typed? (window-key (List ref 1 ev) (List ref 2 ev)) ()))
     (def key (if typed?
@@ -188,7 +191,7 @@
   (fn (self g a p win m heading title? values? lines)
     (def show! (fn (_) (Sdl show! win (List ref 2 (paint-menu! p g heading title? (lines) (menu-chosen m) (%wn-prompts a values?) (Vector ref 6 a))))))
     (sound-pump! (Vector ref 4 a))
-    (def in (%wn-input a))
+    (def in (%wn-input a win))
     (def ev (first in))
     (def key (rest in))
     (def e (if (pad-event? ev) () ev))
@@ -200,6 +203,7 @@
             (self g a p win m heading title? values? lines)))
       ((not (null? act)) act)
       ((not (null? key)) (do (show!) (self g a p win m heading title? values? lines)))
+      ((%wn-mouse? e) (self g a p win m heading title? values? lines))
       ((not (null? e)) (do (show!) (self g a p win m heading title? values? lines)))
       ((not (null? ev)) (self g a p win m heading title? values? lines))
       (#t (do (Sys usleep %wn-idle-us)
@@ -255,7 +259,7 @@
     (def pad (Vector ref 3 a))
     (def snd (Vector ref 4 a))
     (sound-pump! snd)
-    (def in (%wn-input a))
+    (def in (%wn-input a win))
     (def ev (first in))
     ; A gamepad's A goes on past a message as enter does.
     (def key (if (if (Vector ref 6 a) (if (str? (rest in)) (if (str=? (rest in) ",") (game-waiting? g) #f) #f) #f)
@@ -288,10 +292,19 @@
       ((if (null? (%wn-sound-key key)) #f (null? (game-ask g)))
         (do (%wn-sound! a p g win (%wn-sound-key key))
             (self g a p win tick)))
+      ; The right stick moves the view a cell; the window's, so no turn
+      ; passes.
+      ((if (pair? key) (eq? (first key) (lit look)) #f)
+        (do (%wn-pan! a p g win tick (int+ (first (frame-pan)) (List ref 2 key)) (int+ (rest (frame-pan)) (List ref 1 key)))
+            (self g a p win tick)))
+      ; The mouse drags the view.
+      ((%wn-mouse? e) (do (%wn-drag! a p g win tick e) (self g a p win tick)))
       ; The frame goes on screen before the heap is collected: the
-      ; collect's cost comes after the key's answer, not before it.
+      ; collect's cost comes after the key's answer, not before it.  A
+      ; key brings a dragged view back to the player.
       ((not (null? key))
-        (do (if (game-exploring? g) (game-exploring! g ()) (game-key! g key))
+        (do (frame-pan! g 0 0)
+            (if (game-exploring? g) (game-exploring! g ()) (game-key! g key))
             (sound-turn! snd g)
             (paint-turn! p g (%wn-art a g))
             (Sdl show! win (List ref 2 (paint-frame! p g tick)))
@@ -304,7 +317,8 @@
       ((not (null? ev)) (self g a p win tick))
       ; Exploring steps on without waiting for each step to be shown.
       ((game-exploring? g)
-        (do (game-explore! g)
+        (do (frame-pan! g 0 0)
+            (game-explore! g)
             (sound-turn! snd g)
             (paint-turn! p g (%wn-art a g))
             (Sdl show! win (List ref 2 (paint-frame! p g tick)))
@@ -326,6 +340,43 @@
       (#t (do (Sys usleep %wn-idle-us)
               (when (sound-collect? snd) (Heap collect))
               (self g a p win tick))))))
+
+; --- dragging the view ---------------------------------------------------------
+
+(def %wn-mouse?
+  (fn (_ e) (if (null? e) #f (if (List find (fn (_ k) (eq? k (first e))) (lit (mouse-down mouse-up mouse-motion))) #t #f))))
+
+; Game G's view moved to DR DC cells off the player, held to the map,
+; and shown at TICK when it moved: drawn again without the turn's blows
+; and steps.
+(def %wn-pan!
+  (fn (_ a p g win tick dr dc)
+    (def was (frame-pan))
+    (frame-pan! g dr dc)
+    (unless (equal? was (frame-pan))
+      (do (paint-view! p g (%wn-art a g))
+          (Sdl show! win (List ref 2 (paint-frame! p g tick)))))))
+
+; Mouse event E taken: the left button down starts a drag, kept in A as
+; (X Y DR DC), where it went down and the view's pan then; a motion
+; with the left button held moves the view by the whole cells the
+; mouse has gone, the level following the hand; the button up ends it.
+(def %wn-drag!
+  (fn (_ a p g win tick e)
+    (def d (Vector ref 7 a))
+    (def t (int* frame-tile-size (paint-zoom p)))
+    ; Pixels to the nearest whole cells.
+    (def cells (fn (_ px) (int/ (int+ px (if (int< px 0) (int- 0 (int/ t 2)) (int/ t 2))) t)))
+    (match
+      ((eq? (first e) (lit mouse-down))
+        (when (eq? (List ref 1 e) (lit left))
+          (Vector set! 7 (list (List ref 2 e) (List ref 3 e) (first (frame-pan)) (rest (frame-pan))) a)))
+      ((eq? (first e) (lit mouse-up)) (when (eq? (List ref 1 e) (lit left)) (Vector set! 7 () a)))
+      ((null? d) ())
+      ((not (List find (fn (_ b) (eq? b (lit left))) (List ref 3 e))) (Vector set! 7 () a))
+      (#t (%wn-pan! a p g win tick
+            (int+ (List ref 2 d) (cells (int- (List ref 1 d) (List ref 2 e))))
+            (int+ (List ref 3 d) (cells (int- (List ref 0 d) (List ref 1 e)))))))))
 
 ; The zoom KEY asks for: 1 for + or =, -1 for -, 0 for any other.
 (def %wn-zoom-step
@@ -373,7 +424,7 @@
 (def window-play
   (fn (_ saved fresh arts font scale zoom title)
     (def o (options-read (options-path)))
-    (def a (Vector of arts "" () (pad-make) () (if (null? zoom) o (options-set o (lit zoom) zoom)) #f))
+    (def a (Vector of arts "" () (pad-make) () (if (null? zoom) o (options-set o (lit zoom) zoom)) #f ()))
     ; Fullscreen on a Mac stays on the desktop's Space: a Space of its
     ; own slides in, and a switch back before the slide ends leaves an
     ; empty screen with the window gone.

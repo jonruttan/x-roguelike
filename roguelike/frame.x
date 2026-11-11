@@ -33,12 +33,25 @@
 (import roguelike/game game-frontier?)
 
 (def frame-tile-size 16)
-; The view, [ROWS COLS] in cells: drawn at the tile's size and shown
-; at the painter's zoom (paint.x), which sets it to fill the screen.
-(def %fr-view (Vector of 10 20))
+; The view, [ROWS COLS DR DC] in cells: drawn at the tile's size and
+; shown at the painter's zoom (paint.x), which sets it to fill the
+; screen; DR DC how far it is moved off the player, by a drag.
+(def %fr-view (Vector of 10 20 0 0))
 (def frame-view-rows (fn (_) (Vector ref 0 %fr-view)))
 (def frame-view-cols (fn (_) (Vector ref 1 %fr-view)))
 (def frame-view! (fn (_ rows cols) (do (Vector set! 0 rows %fr-view) (Vector set! 1 cols %fr-view) ())))
+(def frame-pan (fn (_) (pair (Vector ref 2 %fr-view) (Vector ref 3 %fr-view))))
+; V held to 0 .. N - 1.
+(def %fr-held (fn (_ v n) (if (int< v 0) 0 (if (int< v n) v (int- n 1)))))
+; The view of game G moved DR DC cells off the player, no further than
+; puts its middle on the map's edge.
+(def frame-pan!
+  (fn (_ g dr dc)
+    (def m (game-map g))
+    (def p (game-player g))
+    (Vector set! 2 (int- (%fr-held (int+ (player-r p) dr) (map-rows m)) (player-r p)) %fr-view)
+    (Vector set! 3 (int- (%fr-held (int+ (player-c p) dc) (map-cols m)) (player-c p)) %fr-view)
+    ()))
 (def frame-level-y 24)
 
 ; --- the art ----------------------------------------------------------------
@@ -142,13 +155,13 @@
 ; --- the camera -------------------------------------------------------------
 
 ; The view's top-left cell, (R0 . C0): the player at R C in the middle,
-; always, so the screen is never half empty beside a map's edge.  What
-; lies past the edge is drawn as rock.  ROWS and COLS, the map's size,
-; are not needed to place it.
+; so the screen is never half empty beside a map's edge, or moved off
+; the player by the pan, its middle kept on the map of ROWS by COLS.
+; What lies past the edge is drawn as rock.
 (def frame-camera
   (fn (_ rows cols r c)
-    (pair (- r (int/ (frame-view-rows) 2))
-          (- c (int/ (frame-view-cols) 2)))))
+    (pair (- (%fr-held (+ r (Vector ref 2 %fr-view)) rows) (int/ (frame-view-rows) 2))
+          (- (%fr-held (+ c (Vector ref 3 %fr-view)) cols) (int/ (frame-view-cols) 2)))))
 
 ; --- the level --------------------------------------------------------------
 
@@ -614,7 +627,7 @@
             (game-creatures g)))))
 
 (provide roguelike/frame
-  frame-tile-size frame-view-rows frame-view-cols frame-view! frame-level-y
+  frame-tile-size frame-view-rows frame-view-cols frame-view! frame-pan frame-pan! frame-level-y
   frame-art frame-art-band frame-named frame-seed frame-wall-parts frame-camera frame-cell frame-level
   frame-place frame-things frame-view frame-lights frame-glints frame-blows frame-flicker frame-light-map frame-scene
   frame-chart)

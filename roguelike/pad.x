@@ -14,7 +14,8 @@
 ;     Start  the pause menu    Back  the map of the world (m)
 ;
 ; A command that asks for a thing -- quaff, read, wear -- is still a
-; key on the keyboard.
+; key on the keyboard.  The right stick moves the view, a cell at a time
+; while held, as (look DX DY): the window's, not the game's.
 ;
 ; A direction moves once it has held for a moment, so a stick pushed to
 ; a diagonal crosses no straight direction on the way there, and again
@@ -39,6 +40,8 @@
 (def %pd-settle 40)
 (def %pd-first 260)
 (def %pd-rate 120)
+; Between the view's moves while the right stick holds it.
+(def %pd-look 90)
 
 (def %pd-buttons
   (list (pair (lit south) ",") (pair (lit east) (lit escape))
@@ -59,11 +62,13 @@
     ((fn (_ hit) (if (null? hit) () (rest hit)))
      (List find (fn (_ e) (if (= (first (first e)) dx) (= (rest (first e)) dy) #f)) %pd-dirs))))
 
-; A pad's state: [STICK-X STICK-Y DPAD HELD NEXT FIRST? FULLSCREEN?],
-; the stick's two directions, the d-pad buttons down, the direction
-; held, when it next moves, whether that is its first move, and whether
-; the window is fullscreen.
-(def pad-make (fn (_) (Vector of 0 0 () () 0 #t #f)))
+; A pad's state: [STICK-X STICK-Y DPAD HELD NEXT FIRST? FULLSCREEN?
+; LOOK-X LOOK-Y LOOKING LOOK-NEXT], the left stick's two directions,
+; the d-pad buttons down, the direction held, when it next moves,
+; whether that is its first move, whether the window is fullscreen; the
+; right stick's two directions, the way it holds the view, and when the
+; view next moves.
+(def pad-make (fn (_) (Vector of 0 0 () () 0 #t #f 0 0 () 0)))
 
 (def pad-fullscreen? (fn (_ s) (Vector ref 6 s)))
 (def pad-fullscreen! (fn (_ s on) (Vector set! 6 on s)))
@@ -109,6 +114,8 @@
       ((eq? what (lit pad-axis))
         (match ((eq? name (lit left-x)) (Vector set! 0 (%pd-axis (List ref 2 e) (Vector ref 0 s)) s))
                ((eq? name (lit left-y)) (Vector set! 1 (%pd-axis (List ref 2 e) (Vector ref 1 s)) s))
+               ((eq? name (lit right-x)) (Vector set! 7 (%pd-axis (List ref 2 e) (Vector ref 7 s)) s))
+               ((eq? name (lit right-y)) (Vector set! 8 (%pd-axis (List ref 2 e) (Vector ref 8 s)) s))
                (#t ())))
       ((eq? what (lit pad-down))
         (Vector set! 2 (pair name (List filter (fn (_ h) (not (eq? h name))) (Vector ref 2 s))) s))
@@ -133,12 +140,20 @@
       (do (Vector set! 3 pointing s)
           (Vector set! 4 (+ now %pd-settle) s)
           (Vector set! 5 #t s)))
+    (def looking (if (if (= 0 (Vector ref 7 s)) (= 0 (Vector ref 8 s)) #f) () (pair (Vector ref 7 s) (Vector ref 8 s))))
+    (unless (equal? looking (Vector ref 9 s))
+      (do (Vector set! 9 looking s)
+          (Vector set! 10 now s)))
     (match
       ((not (null? button)) button)
-      ((null? pointing) ())
-      ((< now (Vector ref 4 s)) ())
-      (#t (do (Vector set! 4 (+ now (if (Vector ref 5 s) %pd-first %pd-rate)) s)
+      ((not (null? pointing))
+        (if (< now (Vector ref 4 s)) ()
+          (do (Vector set! 4 (+ now (if (Vector ref 5 s) %pd-first %pd-rate)) s)
               (Vector set! 5 #f s)
-              pointing)))))
+              pointing)))
+      ((null? looking) ())
+      ((< now (Vector ref 10 s)) ())
+      (#t (do (Vector set! 10 (+ now %pd-look) s)
+              (list (lit look) (first looking) (rest looking)))))))
 
 (provide roguelike/pad pad-make pad-key pad-event? pad-fullscreen? pad-fullscreen!)
