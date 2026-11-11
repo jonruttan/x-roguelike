@@ -3,7 +3,8 @@
 ; ## roguelike/window.x -- the game played in a window
 ;
 ; The same game as the terminal's, drawn by roguelike/paint into a 640
-; by 360 screen shown whole in an SDL window, and played with the same
+; by 360 screen shown whole in a window, SDL's or a browser tab's (Sdl or
+; Web, which answer the same messages), and played with the same
 ; keys: a key pressed is handed to the game as the terminal would hand
 ; it, a letter as its string and an arrow, enter or escape by name.
 ; A gamepad's events become the same keys through roguelike/pad, and
@@ -20,6 +21,7 @@
 (module roguelike/window)
 
 (import x/sys/sdl)
+(import x/sys/web)
 (import x/sys/posix)
 (import x/sys/gc)
 (import x/type/vector)
@@ -99,17 +101,19 @@
       (%wn-char (if (= 0 (int& mod %wn-shift-mod)) code (%wn-shift code)))
       ((fn (_ hit) (if (null? hit) () (rest hit))) (List find (fn (_ e) (= (first e) code)) %wn-named))))))
 
-; The window's cache A: [ARTS KEY ART PAD SOUND OPTIONS PAD?], ARTS KEY
-; and ART for %wn-art, the gamepad's state, the game's sound or nil, the
-; options (roguelike/options), and whether the last key came from the
-; gamepad, so the prompts show its buttons.
+; The window's cache A: [ARTS KEY ART PAD SOUND OPTIONS PAD? FRONT], ARTS
+; KEY and ART for %wn-art, the gamepad's state, the game's sound or nil,
+; the options (roguelike/options), whether the last key came from the
+; gamepad, so the prompts show its buttons, and the class the window is
+; drawn through, Sdl or Web.
+(def %wn-front (fn (_ a) (Vector ref 7 a)))
 
 ; The next event and the key it is, (EVENT . KEY): a gamepad's events
 ; go to its state and come back as keys.  Whether the key came from the
 ; gamepad is kept in A.  A held fullscreen key switches once.
 (def %wn-input
   (fn (_ a)
-    (def ev (Sdl poll))
+    (def ev ((%wn-front a) poll))
     (def typed? (if (null? ev) #f (eq? (first ev) (lit key-down))))
     (def typed (if typed? (window-key (List ref 1 ev) (List ref 2 ev)) ()))
     (def key (if typed?
@@ -146,7 +150,7 @@
       (do (paint-zoom! p (options-get o (lit zoom))) (paint-turn! p g (%wn-art a g))))
     (unless (eq? (pad-fullscreen? pad) (int= 1 (options-get o (lit fullscreen))))
       (do (pad-fullscreen! pad (int= 1 (options-get o (lit fullscreen))))
-          (Sdl fullscreen! win (pad-fullscreen? pad))))
+          ((%wn-front a) fullscreen! win (pad-fullscreen? pad))))
     (if (int= 1 (options-get o (lit mute)))
       (sound-volume! (Vector ref 4 a) 0 0)
       (sound-volume! (Vector ref 4 a) (options-get o (lit music)) (options-get o (lit effects))))
@@ -186,7 +190,7 @@
 ; paint-menu! and %wn-prompts take them; LINES makes the items' text.
 (def %wn-menu
   (fn (self g a p win m heading title? values? lines)
-    (def show! (fn (_) (Sdl show! win (List ref 2 (paint-menu! p g heading title? (lines) (menu-chosen m) (%wn-prompts a values?) (Vector ref 6 a))))))
+    (def show! (fn (_) ((%wn-front a) show! win (List ref 2 (paint-menu! p g heading title? (lines) (menu-chosen m) (%wn-prompts a values?) (Vector ref 6 a))))))
     (sound-pump! (Vector ref 4 a))
     (def in (%wn-input a))
     (def ev (first in))
@@ -212,7 +216,7 @@
 (def %wn-options
   (fn (self g a p win m)
     (def lines (fn (_) (List append (List map (fn (_ n) (options-line (Vector ref 5 a) n)) options-names) (list "Back"))))
-    (Sdl show! win (List ref 2 (paint-menu! p g "Options" #f (lines) (menu-chosen m) (%wn-prompts a #t) (Vector ref 6 a))))
+    ((%wn-front a) show! win (List ref 2 (paint-menu! p g "Options" #f (lines) (menu-chosen m) (%wn-prompts a #t) (Vector ref 6 a))))
     (def act (%wn-menu g a p win m "Options" #f #t lines))
     (def step!
       (fn (_ name dir)
@@ -232,7 +236,7 @@
 (def %wn-pause
   (fn (self g a p win m)
     (def items (List map rest (Vector ref 0 m)))
-    (Sdl show! win (List ref 2 (paint-menu! p g "Paused" #f items (menu-chosen m) (%wn-prompts a #f) (Vector ref 6 a))))
+    ((%wn-front a) show! win (List ref 2 (paint-menu! p g "Paused" #f items (menu-chosen m) (%wn-prompts a #f) (Vector ref 6 a))))
     (def act (%wn-menu g a p win m "Paused" #f #f (fn (_) items)))
     (def id (if (pair? act) (rest act) ()))
     (match
@@ -268,19 +272,19 @@
       ((eq? key (lit fullscreen))
         (do (%wn-option! a (lit fullscreen) (if (pad-fullscreen? pad) 0 1))
             (%wn-apply! a p g win)
-            (Sdl show! win (List ref 2 (paint-screen p)))
+            ((%wn-front a) show! win (List ref 2 (paint-screen p)))
             (self g a p win tick)))
       ((if (eq? key (lit pause)) #t (if (eq? key (lit escape)) (null? (game-ask g)) #f))
         (do (when (eq? (%wn-pause g a p win (menu-make %wn-pause-items)) (lit close)) (game-over! g (lit saved)))
             (paint-turn! p g (%wn-art a g))
-            (Sdl show! win (List ref 2 (paint-frame! p g tick)))
+            ((%wn-front a) show! win (List ref 2 (paint-frame! p g tick)))
             (self g a p win tick)))
       ; + or = shows the level larger, - smaller: the window's, not the
       ; game's, so no turn passes.
       ((not (int= 0 (%wn-zoom-step key)))
         (do (%wn-option! a (lit zoom) (int+ (paint-zoom p) (%wn-zoom-step key)))
             (%wn-apply! a p g win)
-            (Sdl show! win (List ref 2 (paint-frame! p g tick)))
+            ((%wn-front a) show! win (List ref 2 (paint-frame! p g tick)))
             (Heap collect)
             (self g a p win tick)))
       ; M mutes the sound or brings it back, [ and ] make it quieter and
@@ -294,12 +298,12 @@
         (do (if (game-exploring? g) (game-exploring! g ()) (game-key! g key))
             (sound-turn! snd g)
             (paint-turn! p g (%wn-art a g))
-            (Sdl show! win (List ref 2 (paint-frame! p g tick)))
+            ((%wn-front a) show! win (List ref 2 (paint-frame! p g tick)))
             (Heap collect)
             (self g a p win tick)))
       ; Any other event -- a resize, the window shown again -- may have
       ; lost what was presented: the frame is presented again.
-      ((not (null? e)) (do (Sdl show! win (List ref 2 (paint-screen p))) (self g a p win tick)))
+      ((not (null? e)) (do ((%wn-front a) show! win (List ref 2 (paint-screen p))) (self g a p win tick)))
       ; A gamepad event that is no key yet: the next one at once.
       ((not (null? ev)) (self g a p win tick))
       ; Exploring steps on without waiting for each step to be shown.
@@ -307,7 +311,7 @@
         (do (game-explore! g)
             (sound-turn! snd g)
             (paint-turn! p g (%wn-art a g))
-            (Sdl show! win (List ref 2 (paint-frame! p g tick)))
+            ((%wn-front a) show! win (List ref 2 (paint-frame! p g tick)))
             (Heap collect)
             (Sys usleep 30000)
             (self g a p win tick)))
@@ -316,11 +320,11 @@
       ((paint-animating? p)
         (do (Sys usleep %wn-step-us)
             (paint-step! p)
-            (Sdl show! win (List ref 2 (paint-frame! p g (+ tick 1))))
+            ((%wn-front a) show! win (List ref 2 (paint-frame! p g (+ tick 1))))
             (self g a p win (+ tick 1))))
       ((paint-flickers? p)
         (do (Sys usleep %wn-frame-us)
-            (Sdl show! win (List ref 2 (paint-frame! p g (+ tick 1))))
+            ((%wn-front a) show! win (List ref 2 (paint-frame! p g (+ tick 1))))
             (Heap collect)
             (self g a p win (+ tick 1))))
       (#t (do (Sys usleep %wn-idle-us)
@@ -339,7 +343,7 @@
 (def %wn-title
   (fn (self g saved fresh a p win m title)
     (def items (List map rest (Vector ref 0 m)))
-    (Sdl show! win (List ref 2 (paint-menu! p g title #t items (menu-chosen m) (%wn-prompts a #f) (Vector ref 6 a))))
+    ((%wn-front a) show! win (List ref 2 (paint-menu! p g title #t items (menu-chosen m) (%wn-prompts a #f) (Vector ref 6 a))))
     (def act (%wn-menu g a p win m title #t #f (fn (_) items)))
     (def id (if (pair? act) (rest act) ()))
     (match
@@ -351,7 +355,7 @@
         (if (null? saved) (pair (lit play) g)
           (do (def n (fresh))
               (sound-close (Vector ref 4 a))
-              (Vector set! 4 (sound-make n) a)
+              (Vector set! 4 (sound-make n (%wn-front a)) a)
               (%wn-apply! a p n win)
               (paint-turn! p n (%wn-art a n))
               (pair (lit play) n))))
@@ -369,22 +373,23 @@
 ; place's art (from paint-art), so each region is drawn with its own
 ; set's pictures; TITLE heads the title screen.  Answers (G . FAILED):
 ; the game played, nil when none was, and nil or what was raised while
-; it was played, the window closed either way.
+; it was played, the window closed either way.  FRONT is the class the
+; window is drawn through, Sdl or Web.
 (def window-play
-  (fn (_ saved fresh arts font scale zoom title)
+  (fn (_ front saved fresh arts font scale zoom title)
     (def o (options-read (options-path)))
-    (def a (Vector of arts "" () (pad-make) () (if (null? zoom) o (options-set o (lit zoom) zoom)) #f))
+    (def a (Vector of arts "" () (pad-make) () (if (null? zoom) o (options-set o (lit zoom) zoom)) #f front))
     ; Fullscreen on a Mac stays on the desktop's Space: a Space of its
     ; own slides in, and a switch back before the slide ends leaves an
     ; empty screen with the window gone.
-    (Sdl hint! "SDL_VIDEO_MAC_FULLSCREEN_SPACES" "0")
-    (def win (Sdl scaling! (Sdl open title paint-width paint-height scale) (lit fit)))
+    (when (eq? front Sdl) (Sdl hint! "SDL_VIDEO_MAC_FULLSCREEN_SPACES" "0"))
+    (def win (front scaling! (front open title paint-width paint-height scale) (lit fit)))
     (def played (Vector of ()))
     (def failed
       (guard (e e)
         (do (def p (paint-make font))
             (def g (if (null? saved) (fresh) saved))
-            (Vector set! 4 (sound-make g) a)
+            (Vector set! 4 (sound-make g front) a)
             (paint-zoom! p (options-get (Vector ref 5 a) (lit zoom)))
             (paint-turn! p g (%wn-art a g))
             (%wn-apply! a p g win)
@@ -396,11 +401,11 @@
             (unless (null? chosen)
               (do (Vector set! 0 (rest chosen) played)
                   (paint-turn! p (rest chosen) (%wn-art a (rest chosen)))
-                  (Sdl show! win (List ref 2 (paint-frame! p (rest chosen) 0)))
+                  ((%wn-front a) show! win (List ref 2 (paint-frame! p (rest chosen) 0)))
                   (%wn-loop (rest chosen) a p win 0)))
             ())))
     (sound-close (Vector ref 4 a))
-    (Sdl close win)
+    (front close win)
     (pair (Vector ref 0 played) failed)))
 
 (provide roguelike/window window-key window-play)
