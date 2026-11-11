@@ -406,7 +406,8 @@
 ; A step toward the nearest seen cell beside the unseen that the player
 ; has not yet stood on here, or #f with none to reach.  Standing on one
 ; spends it: some edges never show what lies past them, and a walk back
-; to one would go to and fro for good.
+; to one would go to and fro for good.  One a person stands on is left:
+; a walk onto it is a talk.
 (def %bl-to-frontier!
   (fn (_ g s)
     (def m (game-map g))
@@ -415,7 +416,9 @@
     (when (null? (Vector ref 9 s)) (Vector set! 9 (Vector make (* (map-rows m) cols) #f) s))
     (def spent (Vector ref 9 s))
     (Vector set! (+ (* (player-r p) cols) (player-c p)) #t spent)
-    (%bl-walk! g s (lit frontier) (fn (_ r c) (if (Vector ref (+ (* r cols) c) spent) #f (map-frontier? m r c))))))
+    (def person? (fn (_ r c) ((fn (_ cr) (if (null? cr) #f (creature-trait? cr (lit talks)))) (state-creature-at g r c))))
+    (%bl-walk! g s (lit frontier)
+      (fn (_ r c) (match ((Vector ref (+ (* r cols) c) spent) #f) ((person? r c) #f) (#t (map-frontier? m r c)))))))
 
 ; --- who the bot is ----------------------------------------------------------
 
