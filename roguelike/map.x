@@ -95,7 +95,8 @@
 ; stairs up, 8 the named places, (NAME R0 C0 R1 C1) each, walls and
 ; all, 9 the roofs, a buffer or nil, 10 the roof that is off, 11 the
 ; roofs in view, a flag each, worked afresh each turn, 12 the roofs'
-; slopes, a buffer, or nil until asked for.  Its slots are read through
+; slopes, a buffer, or nil until asked for, 13 what the view was last
+; worked from.  Its slots are read through
 ; the object doors, not the class: a cell's flag is asked for thousands
 ; of times a turn.
 (def %mp-get (fn (_ m k) (obj-ref m (int+ k 1))))
@@ -103,10 +104,10 @@
 (def map-rows (fn (_ m) (%mp-get m 0)))
 (def map-cols (fn (_ m) (%mp-get m 1)))
 (def map-rooms (fn (_ m) (%mp-get m 5)))
-; What M's view was last worked from, (R C RADIUS), in slot 12: nil
+; What M's view was last worked from, (R C RADIUS), in slot 13: nil
 ; once a tile, a room or a roof has changed, so the next light works
 ; it afresh.
-(def %mp-changed! (fn (_ m) (%mp-put! m 12 ())))
+(def %mp-changed! (fn (_ m) (%mp-put! m 13 ())))
 (def map-rooms! (fn (_ m rooms) (%mp-changed! m) (%mp-put! m 5 rooms)))
 (def map-down (fn (_ m) (%mp-get m 6)))
 (def map-down! (fn (_ m at) (%mp-put! m 6 at)))
@@ -127,7 +128,7 @@
 
 (def map-make
   (fn (_ rows cols)
-    (def m (Vector make 13 ()))
+    (def m (Vector make 14 ()))
     (%mp-put! m 10 0)
     (%mp-put! m 0 rows)
     (%mp-put! m 1 cols)
@@ -328,7 +329,7 @@
 ; Whether M's view stands as worked from R C within RADIUS.
 (def %mp-lit?
   (fn (_ m r c radius)
-    (def from (%mp-get m 12))
+    (def from (%mp-get m 13))
     (match ((null? from) #f)
            ((not (= (first from) r)) #f)
            ((not (= (first (rest from)) c)) #f)
@@ -339,7 +340,7 @@
     (unless (%mp-lit? m r c radius)
       (do (work)
           (%mp-roofs-light! m r c)
-          (%mp-put! m 12 (list r c radius))))))
+          (%mp-put! m 13 (list r c radius))))))
 
 ; What is in view from R C: the cells around it, and the whole of a lit
 ; room it is in.  Everything else leaves view.
@@ -461,6 +462,33 @@
              (self (rest l)))))
      (%mp-rays radius cols))))
 
+; What is in view by daylight: every cell of M, wherever the player
+; stands at R C, and all of it seen; the roofs as ever, none of them
+; off, since under one it is not day.  Worked once, and kept while the
+; view stands as daylight's.
+(def %mp-fill!
+  (fn (self p i n) (when (int< i n) (do (ptr-set! p i 1 1) (self p (int+ i 1) n)))))
+(def map-light-all!
+  (fn (_ m r c)
+    (def from (%mp-get m 13))
+    (unless (if (null? from) #f (= (first (rest (rest from))) -2))
+      (do (def n (int* (map-rows m) (map-cols m)))
+          (%mp-fill! (str->ptr (%mp-get m 3)) 0 n)
+          (%mp-fill! (str->ptr (%mp-get m 4)) 0 n)
+          (%mp-roofs-light! m r c)))
+    (%mp-put! m 13 (list r c -2))))
+; Whether every cell of M has been seen, so nothing is left to walk to.
+(def map-seen-whole?
+  (fn (_ m)
+    (def n (int* (map-rows m) (map-cols m)))
+    (def seen (str->ptr (%mp-get m 3)))
+    ((fn (self i) (match ((not (int< i n)) #t) ((int= (ptr-ref seen i 1) 0) #f) (#t (self (int+ i 1))))) 0)))
+; Whether R1 C1 is in sight from R0 C0 within RADIUS: no farther along
+; either axis, and a clear line between, as map-light-radius! walks it.
+(def map-sight?
+  (fn (_ m r0 c0 r1 c1 radius)
+    (if (< radius (%mp-max (%mp-abs (- r1 r0)) (%mp-abs (- c1 c0)))) #f (%mp-clear? m r0 c0 r1 c1))))
+
 ; --- drawing -----------------------------------------------------------------
 
 ; Row R's cells as glyph bytes into BUF: BYTES the glyph of each tile
@@ -544,5 +572,5 @@
   map-make map-rows map-cols map-rooms map-rooms! map-down map-down! map-up map-up! map-places map-places! map-place-at
   map-in? map-tile map-set! map-seen? map-seen! map-visible? map-passable? map-walkable?
   room-r0 room-c0 room-r1 room-c1 room-lit? room-covers? room-inside? room-centre map-room-at
-  map-each! map-opaque? map-light! map-light-radius! map-row-glyphs! map-visible-next map-visible-run
+  map-each! map-opaque? map-light! map-light-radius! map-light-all! map-sight? map-seen-whole? map-row-glyphs! map-visible-next map-visible-run
   map-reveal! map-fill-unreached!)

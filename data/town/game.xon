@@ -28,6 +28,9 @@
 ; most.  Past nothing, (starve N) costs a hit point every N seconds.
 (hunger 43200 14400 3600 86400)
 (starve 600)
+; The streets lie under the sky by day, seen whole from anywhere in
+; them; under a roof, sight is eight cells.
+(light day)
 (view 8)
 
 ; Streets and terraces, in metres: rows of brick terraces under slate,

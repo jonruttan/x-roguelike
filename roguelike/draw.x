@@ -270,12 +270,18 @@
         (Str8 append (Str8 join "  " (game-messages g)) "  --any key--"))
       (#t (Str8 join "  " (game-messages g))))))
 
+; LINES laid from row R down, on a block as wide as the widest of them
+; and a blank either side, so a level in view whole does not show
+; through between them.
 (def %dr-lines!
-  (fn (self s r lines)
-    (unless (null? lines)
-      (do (Screen fill s r 0 (+ 2 (Str8 length (first lines))) %dr-plain)
-          (screen-put! s r 1 (first lines) %dr-plain)
-          (self s (+ r 1) (rest lines))))))
+  (fn (_ s r lines)
+    (def wide (+ 2 (List fold (fn (_ w l) (if (< w (Str8 length l)) (Str8 length l) w)) 0 lines)))
+    ((fn (self r lines)
+       (unless (null? lines)
+         (do (Screen fill s r 0 wide %dr-plain)
+             (screen-put! s r 1 (first lines) %dr-plain)
+             (self (+ r 1) (rest lines)))))
+     r lines)))
 ; The lines laid over the level: a list looked at, a choice, or the
 ; pack's items a question can take; nil for none.  The window lays the
 ; same lines on a panel.

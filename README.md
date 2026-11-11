@@ -60,7 +60,12 @@ answer from the keyboard.
 The first row says what happened; the last is your standing: the
 level, gold, hit points, strength, experience, and how hungry you are.
 A lit room is seen whole from its door; a dark one, and a passage, a
-cell around you.  What you have seen stays on the map.
+cell around you.  What you have seen stays on the map.  A set that says
+`(light day)` lies under the sky: a level of it is in view whole from
+anywhere on it, until the player steps under a roof or goes inside,
+where sight is the set's `(view N)` again.  By day `(view N)` is still
+how far off a creature and the player notice one another, what a
+creature's tale waits for, and what stops a walk.
 
 ## A set
 

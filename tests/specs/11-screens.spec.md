@@ -119,7 +119,7 @@ descents, and their specs stand.
 (player-at! p 11 79)
 (game-key! g "l")
 (game-key! g "m")
-(def rows (spec-screen g))
+(def rows (List map (fn (_ row) (Str8 trim-right (Str8 sub 0 (if (< (Str8 length row) 24) (Str8 length row) 24) row))) (spec-screen g)))
 (def d (spec-game 11 (list "m")))
 (write (list (List ref 0 rows) (List ref 1 rows) (List ref 2 rows) (List ref 3 rows) (List ref 4 rows) (game-turn g)
              (game-messages d) (game-turn d)))

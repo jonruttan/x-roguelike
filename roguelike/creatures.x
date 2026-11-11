@@ -40,7 +40,7 @@
   creature-make creature-r creature-c creature-at! creature-hp creature-hp! creature-state creature-state!
   creature-carried creature-name creature-prop creature-prop1 creature-trait? creature-condition creature-tick! state-a-kind
   creature-target creature-target!
-  state-say! state-tell! state-roll state-chance? state-dirs state-dist state-adjacent? state-sign state-free?
+  state-say! state-tell! state-roll state-chance? state-dirs state-dist state-adjacent? state-in-sight? state-sign state-free?
   state-ring? state-ring-bonus state-gentle?)
 (import roguelike/combat combat-creature-attacks! combat-hurt-player!)
 
@@ -105,7 +105,7 @@
   (fn (_ g r c)
     (def p (game-player g))
     (match ((not (state-free? g r c)) #f)
-           ((map-visible? (game-map g) r c) #f)
+           ((state-in-sight? g r c) #f)
            (#t (< (game-param1 g (lit elbow-room) 0) (state-dist r c (player-r p) (player-c p)))))))
 ; One creature of the depth put where it may be, in the state START
 ; gives its kind.
@@ -197,7 +197,7 @@
 
 ; --- the turn ----------------------------------------------------------------
 
-(def %cr-seen? (fn (_ g cr) (map-visible? (game-map g) (creature-r cr) (creature-c cr))))
+(def %cr-seen? (fn (_ g cr) (state-in-sight? g (creature-r cr) (creature-c cr))))
 (def %cr-player-at (fn (_ g) (pair (player-r (game-player g)) (player-c (game-player g)))))
 ; CR awake, making for the player.
 (def %cr-rouse! (fn (_ g cr) (creature-state! cr (lit awake)) (creature-target! cr (%cr-player-at g))))
@@ -286,7 +286,7 @@
 (def %cr-summons?
   (fn (_ g cr)
     (match ((not (creature-trait? cr (lit summon))) #f)
-           ((not (map-visible? (game-map g) (creature-r cr) (creature-c cr))) #f)
+           ((not (%cr-seen? g cr)) #f)
            (#t (state-chance? (game-rng g) 10)))))
 (def %cr-summon!
   (fn (_ g cr)
@@ -382,7 +382,7 @@
 ; Every creature in view runs.
 (def creatures-scare!
   (fn (_ g)
-    (List for-each (fn (_ cr) (when (map-visible? (game-map g) (creature-r cr) (creature-c cr)) (creature-state! cr (lit fleeing))))
+    (List for-each (fn (_ cr) (when (%cr-seen? g cr) (creature-state! cr (lit fleeing))))
       (game-creatures g))))
 
 (provide roguelike/creatures

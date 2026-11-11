@@ -17,7 +17,7 @@
 (import x/num/random)
 (import x/core/doors obj-ref obj-set! int+ int/)
 (import roguelike/data data-all data-one data-get data-region data-prop data-prop1 data-trait?)
-(import roguelike/map map-walkable?)
+(import roguelike/map map-walkable? map-visible? map-sight? map-roof-at)
 
 ; --- the game ----------------------------------------------------------------
 
@@ -543,6 +543,24 @@
 (def %st-max (fn (_ a b) (if (< a b) b a)))
 ; The moves from R1 C1 to R2 C2, a diagonal step counting one.
 (def state-dist (fn (_ r1 c1 r2 c2) (%st-max (%st-abs (- r1 r2)) (%st-abs (- c1 c2)))))
+; Whether the level in hand lies under the sky by day: the set in force
+; says (light day), and the player is neither inside nor under a roof.
+; Then the whole of it is in view (see map-light-all!).
+(def game-daylight?
+  (fn (_ g)
+    (def p (game-player g))
+    (match ((not (eq? (game-param1 g (lit light) (lit dark)) (lit day))) #f)
+           ((not (null? (game-inside g))) #f)
+           (#t (= 0 (map-roof-at (game-map g) (player-r p) (player-c p)))))))
+; Whether R C is in the player's sight, which is what a creature goes
+; by: in view, and by daylight, when everything is, within the set's
+; (view N) by a clear line.
+(def state-in-sight?
+  (fn (_ g r c)
+    (def p (game-player g))
+    (match ((not (map-visible? (game-map g) r c)) #f)
+           ((game-daylight? g) (map-sight? (game-map g) (player-r p) (player-c p) r c (game-param1 g (lit view) 8)))
+           (#t #t))))
 ; Whether the two cells touch: a move apart, and not the same cell.
 (def state-adjacent?
   (fn (_ r1 c1 r2 c2) (if (if (= r1 r2) (= c1 c2) #f) #f (< (state-dist r1 c1 r2 c2) 2))))
@@ -633,7 +651,7 @@
   item-make item-form item-class item-name item-prop item-prop1 item-count item-count! item-charges
   item-charges! item-enchant item-enchant! item-letter item-letter! item-r item-c item-at! item-class? item-class-in?
   state-say! state-clear-messages! game-blows state-blow! state-clear-log! state-fill state-text state-tell!
-  state-roll state-chance? state-dir state-dirs state-dist state-adjacent? state-covers? state-sign
+  state-roll state-chance? state-dir state-dirs state-dist state-adjacent? state-in-sight? game-daylight? state-covers? state-sign
   state-creature-at state-creature-named state-items-at state-player-at? state-free?
   state-remove-creature! state-remove-floor! state-remove-pack!
   state-ring-bonus state-ring? state-gentle? state-defence state-strength state-shortfall)
