@@ -43,6 +43,7 @@
 (def tile-edge 14)
 (def tile-bog 15)
 (def tile-scar 16)
+(def tile-shallow 17)
 ; No cell's byte, so a code past the last: what a building's cells are
 ; drawn as from outside it
 ; (see roofs, below).
@@ -76,6 +77,8 @@
         (list tile-bog (lit bog) (lit floor) #t #f)
         ; A limestone scar: a cliff of bare rock.
         (list tile-scar (lit scar) (lit wall) #f #t)
+        ; Floor under a hand of standing water: waded, not swum.
+        (list tile-shallow (lit shallow) (lit floor) #t #f)
         ; The roof over a building, seen from outside it.
         (list tile-roof (lit roof) (lit wall) #f #t)))
 (def map-kinds 19)
@@ -159,6 +162,9 @@
 ; Whether a creature can stand on tile T.
 (def map-passable? (fn (_ t) (obj-ref %mp-passable (int+ t 1))))
 (def map-walkable? (fn (_ m r c) (map-passable? (map-tile m r c))))
+; Whether the cell at R C of M is floor, dry or under shallow water: a
+; place to set a thing down or spring a trap.
+(def map-floor? (fn (_ m r c) ((fn (_ t) (if (= t tile-floor) #t (= t tile-shallow))) (map-tile m r c))))
 
 ; --- rooms -------------------------------------------------------------------
 
@@ -539,11 +545,11 @@
 
 (provide roguelike/map
   tile-rock tile-floor tile-wall tile-door tile-passage tile-down tile-up
-  tile-water tile-pillar tile-fall tile-dressed tile-hedge tile-gate tile-thicket tile-edge tile-bog tile-scar tile-roof
+  tile-water tile-pillar tile-fall tile-dressed tile-hedge tile-gate tile-thicket tile-edge tile-bog tile-scar tile-shallow tile-roof
   map-terrain map-kinds map-look map-look-run
   map-roof-at map-roof! map-roof-off map-covered? map-roofed? map-shown map-roofs? map-roof-pitch
   map-make map-rows map-cols map-rooms map-rooms! map-down map-down! map-up map-up! map-places map-places! map-place-at
-  map-in? map-tile map-set! map-seen? map-seen! map-visible? map-passable? map-walkable?
+  map-in? map-tile map-set! map-seen? map-seen! map-visible? map-passable? map-walkable? map-floor?
   room-r0 room-c0 room-r1 room-c1 room-lit? room-covers? room-inside? room-centre map-room-at
   map-each! map-opaque? map-light! map-light-radius! map-row-glyphs! map-visible-next map-visible-run
   map-reveal! map-fill-unreached!)

@@ -27,7 +27,7 @@
 (import x/core/doors int/)
 (import roguelike/scale scale-rung)
 (import roguelike/chain chain-where chain-compass)
-(import roguelike/map map-rows map-cols map-tile map-seen? map-each! map-places map-roof-at tile-rock tile-floor)
+(import roguelike/map map-rows map-cols map-tile map-seen? map-each! map-places map-roof-at map-floor? tile-rock)
 (import roguelike/dungeon dungeon-spot)
 (import roguelike/state
   game-rng game-set game-forms game-turn game-depth game-map game-player game-creatures game-creatures! game-floor game-floor!
@@ -229,7 +229,7 @@
     (def m (game-map g))
     (def cells (List flat-map (fn (_ r) (List map (fn (_ c) (pair r c)) (List range (List ref 2 p) (+ (List ref 4 p) 1))))
                  (List range (List ref 1 p) (+ (List ref 3 p) 1))))
-    (def in? (fn (_ at) (if (= (map-tile m (first at) (rest at)) tile-floor) (< 0 (map-roof-at m (first at) (rest at))) #f)))
+    (def in? (fn (_ at) (if (map-floor? m (first at) (rest at)) (< 0 (map-roof-at m (first at) (rest at))) #f)))
     (def free (List filter (fn (_ at) (if (in? at) (state-free? g (first at) (rest at)) #f)) cells))
     (if (null? free) () (List ref (int/ (List length free) 2) free))))
 ; Each keeper on the level just made, inside their building.

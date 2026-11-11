@@ -152,7 +152,8 @@
 ; "" the set's own art/; a region (see data.x) the art/ of its set
 ; beside DIR, with the set's own art behind it for any name it does
 ; not draw.  Each is read and painted (paint-art) the first time it is
-; asked for.  A name no art draws is drawn with its letter.
+; asked for, and what the reading left behind is collected.  A name no
+; art draws is drawn with its letter.
 (def paint-arts
   (fn (_ dir)
     (def made (Vector of ()))
@@ -162,6 +163,7 @@
         ((fn (_ own)
            (def art (if (str=? place "") own (%pt-beside own (self ""))))
            (Vector set! 0 (pair (pair place art) (Vector ref 0 made)) made)
+           (Heap collect)
            art)
          (paint-art (guard (e ()) (data-load (Str8 append (if (str=? place "") dir (Str8 append dir "/../" place)) "/art")))))
         (rest hit)))))

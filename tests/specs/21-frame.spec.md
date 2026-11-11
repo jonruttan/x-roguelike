@@ -30,6 +30,21 @@ takes, a wall in parts by its neighbours, and the camera on the player.
     (('top) ('face) ('face 'face-w 'face-e) ('top 'n) ('top 'se) ('top 'ne 'nw) ('top 'n 'e))
 
 
+### ground that joins: an edge where the next cell differs, a corner where two do, a notch where only the diagonal does
+
+```roguelike
+(import roguelike/frame frame-join-parts)
+(def spec-eight '((-1 . -1) (-1 . 0) (-1 . 1) (0 . -1) (0 . 1) (1 . -1) (1 . 0) (1 . 1)))
+(write (List map (fn (_ open) (frame-join-parts (spec-solid open)))
+  (list ()
+        spec-eight
+        (list '(-1 . 0) '(-1 . -1) '(-1 . 1))
+        (list '(-1 . 1)))))
+```
+---
+    ((()) (() 'n 'e 's 'w 'out-ne 'out-nw 'out-se 'out-sw) (() 'n) (() 'ne))
+
+
 ## the camera
 
 ### the player in the middle, always: the view runs past the map's edge

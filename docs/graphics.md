@@ -217,6 +217,23 @@ on.  Where the cell to the south is open the cell is `face` alone, the
 eaves over the building's front.  A set with no picture of a slope
 draws its `top` there, and a set with no `roof` its `wall`.
 
+## Ground that joins
+
+Ground with a `n` part is joined into one stretch with its neighbours:
+water and shallows in `data/delve/art/water.xon`.  A neighbour runs on
+when it is the same kind, water beside water, a wall, or not yet seen;
+anything else ends the stretch with a bank.
+
+| Neighbours | Drawn over the ground |
+|---|---|
+| one side ends | that side's `n` `e` `s` `w` bank |
+| two sides that meet both end | the round outer corner, `out-ne` `out-nw` `out-se` `out-sw` |
+| two sides run on, the diagonal between them ends | the notch, `ne` `nw` `se` `sw` |
+
+The deep levels stand in shallows: below level 3 of the delve each
+level has more of its floor under water, set in `game.xon` as
+`(shallows FROM PER MOST)`.
+
 ## Light
 
 A level is dark but for what gives light.  `(light R G B N)` on a tile
