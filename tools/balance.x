@@ -106,6 +106,10 @@
   (fn (_ g r c)
     (List any? (fn (_ cr) (if (%bl-sitter? g cr) (state-adjacent? (creature-r cr) (creature-c cr) r c) #f)) (game-creatures g))))
 
+; Whether the bot, with nowhere left to go on a level, has given up
+; going round what sits there.
+(def %bl-bold (Vector of #f))
+
 ; The cells a walk does not cross, a vector by cell: #t where a creature
 ; stands and where a trap has been found, which a walk may still end
 ; on, and `shun` beside a sitter, which it may not.
@@ -115,7 +119,7 @@
     (def m (game-map g))
     (List for-each
       (fn (_ cr)
-        (when (%bl-sitter? g cr)
+        (when (if (Vector ref 0 %bl-bold) #f (%bl-sitter? g cr))
           (List for-each
             (fn (_ d)
               (def r (+ (creature-r cr) (first (rest d))))
@@ -190,26 +194,48 @@
            ((< most (List length path)) ())
            ((not (state-adjacent? (row (first path)) (col (first path)) (player-r p) (player-c p))) ())
            ((not ((fn (_ last) (goal? (row last) (col last))) (List ref (- (List length path) 1) path))) ())
-           ((%bl-shunned? g (row (first path)) (col (first path))) ())
+           ((if (Vector ref 0 %bl-bold) #f (%bl-shunned? g (row (first path)) (col (first path)))) ())
            ((null? (rest path)) path)
            ((not (null? (state-creature-at g (row (first path)) (col (first path))))) ())
            ((not (null? (traps-found-at g (row (first path)) (col (first path))))) ())
            (#t path))))
 
+; Where the player and every creature stand, as (CELL . SUM): while it
+; is as it was, a walk that could not be found still cannot.
+(def %bl-standing
+  (fn (_ g)
+    (def p (game-player g))
+    (def cols (map-cols (game-map g)))
+    (pair (+ (* (player-r p) cols) (player-c p))
+          (List fold (fn (_ sum cr) (% (+ (* 3 sum) (+ (* (creature-r cr) cols) (creature-c cr))) 1000003)) 0 (game-creatures g)))))
+; Whether the walk TAG names was looked for within MOST from this
+; standing and not found: slot 15 of S keeps (TAG MOST CELL . SUM) each.
+(def %bl-no-way?
+  (fn (_ s tag most standing)
+    (def e (List find (fn (_ e) (eq? (first e) tag)) (Vector ref 15 s)))
+    (match ((null? e) #f) ((not (= (List ref 1 e) most)) #f)
+           ((not (= (first (rest (rest e))) (first standing))) #f)
+           (#t (= (rest (rest (rest e))) (rest standing))))))
+
 ; The first step, (DR . DC), of the walk TAG names to a cell GOAL?
 ; allows no more than MOST steps away, or nil: the walk kept from the
-; turn before while it serves, searched for afresh when it does not.
+; turn before while it serves, searched for afresh when it does not,
+; and not searched for again from where none was found.
 (def %bl-step-within
   (fn (_ g s tag goal? most)
     (def p (game-player g))
     (def cols (map-cols (game-map g)))
+    (def standing (%bl-standing g))
     (def kept (%bl-kept g s tag goal? most))
-    (def path (if (null? kept) (%bl-search g goal? most) kept))
+    (def none? (if (null? kept) (%bl-no-way? s tag most standing) #f))
+    (def path (match (none? ()) ((null? kept) (%bl-search g goal? most)) (#t kept)))
     (when %bl-tracing
       (Vector set! 0 (pair (Str8 append "{" (symbol->str tag) (match ((not (null? kept)) " kept") ((null? path) " none") (#t " found")) "}")
                            (Vector ref 0 %bl-pressed))
                   %bl-pressed))
     (Vector set! 12 (pair (pair tag path) (List reject (fn (_ e) (eq? (first e) tag)) (Vector ref 12 s))) s)
+    (when (null? path)
+      (Vector set! 15 (pair (pair tag (pair most standing)) (List reject (fn (_ e) (eq? (first e) tag)) (Vector ref 15 s))) s))
     (if (null? path) ()
       (do (def r (int/ (first path) cols))
           (pair (- r (player-r p)) (- (- (first path) (* r cols)) (player-c p)))))))
@@ -267,7 +293,7 @@
 ; the cells beside the unseen already stood on here, a vector by cell,
 ; 10 oil flasks poured, 11 turns taken with the lamp out, 12 the walks
 ; kept here, (TAG . CELLS) each, 13 the turn the level was come to, 14
-; whether its shaft was found barred.
+; whether its shaft was found barred, 15 the walks not found.
 
 ; Where the player stands, as text: the depth, or on a world of screens
 ; the screen and any interior.
@@ -280,7 +306,16 @@
 (def %bl-explored? (fn (_ g s) (if (%bl-here? g s) (Vector ref 0 s) #f)))
 (def %bl-explored! (fn (_ g s) (Vector set! 0 #t s) (Vector set! 1 (%bl-place g) s) (Vector set! 4 #f s)))
 (def %bl-new-level! (fn (_ g s) (Vector set! 0 #f s) (Vector set! 1 (%bl-place g) s) (Vector set! 4 #f s) (Vector set! 9 () s) (Vector set! 12 () s)
-    (Vector set! 13 (game-turn g) s) (Vector set! 14 #f s)))
+    (Vector set! 13 (game-turn g) s) (Vector set! 14 #f s) (Vector set! 15 () s) (Vector set! 0 #f %bl-bold)))
+
+; With nowhere at all to go: the cells beside the unseen are all to be
+; stood on again, and what sits is no longer gone round; a turn's rest.
+(def %bl-unstick!
+  (fn (_ g s)
+    (Vector set! 9 () s)
+    (Vector set! 12 () s) (Vector set! 15 () s)
+    (Vector set! 0 #t %bl-bold)
+    (%bl-key! g "s")))
 
 ; Whether the level has light left to look about by: the turns spent
 ; here, a second each, under the share of the oil in hand, lamp and
@@ -705,7 +740,7 @@
       ((%bl-walk! g s (lit stairs) (%bl-stairs-goal g t)) ())
       ((%bl-to-frontier! g s) ())
       ((if (null? shown) #f (%bl-toward-creature! g s shown)) ())
-      (#t (%bl-key! g "s")))))
+      (#t (%bl-unstick! g s)))))
 
 ; Whether to pour the flask OIL into the lamp under the set's (lamp FULL
 ; LOW): with it out, or with room for the whole flask.
@@ -737,7 +772,9 @@
         (do (%bl-use! g "q" potion) (Vector set! 2 (+ 1 (Vector ref 2 s)) s)))
       ((%bl-ready! g s foe) ())
       ((if (null? foe) #f (%bl-flee! g)) ())
-      ((%bl-zap! g who (match ((not (null? foe)) foe) ((null? shown) ()) ((eq? (creature-state shown) (lit asleep)) ()) (#t shown))) ())
+      ((%bl-zap! g who (match ((not (null? foe)) foe)
+                              ((null? shown) (List find (fn (_ cr) (%bl-sitter? g cr)) (game-creatures g)))
+                              ((eq? (creature-state shown) (lit asleep)) ()) (#t shown))) ())
       ((if (null? foe) #f (%bl-outpace? g)) (%bl-outpace! g s foe))
       ((not (null? foe))
         (unless (if (if (< 0 (%bl-at who (lit retreat))) (%bl-free? g foe) #f)
@@ -982,7 +1019,7 @@
     (def g (%bl-start set play))
     (unless (str=? path "") (File write-all path ""))
     (def kept (Vector of (str=? path "")))
-    (def s (Vector of #f "" 0 0 #f () () 0 () () 0 0 () 0 #f))
+    (def s (Vector of #f "" 0 0 #f () () 0 () () 0 0 () 0 #f ()))
     (def arrivals (Vector of (list (%bl-arrival g))))
     (def loop
       (fn (self turn stalled)
@@ -1047,7 +1084,7 @@
           (unless (null? cr)
             (do (def hp (creature-prop cr (lit hp) (list 1 1)))
                 (creature-hp! cr (state-roll (game-rng g) (first hp) (List ref 1 hp)))))
-          (def s (Vector of #f "" 0 0 #f () () 0 () () 0 0 () 0 #f))
+          (def s (Vector of #f "" 0 0 #f () () 0 () () 0 0 () 0 #f ()))
           (def depth (game-depth g))
           (def start (game-turn g))
           (def loop
