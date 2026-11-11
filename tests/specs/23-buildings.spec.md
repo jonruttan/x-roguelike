@@ -191,6 +191,21 @@ eye, whole, from inside.  The town set's districts each name theirs.
 ---
     (((('roof 'north) ('roof 'n)) (('roof 'north)) (('roof 'ridge)) (('roof 'top)) (('roof 'face))) (('roof 'north) ('roof 'w)) (('floor ())))
 
+### the front of a roof running north and south is its gable: the peak under the ridge, a rake either side of it, a low end beyond; a roof two wide has its peak and one rake
+
+```roguelike
+(import roguelike/map map-seen!)
+(b23-box! 4 6 11 6 5)
+(b23-box! 5 6 17 6 2)
+(List for-each (fn (_ c) (map-seen! b23-pm 11 c)) (List range 0 20))
+(def b23-front
+  (fn (_ c0 w)
+    (List map (fn (_ c) (List ref 1 (first (rest (List ref 3 (first (frame-cell b23-art b23-pm 11 c 0 0))))))) (List range c0 (+ c0 w)))))
+(write (list (b23-front 11 5) (b23-front 17 2) (b23-front 1 2)))
+```
+---
+    (('gable-ww 'gable-w 'gable 'gable-e 'gable-ee) ('gable 'gable-e) ('face 'face))
+
 
 ## kept
 

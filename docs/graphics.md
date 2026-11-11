@@ -207,9 +207,21 @@ A roof as wide as it is deep runs east and west.  A ridge with no
 middle row lies a row north of the middle, or a column west.  Over the
 slope go the `n` `e` `w` rims, the far eaves and the verges, where the
 roof ends that way, a neighbour solid when it is under a roof that is
-on.  Where the cell to the south is open the cell is `face` alone, the
-eaves over the building's front.  A set with no picture of a slope
-draws its `top` there, and a set with no `roof` its `wall`.
+on.
+
+Where the cell to the south is open the cell is the building's front,
+one part alone.  Under a roof running east and west it is `face`, the
+eaves over the wall.  Under one running north and south it is the
+gable, the wall rising to the ridge with the slopes behind it:
+
+| The cell | Drawn |
+|---|---|
+| under the ridge | `gable`, the peak |
+| beside the ridge, to the west or east | `gable-w`, `gable-e`, the rakes |
+| further west or east | `gable-ww`, `gable-ee`, the low ends |
+
+A set with no picture of a slope draws its `top` there, one with no
+picture of a gable its `face`, and a set with no `roof` its `wall`.
 
 ## Ground that joins
 

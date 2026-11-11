@@ -74,7 +74,8 @@
 
 (def %fr-parts (list () (lit top) (lit face) (lit n) (lit e) (lit s) (lit w) (lit ne) (lit nw) (lit se) (lit sw)
                      (lit out-ne) (lit out-nw) (lit out-se) (lit out-sw) (lit face-w) (lit face-e) (lit shade)
-                     (lit north) (lit ridge) (lit west) (lit ridge-ns) (lit east)))
+                     (lit north) (lit ridge) (lit west) (lit ridge-ns) (lit east)
+                     (lit gable) (lit gable-w) (lit gable-e) (lit gable-ww) (lit gable-ee)))
 
 ; A kind's pictures: ((PART . VARIANTS) ...) for each part it has.
 (def %fr-kind
@@ -181,17 +182,29 @@
 ; roof that is on, its door too.
 (def %fr-covered? (fn (_ m r c) (if (map-in? m r c) (map-covered? m r c) #f)))
 ; The parts the roofed cell at R C of M is drawn in, from the roof's
-; pictures PICS: its front where the street lies south; elsewhere the
-; slope it is on (map.x, map-roof-pitch), the roof's top where PICS has
-; no picture of that slope, then the rims where the roof ends north,
-; east and west.
+; pictures PICS: its front where the street lies south, the gable where
+; the roof runs north and south; elsewhere the slope it is on (map.x,
+; map-roof-pitch), then the rims where the roof ends north, east and
+; west.  Where PICS has no picture of a gable or a slope, the roof's
+; face or its top.
 (def %fr-slopes (list (lit top) (lit north) (lit ridge) (lit top) (lit west) (lit ridge-ns) (lit east)))
+; The gable's part at R C, a cell of pitch P: the peak under the ridge,
+; a rake in the cell beside the ridge, a low end beyond; face where the
+; roof runs east and west.
+(def %fr-gable
+  (fn (_ m r c p)
+    (match ((= p 5) (lit gable))
+           ((= p 4) (if (= (map-roof-pitch m r (+ c 1)) 5) (lit gable-w) (lit gable-ww)))
+           ((= p 6) (if (= (map-roof-pitch m r (- c 1)) 5) (lit gable-e) (lit gable-ee)))
+           (#t (lit face)))))
 (def %fr-roof-parts
   (fn (_ pics m r c seed)
     (def on? (fn (_ dr dc) (%fr-covered? m (+ r dr) (+ c dc))))
-    (def slope (List ref (map-roof-pitch m r c) %fr-slopes))
-    (if (not (on? 1 0)) (list (lit face))
-      (List append (list (if (null? (%fr-pick pics slope seed)) (lit top) slope))
+    (def p (map-roof-pitch m r c))
+    (def have (fn (_ part other) (if (null? (%fr-pick pics part seed)) other part)))
+    (def slope (List ref p %fr-slopes))
+    (if (not (on? 1 0)) (list (have (%fr-gable m r c p) (lit face)))
+      (List append (list (have slope (lit top)))
         (if (on? -1 0) () (list (lit n)))
         (if (on? 0 1) () (list (lit e)))
         (if (on? 0 -1) () (list (lit w)))))))
