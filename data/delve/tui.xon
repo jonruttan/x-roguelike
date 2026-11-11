@@ -27,9 +27,11 @@
 (glyph token "'")
 (glyph trap "^")
 
-; The pit's coal pillars and roof falls, the old stair's water, and the
-; well-keepers' dressed stone.
+; The pit's coal pillars and roof falls, the old stair's water, the
+; shallows standing over the floor, and the well-keepers' dressed
+; stone.
 (colour pillar 240)
 (colour fall 238)
 (colour water 32)
+(colour shallow 74)
 (colour dressed 250)
