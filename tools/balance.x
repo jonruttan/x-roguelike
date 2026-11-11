@@ -63,7 +63,7 @@
   game-ask game-messages game-band band-name game-param
   player-r player-c player-hp player-hpmax player-str player-food player-lamp player-weapon player-armour player-condition
   item-class item-name item-prop item-prop1 item-enchant item-letter item-r item-c game-floor
-  creature-r creature-c creature-state creature-trait? creature-condition creature-hp creature-prop creature-prop1 state-defence state-adjacent? state-dist state-shortfall state-creature-at state-items-at
+  creature-r creature-c creature-state creature-glyph creature-trait? creature-condition creature-hp creature-prop creature-prop1 state-defence state-adjacent? state-dist state-shortfall state-creature-at state-items-at
   game-quest-state game-screens? game-screen game-screen-key game-hub game-chain game-inside state-creature-named
   game-top-set game-home game-place game-below?
   game-rng game-rng! creature-hp! creature-name state-roll game-traps item-charges player-rings)
@@ -999,6 +999,27 @@
           (if (null? (player-armour p)) 0 (%bl-armour-worth g (player-armour p)))
           (player-food p) (player-lamp p) (List length (List filter (%bl-of-class (lit oil)) (game-pack g))))))
 
+; The level as the game's end left it, for the trace: @ the player, a
+; creature its glyph, ^ a found trap, > the way down, seen or not; of
+; the rest, . ground seen, ? ground not seen, # other seen, and blank.
+(def %bl-chart
+  (fn (_ g)
+    (def m (game-map g))
+    (def p (game-player g))
+    (def cell
+      (fn (_ r c)
+        (def cr (state-creature-at g r c))
+        (match ((if (= r (player-r p)) (= c (player-c p)) #f) "@")
+               ((not (null? cr)) (creature-glyph cr))
+               ((not (null? (traps-found-at g r c))) "^")
+               ((= (map-tile m r c) tile-down) ">")
+               ((map-walkable? m r c) (if (map-seen? m r c) "." "?"))
+               ((map-seen? m r c) "#")
+               (#t " "))))
+    (List for-each
+      (fn (_ r) (%bl-line (Str8 join "" (List map (fn (_ c) (cell r c)) (List range 0 (map-cols m))))))
+      (List range 0 (map-rows m)))))
+
 ; One game from SEED to its end or CAP turns: (SEED HOW EPITAPH DEEPEST
 ; TURNS POTIONS FOODS ARRIVALS WEAPON-TURN MET), the turn a weapon was
 ; first held or nil, and the hostile creatures met by then, or by the
@@ -1111,6 +1132,7 @@
               (self (game-turn g) (if (= turn (game-turn g)) (+ stalled 1) 0))))))
     (loop 0 0)
     (when trace? (%bl-line "pack: " (Str8 join ", " (List map item-name (game-pack g)))))
+    (when trace? (%bl-chart g))
     (list seed (if (null? (game-over g)) (lit capped) (game-over g)) (game-epitaph g) (game-deepest g) (game-turn g)
           (Vector ref 2 s) (Vector ref 3 s) (List reverse (Vector ref 0 arrivals))
           (Vector ref 6 s) (if (null? (Vector ref 6 s)) (List length (Vector ref 5 s)) (Vector ref 7 s))
