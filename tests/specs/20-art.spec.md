@@ -107,7 +107,7 @@ each the art's size, held TICKS a picture.
 (write (list (art-problems (spec-set-named "delve") art) (List length (data-all art 'tile))))
 ```
 ---
-    (() 227)
+    (() 225)
 
 ### classic's art is whole
 

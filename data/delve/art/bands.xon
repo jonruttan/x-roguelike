@@ -342,44 +342,6 @@
   "::::@::::::@::e:"
   ":e::::::::::::::"))
 
-; ... a puddle left standing.
-(tile floor (band "The Flood") (weight 4) (rows
-  "::::@:::::e:::::"
-  ":e::::::::::@:::"
-  "::::eeeeeee:::::"
-  ":::eewwwwwwee:::"
-  "::ewwwWW~wwwwe::"
-  "::ewwwwwwWWwwe::"
-  ":ewwW~wwwwwwwe::"
-  ":ewwwwwwwwwwe:::"
-  "::ewwwwWwwwwe:::"
-  ":::eewwwwwee::::"
-  "::::@eeeee::@:::"
-  "::::::::::::::::"
-  ":::::~::::e:::::"
-  "::@:::::::::::::"
-  "::::::::e:::::@:"
-  ":e::::::::::::::"))
-
-; ... shallow water over the whole road, deeper in the ruts.
-(tile floor (band "The Flood") (weight 1) (rows
-  ":::e::::::e:::::"
-  "::eewwwwwwwee:::"
-  ":ewwwwW~wwwwwe::"
-  "ewwW~ww===wwwwe:"
-  "ewww===wwww=wwwe"
-  "eww=====wwwwWwwe"
-  "ewWw===~=wwwwwwe"
-  "ewwww=====wwW~we"
-  "ewwWwww===wwwwwe"
-  "eww~wwwwwwww=wwe"
-  "ewwwwwW~www===we"
-  ":ewww====wwwwwe:"
-  ":ewwwwwwwWwwwwe:"
-  "::eewwwwwwwwee::"
-  ":::@eeeeeeee::::"
-  "::::::::@:::::::"))
-
 ; ... silt laid down in ripples as the water drew off.
 (tile floor (band "The Flood") (weight 3) (rows
   "::::@:::::e:::::"
