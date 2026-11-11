@@ -205,6 +205,10 @@
     (def cols (map-cols (game-map g)))
     (def kept (%bl-kept g s tag goal? most))
     (def path (if (null? kept) (%bl-search g goal? most) kept))
+    (when %bl-tracing
+      (Vector set! 0 (pair (Str8 append "{" (symbol->str tag) (match ((not (null? kept)) " kept") ((null? path) " none") (#t " found")) "}")
+                           (Vector ref 0 %bl-pressed))
+                  %bl-pressed))
     (Vector set! 12 (pair (pair tag path) (List reject (fn (_ e) (eq? (first e) tag)) (Vector ref 12 s))) s)
     (if (null? path) ()
       (do (def r (int/ (first path) cols))
@@ -497,15 +501,17 @@
     (def ar (if (< dr 0) (- 0 dr) dr))
     (def ac (if (< dc 0) (- 0 dc) dc))
     (match ((< 7 ar) #f) ((< 7 ac) #f) ((= ar 0) #t) ((= ac 0) #t) (#t (= ar ac)))))
-; A hostile awake that shoots and has the player in its line, in view or
-; not: a shot shows where it came from.  Or nil.
+; A hostile awake that shoots and has the player in its line with
+; nothing between, in view or not: a shot shows where it came from.  Or
+; nil.
 (def %bl-shooter
   (fn (_ g)
     (def p (game-player g))
     (List find (fn (_ cr)
                  (match ((not (%bl-hostile? cr)) #f) ((not (creature-trait? cr (lit ranged))) #f)
                         ((eq? (creature-state cr) (lit asleep)) #f)
-                        (#t (%bl-in-line? cr (player-r p) (player-c p)))))
+                        ((not (%bl-in-line? cr (player-r p) (player-c p))) #f)
+                        (#t (not (null? (%bl-aim g cr))))))
       (game-creatures g))))
 ; A step out of CR's line, or #f with none.
 (def %bl-out-of-line!
