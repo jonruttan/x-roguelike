@@ -566,31 +566,63 @@
         %bl-dirs))
     (if (null? hit) #f (do (%bl-key! g (first hit)) #t))))
 
-; A step to a cell beside nothing hostile, or #f with none.
+; Whether the player can stand on R C: walkable, with no creature and no
+; found trap on it.
+(def %bl-free?-cell
+  (fn (_ g r c)
+    (def m (game-map g))
+    (match ((not (map-in? m r c)) #f) ((not (map-walkable? m r c)) #f)
+           ((not (null? (state-creature-at g r c))) #f)
+           (#t (null? (traps-found-at g r c))))))
+; How much ground lies open past R C, to MOST cells: those that can be
+; stood on, beside nothing hostile, reached from it a step at a time.  A
+; dead end has little.
+(def %bl-room
+  (fn (_ g r c most)
+    (def cols (map-cols (game-map g)))
+    (def grow
+      (fn (self front seen n)
+        (match ((null? front) n) ((not (< n most)) n)
+               (#t (do (def at (first front))
+                       (def new (List filter
+                                  (fn (_ d)
+                                    (def rr (+ (first at) (first (rest d))))
+                                    (def cc (+ (rest at) (rest (rest d))))
+                                    (match ((List includes? (+ (* rr cols) cc) seen) #f) ((not (%bl-free?-cell g rr cc)) #f)
+                                           (#t (not (%bl-hostile-beside? g rr cc)))))
+                                  %bl-dirs))
+                       (def cells (List map (fn (_ d) (pair (+ (first at) (first (rest d))) (+ (rest at) (rest (rest d))))) new))
+                       (self (List append (rest front) cells)
+                             (List append (List map (fn (_ k) (+ (* (first k) cols) (rest k))) cells) seen)
+                             (+ n (List length cells))))))))
+    (grow (list (pair r c)) (list (+ (* r cols) c)) 1)))
+; A step to a cell beside nothing hostile, the one with the most room
+; past it, or #f with none.
 (def %bl-clear-step!
   (fn (_ g)
     (def p (game-player g))
     (def m (game-map g))
-    (def hit
-      (List find
-        (fn (_ d)
+    (def best
+      (List fold
+        (fn (_ best d)
           (def r (+ (player-r p) (first (rest d))))
           (def c (+ (player-c p) (rest (rest d))))
-          (match ((not (map-in? m r c)) #f) ((not (map-walkable? m r c)) #f)
-                 ((creatures-door-diagonal? m (player-r p) (player-c p) (first (rest d)) (rest (rest d))) #f)
-                 ((not (null? (state-creature-at g r c))) #f)
-                 ((not (null? (traps-found-at g r c))) #f)
-                 (#t (not (%bl-hostile-beside? g r c)))))
-        %bl-dirs))
-    (if (null? hit) #f (do (%bl-key! g (first hit)) #t))))
+          (match ((not (%bl-free?-cell g r c)) best)
+                 ((creatures-door-diagonal? m (player-r p) (player-c p) (first (rest d)) (rest (rest d))) best)
+                 ((%bl-hostile-beside? g r c) best)
+                 (#t ((fn (_ room) (if (< (first best) room) (pair room (first d)) best)) (%bl-room g r c 24)))))
+        (pair 0 ()) %bl-dirs))
+    (if (null? (rest best)) #f (do (%bl-key! g (rest best)) #t))))
 ; The slow FOE beside the player, outpaced: struck on the turn it cannot
 ; answer; on the turn it can, a sleeper waited on, one awake stepped
-; clear of, and struck all the same with nowhere clear to step.
+; clear of.  With nowhere clear to step, one whose fight WHO would not
+; start is walked away from, and any other struck all the same.
 (def %bl-outpace!
-  (fn (_ g s foe)
+  (fn (_ g s who foe)
     (match ((not (%bl-slow-next? g)) (%bl-toward-creature! g s foe))
            ((eq? (creature-state foe) (lit asleep)) (%bl-key! g "s"))
            ((%bl-clear-step! g) ())
+           ((if (%bl-worth? g who foe) #f (%bl-away! g foe)) ())
            (#t (%bl-toward-creature! g s foe)))))
 ; Whether to wait for CR to come: slow, awake, and two cells off, so its
 ; next step brings it beside the player on a turn it cannot strike.
@@ -775,7 +807,7 @@
       ((%bl-zap! g who (match ((not (null? foe)) foe)
                               ((null? shown) (List find (fn (_ cr) (%bl-sitter? g cr)) (game-creatures g)))
                               ((eq? (creature-state shown) (lit asleep)) ()) (#t shown))) ())
-      ((if (null? foe) #f (%bl-outpace? g)) (%bl-outpace! g s foe))
+      ((if (null? foe) #f (%bl-outpace? g)) (%bl-outpace! g s who foe))
       ((not (null? foe))
         (unless (if (if (< 0 (%bl-at who (lit retreat))) (%bl-free? g foe) #f)
                   (if (if (%bl-losing? g foe) #t (%bl-under? p (%bl-at who (lit retreat)))) (%bl-away! g foe) #f) #f)
