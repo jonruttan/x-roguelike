@@ -579,14 +579,17 @@
   (fn (_ g class names)
     (List fold (fn (_ hit name) (if (null? hit) (%bl-with-effect g class name) hit)) () names)))
 
-; What every hostile beside the player is likely to cost together.
+; What every hostile beside the player is likely to cost together, one
+; held still counted for nothing.
 (def %bl-peril
   (fn (_ g)
     (def p (game-player g))
     (List fold
       (fn (_ sum cr)
-        (if (if (%bl-hostile? cr) (state-adjacent? (creature-r cr) (creature-c cr) (player-r p) (player-c p)) #f)
-          (+ sum (%bl-cost g cr)) sum))
+        (match ((not (%bl-hostile? cr)) sum)
+               ((not (state-adjacent? (creature-r cr) (creature-c cr) (player-r p) (player-c p))) sum)
+               ((< 0 (creature-condition cr (lit held))) sum)
+               (#t (+ sum (%bl-cost g cr)))))
       0 (game-creatures g))))
 
 ; The way, (DR . DC), a wand is pointed at CR: along a row, a column or
