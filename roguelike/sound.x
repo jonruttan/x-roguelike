@@ -31,7 +31,6 @@
 
 (module roguelike/sound)
 
-(import x/sys/sdl)
 (import x/audio/mixer)
 (import x/audio/tracker)
 (import x/core/doors int* int+ int- int/ int< int= int& obj-make obj-ref obj-set!)
@@ -60,13 +59,15 @@
 ; (%sd-glance), 9 the random state, 10 blocks since a collect, 11 the
 ; place the music is for, 12 the place's random sounds, 13 how loud
 ; the turn's sounds are, a percentage (sound-volume!), 14 the creatures
-; as they stood (%sd-states), 15 unused, 16 the name of the song
+; as they stood (%sd-states), 15 the class the sound is played through,
+; Sdl or Web (%sd-front), 16 the name of the song
 ; last asked for (%sd-music!), 17 the turns left of a fight, 18 the
 ; guardian fought, or nil, 19 the game's turn last heard (%sd-turned?).
 
 (def %sd-vector-type ((prim-ref (lit type) (lit of)) (Vector make 0 ())))
 (def %sd-get (fn (_ s k) (obj-ref s (int+ k 1))))
 (def %sd-put! (fn (_ s k x) (obj-set! s (int+ k 1) x)))
+(def %sd-front (fn (_ s) (%sd-get s 15)))
 
 ; --- the set's data ------------------------------------------------------------
 
@@ -120,8 +121,8 @@
 (def %sd-free-stream
   (fn (_ s)
     (def ls (%sd-get s 3))
-    (def best (List fold (fn (_ acc st) (if (int< (Sdl audio-queued st) (Sdl audio-queued acc)) st acc)) (first ls) ls))
-    (unless (int= 0 (Sdl audio-queued best)) (Sdl audio-clear! best))
+    (def best (List fold (fn (_ acc st) (if (int< ((%sd-front s) audio-queued st) ((%sd-front s) audio-queued acc)) st acc)) (first ls) ls))
+    (unless (int= 0 ((%sd-front s) audio-queued best)) ((%sd-front s) audio-clear! best))
     best))
 
 ; VOICES, each its (gain G) taken to PCT percent of it.
@@ -150,7 +151,7 @@
           (def b (%sd-bytes s key
                    (fn (_) (Mixer render %sd-rate (%sd-louder (%sd-voices f (int* pick vary) (int* side 55)) vol)
                                      (List map rest (%sd-props f (lit echo)))))))
-          (Sdl audio-put! (%sd-free-stream s) (first b) (rest b))))))
+          ((%sd-front s) audio-put! (%sd-free-stream s) (first b) (rest b))))))
 
 ; Sound NAME's voices started in the music, AT frames on, at GAIN percent.
 (def %sd-play-in-music!
@@ -447,11 +448,12 @@
 
 ; --- the front end's verbs -----------------------------------------------------
 
-; Sound for game G, or nil when there is none to be had: no audio device,
-; no compiled loops to keep it fed, or a set with no sounds.  A failure
-; here costs the game its sound and nothing else.
+; Sound for game G played through FRONT, Sdl or Web, or nil when there
+; is none to be had: no audio device, no compiled loops to keep it fed,
+; or a set with no sounds.  A failure here costs the game its sound and
+; nothing else.
 (def sound-make
-  (fn (_ g)
+  (fn (_ g front)
     (def set (game-set g))
     (guard (e ())
       (if (null? (data-all set (lit sound))) ()
@@ -462,10 +464,11 @@
             (List for-each (fn (_ e) (Mixer echo! m (List ref 0 e) (List ref 1 e) (List ref 2 e))) (data-all set (lit music-echo)))
             (def s (obj-make %sd-vector-type 21))
             (obj-set! s 0 20)
+            (%sd-put! s 15 front)
             (%sd-put! s 0 set)
             (%sd-put! s 1 m)
-            (%sd-put! s 2 (Sdl audio-open %sd-rate 2))
-            (%sd-put! s 3 ((fn (self n) (if (int< n 1) () (pair (Sdl audio-open %sd-rate 2) (self (int- n 1))))) %sd-effect-streams))
+            (%sd-put! s 2 ((%sd-front s) audio-open %sd-rate 2))
+            (%sd-put! s 3 ((fn (self n) (if (int< n 1) () (pair ((%sd-front s) audio-open %sd-rate 2) (self (int- n 1))))) %sd-effect-streams))
             (%sd-put! s 4 ())
             (%sd-put! s 5 ())
             (%sd-put! s 6 ())
@@ -477,7 +480,6 @@
             (%sd-put! s 12 ())
             (%sd-put! s 13 100)
             (%sd-put! s 14 (%sd-states g))
-            (%sd-put! s 15 0)
             (%sd-put! s 16 "")
             (%sd-put! s 17 0)
             (%sd-put! s 18 ())
@@ -496,8 +498,8 @@
   (fn (_ s)
     (if (null? s) 0
       ((fn (self n)
-         (if (int< (Sdl audio-queued (%sd-get s 2)) %sd-ahead)
-           (do (Sdl audio-put! (%sd-get s 2) (Mixer block! (%sd-get s 1)) (int* 4 %sd-block))
+         (if (int< ((%sd-front s) audio-queued (%sd-get s 2)) %sd-ahead)
+           (do ((%sd-front s) audio-put! (%sd-get s 2) (Mixer block! (%sd-get s 1)) (int* 4 %sd-block))
                (%sd-put! s 10 (int+ (%sd-get s 10) 1))
                (self (int+ n 1)))
            n))
@@ -546,7 +548,7 @@
 (def sound-close
   (fn (_ s)
     (unless (null? s)
-      (do (Sdl audio-close (%sd-get s 2))
-          (List for-each (fn (_ st) (Sdl audio-close st)) (%sd-get s 3))))))
+      (do ((%sd-front s) audio-close (%sd-get s 2))
+          (List for-each (fn (_ st) ((%sd-front s) audio-close st)) (%sd-get s 3))))))
 
 (provide roguelike/sound sound-make sound-pump! sound-collect? sound-turn! sound-volume! sound-cue! sound-music sound-close)
