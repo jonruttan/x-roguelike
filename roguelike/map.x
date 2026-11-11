@@ -468,6 +468,33 @@
              (self (rest l)))))
      (%mp-rays radius cols))))
 
+; What is in view by daylight: every cell of M, wherever the player
+; stands at R C, and all of it seen; the roofs as ever, none of them
+; off, since under one it is not day.  Worked once, and kept while the
+; view stands as daylight's.
+(def %mp-fill!
+  (fn (self p i n) (when (int< i n) (do (ptr-set! p i 1 1) (self p (int+ i 1) n)))))
+(def map-light-all!
+  (fn (_ m r c)
+    (def from (%mp-get m 13))
+    (unless (if (null? from) #f (= (first (rest (rest from))) -2))
+      (do (def n (int* (map-rows m) (map-cols m)))
+          (%mp-fill! (str->ptr (%mp-get m 3)) 0 n)
+          (%mp-fill! (str->ptr (%mp-get m 4)) 0 n)
+          (%mp-roofs-light! m r c)))
+    (%mp-put! m 13 (list r c -2))))
+; Whether every cell of M has been seen, so nothing is left to walk to.
+(def map-seen-whole?
+  (fn (_ m)
+    (def n (int* (map-rows m) (map-cols m)))
+    (def seen (str->ptr (%mp-get m 3)))
+    ((fn (self i) (match ((not (int< i n)) #t) ((int= (ptr-ref seen i 1) 0) #f) (#t (self (int+ i 1))))) 0)))
+; Whether R1 C1 is in sight from R0 C0 within RADIUS: no farther along
+; either axis, and a clear line between, as map-light-radius! walks it.
+(def map-sight?
+  (fn (_ m r0 c0 r1 c1 radius)
+    (if (< radius (%mp-max (%mp-abs (- r1 r0)) (%mp-abs (- c1 c0)))) #f (%mp-clear? m r0 c0 r1 c1))))
+
 ; --- drawing -----------------------------------------------------------------
 
 ; Row R's cells as glyph bytes into BUF: BYTES the glyph of each tile
@@ -605,5 +632,5 @@
   map-make map-rows map-cols map-rooms map-rooms! map-down map-down! map-up map-up! map-places map-places! map-place-at
   map-in? map-tile map-set! map-seen? map-seen! map-visible? map-passable? map-walkable? map-floor?
   room-r0 room-c0 room-r1 room-c1 room-lit? room-covers? room-inside? room-centre map-room-at
-  map-each! map-opaque? map-light! map-light-radius! map-row-glyphs! map-visible-next map-visible-run
+  map-each! map-opaque? map-light! map-light-radius! map-light-all! map-sight? map-seen-whole? map-row-glyphs! map-visible-next map-visible-run
   map-reveal! map-fill-unreached! map-frontier? map-chart)

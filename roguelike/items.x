@@ -28,11 +28,11 @@
 (import x/core/doors int/)
 (import roguelike/data data-all data-prop data-prop1 data-glyph data-trait?)
 (import roguelike/map
-  map-walkable? map-reveal! map-rooms map-rooms! map-room-at room-r0 room-c0 room-r1 room-c1 map-tile map-visible?
+  map-walkable? map-reveal! map-rooms map-rooms! map-room-at room-r0 room-c0 room-r1 room-c1 map-tile
   tile-floor)
 (import roguelike/dungeon dungeon-spot)
 (import roguelike/state
-  game-rng game-set game-depth game-map game-player game-floor game-floor! game-pack game-pack! game-ask!
+  game-rng game-set game-depth game-map game-player game-floor game-floor! game-pack game-pack! game-ask! state-in-sight?
   game-guises game-known game-known! game-param game-param1 game-goal-placed? game-goal-placed! game-band game-world-all
   game-pages-placed game-page-placed! game-sure game-sure? game-sure! band-name band-to
   player-r player-c player-at! player-hp player-hp! player-hpmax player-hpmax! player-str player-str!
@@ -110,7 +110,7 @@
     (def kinds (creatures-kinds g (game-depth g)))
     (def at (dungeon-spot (game-rng g) (game-map g)
               (fn (_ r c) (match ((not (state-free? g r c)) #f) ((not (null? (state-items-at g r c))) #f)
-                                 (#t (not (map-visible? (game-map g) r c)))))
+                                 (#t (not (state-in-sight? g r c)))))
               100))
     (unless (match ((null? form) #t) ((null? kinds) #t) (#t (null? at)))
       (do (def it (items-new g form))

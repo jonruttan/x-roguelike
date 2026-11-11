@@ -31,7 +31,7 @@
   creature-make creature-r creature-c creature-at! creature-hp creature-hp! creature-state creature-state!
   creature-name creature-glyph creature-trait? creature-carried state-a-kind item-make item-name item-count item-charges
   item-enchant item-letter item-letter! item-r item-c item-at!
-  item-class state-say! state-dist state-adjacent?)
+  item-class state-say! state-dist state-adjacent? state-in-sight? game-daylight?)
 (import roguelike/creatures creatures-kinds creatures-place!)
 (import roguelike/items items-name items-new items-known? items-spawn!)
 (import roguelike/traps trap-make trap-found?)
@@ -65,7 +65,7 @@
   creature-make creature-r creature-c creature-at! creature-hp creature-hp! creature-state creature-state!
   creature-name creature-glyph creature-trait? creature-carried state-a-kind item-make item-name item-count item-charges
   item-enchant item-letter item-letter! item-r item-c item-at!
-  item-class state-say! state-dist state-adjacent?
+  item-class state-say! state-dist state-adjacent? state-in-sight? game-daylight?
   items-name items-new items-known? items-spawn! creatures-kinds creatures-place! trap-make trap-found? chain-where chain-way shops-kept? shops-open!
   quests-leads quests-errands quests-sighted!
   save-write! save-read save-score! save-scores)

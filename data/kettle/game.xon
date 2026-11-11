@@ -53,7 +53,10 @@
 (hunger 43200 14400 3600 86400)
 (starve 600)
 
-; Sight to eight cells, through nothing solid.
+; The valley lies under the sky by day: a screen is seen whole from
+; anywhere on it.  Sight is eight cells, through nothing solid, which
+; is how far off a creature and the player notice one another.
+(light day)
 (view 8)
 
 ; Open ground: thickets of wall, the outer ring always clear.

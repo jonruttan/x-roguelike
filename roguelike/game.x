@@ -37,7 +37,7 @@
 (import x/type/vector)
 (import x/sys/gc)
 (import roguelike/map
-  map-rows map-cols map-in? map-tile map-up map-down map-walkable? map-seen? map-light! map-light-radius!
+  map-rows map-cols map-in? map-tile map-up map-down map-walkable? map-seen? map-light! map-light-radius! map-light-all! map-seen-whole?
   map-place-at map-frontier? tile-rock tile-down tile-up tile-door)
 (import roguelike/dungeon dungeon-generate dungeon-spot)
 (import x/core/doors int/)
@@ -52,9 +52,9 @@
   game-messages game-messages! game-log game-band game-band-from band-to band-prop1 game-forms
   player-r player-c player-at! player-hp player-hp! player-hpmax player-level player-food player-food! player-lamp player-lamp!
   player-condition player-tick! player-armour player-rings player-gold
-  state-say! state-tell! state-text state-clear-messages! state-clear-log! state-roll state-chance? state-dir state-dirs
+  game-daylight? state-in-sight? state-say! state-tell! state-text state-clear-messages! state-clear-log! state-roll state-chance? state-dir state-dirs
   state-creature-at state-creature-named state-items-at state-free? state-ring? item-class? item-class-in? item-class
-  item-name creature-name creature-trait? creature-prop creature-kind state-a-kind)
+  item-name creature-name creature-r creature-c creature-trait? creature-prop creature-kind state-a-kind)
 (import roguelike/combat combat-player-attacks! combat-hurt-player!)
 (import roguelike/creatures
   creatures-spawn! creatures-guardian! creatures-wander! creatures-act! creatures-door-diagonal? creatures-shown?)
@@ -77,12 +77,16 @@
 
 ; What is in view, from where the player stands: by the room, or by
 ; sight within the set's (view N); the cells beside, with the lamp out
-; under the set's (lamp ...); nothing, blind.
+; under the set's (lamp ...); nothing, blind.  Under the sky of a set
+; that says (light day) the whole level is in view, and a step under a
+; roof is back to sight; what a creature goes by, and what is told or
+; stops a walk, is still what is in sight (state-in-sight?).
 (def %gm-light!
   (fn (_ g)
     (def p (game-player g))
     (def view (if (%gm-dark? g) 1 (game-param1 g (lit view) 0)))
     (match ((< 0 (player-condition p (lit blind))) (map-light! (game-map g) -9 -9))
+           ((game-daylight? g) (map-light-all! (game-map g) (player-r p) (player-c p)))
            ((< 0 view) (map-light-radius! (game-map g) (player-r p) (player-c p) view))
            (#t (map-light! (game-map g) (player-r p) (player-c p))))
     (%gm-tales! g)))
@@ -93,7 +97,7 @@
   (fn (_ g)
     (List for-each
       (fn (_ cr)
-        (when (creatures-shown? g cr)
+        (when (if (creatures-shown? g cr) (state-in-sight? g (creature-r cr) (creature-c cr)) #f)
           (unless (List any? (fn (_ n) (str=? n (creature-name cr))) (game-told g))
             ((fn (_ lines)
                (unless (null? lines)
@@ -576,7 +580,8 @@
 ; The first step, (DR . DC), of the shortest walk over seen cells, a
 ; found trap or one of the people never among them, from the player to the nearest frontier,
 ; or nil with none: a breadth-first search, each cell remembering the
-; first step that reached it.
+; first step that reached it.  A level seen whole, as one is by day, has
+; no frontier, and is not searched for one.
 (def %gm-explore-step
   (fn (_ g)
     (def m (game-map g))
@@ -609,7 +614,7 @@
                   (if (if (eq? step #t) #f (map-frontier? m r c)) step
                     (self (rest front) (List append (reach r c (if (eq? step #t) () step)) back))))))))
     (Vector set! (at (player-r p) (player-c p)) #t came)
-    (search (list (pair (player-r p) (player-c p))) ())))
+    (if (map-seen-whole? m) () (search (list (pair (player-r p) (player-c p))) ()))))
 
 ; One step toward what is not yet seen, a turn: whether the walk goes
 ; on.  It ends with a creature in view that does not talk, a question
@@ -618,7 +623,10 @@
   (fn (_ g)
     (def n (game-exploring g))
     (def stop (fn (_) (game-exploring! g ()) #f))
-    (def shown (if (null? n) () (List find (fn (_ cr) (if (creature-trait? cr (lit talks)) #f (creatures-shown? g cr))) (game-creatures g))))
+    (def shown (if (null? n) () (List find (fn (_ cr) (match ((creature-trait? cr (lit talks)) #f)
+                                                              ((not (creatures-shown? g cr)) #f)
+                                                              (#t (state-in-sight? g (creature-r cr) (creature-c cr)))))
+                                   (game-creatures g))))
     (match
       ((null? n) #f)
       ((not (null? (game-over g))) (stop))
