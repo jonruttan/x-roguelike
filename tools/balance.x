@@ -818,6 +818,7 @@
       ((%bl-walk! g s (lit stairs) (%bl-stairs-goal g t)) ())
       ((%bl-to-frontier! g s) ())
       ((if (null? shown) #f (%bl-toward-creature! g s shown)) ())
+      ((match ((null? shown) #f) ((not (creature-trait? shown (lit ranged))) #f) (#t (%bl-out-of-line! g shown))) ())
       ((%bl-clear-the-way! g s) ())
       (#t (%bl-unstick! g s)))))
 
@@ -986,7 +987,6 @@
       ((not (null? to-item)) (%bl-key! g (%bl-key-for (first to-item) (rest to-item))))
       ((%bl-await? g shown) (%bl-key! g "s"))
       ((not (null? to-foe)) (%bl-key! g (%bl-key-for (first to-foe) (rest to-foe))))
-      ((if shoots? (%bl-out-of-line! g shown) #f) ())
       ((not (null? errand)) (%bl-errand! g s errand shown))
       ((if (null? giver) #f (%bl-talk? g s giver))
         (do (%bl-toward-creature! g s giver) (Vector set! 4 #t s) (Vector set! 18 (List length (game-pack g)) s)))
