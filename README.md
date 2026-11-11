@@ -231,7 +231,8 @@ A level is carved in the shape of where it is.  Besides `rooms`,
 and pillar off a haulage road; `flood`, a channel across the level with
 deep water along it; `works`, paired vaults of dressed stone off a
 stair; `well`, a cave round a walled court with a pool; `fields`,
-hedged closes either side of a road; `hills`, gritstone edges, bog and
+hedged closes either side of a road, a gate or a gap in every hedged
+side of each; `hills`, gritstone edges, bog and
 gorse; or `rim`, limestone scars, shakeholes and fallen walls.  Each
 style's knobs, and what each defaults to, are in its comment in
 `roguelike/dungeon.x`.  `delve`'s four bands are a pit, a flooded

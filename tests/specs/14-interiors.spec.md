@@ -187,6 +187,19 @@ a hundred, so a screen of the first ring always has a door.
 ---
     (("farmhouse cellar") #t)
 
+### a level of one small room keeps its way up: its two stairs are never the one cell, with a way on or without
+
+```roguelike
+(def shut (fn (_ params)
+            (List filter (fn (_ seed)
+                           (def m (spec-level-on params seed 1))
+                           (not (= (map-tile m (first (map-up m)) (rest (map-up m))) tile-up)))
+              (List range 1 61))))
+(write (list (shut '((rooms 1 1) (room-size 4 4 4 4) (scale 1) (stairs up))) (shut '((rooms 1 1) (room-size 4 4 4 4) (scale 1)))))
+```
+---
+    (() ())
+
 ## random play
 
 ### a game of a thousand keys among doors raises nothing and keeps every invariant
