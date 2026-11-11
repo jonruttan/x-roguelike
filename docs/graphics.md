@@ -21,8 +21,13 @@ screen's pixel, the art's scale: a line holds 52 letters.
 
 - **The level** is 80 by 22, as in the terminal.  The window shows 20 by
   9 of it at the first zoom; the camera keeps the player in the middle,
-  always, the view running past the map's edge onto rock, so it scrolls
-  as the player walks.
+  the view running past the map's edge onto rock, so it scrolls as the
+  player walks.
+- **Dragging the view**: the mouse dragged with its left button, shift
+  with an arrow key, or the gamepad's right stick, moves the view off the player a cell at a
+  time, as far as puts the view's middle on the map's edge, to look at
+  what lies off the screen.  It shows only what has been seen, and no
+  turn passes.  Any key brings the view back to the player.
 - **In view and seen**: cells in view drawn whole, cells seen before
   dimmed, rock black.  Found traps and items where they were seen;
   creatures only in view; the player last.  A warm glow round the
@@ -36,8 +41,9 @@ screen's pixel, the art's scale: a line holds 52 letters.
   creature stands under it.
 - **Off the screen**: a creature in view whose cell is off the screen
   (at a close zoom the player sees further than the screen shows) has
-  a red arrowhead at the level's edge, where the line from the player
-  to it leaves the screen, pointing its way.
+  a red arrowhead at the level's edge, where the line from the view's
+  middle to it leaves the screen, pointing its way; the player has a
+  white one while the view is dragged off it.
 - **Marks**: what a creature or the player is under is drawn over it,
   from the set's `mark-NAME` pictures, moving with it and going round
   their pictures: a creature held or slowed; the player confused,

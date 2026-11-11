@@ -224,7 +224,7 @@ each frame that layer, what stands on it, the light and the text.
 (def g (spec-game-on (spec-set-named "delve") 3 ()))
 (paint-zoom! p 2)
 (paint-turn! p g fa)
-(def red (fn (_ s) (List length (List filter (fn (_ y) (List any? (fn (_ x) (equal? (Canvas pixel s x y) '(230 80 60 255))) (List range 4 24)))
+(def red (fn (_ s) (List length (List filter (fn (_ y) (List any? (fn (_ x) (equal? (Canvas pixel s x y) '(230 80 60 255))) (List append (List range 4 24) (List range 616 636))))
                                    (List range paint-level-y 320)))))
 (def s (paint-frame! p g 0))
 (def rim (Canvas pixel s 472 268))
@@ -235,3 +235,29 @@ each frame that layer, what stands on it, the light and the text.
 ```
 ---
     ((92 80 64 255) 0 #t)
+
+### a view dragged off the player points back to it in white, and draws no blow again
+
+```roguelike
+(import roguelike/frame frame-pan!)
+(import roguelike/paint paint-view!)
+(import roguelike/state state-blow! state-clear-messages!)
+(def g (spec-game-on (spec-set-named "delve") 3 ()))
+(def pl (game-player g))
+(paint-zoom! p 2)
+(paint-turn! p g fa)
+(def white (fn (_ s) (List length (List filter (fn (_ y) (List any? (fn (_ x) (equal? (Canvas pixel s x y) '(240 236 224 255))) (List append (List range 4 24) (List range 616 636))))
+                                     (List range paint-level-y 320)))))
+(def home (white (paint-frame! p g 0)))
+(state-clear-messages! g)
+(state-blow! g (player-r pl) (- (player-c pl) 1) (player-r pl) (player-c pl) 'hit 2 ())
+(paint-turn! p g fa)
+(frame-pan! g 0 -20)
+(paint-view! p g fa)
+(def away (white (paint-frame! p g 0)))
+(def still (not (paint-animating? p)))
+(frame-pan! g 0 0)
+(write (list home (< 0 away) still))
+```
+---
+    (0 #t #t)

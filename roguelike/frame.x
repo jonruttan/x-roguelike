@@ -22,23 +22,35 @@
 (import x/core/doors int+ int- int* int/ int% int< int= str-make str->ptr ptr-set! ptr-ref str-byte-ref char->int)
 (import roguelike/data data-all data-glyph)
 (import roguelike/items items-glyph)
-(import roguelike/map map-terrain map-kinds map-rows map-cols map-tile map-seen? map-visible? map-in? map-opaque? map-walkable?
-  tile-rock tile-down tile-up tile-door tile-roof tile-water tile-shallow map-shown map-covered? map-roofed? map-roof-pitch)
+(import roguelike/map map-terrain map-kinds map-rows map-cols map-tile map-seen? map-visible? map-in? map-opaque? map-chart
+  tile-rock tile-roof tile-water tile-shallow map-shown map-covered? map-roofed? map-roof-pitch)
 (import roguelike/state game-map game-player game-floor game-creatures game-traps
   player-r player-c player-conditions item-r item-c item-class creature-r creature-c creature-name creature-glyph
   creature-state creature-condition game-set game-blows game-over)
 (import roguelike/draw draw-hunger)
 (import roguelike/creatures creatures-shown?)
 (import roguelike/traps trap-r trap-c trap-found?)
-(import roguelike/game game-frontier?)
 
 (def frame-tile-size 16)
-; The view, [ROWS COLS] in cells: drawn at the tile's size and shown
-; at the painter's zoom (paint.x), which sets it to fill the screen.
-(def %fr-view (Vector of 10 20))
+; The view, [ROWS COLS DR DC] in cells: drawn at the tile's size and
+; shown at the painter's zoom (paint.x), which sets it to fill the
+; screen; DR DC how far it is moved off the player, by a drag.
+(def %fr-view (Vector of 10 20 0 0))
 (def frame-view-rows (fn (_) (Vector ref 0 %fr-view)))
 (def frame-view-cols (fn (_) (Vector ref 1 %fr-view)))
 (def frame-view! (fn (_ rows cols) (do (Vector set! 0 rows %fr-view) (Vector set! 1 cols %fr-view) ())))
+(def frame-pan (fn (_) (pair (Vector ref 2 %fr-view) (Vector ref 3 %fr-view))))
+; V held to 0 .. N - 1.
+(def %fr-held (fn (_ v n) (if (int< v 0) 0 (if (int< v n) v (int- n 1)))))
+; The view of game G moved DR DC cells off the player, no further than
+; puts its middle on the map's edge.
+(def frame-pan!
+  (fn (_ g dr dc)
+    (def m (game-map g))
+    (def p (game-player g))
+    (Vector set! 2 (int- (%fr-held (int+ (player-r p) dr) (map-rows m)) (player-r p)) %fr-view)
+    (Vector set! 3 (int- (%fr-held (int+ (player-c p) dc) (map-cols m)) (player-c p)) %fr-view)
+    ()))
 (def frame-level-y 24)
 
 ; --- the art ----------------------------------------------------------------
@@ -164,13 +176,13 @@
 ; --- the camera -------------------------------------------------------------
 
 ; The view's top-left cell, (R0 . C0): the player at R C in the middle,
-; always, so the screen is never half empty beside a map's edge.  What
-; lies past the edge is drawn as rock.  ROWS and COLS, the map's size,
-; are not needed to place it.
+; so the screen is never half empty beside a map's edge, or moved off
+; the player by the pan, its middle kept on the map of ROWS by COLS.
+; What lies past the edge is drawn as rock.
 (def frame-camera
   (fn (_ rows cols r c)
-    (pair (- r (int/ (frame-view-rows) 2))
-          (- c (int/ (frame-view-cols) 2)))))
+    (pair (- (%fr-held (+ r (Vector ref 2 %fr-view)) rows) (int/ (frame-view-rows) 2))
+          (- (%fr-held (+ c (Vector ref 3 %fr-view)) cols) (int/ (frame-view-cols) 2)))))
 
 ; --- the level --------------------------------------------------------------
 
@@ -625,47 +637,20 @@
 
 ; --- the chart -----------------------------------------------------------------
 
-; What the chart shows of the cell at R C of M: 0 not seen, 1 ground
-; seen, 2 ground in view, 3 wall seen, 4 wall in view, 5 the way down,
-; 6 the way up, 7 a door, 8 ground beside what is not yet seen, still
-; to explore.  A cell under a roof that is on is the roof, a wall.
-(def %fr-chart-code
-  (fn (_ m r c)
-    (def t (map-shown m r c))
-    (def lit? (map-visible? m r c))
-    (match ((not (map-seen? m r c)) 0)
-           ((= t tile-down) 5)
-           ((= t tile-up) 6)
-           ((= t tile-door) 7)
-           ((map-opaque? t) (if lit? 4 3))
-           ((if (map-walkable? m r c) (game-frontier? m r c) #f) 8)
-           (lit? 2)
-           (#t 1))))
-
 ; The whole of G's level, small, as one op, (chart ROWS COLS BYTES (PR
-; . PC) ((R . C) ...)): a byte a cell, row by row, as %fr-chart-code
-; has it; where the player stands; and where each creature shown
-; stands, on the screen or off it.
+; . PC) ((R . C) ...)): a byte a cell, row by row, as map-chart has it;
+; where the player stands; and where each creature shown stands, on the
+; screen or off it.
 (def frame-chart
   (fn (_ g)
     (def m (game-map g))
     (def p (game-player g))
-    (def rows (map-rows m))
-    (def cols (map-cols m))
-    (def n (* rows cols))
-    (def bytes (str-make n))
-    (def bp (str->ptr bytes))
-    ((fn (self i)
-       (when (int< i n)
-         (do (ptr-set! bp i (%fr-chart-code m (int/ i cols) (int% i cols)) 1)
-             (self (int+ i 1)))))
-     0)
-    (list (lit chart) rows cols bytes (pair (player-r p) (player-c p))
+    (list (lit chart) (map-rows m) (map-cols m) (map-chart m) (pair (player-r p) (player-c p))
           (List flat-map (fn (_ cr) (if (creatures-shown? g cr) (list (pair (creature-r cr) (creature-c cr))) ()))
             (game-creatures g)))))
 
 (provide roguelike/frame
-  frame-tile-size frame-view-rows frame-view-cols frame-view! frame-level-y
+  frame-tile-size frame-view-rows frame-view-cols frame-view! frame-pan frame-pan! frame-level-y
   frame-art frame-art-band frame-named frame-seed frame-wall-parts frame-join-parts frame-camera frame-cell frame-level
   frame-place frame-things frame-view frame-lights frame-glints frame-blows frame-flicker frame-light-map frame-scene
   frame-chart)

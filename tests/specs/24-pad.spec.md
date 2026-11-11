@@ -68,3 +68,22 @@ step it.
 ```
 ---
     ("b" 'right)
+
+## the view
+
+### the right stick moves the view at once, then while held; the left stick still walks first
+
+```roguelike
+(import roguelike/pad pad-make pad-key)
+(def s (pad-make))
+(def first-look (pad-key s '(pad-axis right-x 30000 1) 0))
+(def soon (pad-key s () 50))
+(def held (pad-key s () 90))
+(pad-key s '(pad-axis left-y -30000 1) 100)
+(def walk (pad-key s () 140))
+(pad-key s '(pad-axis left-y 0 1) 150)
+(pad-key s '(pad-axis right-x 0 1) 160)
+(write (list first-look soon held walk (pad-key s () 400)))
+```
+---
+    (('look 1 0) () ('look 1 0) 'up ())

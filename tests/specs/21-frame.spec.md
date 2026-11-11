@@ -255,3 +255,25 @@ takes, a wall in parts by its neighbours, and the camera on the player.
 ```
 ---
     ('chart #t #t #t #t #t #t #t)
+
+## the view dragged
+
+### the view moves off the player by whole cells, its middle held to the map, and back
+
+```roguelike
+(import roguelike/frame frame-pan frame-pan! frame-camera)
+(import roguelike/map map-rows map-cols)
+(def g (spec-game-on (spec-set-named "delve") 3 ()))
+(def m (game-map g))
+(def pl (game-player g))
+(def cam (fn (_) (frame-camera (map-rows m) (map-cols m) (player-r pl) (player-c pl))))
+(def home (cam))
+(frame-pan! g 2 -3)
+(def moved (list (frame-pan) (- (first (cam)) (first home)) (- (rest (cam)) (rest home))))
+(frame-pan! g -999 999)
+(def edge (list (= (first (frame-pan)) (- 0 (player-r pl))) (= (rest (frame-pan)) (- (- (map-cols m) 1) (player-c pl)))))
+(frame-pan! g 0 0)
+(write (list moved edge (equal? (cam) home)))
+```
+---
+    (((2 . -3) 2 -3) (#t #t) #t)

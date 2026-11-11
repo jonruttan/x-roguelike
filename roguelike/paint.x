@@ -612,6 +612,15 @@
     (Vector set! 13 ((fn (_ op) (if (null? op) () (%pt-chart op))) (List find (fn (_ op) (eq? (first op) (lit chart))) over)) p)
     p))
 
+; The turn's scene drawn again for a view moved by a drag: as
+; paint-turn! draws it, its blows and steps not shown again.
+(def paint-view!
+  (fn (_ p g a)
+    (paint-turn! p g a)
+    (Vector set! 9 (%pt-blows-end (%pt-blow-ops (%pt-over p))) p)
+    (Vector set! 12 %pt-glide-frames p)
+    p))
+
 ; TEXT in lines of at most N letters, broken at a space.
 (def %pt-break
   (fn (self text i n)
@@ -757,7 +766,7 @@
     (%pt-sleeps! work over frame-level-y tick font)
     (%pt-blows! work over blows k frame-level-y font)
     (Canvas nine! s 0 paint-level-y (int* zoom lw) (int* zoom lh) work 0 0 0 0)
-    (%pt-chart! s (Vector ref 13 p) zoom tick)
+    (%pt-chart! s (Vector ref 13 p) cam zoom tick)
     (%pt-top! s (Vector ref 10 p) font (draw-top g) (not (null? (game-ask g))))
     (%pt-standing! s (Vector ref 11 p) font (draw-standing g))
     (%pt-overlay! s (Vector ref 4 p) font (draw-overlay g))
@@ -804,21 +813,24 @@
   (fn (_ q x y w h)
     (if (int< (first q) x) #f (if (int< (rest q) y) #f (if (int< (first q) (int+ x w)) (int< (rest q) (int+ y h)) #f)))))
 
-; The chart CH, (CANVAS . OP) or nil, drawn on screen S at ZOOM and
-; TICK: in the corner unless a creature shown stands under it there;
-; and, for each creature shown whose middle is off the level's area, a
-; pointer toward it.
+; The chart CH, (CANVAS . OP) or nil, drawn on screen S under camera
+; CAM at ZOOM and TICK: in the corner unless a creature shown stands
+; under it there; and, for each creature shown whose middle is off the
+; level's area, a red pointer toward it, and a white one toward the
+; player when the view is dragged off it.
 (def %pt-chart!
-  (fn (_ s ch zoom tick)
+  (fn (_ s ch cam zoom tick)
     (unless (null? ch)
       (do (def op (rest ch))
           (def t (int* frame-tile-size zoom))
           (def at (List ref 4 op))
-          ; The player's middle: the camera keeps it in the view's middle cell.
+          ; The view's middle, where the pointers point from.
           (def x0 (int+ (int* t (int/ (frame-view-cols) 2)) (int/ t 2)))
           (def y0 (int+ paint-level-y (int+ (int* t (int/ (frame-view-rows) 2)) (int/ t 2))))
-          (def places (List map (fn (_ q) (pair (int+ x0 (int* t (int- (rest q) (rest at)))) (int+ y0 (int* t (int- (first q) (first at))))))
-                        (List ref 5 op)))
+          (def place (fn (_ q) (pair (int+ (int* t (int- (rest q) (rest cam))) (int/ t 2))
+                                     (int+ paint-level-y (int+ (int* t (int- (first q) (first cam))) (int/ t 2))))))
+          (def places (List map place (List ref 5 op)))
+          (def off? (fn (_ q) (not (%pt-inside? q 0 paint-level-y paint-width %pt-area-h))))
           (def w (first (first ch)))
           (def h (first (rest (first ch))))
           (def cx (int- paint-width (int+ w %pt-chart-gap)))
@@ -828,15 +840,16 @@
                 (when (int< (int% tick 8) 5)
                   (%pt-fill! Canvas s (int+ cx (int+ 1 (int* %pt-chart-cell (rest at)))) (int+ cy (int+ 1 (int* %pt-chart-cell (first at))))
                     %pt-chart-cell %pt-chart-cell %pt-chart-me))))
-          (List for-each
-            (fn (_ q) (unless (%pt-inside? q 0 paint-level-y paint-width %pt-area-h) (%pt-pointer! s x0 y0 q tick)))
-            places)))))
+          (List for-each (fn (_ q) (when (off? q) (%pt-pointer! s x0 y0 q tick %pt-pointer-ink))) places)
+          ((fn (_ q) (when (off? q) (%pt-pointer! s x0 y0 q tick %pt-pointer-me))) (place at))))))
 
-; A pointer on screen S from X0 Y0, the player's middle, toward Q, (X .
-; Y), off the level's area: a red arrowhead %pt-pointer-in pixels inside
-; the area's edge where the line to Q leaves it, nodding toward Q.
+; A pointer on screen S from X0 Y0, the view's middle, toward Q, (X .
+; Y), off the level's area: an arrowhead in INK %pt-pointer-in pixels
+; inside the area's edge where the line to Q leaves it, nodding toward
+; Q.
 (def %pt-pointer-in 12)
 (def %pt-pointer-ink (list 230 80 60))
+(def %pt-pointer-me (list 240 236 224))
 (def %pt-nod (Vector of 0 1 2 1))
 (def %pt-abs (fn (_ n) (if (int< n 0) (int- 0 n) n)))
 (def %pt-least (fn (_ a b) (if (int< a b) a b)))
@@ -852,7 +865,7 @@
   (fn (_ d lo hi o)
     (match ((int< 0 d) (int/ (int* (int- hi o) 1024) d)) ((int< d 0) (int/ (int* (int- lo o) 1024) d)) (#t 1024))))
 (def %pt-pointer!
-  (fn (_ s x0 y0 q tick)
+  (fn (_ s x0 y0 q tick ink)
     (def dx (int- (first q) x0))
     (def dy (int- (rest q) y0))
     (def f (%pt-least (%pt-least 1024 (%pt-reach dx %pt-pointer-in (int- paint-width %pt-pointer-in) x0))
@@ -863,7 +876,7 @@
     (def x (int+ (int+ x0 (int/ (int* dx f) 1024)) (int/ (int* ux nod) 10)))
     (def y (int+ (int+ y0 (int/ (int* dy f) 1024)) (int/ (int* uy nod) 10)))
     (%pt-arrow! s x y ux uy 1 %pt-black)
-    (%pt-arrow! s x y ux uy 0 %pt-pointer-ink)))
+    (%pt-arrow! s x y ux uy 0 ink)))
 
 ; An arrowhead on S at X Y pointing along (UX . UY), in tenths, grown by
 ; G pixels all round, in INK: its tip 5 pixels ahead, its base 3 behind
@@ -968,6 +981,6 @@
       (%pt-over p))))
 
 (provide roguelike/paint
-  paint-width paint-height paint-art paint-arts paint-font paint-make paint-screen paint-turn! paint-frame! paint-flickers?
+  paint-width paint-height paint-art paint-arts paint-font paint-make paint-screen paint-turn! paint-view! paint-frame! paint-flickers?
   paint-zoom paint-zoom! paint-zoom-least paint-zoom-most paint-zoom-first paint-animating? paint-step! paint-level-y
   paint-menu!)

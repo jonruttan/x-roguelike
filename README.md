@@ -41,7 +41,9 @@ the saved game, start a new one, set the options, or quit.  The options
 are the zoom, fullscreen, how loud the music and the sounds are, and
 mute; they are kept in `~/.x-roguelike/options` for every set.  In the
 game, + and - zoom, M mutes the sound and brings it back, and [ and ]
-make it quieter and louder.  Esc, when the
+make it quieter and louder.  Shift with an arrow, the mouse dragged,
+or the right stick moves the view to look off the screen; any other key
+brings it back.  Esc, when the
 game is not asking anything, pauses it: back to the game, the options,
 the keys, or save and quit.  Alt-Enter (Option-Return on a Mac)
 switches to fullscreen and back, and a gamepad plays too:
