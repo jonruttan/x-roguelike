@@ -28,6 +28,7 @@
 ;
 ; BALANCE_KEEP=DIR saves each game, SET-SEED-LABEL.sav in DIR, the turn it
 ; first sees the creature BALANCE_BOSS names, the fireman unless given,
+; or the turn it comes to the level BALANCE_DEPTH gives,
 ; and ends the game there, reported as capped;
 ; a game that never sees it leaves its save empty, so a batch wipes its
 ; own seeds' saves.  BALANCE_FROM=DIR fights again from those saves
@@ -128,7 +129,7 @@
             %bl-dirs)))
       (game-creatures g))
     (List for-each (fn (_ cr) (Vector set! (+ (* (creature-r cr) cols) (creature-c cr)) #t v)) (game-creatures g))
-    (List for-each (fn (_ t) (when (trap-found? t) (Vector set! (+ (* (trap-r t) cols) (trap-c t)) #t v))) (game-traps g))
+    (List for-each (fn (_ t) (when (if (Vector ref 0 %bl-bold) #f (trap-found? t)) (Vector set! (+ (* (trap-r t) cols) (trap-c t)) #t v))) (game-traps g))
     v))
 
 ; The shortest walk over seen, walkable cells, clear of creatures and
@@ -197,7 +198,7 @@
            ((if (Vector ref 0 %bl-bold) #f (%bl-shunned? g (row (first path)) (col (first path)))) ())
            ((null? (rest path)) path)
            ((not (null? (state-creature-at g (row (first path)) (col (first path))))) ())
-           ((not (null? (traps-found-at g (row (first path)) (col (first path))))) ())
+           ((if (Vector ref 0 %bl-bold) #f (not (null? (traps-found-at g (row (first path)) (col (first path)))))) ())
            (#t path))))
 
 ; Where the player and every creature stand, as (CELL . SUM): while it
@@ -308,14 +309,24 @@
 (def %bl-new-level! (fn (_ g s) (Vector set! 0 #f s) (Vector set! 1 (%bl-place g) s) (Vector set! 4 #f s) (Vector set! 9 () s) (Vector set! 12 () s)
     (Vector set! 13 (game-turn g) s) (Vector set! 14 #f s) (Vector set! 15 () s) (Vector set! 0 #f %bl-bold)))
 
-; With nowhere at all to go: the cells beside the unseen are all to be
-; stood on again, and what sits is no longer gone round; a turn's rest.
+; With nowhere at all to go, the first time on a level: the cells
+; beside the unseen are all to be stood on again, and neither what sits
+; nor a found trap is gone round any longer.  A turn's rest.
 (def %bl-unstick!
   (fn (_ g s)
-    (Vector set! 9 () s)
-    (Vector set! 12 () s) (Vector set! 15 () s)
-    (Vector set! 0 #t %bl-bold)
+    (unless (Vector ref 0 %bl-bold)
+      (do (Vector set! 9 () s)
+          (Vector set! 12 () s)
+          (Vector set! 15 () s)
+          (Vector set! 0 #t %bl-bold)))
     (%bl-key! g "s")))
+; Bold, a step toward the nearest hostile on ground that has been seen:
+; one asleep in a passage closes it.  #f with none to reach, or not bold.
+(def %bl-clear-the-way!
+  (fn (_ g s)
+    (if (Vector ref 0 %bl-bold)
+      (%bl-walk! g s (lit blocker) (fn (_ r c) ((fn (_ cr) (if (null? cr) #f (%bl-hostile? cr))) (state-creature-at g r c))))
+      #f)))
 
 ; Whether the level has light left to look about by: the turns spent
 ; here, a second each, under the share of the oil in hand, lamp and
@@ -614,13 +625,13 @@
         (pair 0 ()) %bl-dirs))
     (if (null? (rest best)) #f (do (%bl-key! g (rest best)) #t))))
 ; The slow FOE beside the player, outpaced: struck on the turn it cannot
-; answer; on the turn it can, a sleeper waited on, one awake stepped
-; clear of.  With nowhere clear to step, one whose fight WHO would not
+; answer; on the turn it can, one not yet after the player waited on,
+; one that is stepped clear of.  With nowhere clear to step, one whose fight WHO would not
 ; start is walked away from, and any other struck all the same.
 (def %bl-outpace!
   (fn (_ g s who foe)
     (match ((not (%bl-slow-next? g)) (%bl-toward-creature! g s foe))
-           ((eq? (creature-state foe) (lit asleep)) (%bl-key! g "s"))
+           ((not (eq? (creature-state foe) (lit awake))) (%bl-key! g "s"))
            ((%bl-clear-step! g) ())
            ((if (%bl-worth? g who foe) #f (%bl-away! g foe)) ())
            (#t (%bl-toward-creature! g s foe)))))
@@ -772,6 +783,7 @@
       ((%bl-walk! g s (lit stairs) (%bl-stairs-goal g t)) ())
       ((%bl-to-frontier! g s) ())
       ((if (null? shown) #f (%bl-toward-creature! g s shown)) ())
+      ((%bl-clear-the-way! g s) ())
       (#t (%bl-unstick! g s)))))
 
 ; Whether to pour the flask OIL into the lamp under the set's (lamp FULL
@@ -1046,6 +1058,7 @@
     (def trace? (not (str=? (%bl-env "BALANCE_TRACE" "") "")))
     (def keep (%bl-env "BALANCE_KEEP" ""))
     (def boss (%bl-env "BALANCE_BOSS" "fireman"))
+    (def deep (%bl-int (%bl-env "BALANCE_DEPTH" "0")))
     (def path (if (str=? keep "") "" (%bl-save-path keep set seed (List ref 1 play))))
     (Heap collect)
     (def g (%bl-start set play))
@@ -1061,7 +1074,8 @@
               (%bl-met! g s)
               (when (= 0 (player-lamp (game-player g))) (Vector set! 11 (+ 1 (Vector ref 11 s)) s))
               (when trace? (%bl-trace g))
-              (unless (if (Vector ref 0 kept) #t (null? (%bl-boss-shown g boss)))
+              (unless (match ((Vector ref 0 kept) #t) ((if (< 0 deep) (not (< (game-depth g) deep)) #f) #f)
+                             (#t (null? (%bl-boss-shown g boss))))
                 (do (save-write! g path) (Vector set! 0 #t kept)))
               (Heap collect)
               (unless (= depth (game-depth g)) (Vector set! 0 (pair (%bl-arrival g) (Vector ref 0 arrivals)) arrivals))
