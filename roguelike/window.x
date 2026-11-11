@@ -91,17 +91,27 @@
         (pair (Sdl key (lit left)) (lit left)) (pair (Sdl key (lit right)) (lit right))
         (pair 13 (lit enter)) (pair 27 (lit escape)) (pair 8 (lit backspace))))
 
+; An arrow with shift held moves the view a cell, as the right stick
+; does: (look DX DY).
+(def %wn-looks
+  (list (pair (Sdl key (lit up)) (pair 0 -1)) (pair (Sdl key (lit down)) (pair 0 1))
+        (pair (Sdl key (lit left)) (pair -1 0)) (pair (Sdl key (lit right)) (pair 1 0))))
+
 ; The game's key for SDL keycode CODE with modifiers MOD, or nil for a
 ; key the game has no use for.
 (def window-key
   (fn (_ code mod)
-    (if (match ((= code %wn-f11) #t)
-               ((= code 13) (not (= 0 (int& mod %wn-alt-mod))))
-               (#t #f))
-      (lit fullscreen)
-    (if (if (int< 31 code) (int< code 127) #f)
-      (%wn-char (if (= 0 (int& mod %wn-shift-mod)) code (%wn-shift code)))
-      ((fn (_ hit) (if (null? hit) () (rest hit))) (List find (fn (_ e) (= (first e) code)) %wn-named))))))
+    (def shift? (not (= 0 (int& mod %wn-shift-mod))))
+    (def look (if shift? (List find (fn (_ e) (= (first e) code)) %wn-looks) ()))
+    (match
+      ((match ((= code %wn-f11) #t)
+              ((= code 13) (not (= 0 (int& mod %wn-alt-mod))))
+              (#t #f))
+        (lit fullscreen))
+      ((not (null? look)) (list (lit look) (first (rest look)) (rest (rest look))))
+      ((if (int< 31 code) (int< code 127) #f)
+        (%wn-char (if shift? (%wn-shift code) code)))
+      (#t ((fn (_ hit) (if (null? hit) () (rest hit))) (List find (fn (_ e) (= (first e) code)) %wn-named))))))
 
 ; The window's cache A: [ARTS KEY ART PAD SOUND OPTIONS PAD? FRONT
 ; DRAG], ARTS KEY and ART for %wn-art, the gamepad's state, the game's

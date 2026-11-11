@@ -95,3 +95,16 @@ options kept between games, and the menu drawn over the dimmed level.
 ```
 ---
     ('fullscreen 'fullscreen 'fullscreen 'enter "f")
+
+## the view
+
+### Shift with an arrow moves the view a cell; an arrow alone moves the player
+
+```roguelike
+(import roguelike/window window-key)
+(import x/sys/sdl Sdl)
+(write (list (window-key (Sdl key 'left) 1) (window-key (Sdl key 'down) 2)
+             (window-key (Sdl key 'left) 0) (window-key 104 1)))
+```
+---
+    (('look -1 0) ('look 0 1) 'left "H")

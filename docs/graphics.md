@@ -23,8 +23,8 @@ screen's pixel, the art's scale: a line holds 52 letters.
   9 of it at the first zoom; the camera keeps the player in the middle,
   the view running past the map's edge onto rock, so it scrolls as the
   player walks.
-- **Dragging the view**: the mouse dragged with its left button, or
-  the gamepad's right stick, moves the view off the player a cell at a
+- **Dragging the view**: the mouse dragged with its left button, shift
+  with an arrow key, or the gamepad's right stick, moves the view off the player a cell at a
   time, as far as puts the view's middle on the map's edge, to look at
   what lies off the screen.  It shows only what has been seen, and no
   turn passes.  Any key brings the view back to the player.

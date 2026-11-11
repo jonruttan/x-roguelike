@@ -22,15 +22,14 @@
 (import x/core/doors int+ int- int* int/ int% int< int= str-make str->ptr ptr-set! ptr-ref str-byte-ref char->int)
 (import roguelike/data data-all data-glyph)
 (import roguelike/items items-glyph)
-(import roguelike/map map-terrain map-kinds map-rows map-cols map-tile map-seen? map-visible? map-in? map-opaque? map-walkable?
-  tile-rock tile-down tile-up tile-door tile-roof tile-water tile-shallow map-shown map-covered? map-roofed? map-roof-pitch)
+(import roguelike/map map-terrain map-kinds map-rows map-cols map-tile map-seen? map-visible? map-in? map-opaque? map-chart
+  tile-rock tile-roof tile-water tile-shallow map-shown map-covered? map-roofed? map-roof-pitch)
 (import roguelike/state game-map game-player game-floor game-creatures game-traps
   player-r player-c player-conditions item-r item-c item-class creature-r creature-c creature-name creature-glyph
   creature-state creature-condition game-set game-blows game-over)
 (import roguelike/draw draw-hunger)
 (import roguelike/creatures creatures-shown?)
 (import roguelike/traps trap-r trap-c trap-found?)
-(import roguelike/game game-frontier?)
 
 (def frame-tile-size 16)
 ; The view, [ROWS COLS DR DC] in cells: drawn at the tile's size and
@@ -625,42 +624,15 @@
 
 ; --- the chart -----------------------------------------------------------------
 
-; What the chart shows of the cell at R C of M: 0 not seen, 1 ground
-; seen, 2 ground in view, 3 wall seen, 4 wall in view, 5 the way down,
-; 6 the way up, 7 a door, 8 ground beside what is not yet seen, still
-; to explore.  A cell under a roof that is on is the roof, a wall.
-(def %fr-chart-code
-  (fn (_ m r c)
-    (def t (map-shown m r c))
-    (def lit? (map-visible? m r c))
-    (match ((not (map-seen? m r c)) 0)
-           ((= t tile-down) 5)
-           ((= t tile-up) 6)
-           ((= t tile-door) 7)
-           ((map-opaque? t) (if lit? 4 3))
-           ((if (map-walkable? m r c) (game-frontier? m r c) #f) 8)
-           (lit? 2)
-           (#t 1))))
-
 ; The whole of G's level, small, as one op, (chart ROWS COLS BYTES (PR
-; . PC) ((R . C) ...)): a byte a cell, row by row, as %fr-chart-code
-; has it; where the player stands; and where each creature shown
-; stands, on the screen or off it.
+; . PC) ((R . C) ...)): a byte a cell, row by row, as map-chart has it;
+; where the player stands; and where each creature shown stands, on the
+; screen or off it.
 (def frame-chart
   (fn (_ g)
     (def m (game-map g))
     (def p (game-player g))
-    (def rows (map-rows m))
-    (def cols (map-cols m))
-    (def n (* rows cols))
-    (def bytes (str-make n))
-    (def bp (str->ptr bytes))
-    ((fn (self i)
-       (when (int< i n)
-         (do (ptr-set! bp i (%fr-chart-code m (int/ i cols) (int% i cols)) 1)
-             (self (int+ i 1)))))
-     0)
-    (list (lit chart) rows cols bytes (pair (player-r p) (player-c p))
+    (list (lit chart) (map-rows m) (map-cols m) (map-chart m) (pair (player-r p) (player-c p))
           (List flat-map (fn (_ cr) (if (creatures-shown? g cr) (list (pair (creature-r cr) (creature-c cr))) ()))
             (game-creatures g)))))
 

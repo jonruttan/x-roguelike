@@ -543,6 +543,60 @@
     (map-each! 0 0 (- (map-rows m) 1) (- (map-cols m) 1)
       (fn (_ r c) (unless (= (map-tile m r c) tile-rock) (map-seen! m r c))))))
 
+; Whether the cell at R C of M is not seen yet and not rock: one still
+; to find.
+(def %mp-unknown?
+  (fn (_ m r c)
+    (if (map-in? m r c)
+      ((fn (_ i) (if (int= 0 (ptr-ref (str->ptr (Vector ref 3 m)) i 1)) (not (int= (ptr-ref (str->ptr (%mp-get m 2)) i 1) tile-rock)) #f))
+       (%mp-off m r c))
+      #f)))
+; Whether one of the eight cells beside R C of M is still to find.
+(def map-frontier?
+  (fn (_ m r c)
+    (def up (int- r 1))
+    (def down (int+ r 1))
+    (def left (int- c 1))
+    (def right (int+ c 1))
+    (match ((%mp-unknown? m up left) #t) ((%mp-unknown? m up c) #t) ((%mp-unknown? m up right) #t)
+           ((%mp-unknown? m r left) #t) ((%mp-unknown? m r right) #t)
+           ((%mp-unknown? m down left) #t) ((%mp-unknown? m down c) #t) ((%mp-unknown? m down right) #t)
+           (#t #f))))
+
+; The whole of M small, a byte a cell, row by row: 0 not seen, 1 ground
+; seen, 2 ground in view, 3 wall seen, 4 wall in view, 5 the way down,
+; 6 the way up, 7 a door, 8 ground beside a cell still to find.  A cell
+; under a roof that is on is the roof, a wall.  One pass by offset, the
+; buffers taken once.
+(def map-chart
+  (fn (_ m)
+    (def rows (map-rows m))
+    (def cols (map-cols m))
+    (def n (int* rows cols))
+    (def tp (str->ptr (%mp-get m 2)))
+    (def sp (str->ptr (Vector ref 3 m)))
+    (def vp (str->ptr (Vector ref 4 m)))
+    (def rp (%mp-roof-ptr m))
+    (def off (%mp-get m 10))
+    (def out (str-make n))
+    (def op (str->ptr out))
+    (def code
+      (fn (_ i r c)
+        (if (int= 0 (ptr-ref sp i 1)) 0
+          ((fn (_ t lit?)
+             (match ((int= t tile-down) 5) ((int= t tile-up) 6) ((int= t tile-door) 7)
+                    ((map-opaque? t) (if lit? 4 3))
+                    ((if (map-passable? (ptr-ref tp i 1)) (map-frontier? m r c) #f) 8)
+                    (lit? 2)
+                    (#t 1)))
+           (%mp-kind tp rp off i cols n) (int= 1 (ptr-ref vp i 1))))))
+    ((fn (self i r c)
+       (when (int< i n)
+         (do (ptr-set! op i (code i r c) 1)
+             (if (int= (int+ c 1) cols) (self (int+ i 1) (int+ r 1) 0) (self (int+ i 1) r (int+ c 1))))))
+     0 0 0)
+    out))
+
 (provide roguelike/map
   tile-rock tile-floor tile-wall tile-door tile-passage tile-down tile-up
   tile-water tile-pillar tile-fall tile-dressed tile-hedge tile-gate tile-thicket tile-edge tile-bog tile-scar tile-shallow tile-roof
@@ -552,4 +606,4 @@
   map-in? map-tile map-set! map-seen? map-seen! map-visible? map-passable? map-walkable? map-floor?
   room-r0 room-c0 room-r1 room-c1 room-lit? room-covers? room-inside? room-centre map-room-at
   map-each! map-opaque? map-light! map-light-radius! map-row-glyphs! map-visible-next map-visible-run
-  map-reveal! map-fill-unreached!)
+  map-reveal! map-fill-unreached! map-frontier? map-chart)
