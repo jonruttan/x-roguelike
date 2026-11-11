@@ -15,6 +15,11 @@
 ; back up, each level made again and roused.
 (goal "the Lodestar" "*" 12)
 
+; The water rises the deeper the mine: below level 3, each level has 7
+; in a hundred of its floor more under standing water, to half of it at
+; the most (see roguelike/dungeon).
+(shallows 3 7 50)
+
 ; The bands, (band NAME TO . PROPS): each runs from the level after the
 ; one before to TO.  (enter "TEXT") is said on its first level; the
 ; (guardian "NAME") creature waits by the stairs down on its last, and

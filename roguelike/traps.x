@@ -17,7 +17,7 @@
 
 (import x/type/vector)
 (import roguelike/data data-all data-prop)
-(import roguelike/map map-tile tile-floor)
+(import roguelike/map map-floor?)
 (import roguelike/dungeon dungeon-spot)
 (import roguelike/state
   game-rng game-set game-map game-player game-traps game-traps! game-param
@@ -44,7 +44,7 @@
 (def %tr-spot
   (fn (_ g)
     (dungeon-spot (game-rng g) (game-map g)
-      (fn (_ r c) (match ((not (= (map-tile (game-map g) r c) tile-floor)) #f)
+      (fn (_ r c) (match ((not (map-floor? (game-map g) r c)) #f)
                          ((not (null? (state-items-at g r c))) #f)
                          ((not (null? (%tr-at g r c))) #f)
                          (#t #t)))

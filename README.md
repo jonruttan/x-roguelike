@@ -57,6 +57,12 @@ switches to fullscreen and back, and a gamepad plays too:
 A command that asks for a thing, such as quaff or wear, takes its
 answer from the keyboard.
 
+Where there is no SDL3, `-W` (`--web`) plays the same game in a browser
+tab: the address to open is printed, the first one free from
+`http://127.0.0.1:8080/`.  In a container, `-L 0.0.0.0` listens where
+the host can reach it.  A browser starts the sound and goes fullscreen
+only after a key or a click on the page.
+
 The first row says what happened; the last is your standing: the
 level, gold, hit points, strength, experience, and how hungry you are.
 A lit room is seen whole from its door; a dark one, and a passage, a

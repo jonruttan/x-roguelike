@@ -29,6 +29,8 @@
 (import x/repl/term)
 (import x/tui/screen)
 (import x/sys/opts)
+(import x/sys/sdl)
+(import x/sys/web)
 (import roguelike/data data-load data-get data-choices data-chosen data-choice-text data-choose)
 (import roguelike/state game-set
   game-over game-epitaph game-depth game-deepest game-messages game-ask game-player player-gold game-exploring? game-exploring!)
@@ -50,6 +52,8 @@
           (Opts arg "-S" "--seed" "N" "The seed; the same seed is the same dungeon")
           (Opts arg "-d" "--data" "DIR" "Where the sets are, in place of the bundle's data/")
           (Opts flag "-w" "--window" "Play in a window, drawn with the set's pictures (needs SDL3)")
+          (Opts flag "-W" "--web" "Play as in a window, in a browser tab: the page's address is printed")
+          (Opts arg "-L" "--listen" "ADDRESS" "With --web, the address to listen on: 0.0.0.0 to be reached from outside a container (127.0.0.1)")
           (Opts arg "-z" "--zoom" "N" "In a window, the level shown N times its size, 1 to 4 (2); + and - change it while playing")
           (Opts flag "-V" "--version" "Print the version and exit")
           (Opts flag "-h" "--help" "Print this help and exit"))
@@ -189,16 +193,22 @@
     (def root (guard (e ()) %lang-root))
     (if (str? root) (Str8 append root "/art") "art")))
 
-; A game in a window: each place's art from its set's art/ directory
-; (paint-arts), the font from the bundle's.
+; The ports --web tries in turn, then any the system gives.
+(def %cl-web-ports (list 8080 8081 8082 8083 8084 8085 8086 8087 8088 8089 0))
+
+; A game in a window, SDL's or with --web a browser tab's: each place's
+; art from its set's art/ directory (paint-arts), the font from the
+; bundle's.
 (def %cl-window
   (fn (_ opts)
+    (def front (if (Opts on? opts "-W") Web Sdl))
+    (when (eq? front Web) (Web listen! (Opts value opts "-L" "127.0.0.1") %cl-web-ports))
     (def dir (Str8 append (%cl-data-dir opts) "/" (Opts value opts "-s" "classic")))
     (def set (data-load dir))
     (def saved (save-read (save-path (%cl-set-name opts) "save") set 24 80))
     (def fresh (fn (_) (game-make (data-choose set (%cl-picks opts)) (%cl-seed opts) 24 80)))
     (def zoom (if (null? (Opts value opts "-z")) () (%cl-to-int (Opts value opts "-z"))))
-    (def played (window-play saved fresh (paint-arts dir) (paint-font (%cl-art-dir)) 2 zoom (data-get set (lit title) "x-roguelike")))
+    (def played (window-play front saved fresh (paint-arts dir) (paint-font (%cl-art-dir)) 2 zoom (data-get set (lit title) "x-roguelike")))
     (match
       ((not (null? (rest played))) (do (%cl-say 2 (Str8 append "x-roguelike: " (%cl-err-text (rest played)) "\n")) 1))
       ((null? (first played)) 0)
@@ -248,8 +258,8 @@
       ((Opts on? opts "-V") (do (%cl-say 1 (Str8 append "x-roguelike " roguelike-version "\n")) 0))
       ((if (null? seed) #f (null? (%cl-to-int seed))) (do (%cl-say 2 "x-roguelike: --seed takes a number\n") 2))
       ((not (null? bad-pick)) (do (%cl-say 2 (Str8 append "x-roguelike: " bad-pick "\n")) 2))
-      ((null? words) (guard (e (do (%cl-say 2 (Str8 append "x-roguelike: " (%cl-err-text e) "\n")) 1)) (if (Opts on? opts "-w") (%cl-window opts) (%cl-play opts))))
-      ((str=? (first words) "play") (guard (e (do (%cl-say 2 (Str8 append "x-roguelike: " (%cl-err-text e) "\n")) 1)) (if (Opts on? opts "-w") (%cl-window opts) (%cl-play opts))))
+      ((null? words) (guard (e (do (%cl-say 2 (Str8 append "x-roguelike: " (%cl-err-text e) "\n")) 1)) (if (if (Opts on? opts "-w") #t (Opts on? opts "-W")) (%cl-window opts) (%cl-play opts))))
+      ((str=? (first words) "play") (guard (e (do (%cl-say 2 (Str8 append "x-roguelike: " (%cl-err-text e) "\n")) 1)) (if (if (Opts on? opts "-w") #t (Opts on? opts "-W")) (%cl-window opts) (%cl-play opts))))
       ((str=? (first words) "scores") (%cl-scores (%cl-set-name opts)))
       (#t (do (%cl-say 2 (Str8 append "x-roguelike: no such command: " (first words) "\n" (Opts usage roguelike-options))) 2)))))
 
