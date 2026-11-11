@@ -96,6 +96,22 @@ fields take a quarter of a minute each.
 ---
     (1 2 1 2)
 
+### a level quickens them by the set's (regen N QUICKEN), two seconds unless given: at level five the classic set's twenty are twelve, the Delve's twelve are twelve
+
+```roguelike
+(import roguelike/state player-level!)
+(def back
+  (fn (_ g)
+    (spec-settle! g)
+    (player-level! (game-player g) 5)
+    (player-hp! (game-player g) 1)
+    (List for-each (fn (_ k) (game-creatures! g ()) (game-key! g ".")) (List range 0 24))
+    (player-hp (game-player g))))
+(write (list (back (spec-game 11 ())) (back (spec-game-on (spec-set-named "delve") 4 ()))))
+```
+---
+    (3 3)
+
 ## saving
 
 ### the clock is saved with the game and read back
