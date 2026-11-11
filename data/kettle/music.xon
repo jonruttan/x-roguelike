@@ -1,0 +1,124 @@
+; music.xon -- the kettle set's songs: the valley out from the town, one
+; song a ring and a wind under it, as tracker songs (docs/sound.md).  A
+; fight in the valley plays the town's (kettle-fight), whose set holds it.
+
+(music "default" "valley")
+(music "Kettle" "valley")
+(music "The Farms" "valley")
+(music "The Hills" "hills")
+(music "The Far Valley" "far-valley")
+
+(fight "default" "kettle-fight")
+
+; --- The Farms: hedged fields, G major, a pipe over a harp ---------------------
+
+(song "valley" (bpm 80) (rows 2) (tension-bpm 40)
+  (instrument drone (wave warm) (cut 10) (env (0 0) (1800 38) (5000 30)) (release 3000) (gain 30)
+    (voice (detune -5) (pan -45)) (voice (detune 5) (pan 45)))
+  (instrument pipe (wave reed) (cut 22) (env (0 0) (60 40) (400 30) (1200 0)) (release 500) (gain 26) (pan -15))
+  (instrument harp (wave glass) (env (0 0) (3 26) (700 0)) (release 400) (gain 16) (pan 30))
+  (instrument pad (layer calm) (wave warm) (cut 14) (env (0 0) (2200 30) (6000 26)) (release 3000) (gain 24)
+    (voice (detune -8) (pan -60)) (voice (detune 8) (pan 60)))
+  (instrument pulse (layer tension) (wave sine) (cut 40) (env (0 0) (6 85) (180 0)) (release 60) (gain 48))
+  (instrument tick (layer tension) (wave noise) (hz 1) (cut 26) (env (0 0) (1 30) (35 0)) (release 20) (gain 20) (pan 35))
+  (instrument strain (layer tension) (wave thin) (cut 18) (env (0 0) (900 24) (3000 20)) (release 1500) (gain 18) (pan -20))
+  (pattern va
+    (drone  "G2 .  .  .  .  .  .  .  .  .  .  .  .  .  .  .")
+    (pipe   "D4 .  G4 .  A4 .  B4 .  .  .  A4 .  G4 .  E4 .")
+    (harp   "G3 B3 D4 B3 G3 B3 D4 B3 C4 E4 G4 E4 D4 F#4 A4 F#4")
+    (pad    "B3 .  .  .  .  .  .  .  C4 .  .  .  D4 .  .  .")
+    (pulse  "G1 .  .  .  G1 .  .  .  G1 .  .  .  G1 .  G1 .")
+    (tick   ".  .  C4 .  .  .  C4 .  .  .  C4 .  .  C4 C4 .")
+    (strain "D3 .  .  .  .  .  .  .  Eb3 . .  .  .  .  .  ."))
+  (pattern vb
+    (drone  "C2 .  .  .  .  .  .  .  D2 .  .  .  .  .  .  .")
+    (pipe   "E4 .  G4 .  C5 .  B4 .  A4 .  .  .  F#4 . D4 .")
+    (harp   "C3 E3 G3 E3 C3 E3 G3 E3 D3 F#3 A3 F#3 D3 F#3 A3 F#3")
+    (pad    "E3 .  .  .  .  .  .  .  F#3 . .  .  .  .  .  .")
+    (pulse  "C1 .  .  .  C1 .  .  .  D1 .  .  .  D1 .  D1 .")
+    (tick   ".  .  C4 .  .  .  C4 .  .  .  C4 .  .  C4 C4 .")
+    (strain "G3 .  .  .  .  .  .  .  G#3 . .  .  .  .  .  ."))
+  (pattern vc
+    (drone  "E2 .  .  .  .  .  .  .  D2 .  .  .  .  .  .  .")
+    (pipe   "B4 .  A4 .  G4 .  E4 .  D4 .  .  .  G4 .  .  .")
+    (harp   "E3 G3 B3 G3 E3 G3 B3 G3 D3 G3 B3 G3 D3 F#3 A3 F#3")
+    (pad    "G3 .  .  .  .  .  .  .  F#3 . .  .  .  .  .  .")
+    (pulse  "E1 .  .  .  E1 .  .  .  D1 .  .  .  D1 .  D1 .")
+    (tick   ".  .  C4 .  .  .  C4 .  .  .  C4 .  .  C4 C4 .")
+    (strain "B3 .  .  .  .  .  .  .  C4 .  .  .  .  .  .  ."))
+  (order va vb va vc))
+
+; --- The Hills: gorse and bog, D mixolydian, open fifths ------------------------
+
+(song "hills" (bpm 70) (rows 2) (tension-bpm 40)
+  (instrument drone (wave hollow) (cut 9) (env (0 0) (2000 36) (5000 30)) (release 3000) (gain 30)
+    (voice (detune -4) (pan -40)) (voice (detune 4) (pan 40)))
+  (instrument pipe (wave reed) (cut 18) (env (0 0) (120 36) (600 28) (1500 0)) (release 700) (gain 26) (pan 15))
+  (instrument bell (wave glass) (env (0 0) (5 26) (2400 0)) (release 900) (gain 16) (pan -30))
+  (instrument pad (layer calm) (wave warm) (cut 12) (env (0 0) (2500 28) (6000 24)) (release 3000) (gain 24)
+    (voice (detune -9) (pan -60)) (voice (detune 9) (pan 60)))
+  (instrument pulse (layer tension) (wave sine) (cut 40) (env (0 0) (6 85) (200 0)) (release 60) (gain 48))
+  (instrument tick (layer tension) (wave noise) (hz 1) (cut 22) (env (0 0) (1 28) (40 0)) (release 20) (gain 20) (pan 30))
+  (instrument strain (layer tension) (wave thin) (cut 16) (env (0 0) (1000 22) (3000 18)) (release 1500) (gain 18))
+  (pattern ha
+    (drone  "D2 .  .  .  .  .  .  .  .  .  .  .  .  .  .  .")
+    (drone  "A2 .  .  .  .  .  .  .  .  .  .  .  .  .  .  .")
+    (pipe   "A4 .  .  .  G4 .  F#4 . E4 .  D4 .  .  .  .  .")
+    (bell   ".  .  .  .  .  .  .  .  .  .  .  .  A5 .  .  .")
+    (pad    "F#3 . .  .  .  .  .  .  .  .  .  .  .  .  .  .")
+    (pulse  "D1 .  .  .  .  .  .  .  D1 .  .  .  D1 .  .  .")
+    (tick   ".  .  .  .  C4 .  .  .  .  .  .  .  C4 .  C4 .")
+    (strain "Eb4 . .  .  .  .  .  .  .  .  .  .  .  .  .  ."))
+  (pattern hb
+    (drone  "C2 .  .  .  .  .  .  .  .  .  .  .  .  .  .  .")
+    (drone  "G2 .  .  .  .  .  .  .  .  .  .  .  .  .  .  .")
+    (pipe   "G4 .  .  .  F#4 . E4 .  D4 .  C4 .  D4 .  .  .")
+    (bell   ".  .  .  .  G5 .  .  .  .  .  .  .  .  .  .  .")
+    (pad    "E3 .  .  .  .  .  .  .  .  .  .  .  .  .  .  .")
+    (pulse  "C1 .  .  .  .  .  .  .  C1 .  .  .  C1 .  .  .")
+    (tick   ".  .  .  .  C4 .  .  .  .  .  .  .  C4 .  C4 .")
+    (strain "Db4 . .  .  .  .  .  .  .  .  .  .  .  .  .  ."))
+  (order ha ha hb ha))
+
+; --- The Far Valley: the old city's stones, E phrygian, a chant ----------------
+
+(song "far-valley" (bpm 56) (rows 2) (tension-bpm 40)
+  (instrument organ (wave hollow) (cut 11) (env (0 0) (1500 34) (5000 28)) (release 3500) (gain 28)
+    (voice (detune -4) (pan -40)) (voice (detune 4) (pan 40)))
+  (instrument chant (wave reed) (cut 12) (env (0 0) (300 32) (1200 24)) (release 700) (gain 24) (pan 15))
+  (instrument bell (wave glass) (env (0 0) (5 28) (3000 0)) (release 1200) (gain 16) (pan -35))
+  (instrument pad (layer calm) (wave warm) (cut 12) (env (0 0) (2500 28) (6000 24)) (release 3000) (gain 24)
+    (voice (detune -9) (pan -60)) (voice (detune 9) (pan 60)))
+  (instrument pulse (layer tension) (wave sine) (cut 40) (env (0 0) (6 90) (200 0)) (release 60) (gain 50))
+  (instrument tick (layer tension) (wave noise) (hz 1) (cut 22) (env (0 0) (1 30) (40 0)) (release 20) (gain 22) (pan 30))
+  (instrument strain (layer tension) (wave thin) (cut 16) (env (0 0) (1000 24) (3000 20)) (release 1500) (gain 18))
+  (pattern fa
+    (organ  "E2 .  .  .  .  .  .  .  .  .  .  .  .  .  .  .")
+    (organ  "B2 .  .  .  .  .  .  .  .  .  .  .  .  .  .  .")
+    (chant  "E4 .  .  .  F4 .  .  .  E4 .  D4 .  E4 .  .  .")
+    (bell   "B5 .  .  .  .  .  .  .  .  .  .  .  F5 .  .  .")
+    (pad    "G3 .  .  .  .  .  .  .  .  .  .  .  .  .  .  .")
+    (pulse  "E1 .  .  .  .  .  .  .  E1 .  .  .  E1 .  .  .")
+    (tick   ".  .  .  .  C4 .  .  .  .  .  .  .  C4 .  C4 .")
+    (strain "F3 .  .  .  .  .  .  .  .  .  .  .  .  .  .  ."))
+  (pattern fb
+    (organ  "D2 .  .  .  .  .  .  .  .  .  .  .  .  .  .  .")
+    (organ  "A2 .  .  .  .  .  .  .  .  .  .  .  .  .  .  .")
+    (chant  "D4 .  .  .  E4 .  .  .  F4 .  E4 .  D4 .  .  .")
+    (bell   ".  .  .  .  A5 .  .  .  .  .  .  .  .  .  .  .")
+    (pad    "F3 .  .  .  .  .  .  .  .  .  .  .  .  .  .  .")
+    (pulse  "D1 .  .  .  .  .  .  .  D1 .  .  .  D1 .  .  .")
+    (tick   ".  .  .  .  C4 .  .  .  .  .  .  .  C4 .  C4 .")
+    (strain "Eb3 . .  .  .  .  .  .  .  .  .  .  .  .  .  ."))
+  (order fa fa fb fa))
+
+; --- the valley's wind, under every ring ---------------------------------------
+
+(song "valley-wind" (bpm 60) (rows 1)
+  (instrument wind (wave noise) (hz 1) (env (0 0) (4000 30) (9000 24)) (release 4000) (gain 26)
+    (voice (cut 3) (pan -60)) (voice (cut 5) (pan 60) (detune 30)))
+  (instrument dread (layer tension) (wave noise) (hz 1) (cut 1) (env (0 0) (2000 60)) (release 3000) (gain 40))
+  (pattern a
+    (wind  "C4 . . . . . . .")
+    (dread "C4 . . . . . . ."))
+  (order a))

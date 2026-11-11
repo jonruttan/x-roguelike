@@ -191,8 +191,8 @@
 ; --- Fights --------------------------------------------------------------------
 ;
 ; A blow struck either way brings in the place's fight song, at once,
-; until (fight-turns N) turns pass without one; then the place's own
-; song comes back at the end of the pattern.  Each is in its band's key,
+; until (fight-turns N) turns pass without one or no foe is left in
+; sight; then the place's own song comes back.  Each is in its band's key,
 ; fast, 150 to 180 beats a minute, with a drum; its tension layer is
 ; the hi-hat.
 

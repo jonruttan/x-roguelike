@@ -69,11 +69,30 @@ device.
 ---
     (#t #t #t #t)
 
-### every sound renders to frames
+### the Kettle world's songs make trackers, and its music, fights, beds, footsteps and random sounds are the world's
+
+```roguelike
+(import x/audio/tracker)
+(def spec-k (data-load "data/kettle"))
+(def spec-world (List append spec-k (List flat-map rest (data-all spec-k 'region))))
+(def spec-named? (fn (_ head n) (List any? (fn (_ f) (str=? (first f) n)) (data-all spec-world head))))
+(def spec-props (fn (_ head key) (List flat-map (fn (_ a) (List map (fn (_ p) (List ref 1 p)) (List filter (fn (_ p) (if (pair? p) (eq? (first p) key) #f)) (rest a)))) (data-all spec-world head))))
+(write (list (List all? (fn (_ s) (str? (Tracker name (Tracker make (pair 'song s))))) (data-all spec-world 'song))
+             (List all? (fn (_ m) (spec-named? 'song (List ref 1 m))) (List append (data-all spec-world 'music) (data-all spec-world 'fight)))
+             (List all? (fn (_ b) (spec-named? 'song b)) (spec-props 'ambience 'bed))
+             (List all? (fn (_ f) (spec-named? 'sound (List ref 1 f))) (data-all spec-world 'footstep))
+             (List all? (fn (_ r) (spec-named? 'sound r)) (spec-props 'ambience 'random))
+             (List all? (fn (_ b) (spec-named? 'music (first b))) (data-all spec-k 'band))))
+```
+---
+    (#t #t #t #t #t #t)
+
+### every sound of the Kettle world, the Delve's among them, renders to frames
 
 ```roguelike
 (import x/audio/mixer)
-(def spec-set (data-load "data/delve"))
+(def spec-k (data-load "data/kettle"))
+(def spec-set (List append spec-k (List flat-map rest (data-all spec-k 'region))))
 (List for-each (fn (_ w) (Mixer wave! (first w) (rest w))) (data-all spec-set 'wave))
 (def spec-voices (fn (_ s) (List map rest (List filter (fn (_ p) (if (pair? p) (eq? (first p) 'voice) #f)) (rest s)))))
 (write (List all? (fn (_ s) (< 0 (rest (Mixer render 8000 (spec-voices s) ())))) (data-all spec-set 'sound)))

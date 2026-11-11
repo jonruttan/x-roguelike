@@ -1,0 +1,36 @@
+; sounds.xon -- the town set heard: cobbles underfoot and the square's
+; air.  The blows, cues and cries are the Delve's, found through the
+; world (docs/sound.md); the waves too.
+
+; --- footsteps -----------------------------------------------------------------
+
+(footstep "default" "step-cobble")
+(footstep "floor" "step-cobble")
+(footstep "door" "step-wood")
+(footstep "gate" "step-wood")
+
+(sound "step-cobble" (vary 70) (gain 28)
+  (voice (wave noise) (hz 1) (cut 18) (env (0 0) (1 65) (20 14) (55 0)))
+  (voice (hz 110) (slide 80) (env (0 0) (2 40) (35 0))))
+
+; --- the square ----------------------------------------------------------------
+
+(sound "church-bell" (vary 30) (gain 22)
+  (voice (wave glass) (note "C4") (env (0 0) (3 40) (3500 0)))
+  (voice (wave hollow) (note "C3") (env (0 0) (3 25) (2800 0)))
+  (voice (wave glass) (note "G4") (detune 7) (env (0 0) (3 18) (2500 0))))
+
+(sound "cart" (vary 80) (gain 24)
+  (voice (hz 160) (slide 120) (cut 35) (env (0 0) (1 40) (60 0)))
+  (voice (hz 160) (slide 120) (cut 35) (at 180) (env (0 0) (1 36) (60 0)))
+  (voice (hz 150) (slide 110) (cut 35) (at 360) (env (0 0) (1 32) (60 0)))
+  (voice (wave noise) (hz 1) (cut 6) (env (0 0) (200 20) (700 0))))
+
+(sound "hammer" (vary 60) (gain 20)
+  (voice (wave glass) (note "A5") (env (0 0) (1 40) (400 0)))
+  (voice (wave noise) (hz 1) (cut 50) (env (0 0) (1 40) (30 0)))
+  (voice (wave glass) (note "A5") (at 600) (env (0 0) (1 34) (400 0)))
+  (voice (wave noise) (hz 1) (cut 50) (at 600) (env (0 0) (1 34) (30 0))))
+
+(ambience "default" (bed "town-square") (random "cart" 12000 40) (random "hammer" 15000 35))
+(ambience "Kettle" (bed "town-square") (random "cart" 10000 40) (random "hammer" 12000 35) (random "church-bell" 40000 45))
