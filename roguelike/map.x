@@ -101,7 +101,11 @@
 (def map-rows (fn (_ m) (%mp-get m 0)))
 (def map-cols (fn (_ m) (%mp-get m 1)))
 (def map-rooms (fn (_ m) (%mp-get m 5)))
-(def map-rooms! (fn (_ m rooms) (%mp-put! m 5 rooms)))
+; What M's view was last worked from, (R C RADIUS), in slot 12: nil
+; once a tile, a room or a roof has changed, so the next light works
+; it afresh.
+(def %mp-changed! (fn (_ m) (%mp-put! m 12 ())))
+(def map-rooms! (fn (_ m rooms) (%mp-changed! m) (%mp-put! m 5 rooms)))
 (def map-down (fn (_ m) (%mp-get m 6)))
 (def map-down! (fn (_ m at) (%mp-put! m 6 at)))
 (def map-up (fn (_ m) (%mp-get m 7)))
@@ -121,7 +125,7 @@
 
 (def map-make
   (fn (_ rows cols)
-    (def m (Vector make 12 ()))
+    (def m (Vector make 13 ()))
     (%mp-put! m 10 0)
     (%mp-put! m 0 rows)
     (%mp-put! m 1 cols)
@@ -138,7 +142,8 @@
 (def map-tile
   (fn (_ m r c) (if (map-in? m r c) (ptr-ref (str->ptr (%mp-get m 2)) (%mp-off m r c) 1) tile-rock)))
 (def map-set!
-  (fn (_ m r c t) (when (map-in? m r c) (ptr-set! (str->ptr (%mp-get m 2)) (%mp-off m r c) t 1))))
+  (fn (_ m r c t)
+    (when (map-in? m r c) (do (%mp-changed! m) (ptr-set! (str->ptr (%mp-get m 2)) (%mp-off m r c) t 1)))))
 
 (def %mp-flag
   (fn (_ m k r c) (if (map-in? m r c) (= (ptr-ref (str->ptr (Vector ref k m)) (%mp-off m r c) 1) 1) #f)))
@@ -196,6 +201,7 @@
 ; The cell at R C put under roof ID.
 (def map-roof!
   (fn (_ m r c id)
+    (%mp-changed! m)
     (when (null? (%mp-get m 9))
       (do (%mp-put! m 9 (%mp-buffer (int* (map-rows m) (map-cols m))))
           (%mp-put! m 11 (%mp-buffer 256))))
@@ -272,16 +278,33 @@
 
 (def %mp-mark! (fn (_ m r c) (%mp-flag! m 4 r c 1) (%mp-flag! m 3 r c 1)))
 
+; Whether M's view stands as worked from R C within RADIUS.
+(def %mp-lit?
+  (fn (_ m r c radius)
+    (def from (%mp-get m 12))
+    (match ((null? from) #f)
+           ((not (= (first from) r)) #f)
+           ((not (= (first (rest from)) c)) #f)
+           (#t (= (first (rest (rest from))) radius)))))
+; WORK run, unless M's view stands as worked from R C within RADIUS.
+(def %mp-light!
+  (fn (_ m r c radius work)
+    (unless (%mp-lit? m r c radius)
+      (do (work)
+          (%mp-roofs-light! m r c)
+          (%mp-put! m 12 (list r c radius))))))
+
 ; What is in view from R C: the cells around it, and the whole of a lit
 ; room it is in.  Everything else leaves view.
 (def map-light!
   (fn (_ m r c)
-    (%mp-zero! (str->ptr (%mp-get m 4)) 0 (int* (map-rows m) (map-cols m)))
-    (map-each! (- r 1) (- c 1) (+ r 1) (+ c 1) (fn (_ rr cc) (%mp-mark! m rr cc)))
-    (def room (map-room-at m r c))
-    (when (if (null? room) #f (room-lit? room))
-      (map-each! (room-r0 room) (room-c0 room) (room-r1 room) (room-c1 room) (fn (_ rr cc) (%mp-mark! m rr cc))))
-    (%mp-roofs-light! m r c)))
+    (%mp-light! m r c -1
+      (fn (_)
+        (%mp-zero! (str->ptr (%mp-get m 4)) 0 (int* (map-rows m) (map-cols m)))
+        (map-each! (- r 1) (- c 1) (+ r 1) (+ c 1) (fn (_ rr cc) (%mp-mark! m rr cc)))
+        (def room (map-room-at m r c))
+        (when (if (null? room) #f (room-lit? room))
+          (map-each! (room-r0 room) (room-c0 room) (room-r1 room) (room-c1 room) (fn (_ rr cc) (%mp-mark! m rr cc))))))))
 
 ; Whether tile T stops sight.
 (def map-opaque? (fn (_ t) (obj-ref %mp-opaque (int+ t 1))))
@@ -311,6 +334,7 @@
     (def start (%mp-off m r0 c0))
     (ptr-set! seen start 1 1)
     (flood (list start))
+    (%mp-changed! m)
     ((fn (self i)
        (when (int< i n)
          (do (when (open? i) (ptr-set! t i fill 1))
@@ -368,7 +392,8 @@
 ; What is in view from R C within RADIUS: every cell a clear line
 ; reaches, the walls at the edge of sight included.  Everything else
 ; leaves view.  The lines are %mp-rays', the same %mp-clear? walks.
-(def map-light-radius!
+(def map-light-radius! (fn (_ m r c radius) (%mp-light! m r c radius (fn (_) (%mp-radius! m r c radius)))))
+(def %mp-radius!
   (fn (_ m r c radius)
     (def rows (map-rows m))
     (def cols (map-cols m))
@@ -387,8 +412,7 @@
                (when (%mp-ray-clear? t base (rest more))
                  ((fn (_ i) (ptr-set! vis i 1 1) (ptr-set! seen i 1 1)) (int+ base (first more)))))
              (self (rest l)))))
-     (%mp-rays radius cols))
-    (%mp-roofs-light! m r c)))
+     (%mp-rays radius cols))))
 
 ; --- drawing -----------------------------------------------------------------
 
