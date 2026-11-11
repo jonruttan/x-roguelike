@@ -20,6 +20,30 @@ what runs, what dies, and the messages that outrun the row.
 ---
     (#t 1 #t #t)
 
+### one the player cannot see strikes as something unseen; seeing the unseen, the player knows it
+
+```roguelike
+(import roguelike/state player-condition!)
+(def strike
+  (fn (_ seeing)
+    (def g (spec-calm 5 ()))
+    (def open (spec-open g))
+    (player-hp! (game-player g) 500)
+    (when seeing (player-condition! (game-player g) 'seeing 50))
+    (spec-place! g "night stalker" (first (rest open)) (rest (rest open)) 100 'awake)
+    (game-key! g ".")
+    (List map (fn (_ m) (match ((str=? m "Something unseen hits you.") 'unseen) ((str=? m "Something unseen misses you.") 'unseen)
+                               ((str=? m "The night stalker hits you.") 'named) ((str=? m "The night stalker misses you.") 'named)
+                               (#t m)))
+              (game-messages g))))
+(def unseen (strike #f))
+(def seen (strike #t))
+(write (list (< 0 (List length unseen)) (List all? (fn (_ m) (eq? m 'unseen)) unseen)
+             (< 0 (List length seen)) (List all? (fn (_ m) (eq? m 'named)) seen)))
+```
+---
+    (#t #t #t #t)
+
 ### one three cells away on the same row does not strike; it closes in
 
 ```roguelike
