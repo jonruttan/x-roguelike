@@ -96,11 +96,11 @@
 (level-style caves)
 (cave-fill 38)
 
-(creatures 4 7)
+(creatures 8 12)
 (items 4 7)
 (gold 30 8 30)
-(exp 10)
-(regen 12)
+(exp 20)
+(regen 12 0)
 (wander 40)
 
 ; Classes known without being tried.

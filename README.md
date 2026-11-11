@@ -255,7 +255,9 @@ A turn takes the time to walk a cell at the level's scale, a metre
 and four tenths a second, a second at least: a second at 1 and 2,
 fifteen on `kettle`'s valley.  The game keeps a clock of the seconds,
 and food, `(starve N)` and `(regen N)` are counted on it, so a set
-whose levels are at 1 plays a second a turn.  `(hunger STORE HUNGRY
+whose levels are at 1 plays a second a turn.  `(regen N QUICKEN)`
+takes QUICKEN seconds off N for each of the player's levels past the
+first (2), to four at the least.  `(hunger STORE HUNGRY
 WEAK MOST DEATH)` gives MOST, what eating fills to (2000), and DEATH,
 the seconds under nothing a set with no `(starve N)` dies at (150);
 `kettle` begins with half a day's food and holds a day's.

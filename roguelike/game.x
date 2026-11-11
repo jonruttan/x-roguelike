@@ -463,14 +463,16 @@
         (do (state-tell! g (lit faint) "You faint from lack of food." ()) (creatures-act! g)))
       (#t ()))))
 
-; A hit point back every so many seconds: the set's (regen N), two
-; fewer a level, four at least; every third second with a ring of
-; regeneration; none while starving.
+; A hit point back every so many seconds: the set's (regen N QUICKEN),
+; QUICKEN fewer a level, two unless given, four at least; every third
+; second with a ring of regeneration; none while starving.
 (def %gm-regen!
   (fn (_ g was now)
     (def p (game-player g))
+    (def rule (game-param g (lit regen) (list 20)))
+    (def quicken (if (null? (rest rule)) 2 (List ref 1 rule)))
     (def period (if (state-ring? g (lit regeneration)) 3
-                  ((fn (_ n) (if (< n 4) 4 n)) (- (game-param1 g (lit regen) 20) (* 2 (- (player-level p) 1))))))
+                  ((fn (_ n) (if (< n 4) 4 n)) (- (first rule) (* quicken (- (player-level p) 1))))))
     (def k (if (%gm-starving? g) 0 (%gm-every period was now)))
     (def hp (+ (player-hp p) k))
     (when (if (< 0 k) (< (player-hp p) (player-hpmax p)) #f)
