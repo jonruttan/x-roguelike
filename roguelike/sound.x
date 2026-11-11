@@ -36,7 +36,7 @@
 (import x/core/doors int* int+ int- int/ int< int= int& obj-make obj-ref obj-set!)
 (import roguelike/data data-all data-one data-get)
 (import roguelike/state game-set game-player game-depth game-map game-creatures game-pack game-over game-blows game-turn
-  game-band band-name game-place game-below? game-param player-r player-c player-hp player-hpmax player-level player-gold
+  game-band band-name game-place game-top-set game-param player-r player-c player-hp player-hpmax player-level player-gold
   player-food player-lamp player-conditions creature-r creature-c creature-state creature-name state-dist state-ring?
   band-to band-prop1 state-creature-named)
 (import roguelike/map map-tile map-terrain)
@@ -53,16 +53,18 @@
 
 ; --- the record ----------------------------------------------------------------
 ;
-; A vector: 0 the set, 1 the mixer, 2 the music's stream, 3 the turn's
-; streams, 4 the music's tracker, 5 the bed's, 6 the sounds rendered,
-; ((KEY . (REGION . BYTES)) ...), 7 the tension, 8 the game as it was
-; (%sd-glance), 9 the random state, 10 blocks since a collect, 11 the
-; place the music is for, 12 the place's random sounds, 13 how loud
-; the turn's sounds are, a percentage (sound-volume!), 14 the creatures
-; as they stood (%sd-states), 15 the class the sound is played through,
-; Sdl or Web (%sd-front), 16 the name of the song
-; last asked for (%sd-music!), 17 the turns left of a fight, 18 the
-; guardian fought, or nil, 19 the game's turn last heard (%sd-turned?).
+; A vector: 0 the forms sounds are found in (%sd-forms), 1 the mixer,
+; 2 the music's stream, 3 the turn's streams, 4 the music's tracker, 5
+; the bed's, 6 the sounds rendered, ((KEY . (REGION . BYTES)) ...), 7
+; the tension, 8 the game as it was (%sd-glance), 9 the random state,
+; 10 blocks since a collect, 11 the place the music is for, 12 the
+; place's random sounds, 13 how loud the turn's sounds are, a
+; percentage (sound-volume!), 14 the creatures as they stood
+; (%sd-states), 15 the class the sound is played through, Sdl or Web
+; (%sd-front), 16 the name of the song last asked for (%sd-music!), 17
+; the turns left of a fight, 18 the guardian fought, or nil, 19 the
+; game's turn last heard (%sd-turned?), 20 the set stood in when 0 was
+; made.
 
 (def %sd-vector-type ((prim-ref (lit type) (lit of)) (Vector make 0 ())))
 (def %sd-get (fn (_ s k) (obj-ref s (int+ k 1))))
@@ -70,6 +72,21 @@
 (def %sd-front (fn (_ s) (%sd-get s 15)))
 
 ; --- the set's data ------------------------------------------------------------
+
+; The forms G's sounds are found in: the set stood in, then the set the
+; game began on and each of its regions, so a place's own sounds and
+; songs come first and every other is the world's.
+(def %sd-forms
+  (fn (_ g)
+    (def top (game-top-set g))
+    (List append (game-set g) top (List flat-map rest (data-all top (lit region))))))
+
+; The forms kept on S made again from G once the set stood in changes.
+(def %sd-world!
+  (fn (_ s g)
+    (unless (same? (game-set g) (%sd-get s 20))
+      (do (%sd-put! s 20 (game-set g))
+          (%sd-put! s 0 (%sd-forms g))))))
 
 (def %sd-named
   (fn (_ set head name)
@@ -177,8 +194,8 @@
 ; the nearer, and the wounds taken past (tension HP-FROM) percent of the
 ; player's hit points.
 (def %sd-tension-of
-  (fn (_ g)
-    (def set (game-set g))
+  (fn (_ s g)
+    (def set (%sd-get s 0))
     (def p (game-player g))
     (def near (data-get set (lit tension-near) 12))
     (def threat
@@ -199,7 +216,7 @@
 (def %sd-tension!
   (fn (_ s g)
     (def now (%sd-get s 7))
-    (def want (%sd-tension-of g))
+    (def want (%sd-tension-of s g))
     (def next (if (int< now want) (if (int< (int+ now 30) want) (int+ now 30) want)
                 (if (int< want (int- now 8)) (int- now 8) want)))
     (%sd-put! s 7 next)
@@ -236,10 +253,14 @@
 
 ; --- the music for a place -----------------------------------------------------
 
+; The place G's music is for: the band stood in, else the region, else
+; default.
 (def %sd-place-key
   (fn (_ g)
     (def b (game-band g))
-    (if (game-below? g) (game-place g) (if (null? b) "default" (band-name b)))))
+    (match ((not (null? b)) (band-name b))
+           ((str=? (game-place g) "") "default")
+           (#t (game-place g)))))
 
 (def %sd-tracker!
   (fn (_ s k song)
@@ -450,22 +471,26 @@
 
 ; Sound for game G played through FRONT, Sdl or Web, or nil when there
 ; is none to be had: no audio device, no compiled loops to keep it fed,
-; or a set with no sounds.  A failure here costs the game its sound and
+; or a world with no sounds.  The music's echoes are those of the set
+; the game began on.  A failure here costs the game its sound and
 ; nothing else.
 (def sound-make
   (fn (_ g front)
-    (def set (game-set g))
+    (def set (%sd-forms g))
+    (def top (game-top-set g))
     (guard (e ())
       (if (null? (data-all set (lit sound))) ()
         (do (unless (Mixer jit!) (Err raise (lit state) "no compiled mixer" ()))
-            (List for-each (fn (_ w) (Mixer wave! (first w) (rest w))) (data-all set (lit wave)))
+            (List for-each (fn (_ w) (Mixer wave! (first w) (rest w)))
+              (List append (data-all top (lit wave)) (List flat-map (fn (_ r) (data-all (rest r) (lit wave))) (data-all top (lit region)))))
             (def m (Mixer make %sd-rate %sd-block))
             (Mixer gain! m (data-get set (lit music-gain) 80))
-            (List for-each (fn (_ e) (Mixer echo! m (List ref 0 e) (List ref 1 e) (List ref 2 e))) (data-all set (lit music-echo)))
-            (def s (obj-make %sd-vector-type 21))
-            (obj-set! s 0 20)
+            (List for-each (fn (_ e) (Mixer echo! m (List ref 0 e) (List ref 1 e) (List ref 2 e))) (data-all top (lit music-echo)))
+            (def s (obj-make %sd-vector-type 22))
+            (obj-set! s 0 21)
             (%sd-put! s 15 front)
             (%sd-put! s 0 set)
+            (%sd-put! s 20 (game-set g))
             (%sd-put! s 1 m)
             (%sd-put! s 2 ((%sd-front s) audio-open %sd-rate 2))
             (%sd-put! s 3 ((fn (self n) (if (int< n 1) () (pair ((%sd-front s) audio-open %sd-rate 2) (self (int- n 1))))) %sd-effect-streams))
@@ -517,7 +542,8 @@
 (def sound-turn!
   (fn (_ s g)
     (unless (null? s)
-      (do (def now (%sd-glance g))
+      (do (%sd-world! s g)
+          (def now (%sd-glance g))
           (%sd-changed! s g (%sd-get s 8) now)
           (%sd-put! s 8 now)
           (%sd-cries! s g (%sd-get s 14))

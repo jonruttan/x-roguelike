@@ -1,0 +1,44 @@
+; sounds.xon -- the kettle set heard: the valley's footsteps and the
+; air of each ring out from the town.  The blows, cues and cries are the
+; Delve's, found through the world (docs/sound.md); the waves too.
+
+; --- footsteps -----------------------------------------------------------------
+
+(footstep "default" "step-grass")
+(footstep "floor" "step-grass")
+(footstep "shallow" "step-splash")
+(footstep "gate" "step-wood")
+(footstep "door" "step-wood")
+
+(sound "step-grass" (vary 80) (gain 26)
+  (voice (wave noise) (hz 1) (cut 14) (env (0 0) (6 45) (40 12) (90 0)))
+  (voice (wave noise) (hz 1) (cut 30) (at 20) (env (0 0) (4 25) (50 0))))
+
+(sound "step-splash" (vary 120) (gain 28)
+  (voice (wave noise) (hz 1) (cut 40) (env (0 0) (3 55) (60 20) (180 0)))
+  (voice (wave glass) (note "A5") (slide "E5") (env (0 0) (2 12) (120 0))))
+
+; --- the valley's air ----------------------------------------------------------
+
+(sound "bird" (vary 400) (gain 16)
+  (voice (wave glass) (note "E6") (slide "A6") (env (0 0) (5 25) (90 0)))
+  (voice (wave glass) (note "C#7") (slide "G#6") (at 130) (env (0 0) (5 20) (80 0)))
+  (voice (wave glass) (note "E6") (slide "B6") (at 260) (env (0 0) (5 18) (70 0))))
+
+(sound "bleat" (vary 200) (gain 22)
+  (voice (wave reed) (note "A4") (slide "G4") (cut 30) (env (0 0) (40 30) (200 26) (500 0)))
+  (voice (wave reed) (note "A4") (slide "G4") (detune 25) (cut 30) (gain 60) (env (0 0) (40 30) (200 26) (500 0))))
+
+(sound "curlew" (vary 150) (gain 18)
+  (voice (note "C5") (slide "G5") (env (0 0) (300 25) (900 18) (1300 0)))
+  (voice (note "G5") (slide "A5") (at 1300) (env (0 0) (100 18) (600 0))))
+
+(sound "gust" (vary 100) (gain 30)
+  (voice (wave noise) (hz 1) (cut 4) (env (0 0) (800 45) (1600 40) (3200 0)))
+  (voice (wave noise) (hz 1) (cut 9) (pan 40) (env (0 0) (1000 25) (2800 0))))
+
+(ambience "default" (bed "valley-wind") (random "bird" 7000 45))
+(ambience "Kettle" (bed "valley-wind") (random "bird" 6000 45) (random "bleat" 15000 40))
+(ambience "The Farms" (bed "valley-wind") (random "bird" 5000 50) (random "bleat" 9000 45))
+(ambience "The Hills" (bed "valley-wind") (random "curlew" 14000 45) (random "gust" 12000 45) (random "bleat" 20000 30))
+(ambience "The Far Valley" (bed "valley-wind") (random "gust" 9000 50) (random "curlew" 25000 30))
