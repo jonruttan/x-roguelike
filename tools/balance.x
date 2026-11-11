@@ -294,7 +294,8 @@
 ; the cells beside the unseen already stood on here, a vector by cell,
 ; 10 oil flasks poured, 11 turns taken with the lamp out, 12 the walks
 ; kept here, (TAG . CELLS) each, 13 the turn the level was come to, 14
-; whether its shaft was found barred, 15 the walks not found.
+; whether its shaft was found barred, 15 the walks not found, 16 the
+; slow creature last stepped clear of, and where it stood.
 
 ; Where the player stands, as text: the depth, or on a world of screens
 ; the screen and any interior.
@@ -624,15 +625,28 @@
                  (#t ((fn (_ room) (if (< (first best) room) (pair room (first d)) best)) (%bl-room g r c 24)))))
         (pair 0 ()) %bl-dirs))
     (if (null? (rest best)) #f (do (%bl-key! g (rest best)) #t))))
+; Whether FOE stands where it stood when the player last stepped clear
+; of it, slot 16 of S, (CREATURE R . C): it does not follow, and
+; stepping clear of it again gains nothing.
+(def %bl-stays?
+  (fn (_ s foe)
+    (def was (Vector ref 16 s))
+    (match ((null? was) #f) ((not (same? (first was) foe)) #f)
+           ((not (= (first (rest was)) (creature-r foe))) #f)
+           (#t (= (rest (rest was)) (creature-c foe))))))
 ; The slow FOE beside the player, outpaced: struck on the turn it cannot
 ; answer; on the turn it can, one not yet after the player waited on,
-; one that is stepped clear of.  With nowhere clear to step, one whose fight WHO would not
-; start is walked away from, and any other struck all the same.
+; one that follows stepped clear of, and one that stays struck, two
+; blows to its one.  With nowhere clear to step, one whose fight WHO
+; would not start is walked away from, and any other struck all the
+; same.
 (def %bl-outpace!
   (fn (_ g s who foe)
+    (def stood (pair foe (pair (creature-r foe) (creature-c foe))))
     (match ((not (%bl-slow-next? g)) (%bl-toward-creature! g s foe))
            ((not (eq? (creature-state foe) (lit awake))) (%bl-key! g "s"))
-           ((%bl-clear-step! g) ())
+           ((%bl-stays? s foe) (%bl-toward-creature! g s foe))
+           ((%bl-clear-step! g) (Vector set! 16 stood s))
            ((if (%bl-worth? g who foe) #f (%bl-away! g foe)) ())
            (#t (%bl-toward-creature! g s foe)))))
 ; Whether to wait for CR to come: slow, awake, and two cells off, so its
@@ -1064,7 +1078,7 @@
     (def g (%bl-start set play))
     (unless (str=? path "") (File write-all path ""))
     (def kept (Vector of (str=? path "")))
-    (def s (Vector of #f "" 0 0 #f () () 0 () () 0 0 () 0 #f ()))
+    (def s (Vector of #f "" 0 0 #f () () 0 () () 0 0 () 0 #f () ()))
     (def arrivals (Vector of (list (%bl-arrival g))))
     (def loop
       (fn (self turn stalled)
@@ -1130,7 +1144,7 @@
           (unless (null? cr)
             (do (def hp (creature-prop cr (lit hp) (list 1 1)))
                 (creature-hp! cr (state-roll (game-rng g) (first hp) (List ref 1 hp)))))
-          (def s (Vector of #f "" 0 0 #f () () 0 () () 0 0 () 0 #f ()))
+          (def s (Vector of #f "" 0 0 #f () () 0 () () 0 0 () 0 #f () ()))
           (def depth (game-depth g))
           (def start (game-turn g))
           (def loop
