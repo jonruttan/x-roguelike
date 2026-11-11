@@ -132,6 +132,27 @@ blow on a sleeper -- is in 10-elements.
 ---
     (() 5 6 #t #t #t #t)
 
+### standing water rises with the depth: none above level 4, more each level below, only ever over floor
+
+```roguelike
+(def set (spec-set-named "delve"))
+(def tally
+  (fn (_ depth)
+    (def m (spec-level-on set 3 depth))
+    (def count (fn (_ t) (List fold (fn (_ a b) (+ a b)) 0 (List map (fn (_ r) (List count-if (fn (_ c) (= (map-tile m r c) t)) (List range 0 (map-cols m)))) (List range 0 (map-rows m))))))
+    (def v (list (count tile-shallow) (+ (count tile-floor) (count tile-shallow))))
+    (Heap collect)
+    v))
+(def ts (List map tally (list 3 5 8 12)))
+(import x/core/doors int/)
+(def share (fn (_ t) (int/ (* 100 (first t)) (List ref 1 t))))
+(write (list (first (first ts)) (List map (fn (_ t) (< (share t) 51)) ts)
+             (< 0 (share (List ref 1 ts))) (< (share (List ref 1 ts)) (share (List ref 2 ts))) (< (share (List ref 2 ts)) (share (List ref 3 ts)))))
+```
+---
+    (0 (#t #t #t #t) #t #t #t)
+
+
 ## sight
 
 ### light to a radius stops at a wall: the wall is seen, what lies past it is not

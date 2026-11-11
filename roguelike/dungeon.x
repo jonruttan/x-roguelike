@@ -22,9 +22,9 @@
 (import x/core/doors int/ int+ int- int< int= int& int>> obj-ref obj-set!)
 (import roguelike/map
   tile-rock tile-floor tile-wall tile-door tile-passage tile-down tile-up
-  tile-water tile-pillar tile-fall tile-dressed tile-hedge tile-gate tile-thicket tile-edge tile-bog tile-scar
+  tile-water tile-pillar tile-fall tile-dressed tile-hedge tile-gate tile-thicket tile-edge tile-bog tile-scar tile-shallow
   map-make map-rows map-cols map-rooms map-rooms! map-places! map-down map-down! map-up! map-roof! map-terrain
-  map-tile map-set! map-in? map-passable? map-opaque? room-r0 room-c0 room-r1 room-c1 room-centre map-each!
+  map-tile map-set! map-in? map-passable? map-opaque? map-floor? room-r0 room-c0 room-r1 room-c1 room-centre map-each!
   map-fill-unreached!)
 (import roguelike/scale scale-rung scale-across scale-down scale-area)
 
@@ -956,6 +956,50 @@
     (map-rooms! m ())
     m))
 
+; --- shallows ---------------------------------------------------------------
+
+; Standing water over the floor, more of it the deeper the level,
+; (shallows FROM PER MOST): on each level below FROM, PER in a hundred
+; more of the floor, never more than MOST.  It lies in pools, each a
+; wander over the floor from a cell at random, and covers only floor,
+; so the level's ways are as they were.  It draws from a sequence of
+; its own, begun from the level's shape, so the rest of the level is
+; made as it would be without it.
+
+; A wander of K steps from R C over floor and shallows, the floor it
+; crosses made shallows: the cells made, added to N.
+(def %dg-pool!
+  (fn (self rng m r c k n)
+    (if (= k 0) n
+      (do (def made (if (= (map-tile m r c) tile-floor) (do (map-set! m r c tile-shallow) (+ n 1)) n))
+          (def d (rng choice %dg-four))
+          (def nr (+ r (first d)))
+          (def nc (+ c (rest d)))
+          (if (if (%dg-inside? m nr nc) (map-floor? m nr nc) #f)
+            (self rng m nr nc (- k 1) made)
+            (self rng m r c (- k 1) made))))))
+(def %dg-shallows!
+  (fn (_ m depth params)
+    (def s (%dg-p params (lit shallows) ()))
+    (def pct (if (null? s) 0 (%dg-min (List ref 2 s) (* (List ref 1 s) (- depth (first s))))))
+    (when (< 0 pct)
+      (do ; The floor's count, and the level's shape stirred into a seed.
+          (def tally (Vector make 2 0))
+          (map-each! 0 0 (- (map-rows m) 1) (- (map-cols m) 1)
+            (fn (_ r c)
+              (def t (map-tile m r c))
+              (when (= t tile-floor) (Vector set! 0 (+ 1 (Vector ref 0 tally)) tally))
+              (Vector set! 1 (int& (+ (* 31 (Vector ref 1 tally)) (+ t 1)) 1073741823) tally)))
+          (def rng (Random sw (+ (Vector ref 1 tally) depth)))
+          ((fn (self left tries)
+             (when (if (< 0 left) (< 0 tries) #f)
+               ((fn (_ r c)
+                  (if (= (map-tile m r c) tile-floor)
+                    (self (- left (%dg-pool! rng m r c (%dg-roll rng 8 40) 0)) (- tries 1))
+                    (self left (- tries 1))))
+                (rng int (map-rows m)) (rng int (map-cols m)))))
+           (int/ (* pct (Vector ref 0 tally)) 100) 2000)))))
+
 ; A level of ROWS by COLS at DEPTH, by PARAMS: rooms, or caves with
 ; (level-style caves), open ground with (level-style open), or a town
 ; with (level-style town); in the Delve, a pit (pit), a flooded reach
@@ -978,6 +1022,7 @@
            ((eq? style (lit hills)) (%dg-hills! rng m params))
            ((eq? style (lit rim)) (%dg-rim! rng m params))
            (#t (%dg-rooms! rng m depth params)))
+    (%dg-shallows! m depth params)
     (def down (map-down m))
     (when (if (null? down) #f (eq? (first (%dg-p params (lit stairs) (list (lit both)))) (lit up)))
       (do (map-set! m (first down) (rest down) tile-floor) (map-down! m ())))
@@ -989,7 +1034,7 @@
   (fn (self rng m free? tries)
     (if (= tries 0) ()
       ((fn (_ at)
-         (if (if (= (map-tile m (first at) (rest at)) tile-floor) (free? (first at) (rest at)) #f) at
+         (if (if (map-floor? m (first at) (rest at)) (free? (first at) (rest at)) #f) at
            (self rng m free? (- tries 1))))
        (if (null? (map-rooms m)) (pair (rng int (map-rows m)) (rng int (map-cols m)))
          (%dg-spot rng (rng choice (map-rooms m))))))))

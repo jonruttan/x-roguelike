@@ -17,11 +17,12 @@ each the art's size, held TICKS a picture.
 
 ```roguelike
 (def %art-prop (fn (_ t key) (List find (fn (_ p) (if (pair? p) (eq? (first p) key) #f)) (rest t))))
-(def %art-parts '(top face n e w ne nw se sw face-w face-e shade))
+(def %art-parts '(top face n e s w ne nw se sw out-ne out-nw out-se out-sw face-w face-e shade))
 (def %art-marks '(mark-confused mark-blind mark-held mark-hasted mark-slowed mark-seeing mark-hungry mark-weak mark-fainting mark-wounded))
 (def %art-poses '(attack hit dead))
 (def %art-same? (fn (_ a b) (if (str? a) (if (str? b) (str=? a b) #f) (eq? a b))))
 (import x/core/doors int+ int< int= str-byte-ref char->int)
+(import roguelike/map map-terrain)
 (def %art-mask
   (fn (_ cs)
     (Str8 join "" (List map (fn (_ b) (if (List any? (fn (_ c) (= b c)) cs) "#" ".")) (List range 0 128)))))
@@ -78,7 +79,7 @@ each the art's size, held TICKS a picture.
     (def size (data-one art 'size (list 16 16)))
     (def chars (%art-mask (List map (fn (_ c) (char->int (str-byte-ref (first c) 0))) (data-all art 'colour))))
     (def tiles (data-all art 'tile))
-    (def known (pair 'panel (pair 'shadow (List append %art-marks (List map (fn (_ g) (first g)) (data-all set 'glyph))
+    (def known (pair 'panel (pair 'shadow (List append %art-marks (List map (fn (_ k) (List ref 1 k)) map-terrain) (List map (fn (_ g) (first g)) (data-all set 'glyph))
                                          (List map (fn (_ c) (first c)) (data-all set 'creature))))))
     (def bands (data-all set 'band))
     (List flat-map (fn (_ t) (%art-tile t size chars known tiles bands)) tiles)))
@@ -106,7 +107,7 @@ each the art's size, held TICKS a picture.
 (write (list (art-problems (spec-set-named "delve") art) (List length (data-all art 'tile))))
 ```
 ---
-    (() 149)
+    (() 227)
 
 ### classic's art is whole
 

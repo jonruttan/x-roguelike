@@ -23,7 +23,7 @@
 (import roguelike/data data-all data-glyph)
 (import roguelike/items items-glyph)
 (import roguelike/map map-terrain map-kinds map-rows map-cols map-tile map-seen? map-visible? map-in? map-opaque? map-walkable?
-  tile-rock tile-down tile-up tile-door tile-roof map-shown map-covered? map-roofed?)
+  tile-rock tile-down tile-up tile-door tile-roof tile-water tile-shallow map-shown map-covered? map-roofed?)
 (import roguelike/state game-map game-player game-floor game-creatures game-traps
   player-r player-c player-conditions item-r item-c item-class creature-r creature-c creature-name creature-glyph
   creature-state creature-condition game-set game-blows game-over)
@@ -72,8 +72,8 @@
     (def vs (if (null? own) (List filter (fn (_ t) (null? (%fr-prop t (lit band)))) mine) own))
     (if (null? vs) () (pair (List fold (fn (_ n t) (+ n (%fr-weight t))) 0 vs) vs))))
 
-(def %fr-parts (list () (lit top) (lit face) (lit n) (lit e) (lit w) (lit ne) (lit nw) (lit se) (lit sw)
-                     (lit face-w) (lit face-e) (lit shade)))
+(def %fr-parts (list () (lit top) (lit face) (lit n) (lit e) (lit s) (lit w) (lit ne) (lit nw) (lit se) (lit sw)
+                     (lit out-ne) (lit out-nw) (lit out-se) (lit out-sw) (lit face-w) (lit face-e) (lit shade)))
 
 ; A kind's pictures: ((PART . VARIANTS) ...) for each part it has.
 (def %fr-kind
@@ -139,6 +139,26 @@
         (if (if (solid? 1 0) (if (solid? 0 1) (not (solid? 1 1)) #f) #f) (list (lit se)) ())
         (if (if (solid? 1 0) (if (solid? 0 -1) (not (solid? 1 -1)) #f) #f) (list (lit sw)) ())))))
 
+; --- ground that joins ------------------------------------------------------
+
+; The parts a joined ground cell (water, shallows: a kind drawn with
+; rims) is drawn in, in order, from SAME?, (fn (_ dr dc)) whether the
+; neighbour that way runs on from it: the whole; a rim on each side
+; that does not; a rounded corner where both sides of it do not; and
+; a notch where both sides do and the diagonal between does not.  So
+; cells of a kind side by side are drawn as one pool.
+(def frame-join-parts
+  (fn (_ same?)
+    (def n (same? -1 0))
+    (def e (same? 0 1))
+    (def s (same? 1 0))
+    (def w (same? 0 -1))
+    (def corner (fn (_ a b dr dc out in) (match ((not (if a #t b)) (list out)) ((if a (if b (not (same? dr dc)) #f) #f) (list in)) (#t ()))))
+    (List append (list ())
+      (if n () (list (lit n))) (if e () (list (lit e))) (if s () (list (lit s))) (if w () (list (lit w)))
+      (corner n e -1 1 (lit out-ne) (lit ne)) (corner n w -1 -1 (lit out-nw) (lit nw))
+      (corner s e 1 1 (lit out-se) (lit se)) (corner s w 1 -1 (lit out-sw) (lit sw)))))
+
 ; --- the camera -------------------------------------------------------------
 
 ; The view's top-left cell, (R0 . C0): the player at R C in the middle,
@@ -182,12 +202,29 @@
         (if (null? parts) acc
           ((fn (_ p) (if (null? p) (self (rest parts) acc) (pair (list (lit tile) x y p) (self (rest parts) acc))))
            (%fr-pick pics (first parts) seed)))))
+    ; The ground's parts: joined to its neighbours where its kind has rims.
+    (def ground
+      (fn (_)
+        (if (List any? (fn (_ p) (eq? (first p) (lit n))) pics)
+          (frame-join-parts (fn (_ dr dc) (%fr-joins? m t (+ r dr) (+ c dc))))
+          (list ()))))
     (match ((not (map-seen? m r c)) (list (list (lit fill) x y frame-tile-size frame-tile-size)))
            ((= t tile-rock) (list (list (lit fill) x y frame-tile-size frame-tile-size)))
            ((= t tile-roof) (puts (frame-wall-parts (fn (_ dr dc) (%fr-covered? m (+ r dr) (+ c dc)))) ()))
            ((map-opaque? t) (puts (frame-wall-parts (fn (_ dr dc) (%fr-solid? m (+ r dr) (+ c dc)))) ()))
-           ((%fr-solid? m (- r 1) c) (puts (list () (lit shade)) ()))
-           (#t (puts (list ()) ())))))
+           ((%fr-solid? m (- r 1) c) (puts (List append (ground) (list (lit shade))) ()))
+           (#t (puts (ground) ())))))
+
+; Whether kind T is water, deep or shallow.
+(def %fr-wet? (fn (_ t) (if (= t tile-water) #t (= t tile-shallow))))
+; Whether the cell at R C of M runs on from ground of kind T, with no
+; rim between: the same kind, water beside water, a wall, or a cell not
+; seen or off the map.
+(def %fr-joins?
+  (fn (_ m t r c)
+    (if (if (map-in? m r c) (map-seen? m r c) #f)
+      ((fn (_ u) (match ((= u t) #t) ((map-opaque? u) #t) (#t (if (%fr-wet? t) (%fr-wet? u) #f)))) (map-tile m r c))
+      #t)))
 
 ; The level's cells in view of camera CAM, (R0 . C0), with art A, in
 ; the order to draw them: built from the last cell back.
@@ -600,6 +637,6 @@
 
 (provide roguelike/frame
   frame-tile-size frame-view-rows frame-view-cols frame-view! frame-level-y
-  frame-art frame-art-band frame-named frame-seed frame-wall-parts frame-camera frame-cell frame-level
+  frame-art frame-art-band frame-named frame-seed frame-wall-parts frame-join-parts frame-camera frame-cell frame-level
   frame-place frame-things frame-view frame-lights frame-glints frame-blows frame-flicker frame-light-map frame-scene
   frame-chart)
