@@ -234,6 +234,37 @@ takes, a wall in parts by its neighbours, and the camera on the player.
 ---
     (() 'attack 'hit 'dead 5)
 
+## blows
+
+### a blow struck from a cell in view with no one drawn there is marked unseen; the player's never is
+
+```roguelike
+(import roguelike/frame frame-blows)
+(import roguelike/state state-blow! state-clear-messages! player-condition!)
+(def g (spec-game-on (spec-set-named "delve") 3 ()))
+(game-creatures! g ())
+(def pl (game-player g))
+(def m (game-map g))
+(def open (spec-open g))
+(def r (first (rest open)))
+(def c (rest (rest open)))
+(spec-place! g "drowned shade" r c 10 'awake)
+(def unseen? (fn (_) (List ref 9 (first (frame-blows g (frame-camera (map-rows m) (map-cols m) (player-r pl) (player-c pl)))))))
+(state-clear-messages! g)
+(state-blow! g r c (player-r pl) (player-c pl) 'hit 2 ())
+(def hidden (unseen?))
+(state-clear-messages! g)
+(state-blow! g (player-r pl) (player-c pl) r c 'miss 0 ())
+(def mine (unseen?))
+(state-clear-messages! g)
+(player-condition! pl 'seeing 50)
+(state-blow! g r c (player-r pl) (player-c pl) 'hit 2 ())
+(write (list hidden mine (unseen?)))
+```
+---
+    (#t #f #f)
+
+
 ## the chart
 
 ### the whole level a byte a cell; the player's cell in view, or the way up it came down; the creatures shown, none till they are seen
@@ -255,3 +286,25 @@ takes, a wall in parts by its neighbours, and the camera on the player.
 ```
 ---
     ('chart #t #t #t #t #t #t #t)
+
+## the view dragged
+
+### the view moves off the player by whole cells, its middle held to the map, and back
+
+```roguelike
+(import roguelike/frame frame-pan frame-pan! frame-camera)
+(import roguelike/map map-rows map-cols)
+(def g (spec-game-on (spec-set-named "delve") 3 ()))
+(def m (game-map g))
+(def pl (game-player g))
+(def cam (fn (_) (frame-camera (map-rows m) (map-cols m) (player-r pl) (player-c pl))))
+(def home (cam))
+(frame-pan! g 2 -3)
+(def moved (list (frame-pan) (- (first (cam)) (first home)) (- (rest (cam)) (rest home))))
+(frame-pan! g -999 999)
+(def edge (list (= (first (frame-pan)) (- 0 (player-r pl))) (= (rest (frame-pan)) (- (- (map-cols m) 1) (player-c pl)))))
+(frame-pan! g 0 0)
+(write (list moved edge (equal? (cam) home)))
+```
+---
+    (((2 . -3) 2 -3) (#t #t) #t)

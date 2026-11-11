@@ -1173,6 +1173,102 @@
   "kkkkkkkkkkkkkkkk"))
 
 
+; The gable, the front of a roof running north and south: the wall
+; rising under its coping to the ridge, the slopes behind it.  The peak,
+; under the ridge.
+(tile roof (part gable) (rows
+  "ddekddkkkkfkFFfk"
+  "deekkkhhhhkkFffk"
+  "ddkkhhRRhRhhkkfk"
+  "kkhheeeeeeeehhkk"
+  "hhRRReRRRRRReRhh"
+  "RhRrReRRhRrReRhR"
+  "eeeeeeeeeeeeeeee"
+  "RRRRReRRRRRReRRR"
+  "RhRrReRRhRrReRhR"
+  "eeeeeeeeeeeeeeee"
+  "RRRRReRRRRRReRRR"
+  "RhRrReRRhRrReRhR"
+  "eeeeeeeeeeeeeeee"
+  "RReRRRRhReRRRRRe"
+  "dddddddddddddddd"
+  "kkkkkkkkkkkkkkkk"))
+
+; The rakes, in the cells west and east of the ridge.
+(tile roof (part gable-w) (rows
+  "ddekddekddekddek"
+  "deekddekddekdeek"
+  "ddekddekddekddek"
+  "ddekkkkkdeekkkkk"
+  "ddekddekddekkkhh"
+  "ddekddekddkkhhhR"
+  "ddekdeekkkhheeee"
+  "kkkkddkkhhRReRRR"
+  "ddekkkhhhRrReRhR"
+  "ddkkhheeeeeeeeee"
+  "kkhhReRRRRRReRRR"
+  "hhRrReRRhRrReRhR"
+  "eeeeeeeeeeeeeeee"
+  "RReRRRRhReRRRRRe"
+  "dddddddddddddddd"
+  "kkkkkkkkkkkkkkkk"))
+
+(tile roof (part gable-e) (rows
+  "FFfkFFfkFFfkFFfk"
+  "FffkFFfkFFfkFffk"
+  "FFfkFFfkFFfkFFfk"
+  "kkfkeeekFffkeeek"
+  "hhkkFFfkFFfkFFfk"
+  "RhhhkkfkFFfkFFfk"
+  "eeeehhkkFFfkFFfk"
+  "RRRRRehhkkekFFfk"
+  "RhRrReRRhhkkFFfk"
+  "eeeeeeeeeehhkkfk"
+  "RRRRReRRRRRRhhkk"
+  "RhRrReRRhRrReRhh"
+  "eeeeeeeeeeeeeeee"
+  "RReRRRRhReRRRRRe"
+  "dddddddddddddddd"
+  "kkkkkkkkkkkkkkkk"))
+
+; The low ends of a wider gable, west and east of the rakes.
+(tile roof (part gable-ww) (rows
+  "ddekddekddekddek"
+  "deekddekddekdeek"
+  "ddekddekddekddek"
+  "ddekkkkkdeekkkkk"
+  "ddekddekddekddek"
+  "ddekddekddekddek"
+  "ddekdeekddekddek"
+  "kkkkddekkkkkddek"
+  "ddekddekddekddek"
+  "ddekddekddekdeek"
+  "kkkkkkkkkkkkkkkk"
+  "hhhhhhhhhhhhhhhh"
+  "eeeeeeeeeeeeeeee"
+  "RReRRRRhReRRRRRe"
+  "dddddddddddddddd"
+  "kkkkkkkkkkkkkkkk"))
+
+(tile roof (part gable-ee) (rows
+  "FFfkFFfkFFfkFFfk"
+  "FffkFFfkFFfkFffk"
+  "FFfkFFfkFFfkFFfk"
+  "FFfkeeekFffkeeek"
+  "FFfkFFfkFFfkFFfk"
+  "FFfkFFfkFFfkFFfk"
+  "FFfkFffkFFfkFFfk"
+  "eeekFFfkeeekFFfk"
+  "FFfkFFfkFFfkFFfk"
+  "FFfkFFfkFFfkFffk"
+  "kkkkkkkkkkkkkkkk"
+  "hhhhhhhhhhhhhhhh"
+  "eeeeeeeeeeeeeeee"
+  "RReRRRRhReRRRRRe"
+  "dddddddddddddddd"
+  "kkkkkkkkkkkkkkkk"))
+
+
 ; --- who walks there ---------------------------------------------------------
 
 ; One of Kettle's people about the streets: flat cap, muffler, a long

@@ -22,23 +22,35 @@
 (import x/core/doors int+ int- int* int/ int% int< int= str-make str->ptr ptr-set! ptr-ref str-byte-ref char->int)
 (import roguelike/data data-all data-glyph)
 (import roguelike/items items-glyph)
-(import roguelike/map map-terrain map-kinds map-rows map-cols map-tile map-seen? map-visible? map-in? map-opaque? map-walkable?
-  tile-rock tile-down tile-up tile-door tile-roof tile-water tile-shallow map-shown map-covered? map-roofed? map-roof-pitch)
+(import roguelike/map map-terrain map-kinds map-rows map-cols map-tile map-seen? map-visible? map-in? map-opaque? map-chart
+  tile-rock tile-roof tile-water tile-shallow map-shown map-covered? map-roofed? map-roof-pitch)
 (import roguelike/state game-map game-player game-floor game-creatures game-traps
   player-r player-c player-conditions item-r item-c item-class creature-r creature-c creature-name creature-glyph
   creature-state creature-condition game-set game-blows game-over)
 (import roguelike/draw draw-hunger)
 (import roguelike/creatures creatures-shown?)
 (import roguelike/traps trap-r trap-c trap-found?)
-(import roguelike/game game-frontier?)
 
 (def frame-tile-size 16)
-; The view, [ROWS COLS] in cells: drawn at the tile's size and shown
-; at the painter's zoom (paint.x), which sets it to fill the screen.
-(def %fr-view (Vector of 10 20))
+; The view, [ROWS COLS DR DC] in cells: drawn at the tile's size and
+; shown at the painter's zoom (paint.x), which sets it to fill the
+; screen; DR DC how far it is moved off the player, by a drag.
+(def %fr-view (Vector of 10 20 0 0))
 (def frame-view-rows (fn (_) (Vector ref 0 %fr-view)))
 (def frame-view-cols (fn (_) (Vector ref 1 %fr-view)))
 (def frame-view! (fn (_ rows cols) (do (Vector set! 0 rows %fr-view) (Vector set! 1 cols %fr-view) ())))
+(def frame-pan (fn (_) (pair (Vector ref 2 %fr-view) (Vector ref 3 %fr-view))))
+; V held to 0 .. N - 1.
+(def %fr-held (fn (_ v n) (if (int< v 0) 0 (if (int< v n) v (int- n 1)))))
+; The view of game G moved DR DC cells off the player, no further than
+; puts its middle on the map's edge.
+(def frame-pan!
+  (fn (_ g dr dc)
+    (def m (game-map g))
+    (def p (game-player g))
+    (Vector set! 2 (int- (%fr-held (int+ (player-r p) dr) (map-rows m)) (player-r p)) %fr-view)
+    (Vector set! 3 (int- (%fr-held (int+ (player-c p) dc) (map-cols m)) (player-c p)) %fr-view)
+    ()))
 (def frame-level-y 24)
 
 ; --- the art ----------------------------------------------------------------
@@ -74,7 +86,8 @@
 
 (def %fr-parts (list () (lit top) (lit face) (lit n) (lit e) (lit s) (lit w) (lit ne) (lit nw) (lit se) (lit sw)
                      (lit out-ne) (lit out-nw) (lit out-se) (lit out-sw) (lit face-w) (lit face-e) (lit shade)
-                     (lit north) (lit ridge) (lit west) (lit ridge-ns) (lit east)))
+                     (lit north) (lit ridge) (lit west) (lit ridge-ns) (lit east)
+                     (lit gable) (lit gable-w) (lit gable-e) (lit gable-ww) (lit gable-ee)))
 
 ; A kind's pictures: ((PART . VARIANTS) ...) for each part it has.
 (def %fr-kind
@@ -163,13 +176,13 @@
 ; --- the camera -------------------------------------------------------------
 
 ; The view's top-left cell, (R0 . C0): the player at R C in the middle,
-; always, so the screen is never half empty beside a map's edge.  What
-; lies past the edge is drawn as rock.  ROWS and COLS, the map's size,
-; are not needed to place it.
+; so the screen is never half empty beside a map's edge, or moved off
+; the player by the pan, its middle kept on the map of ROWS by COLS.
+; What lies past the edge is drawn as rock.
 (def frame-camera
   (fn (_ rows cols r c)
-    (pair (- r (int/ (frame-view-rows) 2))
-          (- c (int/ (frame-view-cols) 2)))))
+    (pair (- (%fr-held (+ r (Vector ref 2 %fr-view)) rows) (int/ (frame-view-rows) 2))
+          (- (%fr-held (+ c (Vector ref 3 %fr-view)) cols) (int/ (frame-view-cols) 2)))))
 
 ; --- the level --------------------------------------------------------------
 
@@ -181,17 +194,29 @@
 ; roof that is on, its door too.
 (def %fr-covered? (fn (_ m r c) (if (map-in? m r c) (map-covered? m r c) #f)))
 ; The parts the roofed cell at R C of M is drawn in, from the roof's
-; pictures PICS: its front where the street lies south; elsewhere the
-; slope it is on (map.x, map-roof-pitch), the roof's top where PICS has
-; no picture of that slope, then the rims where the roof ends north,
-; east and west.
+; pictures PICS: its front where the street lies south, the gable where
+; the roof runs north and south; elsewhere the slope it is on (map.x,
+; map-roof-pitch), then the rims where the roof ends north, east and
+; west.  Where PICS has no picture of a gable or a slope, the roof's
+; face or its top.
 (def %fr-slopes (list (lit top) (lit north) (lit ridge) (lit top) (lit west) (lit ridge-ns) (lit east)))
+; The gable's part at R C, a cell of pitch P: the peak under the ridge,
+; a rake in the cell beside the ridge, a low end beyond; face where the
+; roof runs east and west.
+(def %fr-gable
+  (fn (_ m r c p)
+    (match ((= p 5) (lit gable))
+           ((= p 4) (if (= (map-roof-pitch m r (+ c 1)) 5) (lit gable-w) (lit gable-ww)))
+           ((= p 6) (if (= (map-roof-pitch m r (- c 1)) 5) (lit gable-e) (lit gable-ee)))
+           (#t (lit face)))))
 (def %fr-roof-parts
   (fn (_ pics m r c seed)
     (def on? (fn (_ dr dc) (%fr-covered? m (+ r dr) (+ c dc))))
-    (def slope (List ref (map-roof-pitch m r c) %fr-slopes))
-    (if (not (on? 1 0)) (list (lit face))
-      (List append (list (if (null? (%fr-pick pics slope seed)) (lit top) slope))
+    (def p (map-roof-pitch m r c))
+    (def have (fn (_ part other) (if (null? (%fr-pick pics part seed)) other part)))
+    (def slope (List ref p %fr-slopes))
+    (if (not (on? 1 0)) (list (have (%fr-gable m r c p) (lit face)))
+      (List append (list (have slope (lit top)))
         (if (on? -1 0) () (list (lit n)))
         (if (on? 0 1) () (list (lit e)))
         (if (on? 0 -1) () (list (lit w)))))))
@@ -560,10 +585,11 @@
         (frame-glints g cam) (frame-blows g cam) (list (frame-chart g)))))))
 
 ; The turn's blows whose target is in view under camera CAM, oldest
-; first, each (blow FX FY TX TY HOW N BY-PLAYER? WHAT): the pixel
-; places of who struck (the target's when the striker is out of view)
-; and of whom, HOW hit, miss, kill or touch, N the damage, whether the
-; player struck, and what flew, or nil.
+; first, each (blow FX FY TX TY HOW N BY-PLAYER? WHAT UNSEEN?): the
+; pixel places of who struck (the target's when the striker is out of
+; view) and of whom, HOW hit, miss, kill or touch, N the damage, whether
+; the player struck, what flew, or nil, and whether it was struck from a
+; cell in view with no one drawn there.
 (def frame-blows
   (fn (_ g cam)
     (def p (game-player g))
@@ -571,11 +597,19 @@
       (fn (_ b)
         (def to (frame-place cam (List ref 3 b) (List ref 4 b)))
         (def from ((fn (_ f) (if (null? f) to f)) (frame-place cam (List ref 1 b) (List ref 2 b))))
+        (def mine (if (= (List ref 1 b) (player-r p)) (= (List ref 2 b) (player-c p)) #f))
         (if (null? to) ()
           (list (list (lit blow) (first from) (rest from) (first to) (rest to) (List ref 5 b) (List ref 6 b)
-                      (if (= (List ref 1 b) (player-r p)) (= (List ref 2 b) (player-c p)) #f)
-                      (List ref 7 b)))))
+                      mine (List ref 7 b) (if mine #f (%fr-unseen-at? g (List ref 1 b) (List ref 2 b)))))))
       (List reverse (game-blows g)))))
+; Whether the cell at R C is in view with no one drawn there who stands
+; on it: the striker from it is not seen.
+(def %fr-unseen-at?
+  (fn (_ g r c)
+    (if (map-visible? (game-map g) r c)
+      (not (List any? (fn (_ cr) (if (if (= (creature-r cr) r) (= (creature-c cr) c) #f) (creatures-shown? g cr) #f))
+             (game-creatures g)))
+      #f)))
 
 
 ; The places, (X . Y), of the cells of OPS with a tile that moves.
@@ -612,47 +646,20 @@
 
 ; --- the chart -----------------------------------------------------------------
 
-; What the chart shows of the cell at R C of M: 0 not seen, 1 ground
-; seen, 2 ground in view, 3 wall seen, 4 wall in view, 5 the way down,
-; 6 the way up, 7 a door, 8 ground beside what is not yet seen, still
-; to explore.  A cell under a roof that is on is the roof, a wall.
-(def %fr-chart-code
-  (fn (_ m r c)
-    (def t (map-shown m r c))
-    (def lit? (map-visible? m r c))
-    (match ((not (map-seen? m r c)) 0)
-           ((= t tile-down) 5)
-           ((= t tile-up) 6)
-           ((= t tile-door) 7)
-           ((map-opaque? t) (if lit? 4 3))
-           ((if (map-walkable? m r c) (game-frontier? m r c) #f) 8)
-           (lit? 2)
-           (#t 1))))
-
 ; The whole of G's level, small, as one op, (chart ROWS COLS BYTES (PR
-; . PC) ((R . C) ...)): a byte a cell, row by row, as %fr-chart-code
-; has it; where the player stands; and where each creature shown
-; stands, on the screen or off it.
+; . PC) ((R . C) ...)): a byte a cell, row by row, as map-chart has it;
+; where the player stands; and where each creature shown stands, on the
+; screen or off it.
 (def frame-chart
   (fn (_ g)
     (def m (game-map g))
     (def p (game-player g))
-    (def rows (map-rows m))
-    (def cols (map-cols m))
-    (def n (* rows cols))
-    (def bytes (str-make n))
-    (def bp (str->ptr bytes))
-    ((fn (self i)
-       (when (int< i n)
-         (do (ptr-set! bp i (%fr-chart-code m (int/ i cols) (int% i cols)) 1)
-             (self (int+ i 1)))))
-     0)
-    (list (lit chart) rows cols bytes (pair (player-r p) (player-c p))
+    (list (lit chart) (map-rows m) (map-cols m) (map-chart m) (pair (player-r p) (player-c p))
           (List flat-map (fn (_ cr) (if (creatures-shown? g cr) (list (pair (creature-r cr) (creature-c cr))) ()))
             (game-creatures g)))))
 
 (provide roguelike/frame
-  frame-tile-size frame-view-rows frame-view-cols frame-view! frame-level-y
+  frame-tile-size frame-view-rows frame-view-cols frame-view! frame-pan frame-pan! frame-level-y
   frame-art frame-art-band frame-named frame-seed frame-wall-parts frame-join-parts frame-camera frame-cell frame-level
   frame-place frame-things frame-view frame-lights frame-glints frame-blows frame-flicker frame-light-map frame-scene
   frame-chart)

@@ -329,7 +329,7 @@
       ((%cr-breathes? g cr) (%cr-breathe! g cr))
       ((%cr-summons? g cr) (%cr-summon! g cr))
       ((eq? (creature-state cr) (lit fleeing)) (%cr-away! g cr (player-r p) (player-c p)))
-      ((state-adjacent? (creature-r cr) (creature-c cr) (player-r p) (player-c p)) (combat-creature-attacks! g cr))
+      ((state-adjacent? (creature-r cr) (creature-c cr) (player-r p) (player-c p)) (combat-creature-attacks! g cr (creatures-shown? g cr)))
       ((creature-trait? cr (lit stationary)) ())
       ((if (creature-trait? cr (lit erratic)) (state-chance? (game-rng g) 50) #f) (%cr-random-step! g cr))
       ((%cr-sight? g) (%cr-hunt! g cr))

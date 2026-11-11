@@ -5,7 +5,7 @@ it plays is synthesised as it runs from a set's data: there are no
 recordings and no sound files. The music is played by a tracker, the
 effects are rendered from descriptions of their voices, and both are
 mixed by x-lang's `x/audio/mixer` and played on SDL's audio streams
-(`x/sys/sdl`). A set with no `(sound ...)` forms is silent, and so is a
+(`x/sys/sdl`). A world with no `(sound ...)` forms is silent, and so is a
 host with no audio device or no JIT to compile the mixer's loops; the
 game plays the same either way.
 
@@ -102,8 +102,15 @@ as a drum does.
 `(music "PLACE" "SONG")` names a place's song, and `(ambience "PLACE"
 (bed "SONG") (random "SOUND" EVERY-MS GAIN) ...)` its air: a bed song
 under the music and sounds heard at random, once in EVERY ms or so. A
-place is a band's name, a region's, or `"default"`. `(music-gain PCT)`
-and `(music-echo MS FEEDBACK WET)` are the music's loudness and room.
+place is the band stood in, else the region, else `"default"`.
+`(music-gain PCT)` and `(music-echo MS FEEDBACK WET)` are the music's
+loudness and room; the echoes are those of the set the game began on.
+
+Every form here is looked for in the set stood in first, then in the set
+the game began on and each of its regions. A region's own songs, beds and
+footsteps are heard there, and what it lacks is the world's: the valley
+and the town (`data/kettle`, `data/town`) have their own music and air,
+and the blows, cues and cries of the Delve's set.
 
 `(fight "PLACE" "SONG")` is the place's fight song: a blow struck either
 way brings it in, and it plays until `(fight-turns N)` turns pass without

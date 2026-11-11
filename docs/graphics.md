@@ -21,8 +21,13 @@ screen's pixel, the art's scale: a line holds 52 letters.
 
 - **The level** is 80 by 22, as in the terminal.  The window shows 20 by
   9 of it at the first zoom; the camera keeps the player in the middle,
-  always, the view running past the map's edge onto rock, so it scrolls
-  as the player walks.
+  the view running past the map's edge onto rock, so it scrolls as the
+  player walks.
+- **Dragging the view**: the mouse dragged with its left button, shift
+  with an arrow key, or the gamepad's right stick, moves the view off the player a cell at a
+  time, as far as puts the view's middle on the map's edge, to look at
+  what lies off the screen.  It shows only what has been seen, and no
+  turn passes.  Any key brings the view back to the player.
 - **In view and seen**: cells in view drawn whole, cells seen before
   dimmed, rock black.  Found traps and items where they were seen;
   creatures only in view; the player last.  A warm glow round the
@@ -36,8 +41,9 @@ screen's pixel, the art's scale: a line holds 52 letters.
   creature stands under it.
 - **Off the screen**: a creature in view whose cell is off the screen
   (at a close zoom the player sees further than the screen shows) has
-  a red arrowhead at the level's edge, where the line from the player
-  to it leaves the screen, pointing its way.
+  a red arrowhead at the level's edge, where the line from the view's
+  middle to it leaves the screen, pointing its way; the player has a
+  white one while the view is dragged off it.
 - **Marks**: what a creature or the player is under is drawn over it,
   from the set's `mark-NAME` pictures, moving with it and going round
   their pictures: a creature held or slowed; the player confused,
@@ -63,7 +69,10 @@ screen's pixel, the art's scale: a line holds 52 letters.
   a thrown stone and its dust (a knocker's), a wand's bolt as a streak
   of light, breath as a gout of flame swelling as it goes.  A bolt that
   does no harm (a slowing, a banishing) flashes its target and writes
-  nothing.
+  nothing.  A blow from a cell in view with no one drawn there, an
+  invisible creature's, stirs the air there instead: a pale ring
+  widening from the cell.  The message says "Something unseen hits
+  you." (`unseen-hit`, `unseen-miss`).
 - **Overlays**: a list looked at, the items a question can take, a
   choice, a page read, a talker's words, the world map and the end of
   the game lie over the level on a panel, as the terminal lays them
@@ -207,9 +216,21 @@ A roof as wide as it is deep runs east and west.  A ridge with no
 middle row lies a row north of the middle, or a column west.  Over the
 slope go the `n` `e` `w` rims, the far eaves and the verges, where the
 roof ends that way, a neighbour solid when it is under a roof that is
-on.  Where the cell to the south is open the cell is `face` alone, the
-eaves over the building's front.  A set with no picture of a slope
-draws its `top` there, and a set with no `roof` its `wall`.
+on.
+
+Where the cell to the south is open the cell is the building's front,
+one part alone.  Under a roof running east and west it is `face`, the
+eaves over the wall.  Under one running north and south it is the
+gable, the wall rising to the ridge with the slopes behind it:
+
+| The cell | Drawn |
+|---|---|
+| under the ridge | `gable`, the peak |
+| beside the ridge, to the west or east | `gable-w`, `gable-e`, the rakes |
+| further west or east | `gable-ww`, `gable-ee`, the low ends |
+
+A set with no picture of a slope draws its `top` there, one with no
+picture of a gable its `face`, and a set with no `roof` its `wall`.
 
 ## Ground that joins
 

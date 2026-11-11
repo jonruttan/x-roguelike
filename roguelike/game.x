@@ -38,7 +38,7 @@
 (import x/sys/gc)
 (import roguelike/map
   map-rows map-cols map-in? map-tile map-up map-down map-walkable? map-seen? map-light! map-light-radius! map-light-all! map-seen-whole?
-  map-place-at tile-rock tile-down tile-up tile-door)
+  map-place-at map-frontier? tile-rock tile-down tile-up tile-door)
 (import roguelike/dungeon dungeon-generate dungeon-spot)
 (import x/core/doors int/)
 (import roguelike/state
@@ -467,14 +467,16 @@
         (do (state-tell! g (lit faint) "You faint from lack of food." ()) (creatures-act! g)))
       (#t ()))))
 
-; A hit point back every so many seconds: the set's (regen N), two
-; fewer a level, four at least; every third second with a ring of
-; regeneration; none while starving.
+; A hit point back every so many seconds: the set's (regen N QUICKEN),
+; QUICKEN fewer a level, two unless given, four at least; every third
+; second with a ring of regeneration; none while starving.
 (def %gm-regen!
   (fn (_ g was now)
     (def p (game-player g))
+    (def rule (game-param g (lit regen) (list 20)))
+    (def quicken (if (null? (rest rule)) 2 (List ref 1 rule)))
     (def period (if (state-ring? g (lit regeneration)) 3
-                  ((fn (_ n) (if (< n 4) 4 n)) (- (game-param1 g (lit regen) 20) (* 2 (- (player-level p) 1))))))
+                  ((fn (_ n) (if (< n 4) 4 n)) (- (first rule) (* quicken (- (player-level p) 1))))))
     (def k (if (%gm-starving? g) 0 (%gm-every period was now)))
     (def hp (+ (player-hp p) k))
     (when (if (< 0 k) (< (player-hp p) (player-hpmax p)) #f)
@@ -568,16 +570,6 @@
 
 ; --- exploring ---------------------------------------------------------------
 
-; Whether R C of M, seen and walkable, lies beside a cell not yet seen
-; that is not rock: a place worth walking to.
-(def game-frontier?
-  (fn (_ m r c)
-    (List any? (fn (_ d)
-                 (def rr (+ r (first d)))
-                 (def cc (+ c (rest d)))
-                 (match ((not (map-in? m rr cc)) #f) ((map-seen? m rr cc) #f) (#t (not (= (map-tile m rr cc) tile-rock)))))
-      (state-dirs))))
-
 ; Whether one of the people stands at R C: walking into them talks, so
 ; a walk goes round them.
 (def %gm-person-at?
@@ -619,7 +611,7 @@
           (#t (do (def r (first (first front)))
                   (def c (rest (first front)))
                   (def step (Vector ref (at r c) came))
-                  (if (if (eq? step #t) #f (game-frontier? m r c)) step
+                  (if (if (eq? step #t) #f (map-frontier? m r c)) step
                     (self (rest front) (List append (reach r c (if (eq? step #t) () step)) back))))))))
     (Vector set! (at (player-r p) (player-c p)) #t came)
     (if (map-seen-whole? m) () (search (list (pair (player-r p) (player-c p))) ()))))
@@ -900,4 +892,4 @@
           "S      save and leave       Q      quit"
           "?      these keys           Esc    stop asking")))
 
-(provide roguelike/game game-make game-key! game-waiting? game-explore! game-frontier? game-more! game-score game-score-lines game-score-text game-help)
+(provide roguelike/game game-make game-key! game-waiting? game-explore! game-more! game-score game-score-lines game-score-text game-help)

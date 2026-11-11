@@ -165,15 +165,19 @@
       ((eq? trait (lit thief)) (%cb-steal! g cr))
       (#t ()))))
 
-; CR strikes the player, the blow kept for a front end to show.
+; CR strikes the player, the blow kept for a front end to show.  One
+; the player cannot see, SEEN? false, is told as something unseen.
 (def combat-creature-attacks!
-  (fn (_ g cr)
+  (fn (_ g cr seen?)
     (def subs (list (pair "name" (creature-name cr))))
     (def p (game-player g))
     (def blow! (fn (_ how n) (state-blow! g (creature-r cr) (creature-c cr) (player-r p) (player-c p) how n ())))
     (if (not (combat-hit? (game-rng g) (creature-prop1 cr (lit level) 1) (state-defence g)))
-      (do (blow! (lit miss) 0) (state-tell! g (lit creature-miss) "The {name} misses you." subs))
-      (do (state-tell! g (lit creature-hit) "The {name} hits you." subs)
+      (do (blow! (lit miss) 0)
+          (if seen? (state-tell! g (lit creature-miss) "The {name} misses you." subs)
+            (state-tell! g (lit unseen-miss) "Something unseen misses you." subs)))
+      (do (if seen? (state-tell! g (lit creature-hit) "The {name} hits you." subs)
+            (state-tell! g (lit unseen-hit) "Something unseen hits you." subs))
           (List for-each (fn (_ t) (%cb-trait! g cr t)) (creature-prop cr (lit traits) ()))
           (def n (%cb-dice (game-rng g) (creature-prop cr (lit attack) (list 1 2))))
           (blow! (if (< (player-hp p) (+ n 1)) (lit kill) (lit hit)) n)
