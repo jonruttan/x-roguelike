@@ -1287,6 +1287,81 @@
   "................"
   "................"))
 
+; A dormer over each door, a window in the roof with its own little
+; gable: `dormer` facing the street behind a front door, `dormer-n`,
+; `dormer-e`, `dormer-w` on a door in those walls.
+(tile roof (part dormer) (rows
+  "................"
+  ".......hh......."
+  "......hFFh......"
+  ".....hFFFfh....."
+  "....hFFFFffh...."
+  "...hFFFFFfffh..."
+  "..hFFFFFFffffh.."
+  "..kkkkkkkkkkkk.."
+  "...RrkkkkkkrR..."
+  "...RrkWWWwkrR..."
+  "...RrkWWwwkrR..."
+  "...RrkkkkkkrR..."
+  "...RrkWwwwkrR..."
+  "...rrkkkkkkrr..."
+  "...KKKKKKKKKK..."
+  "................"))
+
+(tile roof (part dormer-n) (rows
+  "................"
+  "....kkkkkkkk...."
+  "....kdddhFFk...."
+  "....kdddhFFk...."
+  "....kdddhFFk...."
+  "....kdddhFFk...."
+  "....kdddhFFk...."
+  "....kdddhFFk...."
+  "....kdddhFFk...."
+  "....kdddhFFk...."
+  "....kdddhFfk...."
+  "....kddehFfk...."
+  "....KKKKKKKK...."
+  "................"
+  "................"
+  "................"))
+
+(tile roof (part dormer-e) (rows
+  "................"
+  "................"
+  "................"
+  "................"
+  "..kkkkkkkkkkkkkk"
+  "..kdddddddddddrk"
+  "..kdddddddddddrk"
+  "..khhhhhhhhhhhRk"
+  "..kFFFFFFFFFFFRk"
+  "..kFFFFFFFFFFFrk"
+  "..kfffffffffffrk"
+  "..kkkkkkkkkkkkkk"
+  "..KKKKKKKKKKKKKK"
+  "................"
+  "................"
+  "................"))
+
+(tile roof (part dormer-w) (rows
+  "................"
+  "................"
+  "................"
+  "................"
+  "kkkkkkkkkkkkkk.."
+  "krdddddddddddk.."
+  "krdddddddddddk.."
+  "kRhhhhhhhhhhhk.."
+  "kRFFFFFFFFFFFk.."
+  "krFFFFFFFFFFFk.."
+  "krfffffffffffk.."
+  "kkkkkkkkkkkkkk.."
+  "KKKKKKKKKKKKKK.."
+  "................"
+  "................"
+  "................"))
+
 ; The gable, the front of a roof running north and south: the wall
 ; rising under its coping to the ridge, the slopes behind it.  The peak,
 ; under the ridge.

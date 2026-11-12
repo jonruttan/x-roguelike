@@ -202,7 +202,10 @@ in the front, where the cell to the south is open, the `doorway` is
 drawn over the front.  Outside every such door the ground has a
 stoop, from the roof's pictures, on the side the door opens to:
 `stoop-s` below a door in the front, `stoop-n`, `stoop-e`, `stoop-w`
-by the others, so a door is found from the street.  Who stands in a
+by the others, so a door is found from the street; and above it a
+dormer, a window with its own little gable in the roof: `dormer` on
+the cell behind a front door, `dormer-n`, `dormer-e`, `dormer-w` on a
+door in those walls.  Who stands in a
 door is drawn.  In the terminal a roofed cell is the `(glyph roof
 "^")`, and a door into the building is its own glyph wherever it is.
 
