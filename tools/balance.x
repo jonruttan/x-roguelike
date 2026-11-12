@@ -66,7 +66,7 @@
   creature-r creature-c creature-state creature-glyph creature-trait? creature-condition creature-hp creature-prop creature-prop1 state-defence state-adjacent? state-dist state-shortfall state-creature-at state-items-at
   game-quest-state game-screens? game-screen game-screen-key game-hub game-chain game-inside state-creature-named
   game-top-set game-home game-place game-below?
-  game-rng game-rng! creature-hp! creature-name state-roll game-traps item-charges player-rings)
+  game-rng game-rng! creature-hp! creature-name state-roll game-traps item-charges player-rings game-blows)
 (import roguelike/save save-write! save-read)
 (import roguelike/creatures creatures-shown? creatures-door-diagonal?)
 (import roguelike/items items-goal-held? items-worn items-target items-known?)
@@ -974,6 +974,23 @@
            (fast? #f)
            (#t (not (< (player-hp p) (Vector ref 22 s)))))))
 
+; A blow back at something unseen: the game shows the air stir where an
+; unseen blow came from, so one struck from a cell beside the player
+; with nothing in view on it is struck at there.  #f with no such blow
+; this turn.
+(def %bl-strike-unseen!
+  (fn (_ g)
+    (def p (game-player g))
+    (def from
+      (List find
+        (fn (_ b)
+          (match ((not (= (List ref 3 b) (player-r p))) #f) ((not (= (List ref 4 b) (player-c p))) #f)
+                 ((not (state-adjacent? (List ref 1 b) (List ref 2 b) (player-r p) (player-c p))) #f)
+                 (#t (null? (%bl-seen-at g (List ref 1 b) (List ref 2 b))))))
+        (game-blows g)))
+    (if (null? from) #f
+      (do (%bl-key! g (%bl-key-for (- (List ref 1 from) (player-r p)) (- (List ref 2 from) (player-c p)))) #t))))
+
 ; --- the turn ----------------------------------------------------------------
 
 ; The hostile creature here that no depth lays, a band's guardian, or nil.
@@ -1054,6 +1071,7 @@
       ((%bl-drink-now? g foe potion)
         (do (%bl-use! g "q" potion) (Vector set! 2 (+ 1 (Vector ref 2 s)) s)))
       ((%bl-ready! g s foe) ())
+      ((if (null? foe) (%bl-strike-unseen! g) #f) ())
       ((if (null? foe) #f (%bl-flee! g)) ())
       ((%bl-zap! g who (match ((not (null? foe)) foe)
                               ((null? shown) (List find (fn (_ cr) (%bl-sitter? g cr)) (%bl-seen g)))
