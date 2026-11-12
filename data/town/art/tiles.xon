@@ -1172,6 +1172,120 @@
   "dddddddddddddddd"
   "kkkkkkkkkkkkkkkk"))
 
+; A door into a building from the street, drawn over the front: a
+; panelled door in a gritstone surround, the step under it.  A door on
+; another side is under the roof and not drawn.
+(tile roof (part doorway) (weight 3) (rows
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "....hhhhhhhh...."
+  "....RkkkkkkR...."
+  "....RkCccCkR...."
+  "....RkCcCCkR...."
+  "....RkCCCJkR...."
+  "....RkCccCkR...."
+  "....RkCcCCkR...."
+  "....RkkkkkkR...."
+  "...dhhhhhhhhd..."))
+
+; ... one painted red, the paint flaking.
+(tile roof (part doorway) (rows
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "....hhhhhhhh...."
+  "....RkkkkkkR...."
+  "....RkDOODkR...."
+  "....RkDODDkR...."
+  "....RkDDDJkR...."
+  "....RkDOtDkR...."
+  "....RkDODDkR...."
+  "....RkkkkkkR...."
+  "...dhhhhhhhhd..."))
+
+; The stoop outside a door into a building, on the street on the side
+; the door opens to, so the door is found with the roof on: a stone
+; step south of a door in the front, north, east or west of the others.
+(tile roof (part stoop-s) (rows
+  "...RRRRRRRRRR..."
+  "...hhhhhhhhhh..."
+  "...RRhRRRRhRR..."
+  "...dddddddddd..."
+  "....KKKKKKKK...."
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"))
+
+(tile roof (part stoop-n) (rows
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "....KKKKKKKK...."
+  "...hhhhhhhhhh..."
+  "...RRhRRRRhRR..."
+  "...RRRRRRRRRR..."
+  "...dddddddddd..."))
+
+(tile roof (part stoop-e) (rows
+  "................"
+  "................"
+  "................"
+  "RhRdK..........."
+  "hhRdK..........."
+  "RhRdK..........."
+  "RhRdK..........."
+  "RhRdK..........."
+  "RhRdK..........."
+  "RhRdK..........."
+  "RhRdK..........."
+  "hhRdK..........."
+  "RhRdK..........."
+  "................"
+  "................"
+  "................"))
+
+(tile roof (part stoop-w) (rows
+  "................"
+  "................"
+  "................"
+  "...........KdRhR"
+  "...........KdRhh"
+  "...........KdRhR"
+  "...........KdRhR"
+  "...........KdRhR"
+  "...........KdRhR"
+  "...........KdRhR"
+  "...........KdRhR"
+  "...........KdRhh"
+  "...........KdRhR"
+  "................"
+  "................"
+  "................"))
 
 ; The gable, the front of a roof running north and south: the wall
 ; rising under its coping to the ridge, the slopes behind it.  The peak,
