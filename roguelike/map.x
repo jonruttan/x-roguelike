@@ -400,6 +400,41 @@
      0)
     ()))
 
+; The eight steps, (DR . DC) each.
+(def %mp-steps
+  (list (pair -1 -1) (pair -1 0) (pair -1 1) (pair 0 -1) (pair 0 1) (pair 1 -1) (pair 1 0) (pair 1 1)))
+; Whether TO, (R . C), can be walked to from FROM in M: a step at a
+; time, any of the eight ways, over cells a creature can stand on, never
+; cornerwise through a door, and never onto one of BARRED, (R . C) each.
+(def map-way?
+  (fn (_ m from to barred)
+    (def cols (map-cols m))
+    (def rows (map-rows m))
+    (def t (str->ptr (%mp-get m 2)))
+    (def seen-buf (%mp-buffer (int* rows cols)))
+    (def seen (str->ptr seen-buf))
+    (def goal (%mp-off m (first to) (rest to)))
+    (def door? (fn (_ i) (int= (ptr-ref t i 1) tile-door)))
+    (def step
+      (fn (_ i r c d s)
+        (def rr (int+ r (first d)))
+        (def cc (int+ c (rest d)))
+        (def j (int+ (int* rr cols) cc))
+        (match ((not (map-in? m rr cc)) s)
+               ((not (int= (ptr-ref seen j 1) 0)) s)
+               ((not (obj-ref %mp-passable (int+ (ptr-ref t j 1) 1))) s)
+               ((match ((int= (first d) 0) #f) ((int= (rest d) 0) #f) ((door? i) #t) (#t (door? j))) s)
+               (#t (do (ptr-set! seen j 1 1) (pair j s))))))
+    (def walk
+      (fn (self s)
+        (match ((null? s) #f)
+               ((int= (first s) goal) #t)
+               (#t ((fn (_ i r) (self (List fold (fn (_ acc d) (step i r (int- i (int* r cols)) d acc)) (rest s) %mp-steps)))
+                    (first s) (int/ (first s) cols))))))
+    (List for-each (fn (_ at) (when (map-in? m (first at) (rest at)) (ptr-set! seen (%mp-off m (first at) (rest at)) 1 1))) barred)
+    (ptr-set! seen (%mp-off m (first from) (rest from)) 1 1)
+    (walk (list (%mp-off m (first from) (rest from))))))
+
 (def %mp-abs (fn (_ n) (if (< n 0) (- 0 n) n)))
 (def %mp-max (fn (_ a b) (if (< a b) b a)))
 ; NUM/DEN to the nearest integer, halves away from zero.
@@ -637,4 +672,4 @@
   map-in? map-tile map-set! map-seen? map-seen! map-visible? map-passable? map-walkable? map-floor?
   room-r0 room-c0 room-r1 room-c1 room-lit? room-covers? room-inside? room-centre map-room-at
   map-each! map-opaque? map-light! map-light-radius! map-light-all! map-sight? map-seen-whole? map-row-glyphs! map-visible-next map-visible-run
-  map-reveal! map-fill-unreached! map-frontier? map-chart)
+  map-reveal! map-fill-unreached! map-way? map-frontier? map-chart)

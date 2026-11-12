@@ -11,13 +11,15 @@
 ; it, says its message and takes its (effect hurt LO HI), (effect hold
 ; N), (effect aggravate) or (effect teleport); searching finds every
 ; one beside the player.  A found trap is drawn, and auto-explore walks
-; around it.  Creatures never set one off.
+; around it.  Creatures never set one off.  One that throws the player
+; elsewhere is never laid where it would leave no way from the stairs up
+; to the stairs down.
 
 (module roguelike/traps)
 
 (import x/type/vector)
 (import roguelike/data data-all data-prop)
-(import roguelike/map map-floor?)
+(import roguelike/map map-floor? map-up map-down map-way?)
 (import roguelike/dungeon dungeon-spot)
 (import roguelike/state
   game-rng game-set game-map game-player game-traps game-traps! game-param
@@ -49,15 +51,31 @@
                          ((not (null? (%tr-at g r c))) #f)
                          (#t #t)))
       100)))
+; Whether a trap of KIND throws the player elsewhere: such a one cannot
+; be walked over, as the others can at their price.
+(def %tr-throws?
+  (fn (_ kind) ((fn (_ e) (if (null? e) #f (eq? (first e) (lit teleport)))) (data-prop kind (lit effect) ()))))
+; Whether a trap of KIND at AT, (R . C), would close the level: one that
+; throws, leaving no way from the stairs up to the stairs down round it
+; and the others that throw.  Never, on a level without both stairs.
+(def %tr-closes?
+  (fn (_ g kind at)
+    (def m (game-map g))
+    (def throwers (List filter (fn (_ t) (%tr-throws? (trap-kind t))) (game-traps g)))
+    (match ((not (%tr-throws? kind)) #f) ((null? (map-up m)) #f) ((null? (map-down m)) #f)
+           (#t (not (map-way? m (map-up m) (map-down m)
+                      (pair at (List map (fn (_ t) (pair (trap-r t) (trap-c t))) throwers))))))))
 (def %tr-place!
   (fn (self g kinds n)
     (unless (< n 1)
       (do (def at (%tr-spot g))
-          (unless (null? at)
-            (game-traps! g (pair (trap-make (first at) (rest at) ((game-rng g) choice kinds) #f) (game-traps g))))
+          (def kind (if (null? at) () ((game-rng g) choice kinds)))
+          (unless (if (null? at) #t (%tr-closes? g kind at))
+            (game-traps! g (pair (trap-make (first at) (rest at) kind #f) (game-traps g))))
           (self g kinds (- n 1))))))
 ; The set's (traps LO HI) of its kinds, hidden, on floor cells with
-; nothing on them; none on a gentle level.
+; nothing on them, one that would close the level left out; none on a
+; gentle level.
 (def traps-place!
   (fn (_ g)
     (def kinds (data-all (game-set g) (lit trap)))

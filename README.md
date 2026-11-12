@@ -104,7 +104,8 @@ cells, `(level-style caves)` with `(cave-fill PERCENT)`, `(known CLASS
 ...)`, a first `(hunger ...)` value under one, or `(starve N)` for a hit
 point every N seconds past nothing in place of the faint; `(traps LO HI)`
 a level, of its `(trap NAME MESSAGE (effect ...))` kinds, hurt, hold,
-aggravate or teleport; `(surprise N)` times the damage on a sleeper;
+aggravate or teleport, a teleport never laid where it would leave no
+way from the stairs up to the stairs down; `(surprise N)` times the damage on a sleeper;
 `(strength N)` on a weapon or armour, and `(effect upgrade)` on a
 scroll; `(band NAME TO . PROPS)`,
 one after another from level 1, with `(enter "TEXT")` said on its first
@@ -242,7 +243,8 @@ A level is carved in the shape of where it is.  Besides `rooms`,
 and pillar off a haulage road; `flood`, a channel across the level with
 deep water along it; `works`, paired vaults of dressed stone off a
 stair; `well`, a cave round a walled court with a pool; `fields`,
-hedged closes either side of a road; `hills`, gritstone edges, bog and
+hedged closes either side of a road, a gate or a gap in every hedged
+side of each; `hills`, gritstone edges, bog and
 gorse; or `rim`, limestone scars, shakeholes and fallen walls.  Each
 style's knobs, and what each defaults to, are in its comment in
 `roguelike/dungeon.x`.  `delve`'s four bands are a pit, a flooded

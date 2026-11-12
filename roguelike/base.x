@@ -11,12 +11,12 @@
 (import roguelike/data data-load data-region data-all data-one data-get data-prop data-prop1 data-trait? data-glyph
   data-choices data-chosen data-choice-text data-choose)
 (import roguelike/map
-  map-rows map-cols map-rooms map-places map-place-at map-down map-up map-tile map-seen? map-visible? map-walkable? room-lit?
+  map-make map-set! map-rows map-cols map-rooms map-places map-place-at map-down map-up map-tile map-seen? map-visible? map-walkable? room-lit?
   room-r0 room-c0 room-r1 room-c1 room-centre
   map-room-at map-light-radius! tile-rock tile-floor tile-wall tile-door tile-passage tile-down tile-up
   tile-water tile-pillar tile-fall tile-dressed tile-hedge tile-gate tile-thicket tile-edge tile-bog tile-scar tile-shallow tile-roof tile-counter map-passable?
   map-floor? map-roof-at map-roof-off map-roofed? map-shown)
-(import roguelike/dungeon dungeon-generate)
+(import roguelike/dungeon dungeon-generate dungeon-open-close!)
 (import roguelike/scale scale-rung scale-across scale-down scale-area scale-seconds scale-check!)
 (import roguelike/state
   game-set game-depth game-map game-player game-creatures game-creatures! game-floor game-floor! game-pack game-pack!
@@ -46,12 +46,12 @@
 (provide roguelike/base roguelike-version roguelike-main roguelike-options
   data-load data-region data-all data-one data-get data-prop data-prop1 data-trait? data-glyph
   data-choices data-chosen data-choice-text data-choose
-  map-rows map-cols map-rooms map-places map-place-at map-down map-up map-tile map-seen? map-visible? map-walkable? room-lit?
+  map-make map-set! map-rows map-cols map-rooms map-places map-place-at map-down map-up map-tile map-seen? map-visible? map-walkable? room-lit?
   room-r0 room-c0 room-r1 room-c1 room-centre
   map-room-at map-light-radius! tile-rock tile-floor tile-wall tile-door tile-passage tile-down tile-up
   tile-water tile-pillar tile-fall tile-dressed tile-hedge tile-gate tile-thicket tile-edge tile-bog tile-scar tile-shallow tile-roof tile-counter map-passable?
   map-floor? map-roof-at map-roof-off map-roofed? map-shown
-  dungeon-generate scale-rung scale-across scale-down scale-area scale-seconds scale-check!
+  dungeon-generate dungeon-open-close! scale-rung scale-across scale-down scale-area scale-seconds scale-check!
   game-make game-key! game-explore! game-more! game-score game-score-lines game-score-text game-help game-draw!
   game-set game-depth game-map game-player game-creatures game-creatures! game-floor game-floor! game-pack game-pack!
   game-messages game-turn game-ask game-over game-epitaph game-known game-deepest game-log game-pages-placed

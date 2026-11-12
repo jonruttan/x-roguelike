@@ -65,7 +65,8 @@
 (clump-size 11000 34000)
 
 ; The valley's ground in metres: the closes, (close W H), and the
-; road's gates, (gate-first LO HI) in and (gate-gap LO HI) apart; the
+; road's gates, (gate-first LO HI) in and (gate-gap LO HI) apart, and
+; of the ways made through a close's shut sides (gaps PERCENT) gaps; the
 ; hills' edges, (edge-length LO HI), the boulders (boulder-drop LO HI)
 ; below them, and bog and gorse in square metres, (bog-size LO HI) and
 ; (gorse-size LO HI); the rim's scars, (scar-across LO HI) along and
@@ -74,6 +75,7 @@
 (close 210 136)
 (gate-first 63 252)
 (gate-gap 210 504)
+(gaps 35)
 (edge-length 420 1050)
 (boulder-drop 68 102)
 (bog-size 14000 43000)

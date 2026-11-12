@@ -38,10 +38,10 @@
 (import roguelike/menu menu-make menu-chosen menu-key)
 (import roguelike/options options-names options-get options-set options-step options-line options-path options-read options-write!)
 
-; A frame's wait while a light flickers, and the wait for a key when
-; nothing moves, in microseconds.
+; A frame's time while a light flickers, drawing it and the wait after,
+; and the wait for a key when nothing moves, in microseconds.
 (def %wn-frame-us 83000)
-; A frame's wait while a turn's blows and steps are shown.
+; A frame's time while a turn's blows and steps are shown.
 (def %wn-step-us 20000)
 (def %wn-idle-us 10000)
 
@@ -57,6 +57,10 @@
 
 ; The wall clock in milliseconds, for a held gamepad direction.
 (def %wn-ms (fn (_) ((fn (_ t) (+ (* 1000 (first t)) (/ (rest t) 1000))) (Sys time-of-day))))
+; A wait of what is left of US microseconds since T0 milliseconds.
+(def %wn-rest-of
+  (fn (_ us t0)
+    ((fn (_ left) (when (int< 0 left) (Sys usleep left))) (int- us (int* 1000 (int- (%wn-ms) t0))))))
 (def %wn-shifted "1!2@3#4$5%6^7&8*9(0)-_=+[{]}\\|;:'\",<.>/?`~")
 
 (def %wn-char
@@ -322,9 +326,7 @@
         (do (frame-pan! g 0 0)
             (if (game-exploring? g) (game-exploring! g ()) (game-key! g key))
             (sound-turn! snd g)
-            (paint-turn! p g (%wn-art a g))
-            ((%wn-front a) show! win (List ref 2 (paint-frame! p g tick)))
-            (Heap collect)
+            (%wn-turn-shown! a p g win snd tick)
             (self g a p win tick)))
       ; Any other event -- a resize, the window shown again -- may have
       ; lost what was presented: the frame is presented again.
@@ -336,26 +338,40 @@
         (do (frame-pan! g 0 0)
             (game-explore! g)
             (sound-turn! snd g)
-            (paint-turn! p g (%wn-art a g))
-            ((%wn-front a) show! win (List ref 2 (paint-frame! p g tick)))
-            (Heap collect)
+            (%wn-turn-shown! a p g win snd tick)
             (Sys usleep 30000)
             (self g a p win tick)))
       ; A turn's blows and steps shown a frame at a time, before anything
       ; else moves; a key pressed meanwhile is taken at once.
+      ; Each waits only what drawing the frame left of its time.
       ((paint-animating? p)
-        (do (Sys usleep %wn-step-us)
+        (do (def t0 (%wn-ms))
             (paint-step! p)
             ((%wn-front a) show! win (List ref 2 (paint-frame! p g (+ tick 1))))
+            (%wn-rest-of %wn-step-us t0)
             (self g a p win (+ tick 1))))
       ((paint-flickers? p)
-        (do (Sys usleep %wn-frame-us)
+        (do (def t0 (%wn-ms))
             ((%wn-front a) show! win (List ref 2 (paint-frame! p g (+ tick 1))))
             (Heap collect)
+            (%wn-rest-of %wn-frame-us t0)
             (self g a p win (+ tick 1))))
       (#t (do (Sys usleep %wn-idle-us)
               (when (sound-collect? snd) (Heap collect))
               (self g a p win tick))))))
+
+; The turn game G has just taken drawn and shown at TICK, the heap
+; collected after: the music topped up before each of the three, each
+; long enough to empty what is queued of it while a busy machine takes
+; its share.
+(def %wn-turn-shown!
+  (fn (_ a p g win snd tick)
+    (sound-pump! snd)
+    (paint-turn! p g (%wn-art a g))
+    (sound-pump! snd)
+    ((%wn-front a) show! win (List ref 2 (paint-frame! p g tick)))
+    (sound-pump! snd)
+    (Heap collect)))
 
 ; --- dragging the view ---------------------------------------------------------
 
@@ -371,6 +387,7 @@
     (frame-pan! g dr dc)
     (unless (equal? was (frame-pan))
       (do (paint-view! p g (%wn-art a g))
+          (sound-pump! (Vector ref 4 a))
           ((%wn-front a) show! win (List ref 2 (paint-frame! p g tick)))))))
 
 ; Mouse event E taken: the left button down starts a drag, kept in A as

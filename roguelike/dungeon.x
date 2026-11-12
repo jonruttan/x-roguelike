@@ -23,7 +23,7 @@
 (import roguelike/map
   tile-rock tile-floor tile-wall tile-door tile-passage tile-down tile-up
   tile-water tile-pillar tile-fall tile-dressed tile-hedge tile-gate tile-thicket tile-edge tile-bog tile-scar tile-shallow
-  map-make map-rows map-cols map-rooms map-rooms! map-places! map-down map-down! map-up! map-roof! map-terrain
+  map-make map-rows map-cols map-rooms map-rooms! map-places! map-down map-down! map-up map-up! map-roof! map-terrain
   map-tile map-set! map-in? map-passable? map-opaque? map-floor? room-r0 room-c0 room-r1 room-c1 room-centre map-each!
   map-fill-unreached!)
 (import roguelike/scale scale-rung scale-across scale-down scale-area)
@@ -143,6 +143,13 @@
   (fn (_ rng room)
     (pair (%dg-roll rng (+ (room-r0 room) 1) (- (room-r1 room) 1))
           (%dg-roll rng (+ (room-c0 room) 1) (- (room-c1 room) 1)))))
+; A spot in ROOM that is not AVOID, or after TRIES tries whatever came:
+; a level of one room has both its stairs in it, and they are not the
+; one cell.
+(def %dg-spot-off
+  (fn (self rng room avoid tries)
+    (def at (%dg-spot rng room))
+    (if (if (= tries 0) #f (if (= (first at) (first avoid)) (= (rest at) (rest avoid)) #f)) (self rng room avoid (- tries 1)) at)))
 
 ; A level of rooms: (rooms LO HI), (room-size WLO WHI HLO HHI) metres
 ; of floor, (lit PERCENT STEP), the percent a room is lit at depth 1 and
@@ -165,7 +172,8 @@
     (%dg-chain! m rng rooms)
     (map-rooms! m rooms)
     (def up (%dg-spot rng (first rooms)))
-    (def down (%dg-spot rng (if (null? (rest rooms)) (first rooms) (List ref (%dg-roll rng 1 (- (List length rooms) 1)) rooms))))
+    (def last (if (null? (rest rooms)) (first rooms) (List ref (%dg-roll rng 1 (- (List length rooms) 1)) rooms)))
+    (def down (%dg-spot-off rng last up 20))
     (%dg-stairs! m up down)))
 
 (def %dg-stairs!
@@ -775,7 +783,9 @@
 ; Above and below it, inside a headland two cells wide round the edge,
 ; the ground is cut into closes: a piece longer than (close W H) metres
 ; is halved across its longer side by a hedge with a gate in it.  Of
-; the hedges' cells, (trees PERCENT) are hedgerow trees.
+; the hedges' cells, (trees PERCENT) are hedgerow trees.  Each close is
+; then opened on every hedged side that has no way through: a gate, or
+; (gaps PERCENT) of the time a gap in the hedge.
 
 ; A hedge from R0 C0 to R1 C1, short of any gate it would close: a
 ; cell beside a gate is left open, so the gate still leads somewhere.
@@ -785,7 +795,8 @@
       (fn (_ r c)
         (unless (List any? (fn (_ d) (= (map-tile m (+ r (first d)) (+ c (rest d))) tile-gate)) %dg-four)
           (map-set! m r c tile-hedge))))))
-; The piece from R0 C0 to R1 C1 hedged into closes.
+; The piece from R0 C0 to R1 C1 hedged into closes, and the closes it
+; came to, (R0 C0 R1 C1) each.
 (def %dg-closes!
   (fn (self rng m r0 c0 r1 c1 cw ch)
     (def w (+ (- c1 c0) 1))
@@ -795,15 +806,37 @@
         (do (def x (%dg-roll rng (+ c0 3) (- c1 3)))
             (%dg-hedge! m r0 x r1 x)
             (map-set! m (%dg-roll rng r0 r1) x tile-gate)
-            (self rng m r0 c0 r1 (- x 1) cw ch)
-            (self rng m r0 (+ x 1) r1 c1 cw ch)))
+            (def left (self rng m r0 c0 r1 (- x 1) cw ch))
+            (List append left (self rng m r0 (+ x 1) r1 c1 cw ch))))
       ((< (%dg-max ch 4) h)
         (do (def y (%dg-roll rng (+ r0 2) (- r1 2)))
             (%dg-hedge! m y c0 y c1)
             (map-set! m y (%dg-roll rng c0 c1) tile-gate)
-            (self rng m r0 c0 (- y 1) c1 cw ch)
-            (self rng m (+ y 1) c0 r1 c1 cw ch)))
-      (#t ()))))
+            (def top (self rng m r0 c0 (- y 1) c1 cw ch))
+            (List append top (self rng m (+ y 1) c0 r1 c1 cw ch))))
+      (#t (list (list r0 c0 r1 c1))))))
+; One side of a close: the line of cells from R0 C0 to R1 C1 beside
+; it, the ground beyond a step of DR DC on.  A side with no way
+; through it is given one where the ground beyond can be stood on: a
+; gap in the hedge GAPS times in a hundred, else a gate.
+(def %dg-side!
+  (fn (_ rng m r0 c0 r1 c1 dr dc gaps)
+    (def line
+      (if (= r0 r1) (List map (fn (_ c) (pair r0 c)) (List range c0 (+ c1 1)))
+          (List map (fn (_ r) (pair r c0)) (List range r0 (+ r1 1)))))
+    (unless (List any? (fn (_ at) (map-passable? (map-tile m (first at) (rest at)))) line)
+      (do (def spots (List filter (fn (_ at) (map-passable? (map-tile m (+ (first at) dr) (+ (rest at) dc)))) line))
+          (unless (null? spots)
+            (do (def at (List ref (rng int (List length spots)) spots))
+                (map-set! m (first at) (rest at) (if (%dg-chance? rng gaps) tile-floor tile-gate))))))))
+; The close from R0 C0 to R1 C1 opened on every side: a field is
+; walked out of the way one is going, not round by its one gate.
+(def dungeon-open-close!
+  (fn (_ rng m r0 c0 r1 c1 gaps)
+    (%dg-side! rng m (- r0 1) c0 (- r0 1) c1 -1 0 gaps)
+    (%dg-side! rng m (+ r1 1) c0 (+ r1 1) c1 1 0 gaps)
+    (%dg-side! rng m r0 (- c0 1) r1 (- c0 1) 0 -1 gaps)
+    (%dg-side! rng m r0 (+ c1 1) r1 (+ c1 1) 0 1 gaps)))
 (def %dg-trees!
   (fn (_ rng m pct)
     (map-each! 0 0 (- (map-rows m) 1) (- (map-cols m) 1)
@@ -827,8 +860,11 @@
              (do (map-set! m r c tile-gate) (self (+ c (%dg-draw rng gap))))))
          (%dg-draw rng gate)))
       (list (- mr 1) (+ mr 1)))
-    (%dg-closes! rng m 2 2 (- mr 2) (- cols 3) (first close) (rest close))
-    (%dg-closes! rng m (+ mr 2) 2 (- rows 3) (- cols 3) (first close) (rest close))
+    (def gaps (first (%dg-p params (lit gaps) (list 35))))
+    (def above (%dg-closes! rng m 2 2 (- mr 2) (- cols 3) (first close) (rest close)))
+    (List for-each
+      (fn (_ at) (dungeon-open-close! rng m (first at) (List ref 1 at) (List ref 2 at) (List ref 3 at) gaps))
+      (List append above (%dg-closes! rng m (+ mr 2) 2 (- rows 3) (- cols 3) (first close) (rest close))))
     (%dg-trees! rng m trees)
     (map-rooms! m ())
     m))
@@ -1025,7 +1061,7 @@
     (%dg-shallows! m depth params)
     (def down (map-down m))
     (when (if (null? down) #f (eq? (first (%dg-p params (lit stairs) (list (lit both)))) (lit up)))
-      (do (map-set! m (first down) (rest down) tile-floor) (map-down! m ())))
+      (do (map-set! m (first down) (rest down) (if (equal? down (map-up m)) tile-up tile-floor)) (map-down! m ())))
     m))
 
 ; A random floor cell of M that FREE? allows -- of a random room, or
@@ -1039,4 +1075,4 @@
        (if (null? (map-rooms m)) (pair (rng int (map-rows m)) (rng int (map-cols m)))
          (%dg-spot rng (rng choice (map-rooms m))))))))
 
-(provide roguelike/dungeon dungeon-generate dungeon-spot)
+(provide roguelike/dungeon dungeon-generate dungeon-spot dungeon-open-close!)
