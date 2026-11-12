@@ -63,7 +63,7 @@
   game-ask game-messages game-band band-name game-param
   player-r player-c player-hp player-hpmax player-str player-food player-lamp player-weapon player-armour player-condition
   item-class item-name item-prop item-prop1 item-enchant item-letter item-r item-c game-floor
-  creature-r creature-c creature-state creature-glyph creature-trait? creature-condition creature-hp creature-prop creature-prop1 state-defence state-adjacent? state-dist state-shortfall state-creature-at state-items-at
+  creature-r creature-c creature-state creature-glyph creature-trait? creature-condition creature-hp creature-prop creature-prop1 state-defence state-adjacent? state-in-sight? state-dist state-shortfall state-creature-at state-items-at
   game-quest-state game-screens? game-screen game-screen-key game-hub game-chain game-inside state-creature-named
   game-top-set game-home game-place game-below?
   game-rng game-rng! creature-hp! creature-name state-roll game-traps item-charges player-rings game-blows creature-whole game-exploring?)
@@ -103,6 +103,10 @@
 (def %bl-seen (fn (_ g) (List filter (fn (_ cr) (creatures-shown? g cr)) (game-creatures g))))
 (def %bl-seen-at
   (fn (_ g r c) (List find (fn (_ cr) (if (= (creature-r cr) r) (= (creature-c cr) c) #f)) (%bl-seen g))))
+; Whether CR is a creature in sight, not one only sensed: what breaks a
+; camp (game.x), and what a rest waits on.
+(def %bl-in-sight?
+  (fn (_ g cr) (if (null? cr) #f (state-in-sight? g (creature-r cr) (creature-c cr)))))
 ; Whether the game has just said TEXT.
 (def %bl-told? (fn (_ g text) (List any? (fn (_ m) (Str8 includes? text m)) (game-messages g))))
 
@@ -1075,7 +1079,7 @@
     (def t (if up? tile-up tile-down))
     (def guardian (if (Vector ref 14 s) (%bl-guardian g) ()))
     (match
-      ((match ((not (null? shown)) #f) ((%bl-told? g "shoots") #f) (#t (%bl-under? p (%bl-mark g s who (lit ready))))) (%bl-rest! g))
+      ((match ((%bl-in-sight? g shown) #f) ((%bl-told? g "shoots") #f) (#t (%bl-under? p (%bl-mark g s who (lit ready))))) (%bl-rest! g))
       ((not (null? guardian)) (%bl-hunt! g s guardian))
       ((if (Vector ref 14 s) (%bl-to-frontier! g s) #f) ())
       ((Vector ref 14 s) (do (Vector set! 14 #f s) (%bl-unstick! g s)))
@@ -1145,7 +1149,7 @@
           (%bl-toward-creature! g s foe)))
       ((if (null? food) #f (< (player-food p) hungry))
         (do (%bl-use! g "e" food) (Vector set! 3 (+ 1 (Vector ref 3 s)) s)))
-      ((match ((not (null? shown)) #f) ((%bl-told? g "shoots") #f) (#t (%bl-under? p (%bl-mark g s who (lit rest))))) (%bl-rest! g))
+      ((match ((%bl-in-sight? g shown) #f) ((%bl-told? g "shoots") #f) (#t (%bl-under? p (%bl-mark g s who (lit rest))))) (%bl-rest! g))
       ((%bl-pour? g oil lamp)
         (do (%bl-use! g "f" oil) (Vector set! 10 (+ 1 (Vector ref 10 s)) s)))
       ((if (null? weapon) #f (if (same? weapon (player-weapon p)) #f (< 0 (%bl-weapon-worth g weapon))))
