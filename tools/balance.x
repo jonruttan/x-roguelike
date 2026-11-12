@@ -617,23 +617,53 @@
 ; to take what CR has left, by the game's odds (odds.x), its regeneration
 ; counted and, dazzling, its spoiling the player's aim, times what it
 ; does a turn at its speed and, cold, slowing the player.
-(def %bl-cost
+(def %bl-speed
+  (fn (_ cr) (match ((creature-trait? cr (lit fast)) (lit fast)) ((creature-trait? cr (lit slow)) (lit slow)) (#t ()))))
+(def %bl-turns
   (fn (_ g cr)
     (def span (creature-prop cr (lit hp) (list 1 6)))
     (def hp (int/ (+ (* (%bl-wounds cr) (+ (first span) (List ref 1 span) 1)) 15) 16))
     (def t (odds-swings (odds-hit (combat-player-level g) (creature-prop1 cr (lit defence) 3)) (combat-player-dice g) 0 hp))
-    (def speed (match ((creature-trait? cr (lit fast)) (lit fast)) ((creature-trait? cr (lit slow)) (lit slow)) (#t ())))
-    (def aim (odds-aim (creature-prop1 cr (lit level) 1) (state-defence g) speed
+    (def aim (odds-aim (creature-prop1 cr (lit level) 1) (state-defence g) (%bl-speed cr)
                        (if (creature-trait? cr (lit dazzle)) combat-dazzle 0)))
-    (* (/ (if (creature-trait? cr (lit regen)) (odds-regen t hp) t) aim)
-       (odds-hurt (creature-prop1 cr (lit level) 1) (creature-prop cr (lit attack) (list 1 2)) (state-defence g) speed
-                  (if (creature-trait? cr (lit cold)) combat-chill 0)))))
-; Whether the fight with CR is likely lost: it costs all the player has.
-(def %bl-losing? (fn (_ g cr) (not (< (%bl-cost g cr) (player-hp (game-player g))))))
+    (/ (if (creature-trait? cr (lit regen)) (odds-regen t hp) t) aim)))
+(def %bl-hurt
+  (fn (_ g cr)
+    (odds-hurt (creature-prop1 cr (lit level) 1) (creature-prop cr (lit attack) (list 1 2)) (state-defence g) (%bl-speed cr)
+               (if (creature-trait? cr (lit cold)) combat-chill 0))))
+(def %bl-cost (fn (_ g cr) (* (%bl-turns g cr) (%bl-hurt g cr))))
+; The hurt a turn from every hostile in view but CR able to reach the
+; player: one beside at its blow, one that shoots or breathes with the
+; player in its line at three tenths of its shot; one held counted for
+; nothing.
+(def %bl-volley
+  (fn (_ g cr)
+    (def p (game-player g))
+    (def shot
+      (fn (_ x)
+        (def span (if (creature-trait? x (lit breath)) (creature-prop x (lit bolt) (list 2 8)) (creature-prop x (lit ranged) (list 1 4))))
+        (/ (* 3 (+ (first span) (List ref 1 span))) 20)))
+    (List fold
+      (fn (_ sum x)
+        (match ((same? x cr) sum)
+               ((not (%bl-hostile? x)) sum)
+               ((< 0 (creature-condition x (lit held))) sum)
+               ((state-adjacent? (creature-r x) (creature-c x) (player-r p) (player-c p)) (+ sum (%bl-hurt g x)))
+               ((if (creature-trait? x (lit ranged)) #f (not (creature-trait? x (lit breath)))) sum)
+               ((not (%bl-in-line? x (player-r p) (player-c p))) sum)
+               ((null? (%bl-aim g x)) sum)
+               (#t (+ sum (shot x)))))
+      0 (%bl-seen g))))
+; Whether the fight with CR is likely lost: it costs all the player has,
+; with what else in view reaches the player while it lasts.
+(def %bl-losing?
+  (fn (_ g cr) (not (< (* (%bl-turns g cr) (+ (%bl-hurt g cr) (%bl-volley g cr))) (player-hp (game-player g))))))
 ; Whether WHO would start the fight with CR: it costs no more than
 ; COURAGE % of what the player has.
 (def %bl-worth?
-  (fn (_ g who cr) (not (< (* (player-hp (game-player g)) (%bl-at who (lit courage))) (* 100 (%bl-cost g cr))))))
+  (fn (_ g who cr)
+    (def cost (* (%bl-turns g cr) (+ (%bl-hurt g cr) (%bl-volley g cr))))
+    (not (< (* (player-hp (game-player g)) (%bl-at who (lit courage))) (* 100 cost)))))
 ; Whether POTION's least mending fits in what the player has lost.
 (def %bl-mends?
   (fn (_ g potion)
@@ -1297,7 +1327,7 @@
     (def step-to
       (fn (_ tag cr most) (%bl-step-within g s tag (fn (_ r c) (if (= r (creature-r cr)) (= c (creature-c cr)) #f)) most)))
     (def to-shown (if (match ((null? shown) #t) ((%bl-running? g) #t) ((eq? (creature-state shown) (lit fleeing)) #t)
-                             ((List any? (fn (_ x) (same? x shown)) (Vector ref 20 s)) #t) (shoots? (%bl-losing? g shown))
+                             ((List any? (fn (_ x) (same? x shown)) (Vector ref 20 s)) #t)
                              (#t (not (%bl-worth? g who shown))))
                     ()
                     (step-to (lit foe) shown (if shoots? 9999 (%bl-at who (lit chase))))))
