@@ -977,9 +977,10 @@
 ; A blow back at something unseen: the game shows the air stir where an
 ; unseen blow came from, so one struck from a cell beside the player
 ; with nothing in view on it is struck at there.  #f with no such blow
-; this turn.
+; this turn.  The blows are kept from the turn they fell in, slot 24 of
+; S, as answering the game's --More-- clears them.
 (def %bl-strike-unseen!
-  (fn (_ g)
+  (fn (_ g s)
     (def p (game-player g))
     (def from
       (List find
@@ -987,7 +988,7 @@
           (match ((not (= (List ref 3 b) (player-r p))) #f) ((not (= (List ref 4 b) (player-c p))) #f)
                  ((not (state-adjacent? (List ref 1 b) (List ref 2 b) (player-r p) (player-c p))) #f)
                  (#t (null? (%bl-seen-at g (List ref 1 b) (List ref 2 b))))))
-        (game-blows g)))
+        ((fn (_ kept) (if (null? kept) () (if (= (first kept) (game-turn g)) (rest kept) ()))) (Vector ref 24 s))))
     (if (null? from) #f
       (do (%bl-key! g (%bl-key-for (- (List ref 1 from) (player-r p)) (- (List ref 2 from) (player-c p)))) #t))))
 
@@ -1061,6 +1062,7 @@
     (%bl-thrown! g s)
     (%bl-turning! g s foe shown)
     (Vector set! 0 (game-turn g) %bl-now)
+    (unless (null? (game-blows g)) (Vector set! 24 (pair (game-turn g) (game-blows g)) s))
     (%bl-watch! g s (< (player-hp p) (Vector ref 22 s)))
     (def slips (%bl-slips? g s))
     (Vector set! 22 (player-hp p) s)
@@ -1071,7 +1073,7 @@
       ((%bl-drink-now? g foe potion)
         (do (%bl-use! g "q" potion) (Vector set! 2 (+ 1 (Vector ref 2 s)) s)))
       ((%bl-ready! g s foe) ())
-      ((if (null? foe) (%bl-strike-unseen! g) #f) ())
+      ((if (null? foe) (%bl-strike-unseen! g s) #f) ())
       ((if (null? foe) #f (%bl-flee! g)) ())
       ((%bl-zap! g who (match ((not (null? foe)) foe)
                               ((null? shown) (List find (fn (_ cr) (%bl-sitter? g cr)) (%bl-seen g)))
@@ -1417,7 +1419,7 @@
     (def g (%bl-start set play))
     (unless (str=? path "") (File write-all path ""))
     (def kept (Vector of (str=? path "")))
-    (def s (Vector of #f "" 0 0 #f () () 0 () () 0 0 () 0 #f () () () -1 () () () 0 ()))
+    (def s (Vector of #f "" 0 0 #f () () 0 () () 0 0 () 0 #f () () () -1 () () () 0 () ()))
     (def arrivals (Vector of (list (%bl-arrival g))))
     (def loop
       (fn (self turn stalled)
@@ -1484,7 +1486,7 @@
           (unless (null? cr)
             (do (def hp (creature-prop cr (lit hp) (list 1 1)))
                 (creature-hp! cr (state-roll (game-rng g) (first hp) (List ref 1 hp)))))
-          (def s (Vector of #f "" 0 0 #f () () 0 () () 0 0 () 0 #f () () () -1 () () () 0 ()))
+          (def s (Vector of #f "" 0 0 #f () () 0 () () 0 0 () 0 #f () () () -1 () () () 0 () ()))
           (def depth (game-depth g))
           (def start (game-turn g))
           (def loop
