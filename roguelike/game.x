@@ -67,7 +67,7 @@
   items-put-on! items-remove!)
 (import roguelike/quests quests-place! quests-talk! quests-keepers! quests-folk! quests-leads quests-errands quests-sighted!)
 (import roguelike/chain chain-build! chain-way chain-compass)
-(import roguelike/traps traps-found-at traps-place! traps-step! traps-search!)
+(import roguelike/traps trap-r trap-c trap-found? traps-place! traps-step! traps-search!)
 (import roguelike/interiors interiors-door! interiors-params interiors-prop1)
 (import roguelike/data data-all data-one data-get data-region)
 (import roguelike/scale scale-rung scale-seconds scale-check!)
@@ -578,12 +578,8 @@
 
 ; --- exploring ---------------------------------------------------------------
 
-; Whether one of the people stands at R C: walking into them talks, so
-; a walk goes round them.
-(def %gm-person-at?
-  (fn (_ g r c)
-    (def cr (state-creature-at g r c))
-    (if (null? cr) #f (creature-trait? cr (lit talks)))))
+; The compass's eight steps, last first.
+(def %gm-compass-back (List reverse (state-dirs)))
 
 ; The first step, (DR . DC), of the shortest walk over seen cells, a
 ; found trap or one of the people never among them, from the player to the nearest frontier,
@@ -595,23 +591,39 @@
     (def m (game-map g))
     (def p (game-player g))
     (def cols (map-cols m))
-    (def came (Vector make (* (map-rows m) cols) ()))
+    (def n (* (map-rows m) cols))
+    (def came (Vector make n ()))
     (def at (fn (_ r c) (+ (* r cols) c)))
+    ; A found trap bars its cell, and one of the people theirs, walking
+    ; into them talking: marked reached before the search.  The first
+    ; trap and the first creature on a cell are the ones that count.
+    (def bar!
+      (fn (_ things r-of c-of bars?)
+        (def first-at (Vector make n ()))
+        (List for-each (fn (_ t) (when (map-in? m (r-of t) (c-of t)) (Vector set! (at (r-of t) (c-of t)) t first-at)))
+          (List reverse things))
+        (List for-each (fn (_ t) (when (map-in? m (r-of t) (c-of t))
+                                   (when (if (same? (Vector ref (at (r-of t) (c-of t)) first-at) t) (bars? t) #f)
+                                     (Vector set! (at (r-of t) (c-of t)) (lit barred) came))))
+          things)))
+    (bar! (game-traps g) trap-r trap-c trap-found?)
+    (bar! (game-creatures g) creature-r creature-c (fn (_ cr) (creature-trait? cr (lit talks))))
+    ; The cells a step from R C not yet reached, each marked with the
+    ; first step STEP of the walk to it, pushed onto BACK in the order of
+    ; the compass.
     (def reach
-      (fn (_ r c step)
-        (List reject null?
-          (List map (fn (_ d)
-                      (def rr (+ r (first d)))
-                      (def cc (+ c (rest d)))
-                      (match ((not (map-in? m rr cc)) ())
-                             ((not (map-seen? m rr cc)) ())
-                             ((not (map-walkable? m rr cc)) ())
-                             ((not (null? (traps-found-at g rr cc))) ())
-                             ((%gm-person-at? g rr cc) ())
-                             ((creatures-door-diagonal? m r c (first d) (rest d)) ())
-                             ((not (null? (Vector ref (at rr cc) came))) ())
-                             (#t (do (Vector set! (at rr cc) (if (null? step) d step) came) (pair rr cc)))))
-                    (state-dirs)))))
+      (fn (_ r c step back)
+        (List fold
+          (fn (_ acc d)
+            (def rr (+ r (first d)))
+            (def cc (+ c (rest d)))
+            (match ((not (map-in? m rr cc)) acc)
+                   ((not (null? (Vector ref (at rr cc) came))) acc)
+                   ((not (map-seen? m rr cc)) acc)
+                   ((not (map-walkable? m rr cc)) acc)
+                   ((creatures-door-diagonal? m r c (first d) (rest d)) acc)
+                   (#t (do (Vector set! (at rr cc) (if (null? step) d step) came) (pair (pair rr cc) acc)))))
+          back %gm-compass-back)))
     (def search
       (fn (self front back)
         (match
@@ -620,13 +632,14 @@
                   (def c (rest (first front)))
                   (def step (Vector ref (at r c) came))
                   (if (if (eq? step #t) #f (map-frontier? m r c)) step
-                    (self (rest front) (List append (reach r c (if (eq? step #t) () step)) back))))))))
+                    (self (rest front) (reach r c (if (eq? step #t) () step) back))))))))
     (Vector set! (at (player-r p) (player-c p)) #t came)
     (if (map-seen-whole? m) () (search (list (pair (player-r p) (player-c p))) ()))))
 
 ; One step toward what is not yet seen, a turn: whether the walk goes
 ; on.  It ends with a creature in view that does not talk, a question
 ; asked, nothing left to see, a hundred steps taken, or the game over.
+; The caller collects the heap after each step, as after each key.
 (def game-explore!
   (fn (_ g)
     (def n (game-exploring g))
@@ -644,7 +657,7 @@
       ((= n 100) (stop))
       (#t ((fn (_ d)
              (if (null? d) (do (when (= n 0) (state-tell! g (lit explored) "Nothing left to explore." ())) (stop))
-               (do (%gm-move! g (first d) (rest d)) (%gm-end-turn! g) (Heap collect) (game-exploring! g (+ n 1)) #t)))
+               (do (%gm-move! g (first d) (rest d)) (%gm-end-turn! g) (game-exploring! g (+ n 1)) #t)))
            (%gm-explore-step g))))))
 
 ; --- commands ----------------------------------------------------------------

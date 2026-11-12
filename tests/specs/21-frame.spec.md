@@ -157,15 +157,15 @@ takes, a wall in parts by its neighbours, and the camera on the player.
 ### the light map: the player's cell lit and warm, a seen cell dimmer, a dark one black
 
 ```roguelike
-(import roguelike/frame frame-light-map frame-flicker)
+(import roguelike/frame frame-light-map frame-light-cache frame-flicker)
 (import x/core/doors ptr-ref str->ptr)
-(def lmap (frame-light-map view (List filter (fn (_ op) (eq? (first op) 'light)) scene) 0))
+(def lmap (frame-light-map (frame-light-cache) view (List filter (fn (_ op) (eq? (first op) 'light)) scene) 0))
 (def px (fn (_ i) (if (null? i) () (List map (fn (_ k) (ptr-ref (str->ptr (List ref 2 lmap)) (+ (* i 4) k) 1)) '(0 1 2 3)))))
 (def first-of (fn (_ v) (List find (fn (_ i) (= v (char->int (str-byte-ref (List ref 5 view) i)))) (List range 0 (* (frame-view-rows) (frame-view-cols))))))
 (def lit-beside (px (- cell 1)))
 (import x/core/doors ptr-set!)
 (ptr-set! (str->ptr (List ref 5 view)) (- cell 1) 1 1)
-(def lmap (frame-light-map view (List filter (fn (_ op) (eq? (first op) 'light)) scene) 0))
+(def lmap (frame-light-map (frame-light-cache) view (List filter (fn (_ op) (eq? (first op) 'light)) scene) 0))
 (write (list (List take 2 lmap) (px cell) lit-beside (px (- cell 1)) (px (first-of 0))
              (List map (fn (_ t) (frame-flicker '(light 100 100 0 0 0 3 25) t)) '(0 1 2 3))
              ))
