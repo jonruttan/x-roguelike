@@ -91,6 +91,43 @@ searching, and the blow on a sleeper.  Each is off in classic.
 ---
     (#f #t)
 
+### a trap that throws is never laid where it would leave no way from the stairs up to the stairs down
+
+A level cut to one passage a cell wide, the stairs at its ends, and
+traps laid on it forty times over: the pits, snares and alarms go
+down, and no drop shaft does.  With a second row beside the passage
+there is a way round, and drop shafts go down too.
+
+```roguelike
+(import roguelike/map map-set! map-up! map-down! map-way?)
+(import roguelike/traps traps-place! trap-kind)
+(def g (spec-game-on (spec-set-named "delve") 4 ()))
+(def p (game-player g))
+(player-at! p (first (map-down (game-map g))) (rest (map-down (game-map g))))
+(game-key! g ">")
+(game-creatures! g ())
+(game-floor! g ())
+(def m (game-map g))
+(def cut!
+  (fn (_ rows)
+    (List for-each (fn (_ r) (List for-each (fn (_ c) (map-set! m r c tile-rock)) (List range 0 (map-cols m)))) (List range 0 (map-rows m)))
+    (List for-each (fn (_ r) (List for-each (fn (_ c) (map-set! m r c tile-floor)) (List range 10 31))) rows)
+    (map-set! m 5 10 tile-up)
+    (map-set! m 5 30 tile-down)
+    (map-up! m (pair 5 10))
+    (map-down! m (pair 5 30))
+    (game-traps! g ())
+    (List for-each (fn (_ k) (traps-place! g)) (List range 0 40))))
+(def throws (fn (_) (List length (List filter (fn (_ t) (str=? (first (trap-kind t)) "drop shaft")) (game-traps g)))))
+(cut! (list 5))
+(def narrow (list (< 0 (List length (game-traps g))) (throws)))
+(cut! (list 5 6))
+(def wide (list (< 0 (throws)) (map-way? m (map-up m) (map-down m) (List map (fn (_ t) (pair (Vector ref 0 t) (Vector ref 1 t))) (List filter (fn (_ t) (str=? (first (trap-kind t)) "drop shaft")) (game-traps g))))))
+(write (list narrow wide))
+```
+---
+    ((#t 0) (#t #t))
+
 ## surprise
 
 ### a blow on a sleeper always lands, says so, and wakes it
