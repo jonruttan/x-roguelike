@@ -57,8 +57,10 @@
 (item food "dried fish" (rarity 12) (nutrition 14400))
 
 ; Tallow oil, rendered at the chandler's: five minutes of the lamp a
-; flask.
-(item oil "oil flask" (rarity 24) (oil 300))
+; flask.  Each band lays three, (per-band 3), about one a level, and
+; more are found by chance: a level takes five minutes or more, and the
+; climb back up is lit too.
+(item oil "oil flask" (rarity 24) (per-band 3) (oil 300))
 
 ; What the people below ask for, and what they give: never drawn for a
 ; level.

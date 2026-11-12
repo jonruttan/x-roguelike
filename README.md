@@ -305,8 +305,9 @@ and rouses each sleeper or wanderer within twelve cells, seen or not,
 one turn in its distance times ROUSE, a ring of stealth doubling that;
 `delve` has `(camp 3 30)`.  An `(item oil
 NAME (oil N))` is N seconds of it, poured in with `f` to FULL at the
-most.  `delve` holds half an hour, and its flasks five minutes each:
-under it the lamp is what runs out, and food lasts the day.
+most.  `delve` holds half an hour, and its flasks five minutes each,
+three laid in each band and more found by chance: under it the lamp
+is what runs out, and food lasts the day.
 
 A ring with `(bonus light N)` lights N cells round the player with the
 lamp out, drawn in the set's `(colour glow N)` in the terminal and a
