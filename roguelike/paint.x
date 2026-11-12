@@ -39,10 +39,10 @@
 (def %pt-pitch 9)
 (def %pt-margin 4)
 (def %pt-cols (int/ (int- %pt-strip-w (int* 2 %pt-margin)) %pt-advance))
-; The messages' strip, two lines, and the standing's, two lines, in
+; The messages' strip, two lines, and the standing's, three lines, in
 ; strip pixels.
 (def %pt-top-h 21)
-(def %pt-stand-h 20)
+(def %pt-stand-h 29)
 ; The screen's part the level is shown in, between the two strips.
 (def paint-level-y (int* %pt-scale %pt-top-h))
 (def %pt-area-w paint-width)
@@ -683,9 +683,27 @@
     (match ((int< max (int* 2 hp)) %pt-good) ((int< max (int* 4 hp)) %pt-warn) (#t %pt-bad))))
 
 ; The standing on its strip: the place and the gold on the first line;
-; hit points as a bar, strength, armour, the level, and any hunger or
-; condition on the second.  A spent strength is a warning.
+; hit points as a bar, strength, armour, the level, and any condition
+; on the second; the gauges, food and the lamp, on the third.  A spent
+; strength is a warning.
 (def %pt-bar-w 48)
+; The gauges along the standing's third line from X: each its label,
+; a bar of what is left and the percentage, coloured by its level.
+(def %pt-gauges!
+  (fn (self strip x y gauges font)
+    (unless (null? gauges)
+      (do (def label (first (first gauges)))
+          (def percent (List ref 1 (first gauges)))
+          (def level (List ref 2 (first gauges)))
+          (def colour (match ((int< level 1) %pt-good) ((int< level 2) %pt-warn) (#t %pt-bad)))
+          (Canvas text! strip x y label (if (int< level 1) %pt-dim colour) font)
+          (def bx (int+ x (int* %pt-advance (int+ (Str8 length label) 1))))
+          (Canvas fill! strip bx (int+ y 1) %pt-bar-w 5 %pt-bar-ground)
+          (Canvas fill! strip bx (int+ y 1) (int/ (int* %pt-bar-w percent) 100) 5 colour)
+          (def text (Str8 append (Str8 str percent) "%"))
+          (def tx (int+ bx (int+ %pt-bar-w %pt-advance)))
+          (Canvas text! strip tx y text (if (int< level 1) %pt-bright colour) font)
+          (self strip (int+ tx (int* %pt-advance (int+ (Str8 length text) 2))) y (rest gauges) font)))))
 (def %pt-standing!
   (fn (_ s strip font st)
     (def place (List ref 0 st))
@@ -722,6 +740,7 @@
     (def x3 (%pt-pair! strip x2 y2 "Arm" (Str8 str (List ref 7 st)) %pt-bright font))
     (def x4 (%pt-pair! strip x3 y2 "Lv" (Str8 str (List ref 8 st)) %pt-bright font))
     (Canvas text! strip x4 y2 (%pt-fit warnings (int/ (int- right x4) %pt-advance)) %pt-warn font)
+    (%pt-gauges! strip %pt-margin (int+ y2 %pt-pitch) (List ref 10 st) font)
     (%pt-show! s strip %pt-stand-y)))
 
 ; LINES laid over the level on a panel at its top left: the art's

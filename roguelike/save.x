@@ -47,7 +47,7 @@
   player-armour player-armour! player-weapon player-weapon! player-rings player-rings! player-food
   player-food! player-conditions player-conditions! player-lamp player-lamp!
   creature-make creature-kind creature-r creature-c creature-hp creature-state creature-carried
-  creature-carried! creature-name
+  creature-carried! creature-name creature-whole creature-whole!
   item-make item-form item-class item-name item-count item-charges item-enchant item-letter item-letter!
   item-r item-c item-at! state-say!)
 
@@ -131,7 +131,8 @@
       (List map (fn (_ t) (list (lit trap) (trap-r t) (trap-c t) (trap-name t) (if (trap-found? t) 1 0))) traps)
       (List map (fn (_ cr) (list (lit creature) (creature-name cr) (creature-r cr) (creature-c cr) (creature-hp cr)
                                  (symbol->str (creature-state cr))
-                                 (if (null? (creature-carried cr)) "" (Str8 append (symbol->str (item-class (creature-carried cr))) "/" (item-name (creature-carried cr))))))
+                                 (if (null? (creature-carried cr)) "" (Str8 append (symbol->str (item-class (creature-carried cr))) "/" (item-name (creature-carried cr))))
+                                 (creature-whole cr)))
                 creatures))))
 
 ; A screen's X and Y, (X . Y), or -1 for none.
@@ -312,6 +313,7 @@
     (def kind (List find (fn (_ k) (str=? (first k) (first args))) (data-all set (lit creature))))
     (if (null? kind) ()
       (do (def cr (creature-make kind (List ref 1 args) (List ref 2 args) (List ref 3 args) (Str8 ->sym (List ref 4 args))))
+          (when (< 6 (List length args)) (creature-whole! cr (List ref 6 args)))
           (def carried (List ref 5 args))
           (unless (str=? carried "")
             ((fn (_ at)
