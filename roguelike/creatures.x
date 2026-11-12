@@ -398,6 +398,19 @@
     (List for-each (fn (_ cr) (when (match ((eq? (creature-state cr) (lit asleep)) #t) ((eq? (creature-state cr) (lit wandering)) #t) (#t #f))
                                 (%cr-rouse! g cr)))
       (game-creatures g))))
+; A turn of a camp: each creature asleep or wandering within twelve
+; cells, seen or not, roused one turn in its distance times ROUSE, times
+; one more than the stealth, and making for where the player lies.
+(def creatures-rouse-near!
+  (fn (_ g rouse)
+    (List for-each
+      (fn (_ cr)
+        (when (match ((creature-trait? cr (lit talks)) #f)
+                     ((not (if (eq? (creature-state cr) (lit asleep)) #t (eq? (creature-state cr) (lit wandering)))) #f)
+                     ((< 12 (%cr-dist g cr)) #f)
+                     (#t (%cr-one-in? g (* (%cr-dist g cr) rouse (+ 1 (%cr-stealth g))))))
+          (%cr-rouse! g cr)))
+      (game-creatures g))))
 ; Every creature in view runs.
 (def creatures-scare!
   (fn (_ g)
@@ -407,4 +420,4 @@
 (provide roguelike/creatures
   creatures-kinds creatures-kind creatures-place! creatures-spawn-one! creatures-spawn! creatures-guardian!
   creatures-wander! creatures-door-diagonal?
-  creatures-can-step? creatures-act! creatures-shown? creatures-wake-all! creatures-scare!)
+  creatures-can-step? creatures-act! creatures-shown? creatures-wake-all! creatures-scare! creatures-rouse-near!)

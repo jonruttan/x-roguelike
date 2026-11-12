@@ -148,7 +148,7 @@ pours N seconds in with f, to FULL at the most.
 (def made (list (game-messages g) (game-exploring? g) (< 9 before) (< (in-view) 10)))
 (def run (fn (self n) (when (if (game-exploring? g) (< n 200) #f) (do (game-creatures! g ()) (game-explore! g) (self (+ n 1))))))
 (run 0)
-(write (list made (= (player-hp p) (player-hpmax p)) (= lamp (player-lamp p)) (< 12 (- (game-clock g) c0)) (List includes? "You are rested, and break camp." (game-messages g)) (game-exploring? g) (= before (in-view))))
+(write (list made (= (player-hp p) (player-hpmax p)) (= lamp (player-lamp p)) (< 3 (- (game-clock g) c0)) (List includes? "You are rested, and break camp." (game-messages g)) (game-exploring? g) (= before (in-view))))
 ```
 ---
     ((("You make camp.") #t #t #t) #t #t #t #t #f #t)
@@ -189,6 +189,52 @@ pours N seconds in with f, to FULL at the most.
 ```
 ---
     (#f #t)
+
+### under (camp 3 30) hit points come back three times as fast as resting a turn at a time
+
+```roguelike
+(def g (spec-game-on (spec-set-named "delve") 4 ()))
+(def p (game-player g))
+(game-creatures! g ())
+(game-key! g ".")
+(def rest-turns (fn (self n) (if (if (< (player-hp p) (player-hpmax p)) (< n 400) #f) (do (game-creatures! g ()) (game-key! g ".") (self (+ n 1))) n)))
+(player-hp! p (- (player-hpmax p) 6))
+(def resting (rest-turns 0))
+(player-hp! p (- (player-hpmax p) 6))
+(def t0 (game-turn g))
+(game-key! g "c")
+(def run (fn (self n) (when (if (game-exploring? g) (< n 400) #f) (do (game-creatures! g ()) (game-explore! g) (self (+ n 1))))))
+(run 0)
+(def camping (- (game-turn g) t0))
+(write (list (= (player-hp p) (player-hpmax p)) (< (* 2 camping) resting) (< camping resting)))
+```
+---
+    (#t #t #t)
+
+### a camp rouses sleepers near it, unseen, and leaves those past twelve cells asleep
+
+```roguelike
+(def g (spec-game-on (spec-set-named "delve") 4 ()))
+(def p (game-player g))
+(def m (game-map g))
+(game-creatures! g ())
+(game-key! g ".")
+(def cells (List flat-map (fn (_ r) (List map (fn (_ c) (pair r c)) (List range 0 (map-cols m)))) (List range 0 (map-rows m))))
+(def at-dist (fn (_ lo hi) (List filter (fn (_ rc) (if (map-floor? m (first rc) (rest rc))
+                                                     ((fn (_ d) (if (< (- lo 1) d) (< d (+ hi 1)) #f)) (state-dist (first rc) (rest rc) (player-r p) (player-c p)))
+                                                     #f))
+                              cells)))
+(def place (fn (_ rc) (spec-place! g "mine rat" (first rc) (rest rc) 3 'asleep) (first (game-creatures g))))
+(def near (List map place (at-dist 2 2)))
+(def far (place (first (at-dist 14 40))))
+(def run (fn (self n) (when (if (game-exploring? g) (< n 400) #f) (do (game-explore! g) (self (+ n 1))))))
+(def roused? (fn (_) (List any? (fn (_ cr) (not (eq? (creature-state cr) 'asleep))) near)))
+(def camp (fn (self n) (when (if (< 0 n) (not (roused?)) #f) (do (player-hp! p 1) (game-key! g "c") (run 0) (self (- n 1))))))
+(camp 20)
+(write (list (< 0 (List length near)) (List any? (fn (_ cr) (not (eq? (creature-state cr) 'asleep))) near) (creature-state far)))
+```
+---
+    (#t #t 'asleep)
 
 ## saving
 

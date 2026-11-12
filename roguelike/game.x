@@ -58,7 +58,7 @@
   creature-state creature-hp creature-whole creature-conditions player-conditions state-dist state-adjacent?)
 (import roguelike/combat combat-player-attacks! combat-hurt-player!)
 (import roguelike/creatures
-  creatures-spawn! creatures-guardian! creatures-wander! creatures-act! creatures-door-diagonal? creatures-shown?)
+  creatures-spawn! creatures-guardian! creatures-wander! creatures-act! creatures-door-diagonal? creatures-shown? creatures-rouse-near!)
 (import roguelike/items
   items-spawn! items-place-sure! items-place-caches! items-place-secrets! items-place-goal! items-place-pages! items-goal-held? items-name items-worn
   items-pack-lines
@@ -473,14 +473,18 @@
 
 ; A hit point back every so many seconds: the set's (regen N QUICKEN),
 ; QUICKEN fewer a level, two unless given, four at least; every third
-; second with a ring of regeneration; none while starving.
+; second with a ring of regeneration; none while starving.  In camp the
+; time is the set's (camp HEAL ROUSE) HEAL times shorter, a second at
+; the least.
 (def %gm-regen!
   (fn (_ g was now)
     (def p (game-player g))
     (def rule (game-param g (lit regen) (list 20)))
     (def quicken (if (null? (rest rule)) 2 (List ref 1 rule)))
-    (def period (if (state-ring? g (lit regeneration)) 3
-                  ((fn (_ n) (if (< n 4) 4 n)) (- (first rule) (* quicken (- (player-level p) 1))))))
+    (def awake (if (state-ring? g (lit regeneration)) 3
+                 ((fn (_ n) (if (< n 4) 4 n)) (- (first rule) (* quicken (- (player-level p) 1))))))
+    (def heal (if (%gm-camping? g) (first (game-param g (lit camp) (list 1 0))) 1))
+    (def period ((fn (_ n) (if (< n 1) 1 n)) (int/ awake (if (< heal 1) 1 heal))))
     (def k (if (%gm-starving? g) 0 (%gm-every period was now)))
     (def hp (+ (player-hp p) k))
     (when (if (< 0 k) (< (player-hp p) (player-hpmax p)) #f)
@@ -689,7 +693,8 @@
 ; A turn of the camp: whether it goes on.  It ends rested, at full hit
 ; points; starving, when none come back; struck; with a creature in
 ; view that does not talk; with a question asked; or with the game
-; over.  The lamp is lit again as it ends.
+; over.  The lamp is lit again as it ends.  Each turn of it may rouse
+; what is near, by the set's (camp HEAL ROUSE) (creatures.x).
 (def %gm-camp!
   (fn (_ g)
     (def p (game-player g))
@@ -710,7 +715,9 @@
         (stop (lit camp-roused) "You start up: {a-name} is on you." (list (pair "name" (creature-name shown)) (pair "a-name" (state-a-kind (creature-kind shown))))))
       ((not (< hp (player-hpmax p))) (stop (lit camp-rested) "You are rested, and break camp." ()))
       ((%gm-starving? g) (stop (lit camp-hungry) "Hunger will not let you rest." ()))
-      (#t (do (%gm-end-turn! g)
+      (#t (do ((fn (_ rouse) (when (< 0 rouse) (creatures-rouse-near! g rouse)))
+               (List ref 1 (game-param g (lit camp) (list 1 0))))
+              (%gm-end-turn! g)
               (Heap collect)
               (if (< (player-hp p) hp) (stop (lit camp-struck) "You start up, struck." ())
                 (do (unless (null? (game-exploring g)) (game-exploring! g (- (game-exploring g) 1))) #t)))))))

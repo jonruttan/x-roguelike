@@ -299,7 +299,11 @@ without.  It burns on the clock, says when LOW seconds are left and
 when it goes out, and out, sight is the cells beside.  `c` makes camp:
 the lamp is put out and burns no oil, and the player rests a turn at a
 time, the clock and hunger running on, until they are whole, struck,
-starving, or a creature comes up to them; a key breaks it.  An `(item oil
+starving, or a creature comes up to them; a key breaks it.  `(camp
+HEAL ROUSE)` makes hit points come back HEAL times as fast in camp,
+and rouses each sleeper or wanderer within twelve cells, seen or not,
+one turn in its distance times ROUSE, a ring of stealth doubling that;
+`delve` has `(camp 3 30)`.  An `(item oil
 NAME (oil N))` is N seconds of it, poured in with `f` to FULL at the
 most.  `delve` holds half an hour, and its flasks five minutes each:
 under it the lamp is what runs out, and food lasts the day.

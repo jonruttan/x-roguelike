@@ -112,6 +112,12 @@
 (gold 30 8 30)
 (exp 20)
 (regen 12 0)
+
+; A camp, (camp HEAL ROUSE): hit points come back three times as fast,
+; and each sleeper or wanderer within twelve cells is roused one turn in
+; its distance times thirty: a short camp is fairly safe, a long one
+; seldom quiet.
+(camp 3 30)
 (wander 40)
 
 ; Classes known without being tried.
