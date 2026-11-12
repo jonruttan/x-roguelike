@@ -305,7 +305,8 @@
 ; whether its shaft was found barred, 15 the walks not found, 16 the
 ; slow creature last stepped clear of, and where it stood, 17 where the
 ; player last was, 18 how much the pack held at the last talk here, 19
-; the foe last set out after, 20 the foes given up here.
+; the foe last set out after, 20 the foes given up here, 21 where the
+; last turns were spent.
 
 ; Where the player stands, as text: the depth, or on a world of screens
 ; the screen and any interior.
@@ -318,7 +319,7 @@
 (def %bl-explored? (fn (_ g s) (if (%bl-here? g s) (Vector ref 0 s) #f)))
 (def %bl-explored! (fn (_ g s) (Vector set! 0 #t s) (Vector set! 1 (%bl-place g) s) (Vector set! 4 #f s)))
 (def %bl-new-level! (fn (_ g s) (Vector set! 0 #f s) (Vector set! 1 (%bl-place g) s) (Vector set! 4 #f s) (Vector set! 9 () s) (Vector set! 12 () s)
-    (Vector set! 13 (game-turn g) s) (Vector set! 14 #f s) (Vector set! 15 () s) (Vector set! 17 () s) (Vector set! 19 () s) (Vector set! 20 () s) (Vector set! 0 0 %bl-bold)))
+    (Vector set! 13 (game-turn g) s) (Vector set! 14 #f s) (Vector set! 15 () s) (Vector set! 17 () s) (Vector set! 19 () s) (Vector set! 20 () s) (Vector set! 21 () s) (Vector set! 0 0 %bl-bold)))
 
 ; With nowhere at all to go on a level: the first time, the cells beside
 ; the unseen are all to be stood on again and what sits is no longer
@@ -340,6 +341,26 @@
     (if (< 0 (Vector ref 0 %bl-bold))
       (%bl-walk! g s (lit blocker) (fn (_ r c) ((fn (_ cr) (if (null? cr) #f (%bl-hostile? cr))) (state-creature-at g r c))))
       #f)))
+; The bot going to and fro: slot 21 of S keeps the cells of the last
+; eight turns with nothing hostile beside it, and when those are two
+; cells turn about, four times there and back, what it is after cannot
+; be had.  The foe in view and the quarry are given up for the level,
+; and the walks kept and those not found are forgotten.
+(def %bl-turning!
+  (fn (_ g s foe shown)
+    (def p (game-player g))
+    (def here (+ (* (player-r p) (map-cols (game-map g))) (player-c p)))
+    (def past (if (null? foe) (List take 8 (pair here (Vector ref 21 s))) ()))
+    (def about?
+      (match ((< (List length past) 8) #f) ((= (first past) (List ref 1 past)) #f)
+             (#t (List all? (fn (_ k) (= (List ref k past) (List ref (% k 2) past))) (List range 2 8)))))
+    (Vector set! 21 (if about? () past) s)
+    (when about?
+      (do (Vector set! 20 (List reject null? (pair shown (pair (Vector ref 19 s) (Vector ref 20 s)))) s)
+          (Vector set! 19 () s)
+          (Vector set! 12 () s)
+          (Vector set! 15 () s)))))
+
 ; The player thrown somewhere else on the level, more than a step from
 ; where slot 17 of S last had them: the walks kept and those not found
 ; are for another place, and the bot is no longer bold.
@@ -862,6 +883,7 @@
     (def shown ((fn (_ cr) (if (null? cr) (%bl-shooter g) cr)) (%bl-shown-hostile g)))
     (unless (%bl-here? g s) (%bl-new-level! g s))
     (%bl-thrown! g s)
+    (%bl-turning! g s foe shown)
     (match
       ((not (null? q)) (%bl-answer! g q))
       ((if (null? potion) #f (%bl-under? p (%bl-at who (lit quaff))))
@@ -1202,7 +1224,7 @@
     (def g (%bl-start set play))
     (unless (str=? path "") (File write-all path ""))
     (def kept (Vector of (str=? path "")))
-    (def s (Vector of #f "" 0 0 #f () () 0 () () 0 0 () 0 #f () () () -1 () ()))
+    (def s (Vector of #f "" 0 0 #f () () 0 () () 0 0 () 0 #f () () () -1 () () ()))
     (def arrivals (Vector of (list (%bl-arrival g))))
     (def loop
       (fn (self turn stalled)
@@ -1269,7 +1291,7 @@
           (unless (null? cr)
             (do (def hp (creature-prop cr (lit hp) (list 1 1)))
                 (creature-hp! cr (state-roll (game-rng g) (first hp) (List ref 1 hp)))))
-          (def s (Vector of #f "" 0 0 #f () () 0 () () 0 0 () 0 #f () () () -1 () ()))
+          (def s (Vector of #f "" 0 0 #f () () 0 () () 0 0 () 0 #f () () () -1 () () ()))
           (def depth (game-depth g))
           (def start (game-turn g))
           (def loop
