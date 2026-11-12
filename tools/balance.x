@@ -755,6 +755,35 @@
     (match ((null? was) #f) ((not (same? (first was) foe)) #f)
            ((not (= (first (rest was)) (creature-r foe))) #f)
            (#t (= (rest (rest was)) (creature-c foe))))))
+; How many of the eight cells about R C can be stood on: how many can
+; come at one who stands there.
+(def %bl-open
+  (fn (_ g r c)
+    (def m (game-map g))
+    (List length (List filter (fn (_ d) (map-walkable? m (+ r (first (rest d))) (+ c (rest (rest d))))) %bl-dirs))))
+; With two or more hostile beside the player, a step to the cell beside
+; them that fewest can come at, when it is narrower than where they
+; stand: a pack is met in a passage, one at a time.  Not when held.  #f
+; with no such step.
+(def %bl-to-passage!
+  (fn (_ g)
+    (def p (game-player g))
+    (def m (game-map g))
+    (def crowd (List length (List filter (fn (_ cr) (if (%bl-hostile? cr) (state-adjacent? (creature-r cr) (creature-c cr) (player-r p) (player-c p)) #f))
+                              (%bl-seen g))))
+    (def best
+      (List fold
+        (fn (_ best d)
+          (def r (+ (player-r p) (first (rest d))))
+          (def c (+ (player-c p) (rest (rest d))))
+          (match ((not (%bl-free?-cell g r c)) best)
+                 ((creatures-door-diagonal? m (player-r p) (player-c p) (first (rest d)) (rest (rest d))) best)
+                 ((< (%bl-open g r c) (first best)) (pair (%bl-open g r c) (first d)))
+                 (#t best)))
+        (pair (%bl-open g (player-r p) (player-c p)) ()) %bl-dirs))
+    (match ((< crowd 2) #f) ((< 0 (player-condition p (lit held))) #f) ((null? (rest best)) #f)
+           (#t (do (%bl-key! g (rest best)) #t)))))
+
 ; The slow FOE beside the player, outpaced: struck on the turn it cannot
 ; answer; on the turn it can, one not yet after the player waited on,
 ; one that follows stepped clear of, and one that stays struck, two
@@ -1030,6 +1059,7 @@
                               ((null? shown) (List find (fn (_ cr) (%bl-sitter? g cr)) (%bl-seen g)))
                               ((not (%bl-stirring? s shown)) ()) (#t shown))) ())
       ((if (null? foe) #f slips) (%bl-onward! g s who shown))
+      ((if (null? foe) #f (%bl-to-passage! g)) ())
       ((if (null? foe) #f (%bl-outpace? g)) (%bl-outpace! g s who foe))
       ((not (null? foe))
         (unless (if (if (< 0 (%bl-at who (lit retreat))) (%bl-free? g foe) #f)
