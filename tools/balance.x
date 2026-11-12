@@ -477,7 +477,23 @@
     (def oil (List fold (fn (_ n it) (if (eq? (item-class it) (lit oil)) (+ n (item-prop1 it (lit oil) 600)) n)) 0 (game-pack g)))
     (def levels (+ 1 (if (< (game-depth g) last) (- last (game-depth g)) 0)))
     (match ((null? (game-param g (lit lamp) ())) #t) ((< (player-lamp p) 0) #t)
-           (#t (< (* levels (- (game-turn g) (Vector ref 13 s))) (+ (player-lamp p) oil))))))
+           (#t (< (* levels (- (game-turn g) (Vector ref 13 s))) (+ (player-lamp p) (+ oil (%bl-sure-oil g last))))))))
+; The oil the bands owe the levels below this one down to LAST: a band
+; lays each oil with (per-band N) N times over its levels, so a level of
+; it holds its share.  The bot knows the set, as one who has played.
+(def %bl-sure-oil
+  (fn (_ g last)
+    (def tos (List map (fn (_ b) (List ref 1 b)) (data-all (game-set g) (lit band))))
+    (def each (List fold (fn (_ n f) (if (eq? (first f) (lit oil))
+                                       (+ n (* (first (data-prop f (lit per-band) (list 0))) (first (data-prop f (lit oil) (list 0))))) n))
+                0 (data-all (game-set g) (lit item))))
+    (def share
+      (fn (_ d)
+        (def to (List find (fn (_ t) (not (< t d))) tos))
+        (def before (List filter (fn (_ t) (< t d)) tos))
+        (def from (if (null? before) 1 (+ 1 (List fold (fn (_ a b) (if (< a b) b a)) 0 before))))
+        (if (null? to) 0 (int/ each (+ 1 (- to from))))))
+    (List fold (fn (_ n d) (+ n (share d))) 0 (List range (+ 1 (game-depth g)) (+ 1 last)))))
 
 ; The letter of what an upgrade goes on: the weapon in hand, else the
 ; armour worn, else none of them.
