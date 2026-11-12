@@ -822,6 +822,28 @@
         (#t ())))
     (if (null? use) #f (do (%bl-use! g (first use) (rest use)) #t))))
 
+; With the pack within two of full, a thing of no use dropped and left
+; for good: a weapon or armour that is neither the best held nor in
+; use, or a potion that poisons.  A full pack takes up nothing more,
+; the goal with the rest.  #f with nothing dropped.
+(def %bl-shed!
+  (fn (_ g s)
+    (def weapon (%bl-best g (lit weapon) %bl-weapon-worth))
+    (def armour (%bl-best g (lit armour) %bl-armour-worth))
+    (def spare?
+      (fn (_ it best)
+        (match ((same? it best) #f) (#t (str=? (items-worn g it) "")))))
+    (def junk
+      (%bl-in-pack g
+        (fn (_ it)
+          (def e (item-prop it (lit effect) ()))
+          (match ((eq? (item-class it) (lit weapon)) (spare? it weapon))
+                 ((eq? (item-class it) (lit armour)) (spare? it armour))
+                 ((eq? (item-class it) (lit potion)) (if (null? e) #f (eq? (first e) (lit poison))))
+                 (#t #f)))))
+    (match ((< (List length (game-pack g)) 24) #f) ((null? junk) #f)
+           (#t (do (Vector set! 8 (pair junk (Vector ref 8 s)) s) (%bl-use! g "d" junk) #t)))))
+
 ; Whether the bot is past fighting for its own sake: on the goal's
 ; level, where the goal is all there is to have, or carrying it up.
 (def %bl-running?
@@ -938,6 +960,7 @@
         (%bl-use! g "w" weapon))
       ((if (null? armour) #f (if (null? (player-armour p)) #t (< (%bl-armour-worth g (player-armour p)) (%bl-armour-worth g armour))))
         (if (null? (player-armour p)) (%bl-use! g "W" armour) (%bl-key! g "T")))
+      ((if (null? foe) (%bl-shed! g s) #f) ())
       (#t (%bl-onward! g s who shown)))))
 
 ; --- a world of screens ------------------------------------------------------
