@@ -42,3 +42,12 @@
 (ambience "The Farms" (bed "valley-wind") (random "bird" 5000 50) (random "bleat" 9000 45))
 (ambience "The Hills" (bed "valley-wind") (random "curlew" 14000 45) (random "gust" 12000 45) (random "bleat" 20000 30))
 (ambience "The Far Valley" (bed "valley-wind") (random "gust" 9000 50) (random "curlew" 25000 30))
+
+; --- behind a door -------------------------------------------------------------
+
+; An interior is out of the wind: still air under the drips and settling
+; of the Delve's sounds, and the bothy's hearth gone cold, the wind on
+; its walls.  Their music is the band's outside.
+(ambience "farmhouse cellar" (bed "indoors") (random "drip" 6000 45) (random "settle" 14000 35))
+(ambience "shepherd's bothy" (bed "indoors") (random "gust" 10000 25) (random "creak" 12000 35))
+(ambience "old city vault" (bed "indoors") (random "drip" 5000 45) (random "rumble" 20000 35) (random "trickle" 15000 30))
