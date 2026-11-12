@@ -54,7 +54,8 @@
   player-condition player-tick! player-armour player-rings player-gold
   game-daylight? state-in-sight? state-say! state-tell! state-text state-clear-messages! state-clear-log! state-roll state-chance? state-dir state-dirs
   state-creature-at state-creature-named state-items-at state-free? state-ring? item-class? item-class-in? item-class
-  item-name creature-name creature-r creature-c creature-trait? creature-prop creature-kind state-a-kind)
+  item-name creature-name creature-r creature-c creature-trait? creature-prop creature-kind state-a-kind
+  creature-state creature-hp creature-whole creature-conditions player-conditions state-dist)
 (import roguelike/combat combat-player-attacks! combat-hurt-player!)
 (import roguelike/creatures
   creatures-spawn! creatures-guardian! creatures-wander! creatures-act! creatures-door-diagonal? creatures-shown?)
@@ -65,7 +66,7 @@
   items-drop! items-quaff! items-read! items-zap! items-eat! items-fill! items-wield! items-wear! items-take-off!
   items-put-on! items-remove!)
 (import roguelike/quests quests-place! quests-talk! quests-keepers! quests-folk! quests-leads quests-errands quests-sighted!)
-(import roguelike/chain chain-build! chain-way)
+(import roguelike/chain chain-build! chain-way chain-compass)
 (import roguelike/traps trap-r trap-c trap-found? traps-place! traps-step! traps-search!)
 (import roguelike/interiors interiors-door! interiors-params interiors-prop1)
 (import roguelike/data data-all data-one data-get data-region)
@@ -705,6 +706,57 @@
 (def %gm-ask-dir! (fn (_ g prompt handler) (game-ask! g (list (lit dir) prompt handler)) #f))
 (def %gm-look! (fn (_ g prompt lines) (game-ask! g (list (lit look) prompt () lines)) #f))
 
+; --- what is in view ---------------------------------------------------------
+
+; What a player keeping count would know, for v: the turn and the clock,
+; each condition the player is under and its turns left, and each
+; creature drawn: how far and which way, whether it sleeps, has not
+; noticed the player, is awake or flees, how hurt it is against the hit
+; points it was whole at, and its conditions with their turns left.
+(def %gm-two (fn (_ n) (if (< n 10) (Str8 append "0" (Str8 str n)) (Str8 str n))))
+(def %gm-turns (fn (_ n) (Str8 append (Str8 str n) (if (= n 1) " turn" " turns"))))
+(def %gm-condition-words
+  (list (pair (lit confused) "confused") (pair (lit blind) "blind") (pair (lit held) "held")
+        (pair (lit hasted) "quick") (pair (lit slowed) "slowed") (pair (lit seeing) "seeing the unseen")))
+; CONDS, a conditions list, as "WORD for N turns" for each still on.
+(def %gm-conditions
+  (fn (_ conds)
+    (List map (fn (_ c)
+                (def word (List find (fn (_ w) (eq? (first w) (first c))) %gm-condition-words))
+                (Str8 append (if (null? word) "changed" (rest word)) " for " (%gm-turns (rest c))))
+      (List filter (fn (_ c) (< 0 (rest c))) conds))))
+(def %gm-hurt
+  (fn (_ cr)
+    (def hp (creature-hp cr))
+    (def whole (creature-whole cr))
+    (match ((not (< hp whole)) "") ((< whole (* 2 hp)) "hurt") ((< whole (* 4 hp)) "badly hurt") (#t "nearly dead"))))
+(def %gm-mind
+  (fn (_ cr)
+    (def s (creature-state cr))
+    (match ((eq? s (lit asleep)) "asleep")
+           ((eq? s (lit wandering)) "has not noticed you")
+           ((eq? s (lit fleeing)) "fleeing")
+           ((creature-trait? cr (lit talks)) "")
+           (#t "awake"))))
+(def %gm-view-creature
+  (fn (_ g cr)
+    (def p (game-player g))
+    (def said (List filter (fn (_ s) (not (str=? s "")))
+                (List append (list (%gm-mind cr) (%gm-hurt cr)) (%gm-conditions (creature-conditions cr)))))
+    (Str8 append (state-a-kind (creature-kind cr)) ", "
+      (Str8 str (state-dist (creature-r cr) (creature-c cr) (player-r p) (player-c p))) " "
+      (chain-compass (- (creature-c cr) (player-c p)) (- (creature-r cr) (player-r p)))
+      (if (null? said) "" (Str8 append ": " (Str8 join ", " said))))))
+(def %gm-view-lines
+  (fn (_ g)
+    (def clock (game-clock g))
+    (def seen (List filter (fn (_ cr) (creatures-shown? g cr)) (game-creatures g)))
+    (List append
+      (list (Str8 append "Turn " (Str8 str (game-turn g)) ", " (Str8 str (int/ clock 3600)) ":" (%gm-two (% (int/ clock 60) 60)) ":"
+                         (%gm-two (% clock 60)) " on the clock."))
+      (List map (fn (_ s) (Str8 append "You are " s ".")) (%gm-conditions (player-conditions (game-player g))))
+      (if (null? seen) (list "Nothing that moves is in view.") (List map (fn (_ cr) (%gm-view-creature g cr)) seen)))))
+
 (def %gm-pack-lines
   (fn (_ g)
     (if (null? (game-pack g)) (list "Your pack is empty.") (items-pack-lines g ()))))
@@ -743,6 +795,7 @@
     (pair "L" (fn (_ g) (%gm-look! g "Lately:" (List reverse (List take 20 (game-log g))))))
     (pair "m" (fn (_ g) (if (game-screens? g) (%gm-look! g (state-text g (lit world-map) "The world:" ()) (%gm-world-lines g))
                           (do (state-tell! g (lit no-world-map) "You know only the level you stand on." ()) #f))))
+    (pair "v" (fn (_ g) (%gm-look! g "In view:" (%gm-view-lines g))))
     (pair "?" (fn (_ g) (%gm-look! g "The keys:" (game-help g))))
     (pair "Q" (fn (_ g) (do (game-ask! g (list (lit yn) "Really quit?" (fn (_) (game-over! g (lit quit)) (game-epitaph! g "quit") #f))) #f)))
     (pair "S" (fn (_ g) (do (game-over! g (lit saved)) #f)))))
@@ -902,6 +955,7 @@
           ",  g   pick up what is here"
           "o      explore what is unseen until something comes into view; a key stops"
           "L      what has been said lately   m      the map of the world"
+          "v      who is in view and how they fare, the turn and the clock"
           ">      down, or in a door   <      up with the goal, or out of a door"
           "i      your pack            d      drop a thing"
           "q      quaff a potion       r      read a scroll or a page"

@@ -16,8 +16,8 @@ screen's pixel, the art's scale: a line holds 52 letters.
 | Rows (pixels) | What | The terminal's |
 |---|---|---|
 | 0 to 41 | messages, two lines on a strip ruled off from the level, three over the level's top when they need it; a question asks here, brighter | the top row |
-| 42 to 319 | the level, as many cells as fill it at the zoom | the rows between |
-| 320 to 359 | the standing, two lines: the band and level (or the screen's name) and the gold; hit points as a bar coloured by how many are left, strength (amber when spent), armour, experience level, and hunger and conditions in amber | the last row |
+| 42 to 301 | the level, as many cells as fill it at the zoom | the rows between |
+| 302 to 359 | the standing, three lines: the band and level (or the screen's name) and the gold; hit points as a bar coloured by how many are left, strength (amber when spent), armour, experience level, and conditions in amber; food and lamp oil each as a bar of what is left and its percentage, green, amber when hungry or low, red when weak, starving or dark | the last row |
 
 - **The level** is 80 by 22, as in the terminal.  The window shows 20 by
   9 of it at the first zoom; the camera keeps the player in the middle,

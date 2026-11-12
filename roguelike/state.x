@@ -371,11 +371,13 @@
 ; A creature is a vector: 0 its kind, (NAME GLYPH . PROPS), 1 row, 2
 ; column, 3 hit points, 4 its state (asleep, awake, wandering or
 ; fleeing), 5 the conditions, 6 an item it carries, 7 where it is
-; making for, (R . C), or nil.  Where it makes for is not saved: a
-; creature read back picks its way afresh.
+; making for, (R . C), or nil, 8 the hit points it was whole at, those
+; it is made with.  Where it makes for is not saved: a creature read
+; back picks its way afresh.
 (def creature-make
   (fn (_ kind r c hp state)
-    (def cr (Vector make 8 ()))
+    (def cr (Vector make 9 ()))
+    (%st-set! cr 8 hp)
     (%st-set! cr 0 kind)
     (%st-set! cr 1 r)
     (%st-set! cr 2 c)
@@ -414,6 +416,9 @@
 (def creature-condition (fn (_ cr name) (%st-cond-turns (%st-ref cr 5) name)))
 (def creature-condition! (fn (_ cr name turns) (%st-set! cr 5 (%st-cond-set (%st-ref cr 5) name turns))))
 (def creature-tick! (fn (_ cr) (%st-set! cr 5 (%st-cond-tick (%st-ref cr 5)))))
+(def creature-conditions (fn (_ cr) (%st-ref cr 5)))
+(def creature-whole (fn (_ cr) (%st-ref cr 8)))
+(def creature-whole! (fn (_ cr n) (%st-set! cr 8 n)))
 
 ; --- items -------------------------------------------------------------------
 
@@ -647,7 +652,7 @@
   player-conditions player-conditions! player-lamp player-lamp! player-condition player-condition! player-tick!
   creature-make creature-kind creature-r creature-c creature-at! creature-hp creature-hp! creature-state
   creature-state! creature-carried creature-carried! creature-target creature-target! creature-name creature-glyph creature-prop creature-prop1 state-a-kind
-  creature-trait? creature-condition creature-condition! creature-tick!
+  creature-trait? creature-condition creature-condition! creature-tick! creature-conditions creature-whole creature-whole!
   item-make item-form item-class item-name item-prop item-prop1 item-count item-count! item-charges
   item-charges! item-enchant item-enchant! item-letter item-letter! item-r item-c item-at! item-class? item-class-in?
   state-say! state-clear-messages! game-blows state-blow! state-clear-log! state-fill state-text state-tell!

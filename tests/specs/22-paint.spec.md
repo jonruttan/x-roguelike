@@ -75,6 +75,18 @@ each frame that layer, what stands on it, the light and the text.
 ---
     (640 360 #t (0 0 0 255) #t #t)
 
+### the standing's third line: food's bar half full, the lamp's whole, a low lamp's amber
+
+```roguelike
+(import roguelike/state player-lamp!)
+(def bar (fn (_ s xs) (List map (fn (_ x) (Canvas pixel s x 346)) xs)))
+(def full (bar s (list 70 150 300 380)))
+(player-lamp! pl 600)
+(write (list full (bar (paint-frame! p g 0) (list 350 420))))
+```
+---
+    (((116 170 92 255) (54 48 42 255) (116 170 92 255) (116 170 92 255)) ((222 172 72 255) (54 48 42 255)))
+
 ### the pack looked at lies over the level on the panel, its lines written
 
 ```roguelike
@@ -99,7 +111,7 @@ each frame that layer, what stands on it, the light and the text.
 (write (list (at-zoom 1) (at-zoom 3) (at-zoom 4) (at-zoom 9) (at-zoom 0) (at-zoom 2)))
 ```
 ---
-    ((1 18 40 640) (3 6 14 224) (4 5 10 160) (4 5 10 160) (1 18 40 640) (2 9 20 320))
+    ((1 17 40 640) (3 6 14 224) (4 5 10 160) (4 5 10 160) (1 17 40 640) (2 9 20 320))
 
 
 ## each place's art
