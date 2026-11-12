@@ -304,7 +304,8 @@
 ; kept here, (TAG . CELLS) each, 13 the turn the level was come to, 14
 ; whether its shaft was found barred, 15 the walks not found, 16 the
 ; slow creature last stepped clear of, and where it stood, 17 where the
-; player last was, 18 how much the pack held at the last talk here.
+; player last was, 18 how much the pack held at the last talk here, 19
+; the foe last set out after.
 
 ; Where the player stands, as text: the depth, or on a world of screens
 ; the screen and any interior.
@@ -317,7 +318,7 @@
 (def %bl-explored? (fn (_ g s) (if (%bl-here? g s) (Vector ref 0 s) #f)))
 (def %bl-explored! (fn (_ g s) (Vector set! 0 #t s) (Vector set! 1 (%bl-place g) s) (Vector set! 4 #f s)))
 (def %bl-new-level! (fn (_ g s) (Vector set! 0 #f s) (Vector set! 1 (%bl-place g) s) (Vector set! 4 #f s) (Vector set! 9 () s) (Vector set! 12 () s)
-    (Vector set! 13 (game-turn g) s) (Vector set! 14 #f s) (Vector set! 15 () s) (Vector set! 17 () s) (Vector set! 0 0 %bl-bold)))
+    (Vector set! 13 (game-turn g) s) (Vector set! 14 #f s) (Vector set! 15 () s) (Vector set! 17 () s) (Vector set! 19 () s) (Vector set! 0 0 %bl-bold)))
 
 ; With nowhere at all to go on a level: the first time, the cells beside
 ; the unseen are all to be stood on again and what sits is no longer
@@ -1015,6 +1016,17 @@
     (def cr (if (null? seen) owed seen))
     (match ((null? cr) #f) ((not (%bl-talk? g s cr)) #f) (#t (%bl-toward-creature! g s cr)))))
 
+; A step toward the quarry, slot 19 of S, the foe last set out after:
+; while it lives and its fight is worth it, it is gone after though
+; another is nearer in view, or the bot would turn about between two.
+; STEP-TO walks to a creature within so many steps.  Nil with none.
+(def %bl-to-quarry
+  (fn (_ g s who step-to)
+    (def cr (Vector ref 19 s))
+    (match ((null? cr) ()) ((not (List any? (fn (_ x) (same? x cr)) (game-creatures g))) ())
+           ((not (%bl-worth? g who cr)) ())
+           (#t (step-to cr (%bl-at who (lit chase)))))))
+
 ; With nothing pressing: what lies here, an item within reach (within
 ; GREED with a hostile in view), a foe in view within CHASE whose fight
 ; is worth it to COURAGE, the errand on a world of screens, the giver, the level
@@ -1029,9 +1041,12 @@
     (def to-item (if (if (< 0 reach) (%bl-any-wanted? g s) #f)
                    (%bl-step-within g s (lit item) (fn (_ r c) (not (null? (%bl-wanted-at g s r c)))) reach) ()))
     (def shoots? (if (null? shown) #f (creature-trait? shown (lit ranged))))
-    (def to-foe (if (match ((null? shown) #t) (shoots? #f) (#t (not (%bl-worth? g who shown)))) ()
-                  (%bl-step-within g s (lit foe) (fn (_ r c) (if (= r (creature-r shown)) (= c (creature-c shown)) #f))
-                    (if shoots? 9999 (%bl-at who (lit chase))))))
+    (def step-to
+      (fn (_ cr most) (%bl-step-within g s (lit foe) (fn (_ r c) (if (= r (creature-r cr)) (= c (creature-c cr)) #f)) most)))
+    (def to-shown (if (match ((null? shown) #t) (shoots? #f) (#t (not (%bl-worth? g who shown)))) ()
+                    (step-to shown (if shoots? 9999 (%bl-at who (lit chase))))))
+    (unless (null? to-shown) (Vector set! 19 shown s))
+    (def to-foe (if (null? to-shown) (%bl-to-quarry g s who step-to) to-shown))
     (def errand (if (game-screens? g) (%bl-errand g) ()))
     (def curious? (match ((%bl-explored? g s) #f) ((%bl-surveying? g) #t) ((not (%bl-light-left? g s)) #f)
                          ((< 99 (%bl-at who (lit curiosity))) #t)
@@ -1176,7 +1191,7 @@
     (def g (%bl-start set play))
     (unless (str=? path "") (File write-all path ""))
     (def kept (Vector of (str=? path "")))
-    (def s (Vector of #f "" 0 0 #f () () 0 () () 0 0 () 0 #f () () () -1))
+    (def s (Vector of #f "" 0 0 #f () () 0 () () 0 0 () 0 #f () () () -1 ()))
     (def arrivals (Vector of (list (%bl-arrival g))))
     (def loop
       (fn (self turn stalled)
@@ -1243,7 +1258,7 @@
           (unless (null? cr)
             (do (def hp (creature-prop cr (lit hp) (list 1 1)))
                 (creature-hp! cr (state-roll (game-rng g) (first hp) (List ref 1 hp)))))
-          (def s (Vector of #f "" 0 0 #f () () 0 () () 0 0 () 0 #f () () () -1))
+          (def s (Vector of #f "" 0 0 #f () () 0 () () 0 0 () 0 #f () () () -1 ()))
           (def depth (game-depth g))
           (def start (game-turn g))
           (def loop
