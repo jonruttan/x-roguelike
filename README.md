@@ -24,6 +24,7 @@ Each set keeps its own save and scores, in `~/.x-roguelike/NAME/`.
     o                 explore until something comes into view; a key stops
     L                 what has been said lately
     m                 the map of the world, in a world of screens
+    v                 who is in view and how they fare, the turn and the clock
     >                 go down, or in a door    <         go up with the goal, or out
     i                 your pack                d         drop a thing
     q                 quaff a potion           r         read a scroll or a page
@@ -66,7 +67,10 @@ the host can reach it.  A browser starts the sound and goes fullscreen
 only after a key or a click on the page.
 
 The first row says what happened; the last is your standing: the
-level, gold, hit points, strength, experience, and how hungry you are.
+level, gold, hit points, strength, experience, and how much food and
+lamp oil you have left, each as a share of the most you can hold
+(`Food:50%  Lamp:73%`), under the name of what is wrong once it runs
+low (`Hungry:17%`, `Lamp low:34%`, `Dark`).
 A lit room is seen whole from its door; a dark one, and a passage, a
 cell around you.  What you have seen stays on the map.  A set that says
 `(light day)` lies under the sky: a level of it is in view whole from
