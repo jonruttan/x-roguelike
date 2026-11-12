@@ -306,7 +306,7 @@
 ; slow creature last stepped clear of, and where it stood, 17 where the
 ; player last was, 18 how much the pack held at the last talk here, 19
 ; the foe last set out after, 20 the foes given up here, 21 where the
-; last turns were spent.
+; last turns were spent, 22 the hit points at the last turn.
 
 ; Where the player stands, as text: the depth, or on a world of screens
 ; the screen and any interior.
@@ -822,6 +822,27 @@
         (#t ())))
     (if (null? use) #f (do (%bl-use! g (first use) (rest use)) #t))))
 
+; Whether the bot is past fighting for its own sake: on the goal's
+; level, where the goal is all there is to have, or carrying it up.
+(def %bl-running?
+  (fn (_ g)
+    (if (items-goal-held? g) #t
+      (= (game-depth g) (List ref 2 (data-one (game-top-set g) (lit goal) (list "" "" 0)))))))
+; Whether, running, the bot goes on its way with a hostile beside it: a
+; step away is a turn the creature spends following.  Not held or
+; slowed, nothing fast beside it, and not struck since its last turn,
+; slot 22 of S its hit points then: one that lands its blows is fought.
+(def %bl-slips?
+  (fn (_ g s)
+    (def p (game-player g))
+    (def fast? (List any? (fn (_ cr)
+                            (match ((not (%bl-hostile? cr)) #f) ((not (creature-trait? cr (lit fast))) #f)
+                                   (#t (state-adjacent? (creature-r cr) (creature-c cr) (player-r p) (player-c p)))))
+                 (game-creatures g)))
+    (match ((not (%bl-running? g)) #f) ((< 0 (player-condition p (lit held))) #f) ((< 0 (player-condition p (lit slowed))) #f)
+           (fast? #f)
+           (#t (not (< (player-hp p) (Vector ref 22 s)))))))
+
 ; --- the turn ----------------------------------------------------------------
 
 ; The hostile creature here that no depth lays, a band's guardian, or nil.
@@ -889,6 +910,8 @@
     (unless (%bl-here? g s) (%bl-new-level! g s))
     (%bl-thrown! g s)
     (%bl-turning! g s foe shown)
+    (def slips (%bl-slips? g s))
+    (Vector set! 22 (player-hp p) s)
     (match
       ((not (null? q)) (%bl-answer! g q))
       ((if (null? potion) #f (%bl-under? p (%bl-at who (lit quaff))))
@@ -900,6 +923,7 @@
       ((%bl-zap! g who (match ((not (null? foe)) foe)
                               ((null? shown) (List find (fn (_ cr) (%bl-sitter? g cr)) (game-creatures g)))
                               ((eq? (creature-state shown) (lit asleep)) ()) (#t shown))) ())
+      ((if (null? foe) #f slips) (%bl-onward! g s who shown))
       ((if (null? foe) #f (%bl-outpace? g)) (%bl-outpace! g s who foe))
       ((not (null? foe))
         (unless (if (if (< 0 (%bl-at who (lit retreat))) (%bl-free? g foe) #f)
@@ -1078,7 +1102,7 @@
     (def shoots? (if (null? shown) #f (creature-trait? shown (lit ranged))))
     (def step-to
       (fn (_ tag cr most) (%bl-step-within g s tag (fn (_ r c) (if (= r (creature-r cr)) (= c (creature-c cr)) #f)) most)))
-    (def to-shown (if (match ((null? shown) #t) ((eq? (creature-state shown) (lit fleeing)) #t)
+    (def to-shown (if (match ((null? shown) #t) ((%bl-running? g) #t) ((eq? (creature-state shown) (lit fleeing)) #t)
                              ((List any? (fn (_ x) (same? x shown)) (Vector ref 20 s)) #t) (shoots? #f)
                              (#t (not (%bl-worth? g who shown))))
                     ()
@@ -1229,7 +1253,7 @@
     (def g (%bl-start set play))
     (unless (str=? path "") (File write-all path ""))
     (def kept (Vector of (str=? path "")))
-    (def s (Vector of #f "" 0 0 #f () () 0 () () 0 0 () 0 #f () () () -1 () () ()))
+    (def s (Vector of #f "" 0 0 #f () () 0 () () 0 0 () 0 #f () () () -1 () () () 0))
     (def arrivals (Vector of (list (%bl-arrival g))))
     (def loop
       (fn (self turn stalled)
@@ -1296,7 +1320,7 @@
           (unless (null? cr)
             (do (def hp (creature-prop cr (lit hp) (list 1 1)))
                 (creature-hp! cr (state-roll (game-rng g) (first hp) (List ref 1 hp)))))
-          (def s (Vector of #f "" 0 0 #f () () 0 () () 0 0 () 0 #f () () () -1 () () ()))
+          (def s (Vector of #f "" 0 0 #f () () 0 () () 0 0 () 0 #f () () () -1 () () () 0))
           (def depth (game-depth g))
           (def start (game-turn g))
           (def loop
