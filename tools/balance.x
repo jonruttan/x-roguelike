@@ -961,6 +961,30 @@
            ((not (null? shown)) (unless (%bl-toward-creature! g s shown) (%bl-look! g s)))
            (#t (%bl-look! g s)))))
 
+; The errand asked on this level and not yet done, (quest NAME GIVER .
+; PROPS), or nil.
+(def %bl-errand-here
+  (fn (_ g)
+    (List find
+      (fn (_ q)
+        (def state (game-quest-state g (List ref 1 q)))
+        (match ((not (= (first (data-prop q (lit level) (list 0))) (game-depth g))) #f) ((null? state) #f)
+               (#t (not (eq? state (lit done))))))
+      (data-all (game-set g) (lit quest)))))
+; Whether that errand is to see the whole level: worth its light, for
+; what it pays.
+(def %bl-surveying?
+  (fn (_ g)
+    ((fn (_ q) (if (null? q) #f (eq? (first (data-prop q (lit wants) (list ()))) (lit explore)))) (%bl-errand-here g))))
+; A step toward one of the people: one in view not yet spoken to here,
+; or the one whose level has now been seen.  #f with none to go to.
+(def %bl-to-giver!
+  (fn (_ g s)
+    (def seen (List find (fn (_ cr) (if (creature-trait? cr (lit talks)) (creatures-shown? g cr) #f)) (game-creatures g)))
+    (def asked (if (if (%bl-surveying? g) (%bl-explored? g s) #f) (state-creature-named g (List ref 2 (%bl-errand-here g))) ()))
+    (def cr (if (null? seen) asked seen))
+    (match ((null? cr) #f) ((not (%bl-talk? g s cr)) #f) (#t (%bl-toward-creature! g s cr)))))
+
 ; With nothing pressing: what lies here, an item within reach (within
 ; GREED with a hostile in view), a foe in view within CHASE whose fight
 ; is worth it to COURAGE, the errand on a world of screens, the giver, the level
@@ -979,7 +1003,7 @@
                   (%bl-step-within g s (lit foe) (fn (_ r c) (if (= r (creature-r shown)) (= c (creature-c shown)) #f))
                     (if shoots? 9999 (%bl-at who (lit chase))))))
     (def errand (if (game-screens? g) (%bl-errand g) ()))
-    (def curious? (match ((%bl-explored? g s) #f) ((not (%bl-light-left? g s)) #f)
+    (def curious? (match ((%bl-explored? g s) #f) ((%bl-surveying? g) #t) ((not (%bl-light-left? g s)) #f)
                          ((< 99 (%bl-at who (lit curiosity))) #t)
                          (#t (< (%bl-seen-pct g) (%bl-at who (lit curiosity))))))
     (match
@@ -990,6 +1014,7 @@
       ((not (null? errand)) (%bl-errand! g s errand shown))
       ((if (null? giver) #f (%bl-talk? g s giver))
         (do (%bl-toward-creature! g s giver) (Vector set! 4 #t s) (Vector set! 18 (List length (game-pack g)) s)))
+      ((%bl-to-giver! g s) ())
       ((if curious? (%bl-to-frontier! g s) #f) ())
       (curious? (do (%bl-explored! g s) (%bl-descend! g s who shown)))
       (#t (%bl-descend! g s who shown)))))
