@@ -1,15 +1,22 @@
 # x-roguelike
 
-A roguelike on x-lang, as a lang bundle: a dungeon of rooms and
-passages made anew each game, creatures that wake and hunt, things to
-find and work out, hunger, and one life.  Every creature, item, guise,
+A roguelike written in [x-lang](https://github.com/jonruttan/x-lang),
+loaded as a lang, and an original game, not a port of Rogue: a dungeon of
+rooms and passages made anew each game, creatures that wake and hunt,
+things to find and work out, hunger, and one life.  It plays at a
+terminal, in a window, or in a browser tab.  Every creature, item, guise,
 message and tuning number is read from a set of `.xon` files, so a set
 is a game of its own on the same engine; `classic`, `delve`, `kettle`
 and `town` are the four shipped, the last two worlds of screens rather
 than a descent.
 
     x -l roguelike -- [-s NAME] [-c GROUP=NAME]... [-S N] [-d DIR] [play]
+    x -l roguelike -- [-w [-z N]] | [-W [-L ADDRESS]] ...
     x -l roguelike -- [-s NAME] scores
+    x -l roguelike -- -V | -h
+
+With no `-s` the set is `classic`.  `-w` plays in a window and needs
+SDL3, with `-z` its zoom; `-W` plays in a browser tab.
 
 The goal lies on the deepest level.  Held, it opens the stairs up, and
 every level climbed is made again, roused and hostile; the surface is
@@ -64,7 +71,8 @@ answer from the keyboard.
 Where there is no SDL3, `-W` (`--web`) plays the same game in a browser
 tab: the address to open is printed, the first one free from
 `http://127.0.0.1:8080/`.  In a container, `-L 0.0.0.0` listens where
-the host can reach it.  A browser starts the sound and goes fullscreen
+the host can reach it, and so can anyone else who reaches that address:
+the page asks for no login.  A browser starts the sound and goes fullscreen
 only after a key or a click on the page.
 
 The first row says what happened; the last is your standing: the
@@ -83,7 +91,7 @@ creature's tale waits for, and what stops a walk.
 ## A set
 
 A set is a directory of `.xon` files, every form in them read in
-file-name order.  `data/classic/` is the one shipped and documents each
+file-name order.  `data/classic/` is the one that documents each
 form: `game.xon` the tuning, `creatures.xon` what lives there and the
 traits it may have, `items.xon` what lies about and the effects an
 item may carry, `messages.xon` what the game says, `tui.xon` how the
@@ -394,7 +402,16 @@ in a line.  The header of tools/model.x has the formulas.
 
 ## Installing
 
+It needs x-lang at the release `lang.xon` declares.
+
     make install         into <share>/langs/roguelike, where `x -l` looks
+
+## Documentation
+
+- [The game in a window](docs/graphics.md): the windowed front end and a
+  set's pictures.
+- [Sound](docs/sound.md): the music and effects, synthesised from a set's
+  data.
 
 ## Licence
 
