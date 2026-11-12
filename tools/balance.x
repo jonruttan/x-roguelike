@@ -265,8 +265,15 @@
                         ((not (creatures-shown? g cr)) best) ((null? best) cr)
                         ((< (far cr) (far best)) cr) (#t best)))
       () (game-creatures g))))
+; A step toward CR, or the blow, or the talk, when it is beside the
+; player: a step onto a creature is taken whatever it stands on, so one
+; beside is walked into and not walked to.
 (def %bl-toward-creature!
-  (fn (_ g s cr) (%bl-walk! g s (lit creature) (fn (_ r c) (if (= r (creature-r cr)) (= c (creature-c cr)) #f)))))
+  (fn (_ g s cr)
+    (def p (game-player g))
+    (if (state-adjacent? (creature-r cr) (creature-c cr) (player-r p) (player-c p))
+      (do (%bl-key! g (%bl-key-for (- (creature-r cr) (player-r p)) (- (creature-c cr) (player-c p)))) #t)
+      (%bl-walk! g s (lit creature) (fn (_ r c) (if (= r (creature-r cr)) (= c (creature-c cr)) #f))))))
 
 (def %bl-in-pack (fn (_ g pred) (List find pred (game-pack g))))
 (def %bl-of-class (fn (_ wanted) (fn (_ it) (eq? (item-class it) wanted))))
