@@ -307,9 +307,9 @@ under it the lamp is what runs out, and food lasts the day.
 A ring with `(bonus light N)` lights N cells round the player with the
 lamp out, drawn in the set's `(colour glow N)` in the terminal and a
 cold light in the window.  With the lamp lit it sharpens the eye
-instead: `s` finds hidden traps N cells off in sight, and those beside
-are noticed at every turn's end.  `delve`'s ring of illumination lights
-three.
+instead: `s` finds hidden traps and secret doors N cells off in sight,
+and those beside are noticed at every turn's end.  `delve`'s ring of
+illumination lights three.
 
 What a cell is and how it is drawn are kept apart.  `roguelike/map`
 reports each cell's kind of terrain -- floor, wall, door, water,
@@ -380,6 +380,19 @@ keeper beside it, a creature of the depth, asleep unless wakeful: a
 thing worth having and what stands between you and it.  `kettle`'s
 three bands past the hub each have their word, their colour and their
 caches, and few things lie loose.
+
+`(secrets LO HI GOLD GUARDS)` digs LO to HI rooms a level on the way
+down, each behind a plain wall cell beside open ground with rock behind
+it, out of sight and past the elbow room, its way in a secret door
+drawn as the wall until `s` finds it, as it finds a trap: beside, or
+as far as a ring's light reaches with the lamp lit.  Each holds a hoard
+of gold, three piles' worth, GOLD times in a hundred, and a creature
+of the depth or two, asleep unless wakeful, GUARDS times in a hundred;
+with neither it is empty.  A band's `(prize CLASS "NAME")` lies in one
+on one of its levels, once a game, or in the open on its last if no
+room could be dug there.  `delve` digs none to two a level at even
+chances, and its bands hide a ring of illumination, a ring of warding,
+a plated harness and a ring of mending.
 
 ## Running the suite
 

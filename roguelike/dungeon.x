@@ -22,10 +22,10 @@
 (import x/core/doors int/ int+ int- int< int= int& int>> obj-ref obj-set!)
 (import roguelike/map
   tile-rock tile-floor tile-wall tile-door tile-passage tile-down tile-up
-  tile-water tile-pillar tile-fall tile-dressed tile-hedge tile-gate tile-thicket tile-edge tile-bog tile-scar tile-shallow
+  tile-water tile-pillar tile-fall tile-dressed tile-hedge tile-gate tile-thicket tile-edge tile-bog tile-scar tile-shallow tile-secret
   map-make map-rows map-cols map-rooms map-rooms! map-places! map-down map-down! map-up map-up! map-roof! map-terrain
   map-tile map-set! map-in? map-passable? map-opaque? map-floor? room-r0 room-c0 room-r1 room-c1 room-centre map-each!
-  map-fill-unreached!)
+  map-fill-unreached! map-walkable?)
 (import roguelike/scale scale-rung scale-across scale-down scale-area)
 
 ; The set's parameters, (KEY . VALUES) alist, or DEFAULT's values.
@@ -1075,4 +1075,68 @@
        (if (null? (map-rooms m)) (pair (rng int (map-rows m)) (rng int (map-cols m)))
          (%dg-spot rng (rng choice (map-rooms m))))))))
 
-(provide roguelike/dungeon dungeon-generate dungeon-spot dungeon-open-close!)
+; --- secret rooms ---------------------------------------------------------------
+
+; A room dug behind a wall: a wall cell beside open ground, a plain wall
+; and not dressed stone or a hedge, with H by W cells of rock behind it
+; and a cell of rock or wall all round them but for the wall itself.
+; The cells are made floor, the rock round them wall, and the wall cell
+; a secret door.
+(def %dg-rock? (fn (_ m r c) (if (map-in? m r c) (= (map-tile m r c) tile-rock) #f)))
+(def %dg-solid? (fn (_ m r c) (if (%dg-rock? m r c) #t (if (map-in? m r c) (= (map-tile m r c) tile-wall) #f))))
+; Whether OK? holds of every cell from R0 C0 to R1 C1.
+(def %dg-all?
+  (fn (_ r0 c0 r1 c1 ok?)
+    ((fn (self r c) (match ((< r1 r) #t) ((< c1 c) (self (+ r 1) c0)) ((ok? r c) (self r (+ c 1))) (#t #f))) r0 c0)))
+; For open cell AT and way D, the wall cell and the floor behind it, H
+; deep from the wall and W along it, the wall cell at ALONG on its near
+; side: (WR WC R0 C0 R1 C1).
+(def %dg-secret-at
+  (fn (_ at d h w along)
+    (def dr (first d))
+    (def dc (rest d))
+    (def wr (+ (first at) dr))
+    (def wc (+ (rest at) dc))
+    (def r0 (match ((= dr 1) (+ wr 1)) ((= dr -1) (- wr h)) (#t (- wr along))))
+    (def c0 (match ((= dc 1) (+ wc 1)) ((= dc -1) (- wc h)) (#t (- wc along))))
+    (list wr wc r0 c0 (+ r0 (- (if (= dr 0) w h) 1)) (+ c0 (- (if (= dc 0) w h) 1)))))
+; Whether the cell R C of the ring round the floor of PLAN keeps it shut.
+(def %dg-ring-ok?
+  (fn (_ m plan r c)
+    (def inside? (if (if (< (List ref 2 plan) r) (not (< (List ref 4 plan) r)) #f)
+                   (if (< (List ref 3 plan) c) (not (< (List ref 5 plan) c)) #f) #f))
+    (match ((if (= r (first plan)) (= c (List ref 1 plan)) #f) #t) (inside? #t) (#t (%dg-solid? m r c)))))
+; Whether PLAN can be dug on M from open cell AT.
+(def %dg-secret-fits?
+  (fn (_ m at plan)
+    (def r0 (List ref 2 plan))
+    (def c0 (List ref 3 plan))
+    (def r1 (List ref 4 plan))
+    (def c1 (List ref 5 plan))
+    (match ((not (map-walkable? m (first at) (rest at))) #f)
+           ((not (map-in? m (first plan) (List ref 1 plan))) #f)
+           ((not (= (map-tile m (first plan) (List ref 1 plan)) tile-wall)) #f)
+           ((< r0 1) #f) ((< c0 1) #f) ((< (- (map-rows m) 2) r1) #f) ((< (- (map-cols m) 2) c1) #f)
+           ((not (%dg-all? r0 c0 r1 c1 (fn (_ r c) (%dg-rock? m r c)))) #f)
+           (#t (%dg-all? (- r0 1) (- c0 1) (+ r1 1) (+ c1 1) (fn (_ r c) (%dg-ring-ok? m plan r c)))))))
+(def %dg-secret-dig!
+  (fn (_ m plan)
+    (def r0 (List ref 2 plan))
+    (def c0 (List ref 3 plan))
+    (def r1 (List ref 4 plan))
+    (def c1 (List ref 5 plan))
+    (map-each! (- r0 1) (- c0 1) (+ r1 1) (+ c1 1) (fn (_ r c) (when (%dg-rock? m r c) (map-set! m r c tile-wall))))
+    (map-each! r0 c0 r1 c1 (fn (_ r c) (map-set! m r c tile-floor)))
+    (map-set! m (first plan) (List ref 1 plan) tile-secret)
+    (list r0 c0 r1 c1)))
+; One dug on M, H by W, in TRIES tries, from a random cell and way, its
+; door where DOOR? R C allows: (R0 C0 R1 C1) of its floor, or nil.
+(def dungeon-secret-room!
+  (fn (self rng m h w door? tries)
+    (if (< tries 1) ()
+      (do (def at (pair (rng int (map-rows m)) (rng int (map-cols m))))
+          (def plan (%dg-secret-at at (rng choice %dg-four) h w (rng int w)))
+          (if (if (%dg-secret-fits? m at plan) (door? (first plan) (List ref 1 plan)) #f) (%dg-secret-dig! m plan)
+            (self rng m h w door? (- tries 1)))))))
+
+(provide roguelike/dungeon dungeon-generate dungeon-spot dungeon-open-close! dungeon-secret-room!)

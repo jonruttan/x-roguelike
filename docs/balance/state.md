@@ -211,9 +211,9 @@ oil is 300 seconds of light, so a level below the first gives about
 
 | Errand | Level | Reward | Against what lies about |
 |---|---|---|---|
-| the lamp | 2 | miner's blade, or boiled leather | both are found at that depth |
-| the survey | 5 | wand of sparks, or ring of warding | in keeping |
-| the pump | 9 | foreman's pick 3-9, or plated harness | the sledge, 3-10, is found from level 5 |
+| the lamp | 2 | miner's blade, or scale coat 4 | the coat is found from level 4 |
+| the survey | 5 | wand of sparks, or ring of vigour | the Flood's prize is the ring of warding |
+| the pump | 9 | foreman's pick 3-9, or ring of silence | the sledge, 3-10, is found from level 5; the Old Works' prize is the plated harness |
 
 ## The bots today
 
