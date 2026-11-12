@@ -19,11 +19,12 @@
 (module roguelike/frame)
 
 (import x/type/vector)
-(import x/core/doors int+ int- int* int/ int% int< int= str-make str->ptr ptr-set! ptr-ref str-byte-ref char->int mem-copy)
+(import x/core/doors int+ int- int* int/ int% int< int= str-make str->ptr ptr-set! ptr-ref ptr->int int->ptr str-byte-ref char->int mem-copy mem-cmp)
 (import roguelike/data data-all data-glyph)
 (import roguelike/items items-glyph)
 (import roguelike/map map-terrain map-kinds map-rows map-cols map-tile map-seen? map-visible? map-in? map-opaque? map-chart
-  tile-rock tile-roof tile-door tile-water tile-shallow map-shown map-covered? map-roofed? map-roof-pitch map-roof-at)
+  tile-rock tile-roof tile-door tile-water tile-shallow map-shown map-covered? map-roofed? map-roof-pitch map-roof-at
+  map-roof-off map-drawn-buffers)
 (import roguelike/state game-map game-player game-floor game-creatures game-traps
   player-r player-c player-conditions item-r item-c item-class creature-r creature-c creature-name creature-glyph
   creature-state creature-condition game-set game-blows game-over)
@@ -247,19 +248,27 @@
 ; wall's are, by the roofed cells beside it; a cell not seen, or off
 ; the map, is a fill of the dark.
 (def frame-cell
-  (fn (_ a m r c x y)
-    (if (map-in? m r c) (%fr-cell a m r c x y)
-      (list (list (lit fill) x y frame-tile-size frame-tile-size)))))
+  (fn (_ a m r c x y) (%fr-cell-ops (%fr-cell-pics a m r c) x y)))
+; The pictures the cell at R C of M is drawn in, in order, or dark for
+; a fill of the dark.
+(def %fr-cell-pics
+  (fn (_ a m r c) (if (map-in? m r c) (%fr-cell a m r c) (lit dark))))
+; The ops drawing a cell's pictures PICS at X Y.
+(def %fr-cell-ops
+  (fn (self pics x y)
+    (match ((null? pics) ())
+           ((pair? pics) (pair (list (lit tile) x y (first pics)) (self (rest pics) x y)))
+           (#t (list (list (lit fill) x y frame-tile-size frame-tile-size))))))
 (def %fr-cell
-  (fn (_ a m r c x y)
+  (fn (_ a m r c)
     (def t ((fn (_ k) (if (= k tile-door) (if (map-covered? m r c) tile-roof k) k)) (map-shown m r c)))
     (def pics (Vector ref t (first a)))
     (def seed (+ (* r 80) c))
-    ; The parts PARTS put, in order, in front of ACC.
+    ; The pictures of the parts PARTS, in order, in front of ACC.
     (def puts
       (fn (self parts acc)
         (if (null? parts) acc
-          ((fn (_ p) (if (null? p) (self (rest parts) acc) (pair (list (lit tile) x y p) (self (rest parts) acc))))
+          ((fn (_ p) (if (null? p) (self (rest parts) acc) (pair p (self (rest parts) acc))))
            (%fr-pick pics (first parts) seed)))))
     ; The ground's parts: joined to its neighbours where its kind has rims.
     (def ground
@@ -267,14 +276,14 @@
         (if (List any? (fn (_ p) (eq? (first p) (lit n))) pics)
           (frame-join-parts (fn (_ dr dc) (%fr-joins? m t (+ r dr) (+ c dc))))
           (list ()))))
-    (match ((not (map-seen? m r c)) (list (list (lit fill) x y frame-tile-size frame-tile-size)))
-           ((= t tile-rock) (list (list (lit fill) x y frame-tile-size frame-tile-size)))
+    (match ((not (map-seen? m r c)) (lit dark))
+           ((= t tile-rock) (lit dark))
            ((= t tile-roof) (puts (%fr-roof-parts pics m r c seed) ()))
            ((map-opaque? t) (puts (frame-wall-parts (fn (_ dr dc) (%fr-solid? m (+ r dr) (+ c dc)))) ()))
-           ((%fr-solid? m (- r 1) c) (puts (List append (ground) (list (lit shade))) (%fr-stoops a m r c x y)))
-           (#t (puts (ground) (%fr-stoops a m r c x y))))))
+           ((%fr-solid? m (- r 1) c) (puts (List append (ground) (list (lit shade))) (%fr-stoops a m r c)))
+           (#t (puts (ground) (%fr-stoops a m r c))))))
 
-; The stoops on the ground at R C of M, art A, at X Y: one from the
+; The stoops on the ground at R C of M, art A, their pictures: one from the
 ; roof's pictures for each door beside it into a building it is not
 ; part of, on the side the door is, so a door is found from the street
 ; whether its roof is on or off: stoop-s below a door to the north,
@@ -283,7 +292,7 @@
 (def %fr-stoop-sides
   (list (list -1 0 (lit stoop-s)) (list 1 0 (lit stoop-n)) (list 0 -1 (lit stoop-e)) (list 0 1 (lit stoop-w))))
 (def %fr-stoops
-  (fn (_ a m r c x y)
+  (fn (_ a m r c)
     (def here (map-roof-at m r c))
     (def pics (Vector ref tile-roof (first a)))
     (List flat-map
@@ -292,7 +301,7 @@
         (def dc (first (rest s)))
         (def id (map-roof-at m (+ r dr) (+ c dc)))
         (if (if (= (map-tile m (+ r dr) (+ c dc)) tile-door) (if (< 0 id) (not (= id here)) #f) #f)
-          ((fn (_ p) (if (null? p) () (list (list (lit tile) x y p))))
+          ((fn (_ p) (if (null? p) () (list p)))
            (%fr-pick pics (List ref 2 s) (+ (* r 80) c)))
           ()))
       %fr-stoop-sides)))
@@ -308,10 +317,86 @@
       ((fn (_ u) (match ((= u t) #t) ((map-opaque? u) #t) (#t (if (%fr-wet? t) (%fr-wet? u) #f)))) (map-tile m r c))
       #t)))
 
+; A cell's pictures turn only on the tiles, the seen flags and the roofs
+; of it and the cells beside it, so they are kept from turn to turn and
+; worked again only around a cell whose tile or seen flag has changed;
+; all of them when a roof has changed, or the roof that is off.
+;
+; A level's cache, [MAP ART OFF TILES SEEN ROOFS CELLS]: the map and art
+; its cells were worked for, OFF the roof that was off then, TILES SEEN
+; and ROOFS copies of the map's buffers then, CELLS each cell's pictures
+; (%fr-cell-pics), or unset.  The painter keeps one.
+(def frame-level-cache (fn (_) (Vector of () () -1 () () () ())))
+(def %fr-copy (fn (_ s n) (def d (str-make n)) (mem-copy (str->ptr d) (str->ptr s) n) d))
+(def %fr-same-buffer?
+  (fn (_ a b n) (if (null? a) (null? b) (if (null? b) #f (int= 0 (mem-cmp (str->ptr a) (str->ptr b) n))))))
+; CACHE brought up to map M with art A.
+(def %fr-level-kept!
+  (fn (_ cache a m)
+    (def n (int* (map-rows m) (map-cols m)))
+    (def bufs (map-drawn-buffers m))
+    (def roofs (List ref 2 bufs))
+    (if (if (same? m (Vector ref 0 cache))
+          (if (same? a (Vector ref 1 cache))
+            (if (int= (map-roof-off m) (Vector ref 2 cache)) (%fr-same-buffer? roofs (Vector ref 5 cache) n) #f) #f) #f)
+      (do (%fr-changed! cache m (first bufs) 3)
+          (%fr-changed! cache m (List ref 1 bufs) 4))
+      (do (Vector set! 0 m cache)
+          (Vector set! 1 a cache)
+          (Vector set! 2 (map-roof-off m) cache)
+          (Vector set! 3 (%fr-copy (first bufs) n) cache)
+          (Vector set! 4 (%fr-copy (List ref 1 bufs) n) cache)
+          (Vector set! 5 (if (null? roofs) () (%fr-copy roofs n)) cache)
+          (Vector set! 6 (Vector make n (lit unset)) cache)))))
+; The cells of CACHE around each cell whose byte in the map M's buffer
+; NOW differs from its copy in CACHE's slot K unset, row by row, and
+; the copy brought up to NOW.
+(def %fr-changed!
+  (fn (_ cache m now k)
+    (def rows (map-rows m))
+    (def cols (map-cols m))
+    (def np (str->ptr now))
+    (def wp (str->ptr (Vector ref k cache)))
+    (def cells (Vector ref 6 cache))
+    (def at (fn (_ p o) (int->ptr (int+ (ptr->int p) o))))
+    (def unset!
+      (fn (_ r c)
+        (List for-each
+          (fn (_ d)
+            (def r2 (int+ r (first d)))
+            (def c2 (int+ c (rest d)))
+            (when (map-in? m r2 c2) (Vector set! (int+ (int* r2 cols) c2) (lit unset) cells)))
+          %fr-around)))
+    (unless (int= 0 (mem-cmp np wp (int* rows cols)))
+      ((fn (self r)
+         (when (int< r rows)
+           (do (def o (int* r cols))
+               (unless (int= 0 (mem-cmp (at np o) (at wp o) cols))
+                 ((fn (self c)
+                    (when (int< c cols)
+                      (do (unless (int= (ptr-ref np (int+ o c) 1) (ptr-ref wp (int+ o c) 1)) (unset! r c))
+                          (self (int+ c 1)))))
+                  0))
+               (self (int+ r 1)))))
+       0)
+      (mem-copy wp np (int* rows cols)))))
+(def %fr-around (list (pair -1 -1) (pair -1 0) (pair -1 1) (pair 0 -1) (pair 0 0) (pair 0 1) (pair 1 -1) (pair 1 0) (pair 1 1)))
+; Cell R C's pictures from CACHE, worked and kept when unset.
+(def %fr-kept-pics
+  (fn (_ cache a m r c)
+    (if (map-in? m r c)
+      ((fn (_ cells i)
+         ((fn (_ pics) (if (eq? pics (lit unset)) ((fn (_ new) (Vector set! i new cells) new) (%fr-cell a m r c)) pics))
+          (Vector ref i cells)))
+       (Vector ref 6 cache) (int+ (int* r (map-cols m)) c))
+      (lit dark))))
+
 ; The level's cells in view of camera CAM, (R0 . C0), with art A, in
-; the order to draw them: built from the last cell back.
+; the order to draw them, their pictures kept in CACHE
+; (frame-level-cache): built from the last cell back.
 (def frame-level
-  (fn (_ a m cam)
+  (fn (_ cache a m cam)
+    (%fr-level-kept! cache a m)
     (def r0 (first cam))
     (def c0 (rest cam))
     (def cols (frame-view-cols))
@@ -320,7 +405,7 @@
          (do (def r (int+ r0 (int/ i cols)))
              (def c (int+ c0 (int% i cols)))
              (self (int- i 1)
-               (%fr-onto (frame-cell a m r c (int* frame-tile-size (int- c c0)) (int+ frame-level-y (int* frame-tile-size (int- r r0)))) acc)))))
+               (%fr-onto (%fr-cell-ops (%fr-kept-pics cache a m r c) (int* frame-tile-size (int- c c0)) (int+ frame-level-y (int* frame-tile-size (int- r r0)))) acc)))))
      (int- (* (frame-view-rows) cols) 1) ())))
 
 ; --- what stands on it --------------------------------------------------------
@@ -641,18 +726,19 @@
     (ptr-set! rp (int+ o 3) 255 1)))
 (def %fr-byte (fn (_ x) (if (int< 255 x) 255 (if (int< x 0) 0 x))))
 
-; G's level with art A, the camera on the player, as (CAM LEVEL .
+; G's level with art A, its cells' pictures kept in CACHE
+; (frame-level-cache), the camera on the player, as (CAM LEVEL .
 ; OVER): the ground's ops, which change only when the camera or the
 ; map does and so are drawn once into a layer of their own; then the
 ; cells of the ground with a tile that moves, (frames ...), what stands
 ; on it, the view and the lights, drawn over that every frame, and the
 ; chart of the whole level.
 (def frame-scene
-  (fn (_ g a)
+  (fn (_ cache g a)
     (def m (game-map g))
     (def p (game-player g))
     (def cam (frame-camera (map-rows m) (map-cols m) (player-r p) (player-c p)))
-    (def level (frame-level a m cam))
+    (def level (frame-level cache a m cam))
     (def moving (%fr-moving-cells level))
     (def in? (fn (_ op) (%fr-at? moving (first (rest op)) (first (rest (rest op))))))
     (def things (frame-things g a cam))
@@ -752,5 +838,5 @@
 (provide roguelike/frame
   frame-tile-size frame-view-rows frame-view-cols frame-view! frame-pan frame-pan! frame-level-y
   frame-art frame-art-band frame-named frame-seed frame-wall-parts frame-join-parts frame-camera frame-cell frame-level
-  frame-place frame-things frame-view frame-lights frame-glints frame-blows frame-flicker frame-light-map frame-light-cache frame-scene
+  frame-place frame-things frame-view frame-lights frame-glints frame-blows frame-flicker frame-light-map frame-light-cache frame-level-cache frame-scene
   frame-chart)

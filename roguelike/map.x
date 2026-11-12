@@ -259,6 +259,9 @@
 ; Whether R C is drawn as roof: under one that is on, and no door into
 ; the building.
 (def map-roofed? (fn (_ m r c) (int= (map-shown m r c) tile-roof)))
+; M's buffers that decide how its cells are drawn, a byte a cell: (TILES
+; SEEN ROOFS), ROOFS nil on a level with no building.
+(def map-drawn-buffers (fn (_ m) (list (%mp-get m 2) (%mp-get m 3) (%mp-get m 9))))
 
 ; A roof is peaked, its ridge along its longer side.  The slope a cell
 ; of it is on: 0 under no roof, 1 the far slope of a ridge running east
@@ -667,7 +670,7 @@
   tile-rock tile-floor tile-wall tile-door tile-passage tile-down tile-up
   tile-water tile-pillar tile-fall tile-dressed tile-hedge tile-gate tile-thicket tile-edge tile-bog tile-scar tile-shallow tile-roof tile-counter
   map-terrain map-kinds map-look map-look-run
-  map-roof-at map-roof! map-roof-off map-covered? map-roofed? map-shown map-roofs? map-roof-pitch
+  map-roof-at map-roof! map-roof-off map-covered? map-roofed? map-shown map-roofs? map-roof-pitch map-drawn-buffers
   map-make map-rows map-cols map-rooms map-rooms! map-down map-down! map-up map-up! map-places map-places! map-place-at
   map-in? map-tile map-set! map-seen? map-seen! map-visible? map-passable? map-walkable? map-floor?
   room-r0 room-c0 room-r1 room-c1 room-lit? room-covers? room-inside? room-centre map-room-at
