@@ -103,15 +103,24 @@
             (creature-carried! (%qs-creature! g carrier (first at) (rest at)) it))
           (game-placed! g name)))))
 
-; Of Q's N tokens, the Kth lies on level LEVEL - N + 1 + K.
+; Whether the level in hand is Q's (lies-below REGION LEVEL).
+(def %qs-below?
+  (fn (_ g q)
+    (def at (data-prop q (lit lies-below) ()))
+    (def region (game-region g))
+    (match ((null? at) #f) ((null? region) #f)
+           ((str=? (first at) region) (= (game-depth g) (List ref 1 at))) (#t #f))))
+
 ; Of Q's N tokens, the Kth lies on level LEVEL - N + 1 + K; a quest on
-; a (screen X Y) lays every one on its (lies X Y), and none without.
+; a (screen X Y) lays every one on its (lies X Y), or on its (lies-below
+; REGION LEVEL), and none without.
 (def %qs-place-tokens!
   (fn (_ g q)
     (def names (%qs-items q))
     (def k (- (game-depth g) (+ 1 (- (%qs-level q) (List length names)))))
     (def lay! (fn (_ name) (unless (game-placed? g name) (%qs-place-token! g q name))))
-    (match ((not (null? (data-prop q (lit lies) ()))) (when (%qs-on-screen? g q (lit lies)) (List for-each lay! names)))
+    (match ((not (null? (data-prop q (lit lies-below) ()))) (when (%qs-below? g q) (List for-each lay! names)))
+           ((not (null? (data-prop q (lit lies) ()))) (when (%qs-on-screen? g q (lit lies)) (List for-each lay! names)))
            ((not (null? (data-prop q (lit screen) ()))) ())
            ((if (< k 0) #t (not (< k (List length names)))) ())
            (#t (lay! (List ref k names))))))
@@ -367,14 +376,17 @@
     (list (data-prop1 q (lit region) "") (first at) (List ref 1 at) (data-prop1 q (lit found) ""))))
 ; The first of Q's wants not in the pack, or nil.
 (def %qs-missing (fn (_ g q) (List find (fn (_ n) (not (%qs-has? g n))) (%qs-items q))))
-; Where the thing NAME that Q wants is: where it lies, or with the quest
-; that gives it, or nil.
+; Where the thing NAME that Q wants is: where it lies, on the ground or
+; below, or with the quest that gives it, or nil.  Below, it is on no
+; screen, and the way to it is its words.
 (def %qs-source
   (fn (_ g q name)
     (def lies (data-prop q (lit lies) ()))
+    (def below (data-prop q (lit lies-below) ()))
     (def giver (List find (fn (_ o) (List any? (fn (_ r) (if (< (List length r) 2) #f (str=? (List ref 1 r) name))) (data-prop o (lit rewards) ())))
                  (%qs-quests g)))
-    (match ((not (null? lies)) (list "" (first lies) (List ref 1 lies) (data-prop1 q (lit lies-found) "")))
+    (match ((not (null? below)) (list (first below) () () (data-prop1 q (lit lies-found) "")))
+           ((not (null? lies)) (list "" (first lies) (List ref 1 lies) (data-prop1 q (lit lies-found) "")))
            ((null? giver) ())
            ((null? (data-prop giver (lit screen) ())) ())
            (#t (%qs-stands giver)))))

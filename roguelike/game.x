@@ -824,7 +824,8 @@
 ; A set's (score (NAME POINTS) ...), the set the game began on, below
 ; or not, is what a game is worth: POINTS for each of NAME, among gold,
 ; deepest (the level, or the screens out from the hub), won, quests (done), screens (visited) and places (gone
-; into); and (par TURNS POINTS), POINTS a turn under TURNS on a win.
+; into), goals (of the regions, brought out of them); and (par TURNS
+; POINTS), POINTS a turn under TURNS on a win.
 ; What it does not name counts nothing.  A set without one scores
 ; gold, fifty a level and a thousand for the win.
 (def %gm-score-default (list (list (lit gold) 1) (list (lit deepest) 50) (list (lit won) 1000)))
@@ -840,7 +841,19 @@
            ((eq? name (lit quests)) (List count-if (fn (_ p) (eq? (rest p) (lit done))) (game-quests g)))
            ((eq? name (lit screens)) (List count-if (fn (_ k) (not (place? k))) keys))
            ((eq? name (lit places)) (List count-if place? keys))
+           ((eq? name (lit goals)) (%gm-goals-out g))
            (#t 0))))
+
+; How many goals of the world's regions G holds out of their regions:
+; brought up, where one still in its region is only held.
+(def %gm-goals-out
+  (fn (_ g)
+    (def in (List map first (game-regions g)))
+    (def out
+      (List flat-map
+        (fn (_ r) (if (List any? (fn (_ n) (str=? n (first r))) in) () (list (first (data-one (rest r) (lit goal) (list ""))))))
+        (data-all (game-top-set g) (lit region))))
+    (List count-if (fn (_ it) (if (item-class? it (lit goal)) (List any? (fn (_ n) (str=? n (item-name it))) out) #f)) (game-pack g))))
 
 ; Each line of the score that counts, in the set's order: (NAME COUNT
 ; POINTS).  The par's count is the turns under it.
@@ -868,6 +881,7 @@
         (list (lit quests) (lit score-quests) "{points} for quests done: {count}")
         (list (lit screens) (lit score-screens) "{points} for screens visited: {count}")
         (list (lit places) (lit score-places) "{points} for places gone into: {count}")
+        (list (lit goals) (lit score-goals) "{points} for goals brought up: {count}")
         (list (lit par) (lit score-par) "{points} for turns under par: {count}")))
 
 ; The score's lines in words, the set's (message score-NAME "TEXT")

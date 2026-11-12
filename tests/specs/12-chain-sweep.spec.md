@@ -20,7 +20,7 @@ sound, and no link's want astray.  Apart from 12-chain and
     (def gift (fn (_ q) (List ref 1 (first (prop q 'rewards)))))
     (match ((< n 2) #f) ((< 3 n) #f)
            ((not (eq? (first (first (prop (first chain) 'rewards))) 'goal)) #f)
-           ((null? (prop (List ref (- n 1) chain) 'lies)) #f)
+           ((if (null? (prop (List ref (- n 1) chain) 'lies)) (null? (prop (List ref (- n 1) chain) 'lies-below)) #f) #f)
            (#t (List all? (fn (_ i) (str=? (want (List ref i chain)) (gift (List ref (+ i 1) chain)))) (List range 0 (- n 1)))))))
 (def chains (List map (fn (_ seed) ((fn (_ g) (Heap collect) (game-chain g)) (spec-game-on set seed ()))) (List range 1 13)))
 (def heads (List distinct (List map (fn (_ c) (List ref 1 (first c))) chains)))
