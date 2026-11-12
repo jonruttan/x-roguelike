@@ -37,7 +37,7 @@
 (import x/type/vector)
 (import x/sys/gc)
 (import roguelike/map
-  map-rows map-cols map-in? map-tile map-up map-down map-walkable? map-seen? map-light! map-light-radius! map-light-all! map-seen-whole?
+  map-rows map-cols map-in? map-tile map-set! map-up map-down map-walkable? map-seen? map-light! map-light-radius! map-light-all! map-seen-whole?
   map-place-at map-frontier? tile-rock tile-down tile-up tile-door tile-counter tile-secret)
 (import roguelike/dungeon dungeon-generate dungeon-spot)
 (import x/core/doors int/)
