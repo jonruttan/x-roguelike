@@ -10,6 +10,8 @@
 ;              0 never steps away
 ;   rest       with nothing hostile in view, rests under this %
 ;   ready      rests to this % before stairs down and before a guardian
+;   lit        while the lamp burns, rests and readies to no more than
+;              this %, a guardian's level aside: resting spends the light
 ;   courage    starts a fight with a foe it sees only when the game's odds
 ;              say it costs no more than this % of the hit points it has
 ;   chase      walks this far, at most, to fight a foe it sees
@@ -21,6 +23,7 @@
 (attribute retreat 0 60)
 (attribute rest 0 100)
 (attribute ready 0 100)
+(attribute lit 0 100)
 (attribute courage 0 100)
 (attribute chase 0 40)
 (attribute greed 0 30)
@@ -38,4 +41,4 @@
 (archetype "diver" "takes the stairs as soon as it knows them"
   (curiosity 0 20) (courage 0 30) (chase 0 4))
 (archetype "master" "plays by every answer it has, rested and ready"
-  (quaff 35 35) (retreat 0 0) (rest 100 100) (ready 100 100) (courage 60 60) (chase 40 40) (greed 30 30) (curiosity 100 100))
+  (quaff 35 35) (retreat 0 0) (rest 100 100) (ready 100 100) (lit 50 50) (courage 60 60) (chase 40 40) (greed 30 30) (curiosity 100 100))

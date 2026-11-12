@@ -455,6 +455,15 @@
 
 ; Whether the player has under PCT % of full hit points.
 (def %bl-under? (fn (_ p pct) (< (* 100 (player-hp p)) (* pct (player-hpmax p)))))
+; The % WHO rests to under KEY, rest or ready: while the lamp burns no
+; more than LIT, as resting spends the light, unless a guardian is here
+; to be met whole.
+(def %bl-mark
+  (fn (_ g who key)
+    (def full (%bl-at who key))
+    (match ((< (player-lamp (game-player g)) 1) full) ((not (null? (%bl-guardian g))) full)
+           ((< (%bl-at who (lit lit)) full) (%bl-at who (lit lit)))
+           (#t full))))
 
 ; A step that takes the player furthest from CR, or #f when none gains.
 (def %bl-away!
@@ -809,7 +818,7 @@
     (def t (if up? tile-up tile-down))
     (def guardian (if (Vector ref 14 s) (%bl-guardian g) ()))
     (match
-      ((if (null? shown) (%bl-under? p (%bl-at who (lit ready))) #f) (%bl-key! g "s"))
+      ((if (null? shown) (%bl-under? p (%bl-mark g who (lit ready))) #f) (%bl-key! g "s"))
       ((not (null? guardian)) (%bl-hunt! g s guardian))
       ((%bl-at-stairs? g t)
         (do (%bl-key! g (if up? "<" ">"))
@@ -863,7 +872,7 @@
           (%bl-toward-creature! g s foe)))
       ((if (null? food) #f (< (player-food p) hungry))
         (do (%bl-use! g "e" food) (Vector set! 3 (+ 1 (Vector ref 3 s)) s)))
-      ((if (null? shown) (%bl-under? p (%bl-at who (lit rest))) #f) (%bl-key! g "s"))
+      ((if (null? shown) (%bl-under? p (%bl-mark g who (lit rest))) #f) (%bl-key! g "s"))
       ((%bl-pour? g oil lamp)
         (do (%bl-use! g "f" oil) (Vector set! 10 (+ 1 (Vector ref 10 s)) s)))
       ((if (null? weapon) #f (if (same? weapon (player-weapon p)) #f (< 0 (%bl-weapon-worth g weapon))))
@@ -961,28 +970,42 @@
            ((not (null? shown)) (unless (%bl-toward-creature! g s shown) (%bl-look! g s)))
            (#t (%bl-look! g s)))))
 
-; The errand asked on this level and not yet done, (quest NAME GIVER .
-; PROPS), or nil.
+; The errand of this level not yet done, (quest NAME GIVER . PROPS), or
+; nil: the bot knows the set, and so who stands where.
 (def %bl-errand-here
   (fn (_ g)
     (List find
       (fn (_ q)
-        (def state (game-quest-state g (List ref 1 q)))
-        (match ((not (= (first (data-prop q (lit level) (list 0))) (game-depth g))) #f) ((null? state) #f)
-               (#t (not (eq? state (lit done))))))
+        (if (= (first (data-prop q (lit level) (list 0))) (game-depth g))
+          (not (eq? (game-quest-state g (List ref 1 q)) (lit done)))
+          #f))
       (data-all (game-set g) (lit quest)))))
-; Whether that errand is to see the whole level: worth its light, for
-; what it pays.
+; Whether its giver has been spoken to.
+(def %bl-asked? (fn (_ g q) (not (null? (game-quest-state g (List ref 1 q))))))
+(def %bl-wants (fn (_ q) (data-prop q (lit wants) (list ()))))
+; Whether the level is to be looked over whatever the light: its giver
+; not yet found, or wanting the whole of it seen.  An errand is worth
+; its light, for what it pays.
 (def %bl-surveying?
   (fn (_ g)
-    ((fn (_ q) (if (null? q) #f (eq? (first (data-prop q (lit wants) (list ()))) (lit explore)))) (%bl-errand-here g))))
-; A step toward one of the people: one in view not yet spoken to here,
-; or the one whose level has now been seen.  #f with none to go to.
+    (def q (%bl-errand-here g))
+    (match ((null? q) #f) ((not (%bl-asked? g q)) #t) (#t (eq? (first (%bl-wants q)) (lit explore))))))
+; Whether what Q asks for is in hand: the level seen, or every thing it
+; wants brought in the pack.
+(def %bl-met-want?
+  (fn (_ g s q)
+    (if (eq? (first (%bl-wants q)) (lit explore)) (%bl-explored? g s)
+      (List all? (fn (_ name) (not (null? (%bl-in-pack g (fn (_ it) (%bl-named? it name)))))) (rest (%bl-wants q))))))
+; A step toward one of the people: one in view to be spoken to, or this
+; level's giver, spoken to before, with what they asked for in hand.
+; #f with none to go to.
 (def %bl-to-giver!
   (fn (_ g s)
+    (def q (%bl-errand-here g))
     (def seen (List find (fn (_ cr) (if (creature-trait? cr (lit talks)) (creatures-shown? g cr) #f)) (game-creatures g)))
-    (def asked (if (if (%bl-surveying? g) (%bl-explored? g s) #f) (state-creature-named g (List ref 2 (%bl-errand-here g))) ()))
-    (def cr (if (null? seen) asked seen))
+    (def owed (match ((null? q) ()) ((not (%bl-asked? g q)) ()) ((not (%bl-met-want? g s q)) ())
+                     (#t (state-creature-named g (List ref 2 q)))))
+    (def cr (if (null? seen) owed seen))
     (match ((null? cr) #f) ((not (%bl-talk? g s cr)) #f) (#t (%bl-toward-creature! g s cr)))))
 
 ; With nothing pressing: what lies here, an item within reach (within
