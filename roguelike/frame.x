@@ -88,7 +88,8 @@
 (def %fr-parts (list () (lit top) (lit face) (lit n) (lit e) (lit s) (lit w) (lit ne) (lit nw) (lit se) (lit sw)
                      (lit out-ne) (lit out-nw) (lit out-se) (lit out-sw) (lit face-w) (lit face-e) (lit shade)
                      (lit north) (lit ridge) (lit west) (lit ridge-ns) (lit east)
-                     (lit gable) (lit gable-w) (lit gable-e) (lit gable-ww) (lit gable-ee) (lit doorway) (lit stoop-n) (lit stoop-e) (lit stoop-s) (lit stoop-w)))
+                     (lit gable) (lit gable-w) (lit gable-e) (lit gable-ww) (lit gable-ee) (lit doorway) (lit stoop-n) (lit stoop-e) (lit stoop-s) (lit stoop-w)
+                     (lit dormer) (lit dormer-n) (lit dormer-e) (lit dormer-w)))
 
 ; A kind's pictures: ((PART . VARIANTS) ...) for each part it has.
 (def %fr-kind
@@ -222,7 +223,21 @@
       (List append (list (have slope (lit top)))
         (if (on? -1 0) () (list (lit n)))
         (if (on? 0 1) () (list (lit e)))
-        (if (on? 0 -1) () (list (lit w)))))))
+        (if (on? 0 -1) () (list (lit w)))
+        ((fn (_ d) (if (null? (%fr-pick pics d seed)) () (list d))) (%fr-dormer m r c on?))))))
+; The dormer over a door at R C of M, ON? whether the cell that far off
+; is under a roof: facing the street from the cell behind a front door,
+; facing east, west or north from a door in those walls; nil where no
+; door is.
+(def %fr-dormer
+  (fn (_ m r c on?)
+    (def door? (fn (_ dr) (= (map-tile m (+ r dr) c) tile-door)))
+    (match ((if (door? 1) (if (not (on? 2 0)) (= (map-roof-at m (+ r 1) c) (map-roof-at m r c)) #f) #f) (lit dormer))
+           ((not (door? 0)) ())
+           ((not (on? 0 1)) (lit dormer-e))
+           ((not (on? 0 -1)) (lit dormer-w))
+           ((not (on? -1 0)) (lit dormer-n))
+           (#t ()))))
 ; Whether what lies at R C of M is drawn: seen, and under no roof.
 (def %fr-seen? (fn (_ m r c) (if (map-seen? m r c) (not (map-roofed? m r c)) #f)))
 
