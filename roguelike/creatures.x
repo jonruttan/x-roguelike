@@ -12,7 +12,7 @@
 ; adjacent and otherwise steps toward the player, a fleeing one away; a
 ; stationary one waits; an erratic one wanders half the time; one that
 ; talks does nothing at all.  Traits read here: wakeful, fast, slow,
-; regen, stationary, erratic, invisible, breath, skittish, talks.  A fast creature takes two turns in one; a slow one,
+; regen, stationary, erratic, invisible, breath, skittish, talks, strolls.  A fast creature takes two turns in one; a slow one,
 ; every other; so does one slowed by a wand.  A creature held by a
 ; scroll does nothing.
 ;
@@ -32,7 +32,7 @@
 (import x/type/vector)
 (import x/core/doors int/)
 (import roguelike/data data-all data-prop data-prop1 data-trait?)
-(import roguelike/map map-visible? map-roofed? map-tile map-down tile-door)
+(import roguelike/map map-visible? map-roofed? map-tile map-down map-in? map-floor? map-roof-at tile-door)
 (import roguelike/dungeon dungeon-spot)
 (import roguelike/state
   game-rng game-set game-depth game-map game-player game-creatures game-creatures! game-turn game-param game-param1
@@ -317,12 +317,31 @@
     (when (if (creature-trait? cr (lit regen)) (= 0 (% (game-turn g) 3)) #f)
       (when (< (creature-hp cr) (%cr-hp-most cr)) (creature-hp! cr (+ (creature-hp cr) 1))))))
 
+; One of the people who strolls: a step now and then, on open ground
+; only, never under a roof or through a door.  The way and the time
+; come of the turn and where they stand, not of the dice, so the
+; streets' walkers leave the game's own draws as they were.
+(def %cr-stroll!
+  (fn (_ g cr)
+    (def m (game-map g))
+    (def k (% (+ (* 7 (game-turn g)) (+ (* 13 (creature-r cr)) (* 31 (creature-c cr)))) 32))
+    (when (< k 8)
+      ((fn (_ d)
+         (def r (+ (creature-r cr) (first d)))
+         (def c (+ (creature-c cr) (rest d)))
+         (when (if (map-in? m r c)
+                 (if (map-floor? m r c)
+                   (if (= 0 (map-roof-at m r c)) (creatures-can-step? g (creature-r cr) (creature-c cr) (first d) (rest d)) #f)
+                   #f)
+                 #f)
+           (creature-at! cr r c)))
+       (List ref k (state-dirs))))))
 (def %cr-act-one!
   (fn (_ g cr)
     (def p (game-player g))
     (%cr-mind! g cr)
     (match
-      ((creature-trait? cr (lit talks)) ())
+      ((creature-trait? cr (lit talks)) (when (creature-trait? cr (lit strolls)) (%cr-stroll! g cr)))
       ((< 0 (creature-condition cr (lit held))) ())
       ((eq? (creature-state cr) (lit asleep)) (%cr-maybe-wake! g cr))
       ((eq? (creature-state cr) (lit wandering)) (%cr-wander! g cr))

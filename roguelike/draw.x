@@ -60,7 +60,7 @@
 ; glyph of the kind it is a sort of; rock is a blank.
 (def %dr-glyphs
   (list (pair (lit water) "~") (pair (lit fall) ";") (pair (lit hedge) "\"") (pair (lit gate) "+")
-        (pair (lit thicket) "T") (pair (lit bog) ",") (pair (lit roof) "^")))
+        (pair (lit thicket) "T") (pair (lit bog) ",") (pair (lit roof) "^") (pair (lit counter) "_")))
 (def %dr-named (fn (self name l) (if (eq? (List ref 1 (first l)) name) (first l) (self name (rest l)))))
 (def %dr-glyph
   (fn (self forms t)
