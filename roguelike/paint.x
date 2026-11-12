@@ -804,25 +804,38 @@
 (def %pt-chart-who (list 230 80 60 255))
 (def %pt-chart-me (list 255 255 255 255))
 
+; The chart's colours by character for Canvas rows: a code's digit, r
+; the rim, w a creature.
+(def %pt-chart-colours
+  (List append (list (pair "r" %pt-chart-rim) (pair "w" %pt-chart-who))
+    (List map (fn (_ i) (pair (Str8 str i) (Vector ref i %pt-chart-inks))) (List range 0 9))))
+
 ; The chart of chart op OP, (chart ROWS COLS BYTES (PR . PC) ((R . C)
-; ...)), drawn once a turn: (CANVAS . OP).
+; ...)), made once a turn a pixel a cell in its rim, as rows of
+; characters: (CANVAS . OP).  It is drawn %pt-chart-cell times larger.
 (def %pt-chart
   (fn (_ op)
     (def rows (List ref 1 op))
     (def cols (List ref 2 op))
     (def bp (str->ptr (List ref 3 op)))
-    (def k %pt-chart-cell)
-    (def c (Canvas make (int+ 2 (int* k cols)) (int+ 2 (int* k rows))))
-    (%pt-fill! Canvas c 0 0 (first c) (first (rest c)) %pt-chart-rim)
-    ((fn (self i n)
-       (when (int< i n)
-         (do (%pt-fill! Canvas c (int+ 1 (int* k (int% i cols))) (int+ 1 (int* k (int/ i cols))) k k
-               (Vector ref (ptr-ref bp i 1) %pt-chart-inks))
-             (self (int+ i 1) n))))
-     0 (int* rows cols))
-    (List for-each (fn (_ at) (%pt-fill! Canvas c (int+ 1 (int* k (rest at))) (int+ 1 (int* k (first at))) k k %pt-chart-who))
+    (def w (int+ cols 2))
+    (def h (int+ rows 2))
+    (def buf (str-make (int+ 1 (int* w h))))
+    (def out (str->ptr buf))
+    (def r-ch (char->int (str-byte-ref "r" 0)))
+    (def zero (char->int (str-byte-ref "0" 0)))
+    ((fn (self j y x)
+       (when (int< j (int* w h))
+         (do (ptr-set! out j
+               (if (match ((int= y 0) #t) ((int= y (int- h 1)) #t) ((int= x 0) #t) ((int= x (int- w 1)) #t) (#t #f))
+                 r-ch
+                 (int+ zero (ptr-ref bp (int+ (int* (int- y 1) cols) (int- x 1)) 1)))
+               1)
+             (if (int= (int+ x 1) w) (self (int+ j 1) (int+ y 1) 0) (self (int+ j 1) y (int+ x 1))))))
+     0 0 0)
+    (List for-each (fn (_ at) (ptr-set! out (int+ (int* (int+ (first at) 1) w) (int+ (rest at) 1)) (char->int (str-byte-ref "w" 0)) 1))
       (List ref 5 op))
-    (pair c op)))
+    (pair (Canvas rows (List map (fn (_ y) (Str8 sub (int* y w) w buf)) (List range 0 h)) %pt-chart-colours) op)))
 
 ; Whether Q, (X . Y), lies in the rectangle X Y W H.
 (def %pt-inside?
@@ -847,12 +860,12 @@
                                      (int+ paint-level-y (int+ (int* t (int- (first q) (first cam))) (int/ t 2))))))
           (def places (List map place (List ref 5 op)))
           (def off? (fn (_ q) (not (%pt-inside? q 0 paint-level-y paint-width %pt-area-h))))
-          (def w (first (first ch)))
-          (def h (first (rest (first ch))))
+          (def w (int+ 2 (int* %pt-chart-cell (List ref 2 op))))
+          (def h (int+ 2 (int* %pt-chart-cell (List ref 1 op))))
           (def cx (int- paint-width (int+ w %pt-chart-gap)))
           (def cy (int- %pt-stand-y (int+ h %pt-chart-gap)))
           (unless (List any? (fn (_ q) (%pt-inside? q cx cy w h)) places)
-            (do (%pt-blend! Canvas s cx cy (first ch) 0 0 w h)
+            (do (Canvas nine! s cx cy w h (first ch) 1 1 1 1)
                 (when (int< (int% tick 8) 5)
                   (%pt-fill! Canvas s (int+ cx (int+ 1 (int* %pt-chart-cell (rest at)))) (int+ cy (int+ 1 (int* %pt-chart-cell (first at))))
                     %pt-chart-cell %pt-chart-cell %pt-chart-me))))
