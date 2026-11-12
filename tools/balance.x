@@ -305,7 +305,7 @@
 ; whether its shaft was found barred, 15 the walks not found, 16 the
 ; slow creature last stepped clear of, and where it stood, 17 where the
 ; player last was, 18 how much the pack held at the last talk here, 19
-; the foe last set out after.
+; the foe last set out after, 20 the foes given up here.
 
 ; Where the player stands, as text: the depth, or on a world of screens
 ; the screen and any interior.
@@ -318,7 +318,7 @@
 (def %bl-explored? (fn (_ g s) (if (%bl-here? g s) (Vector ref 0 s) #f)))
 (def %bl-explored! (fn (_ g s) (Vector set! 0 #t s) (Vector set! 1 (%bl-place g) s) (Vector set! 4 #f s)))
 (def %bl-new-level! (fn (_ g s) (Vector set! 0 #f s) (Vector set! 1 (%bl-place g) s) (Vector set! 4 #f s) (Vector set! 9 () s) (Vector set! 12 () s)
-    (Vector set! 13 (game-turn g) s) (Vector set! 14 #f s) (Vector set! 15 () s) (Vector set! 17 () s) (Vector set! 19 () s) (Vector set! 0 0 %bl-bold)))
+    (Vector set! 13 (game-turn g) s) (Vector set! 14 #f s) (Vector set! 15 () s) (Vector set! 17 () s) (Vector set! 19 () s) (Vector set! 20 () s) (Vector set! 0 0 %bl-bold)))
 
 ; With nowhere at all to go on a level: the first time, the cells beside
 ; the unseen are all to be stood on again and what sits is no longer
@@ -1019,7 +1019,9 @@
 ; A step toward the quarry, slot 19 of S, the foe last set out after:
 ; while it lives and its fight is worth it, it is gone after though
 ; another is nearer in view, or the bot would turn about between two.
-; One that runs is let go: it is not caught by following.
+; One that runs is let go: it is not caught by following.  One no way
+; can be found to is given up for the level, slot 20 of S, and not set
+; out after again.
 ; STEP-TO walks, under a name of its own, to a creature within so many
 ; steps.  Nil with none.
 (def %bl-to-quarry
@@ -1028,7 +1030,10 @@
     (match ((null? cr) ()) ((not (List any? (fn (_ x) (same? x cr)) (game-creatures g))) ())
            ((eq? (creature-state cr) (lit fleeing)) ())
            ((if (creature-trait? cr (lit ranged)) #f (not (%bl-worth? g who cr))) ())
-           (#t (step-to (lit quarry) cr (%bl-at who (lit chase)))))))
+           (#t ((fn (_ step)
+                  (when (null? step) (do (Vector set! 20 (pair cr (Vector ref 20 s)) s) (Vector set! 19 () s)))
+                  step)
+                (step-to (lit quarry) cr (%bl-at who (lit chase))))))))
 
 ; With nothing pressing: what lies here, an item within reach (within
 ; GREED with a hostile in view), a foe in view within CHASE whose fight
@@ -1046,7 +1051,8 @@
     (def shoots? (if (null? shown) #f (creature-trait? shown (lit ranged))))
     (def step-to
       (fn (_ tag cr most) (%bl-step-within g s tag (fn (_ r c) (if (= r (creature-r cr)) (= c (creature-c cr)) #f)) most)))
-    (def to-shown (if (match ((null? shown) #t) ((eq? (creature-state shown) (lit fleeing)) #t) (shoots? #f)
+    (def to-shown (if (match ((null? shown) #t) ((eq? (creature-state shown) (lit fleeing)) #t)
+                             ((List any? (fn (_ x) (same? x shown)) (Vector ref 20 s)) #t) (shoots? #f)
                              (#t (not (%bl-worth? g who shown))))
                     ()
                     (step-to (lit foe) shown (if shoots? 9999 (%bl-at who (lit chase))))))
@@ -1196,7 +1202,7 @@
     (def g (%bl-start set play))
     (unless (str=? path "") (File write-all path ""))
     (def kept (Vector of (str=? path "")))
-    (def s (Vector of #f "" 0 0 #f () () 0 () () 0 0 () 0 #f () () () -1 ()))
+    (def s (Vector of #f "" 0 0 #f () () 0 () () 0 0 () 0 #f () () () -1 () ()))
     (def arrivals (Vector of (list (%bl-arrival g))))
     (def loop
       (fn (self turn stalled)
@@ -1263,7 +1269,7 @@
           (unless (null? cr)
             (do (def hp (creature-prop cr (lit hp) (list 1 1)))
                 (creature-hp! cr (state-roll (game-rng g) (first hp) (List ref 1 hp)))))
-          (def s (Vector of #f "" 0 0 #f () () 0 () () 0 0 () 0 #f () () () -1 ()))
+          (def s (Vector of #f "" 0 0 #f () () 0 () () 0 0 () 0 #f () () () -1 () ()))
           (def depth (game-depth g))
           (def start (game-turn g))
           (def loop
