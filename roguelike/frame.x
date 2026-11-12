@@ -539,7 +539,8 @@
 (def %fr-cool-g 215)
 
 ; The light map of VIEW, the view op, and LIGHTS, the light ops, at
-; TICK: a canvas, (COLS ROWS REGION), a pixel a cell, its R G B what
+; TICK, worked in CACHE (frame-light-cache): a canvas, (COLS ROWS
+; REGION), a pixel a cell, its R G B what
 ; the cell's pixels are multiplied by out of 255.  The level is dark
 ; but for the lights: each lifts the dark round it and tints it its
 ; colour; a cell seen before and out of view is dimmer still and
@@ -550,39 +551,40 @@
 ; once a view and copied each frame; only the cells within a light's
 ; reach are worked, in a region kept at no light between frames.
 (def frame-light-map
-  (fn (_ view lights tick)
+  (fn (_ cache view lights tick)
     (def cols (List ref 3 view))
     (def rows (List ref 4 view))
     (def n (int* cols rows))
-    (unless (eq? view (Vector ref 0 %fr-lit)) (%fr-unlit! view n))
-    (def w (str->ptr (Vector ref 2 %fr-lit)))
+    (unless (same? view (Vector ref 0 cache)) (%fr-unlit! cache view n))
+    (def w (str->ptr (Vector ref 2 cache)))
     (def seen (List ref 5 view))
     (def region (str-make (int* n 4)))
     (def rp (str->ptr region))
-    (mem-copy rp (str->ptr (Vector ref 1 %fr-lit)) (int* n 4))
+    (mem-copy rp (str->ptr (Vector ref 1 cache)) (int* n 4))
     (def reaches (List map (fn (_ l) (pair l (%fr-reach cols rows (List ref 1 view) (List ref 2 view) l (frame-flicker l tick)))) lights))
     (List for-each (fn (_ lr) (%fr-light! w cols (List ref 1 view) (List ref 2 view) (first lr) (rest lr))) reaches)
     (List for-each (fn (_ lr) (%fr-each-cell (rest lr) cols (fn (_ i) (%fr-shade! rp (int* i 4) (char->int (str-byte-ref seen i)) w i)))) reaches)
     (List for-each (fn (_ lr) (%fr-each-cell (rest lr) cols (fn (_ i) (%fr-clear! w i)))) reaches)
     (list cols rows region)))
 
-; The view the map with no light was last made for, [VIEW UNLIT WORK N]:
-; UNLIT that map, WORK a region of N cells at no light.
-(def %fr-lit (Vector of () () () 0))
+; A light map's cache, [VIEW UNLIT WORK N]: the view the map with no
+; light was last made for, UNLIT that map, WORK a region of N cells at
+; no light.  The painter keeps one.
+(def frame-light-cache (fn (_) (Vector of () () () 0)))
 (def %fr-clear! (fn (_ w i) (%fr-put! w i 0 256) (%fr-put! w i 1 256) (%fr-put! w i 2 256) (%fr-put! w i 3 256)))
 (def %fr-unlit!
-  (fn (_ view n)
-    (unless (int= n (Vector ref 3 %fr-lit))
+  (fn (_ cache view n)
+    (unless (int= n (Vector ref 3 cache))
       (do (def work (str-make (int* n 16)))
           ((fn (self i) (when (int< i n) (do (%fr-clear! (str->ptr work) i) (self (int+ i 1))))) 0)
-          (Vector set! 2 work %fr-lit)
-          (Vector set! 3 n %fr-lit)))
+          (Vector set! 2 work cache)
+          (Vector set! 3 n cache)))
     (def unlit (str-make (int* n 4)))
     (def seen (List ref 5 view))
-    (def w (str->ptr (Vector ref 2 %fr-lit)))
+    (def w (str->ptr (Vector ref 2 cache)))
     ((fn (self i) (when (int< i n) (do (%fr-shade! (str->ptr unlit) (int* i 4) (char->int (str-byte-ref seen i)) w i) (self (int+ i 1))))) 0)
-    (Vector set! 1 unlit %fr-lit)
-    (Vector set! 0 view %fr-lit)))
+    (Vector set! 1 unlit cache)
+    (Vector set! 0 view cache)))
 
 ; Cell I's colour in the map at RP offset O from its dark and tints in
 ; the region W, V whether it is in view (2), seen before (1) or not (0).
@@ -697,5 +699,5 @@
 (provide roguelike/frame
   frame-tile-size frame-view-rows frame-view-cols frame-view! frame-pan frame-pan! frame-level-y
   frame-art frame-art-band frame-named frame-seed frame-wall-parts frame-join-parts frame-camera frame-cell frame-level
-  frame-place frame-things frame-view frame-lights frame-glints frame-blows frame-flicker frame-light-map frame-scene
+  frame-place frame-things frame-view frame-lights frame-glints frame-blows frame-flicker frame-light-map frame-light-cache frame-scene
   frame-chart)
