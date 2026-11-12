@@ -1784,7 +1784,8 @@
     (%bl-arrivals set games)
     (%bl-line "")
     (%bl-line "A game, on average: turns " (mean 4) "  potions drunk " (mean 5) "  foods eaten " (mean 6)
-              "  flasks poured " (mean 10) "  turns dark " (mean 11) "  secret doors found " (mean 12))))
+              "  flasks poured " (mean 10) "  turns dark " (mean 11))
+    (%bl-line "Secret doors found, in all: " (Str8 str (List fold (fn (_ n r) (+ n (List ref 12 r))) 0 games)))))
 
 ; --- the run -----------------------------------------------------------------
 
