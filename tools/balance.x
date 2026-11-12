@@ -1019,13 +1019,14 @@
 ; A step toward the quarry, slot 19 of S, the foe last set out after:
 ; while it lives and its fight is worth it, it is gone after though
 ; another is nearer in view, or the bot would turn about between two.
-; STEP-TO walks to a creature within so many steps.  Nil with none.
+; STEP-TO walks, under a name of its own, to a creature within so many
+; steps.  Nil with none.
 (def %bl-to-quarry
   (fn (_ g s who step-to)
     (def cr (Vector ref 19 s))
     (match ((null? cr) ()) ((not (List any? (fn (_ x) (same? x cr)) (game-creatures g))) ())
            ((not (%bl-worth? g who cr)) ())
-           (#t (step-to cr (%bl-at who (lit chase)))))))
+           (#t (step-to (lit quarry) cr (%bl-at who (lit chase)))))))
 
 ; With nothing pressing: what lies here, an item within reach (within
 ; GREED with a hostile in view), a foe in view within CHASE whose fight
@@ -1042,9 +1043,9 @@
                    (%bl-step-within g s (lit item) (fn (_ r c) (not (null? (%bl-wanted-at g s r c)))) reach) ()))
     (def shoots? (if (null? shown) #f (creature-trait? shown (lit ranged))))
     (def step-to
-      (fn (_ cr most) (%bl-step-within g s (lit foe) (fn (_ r c) (if (= r (creature-r cr)) (= c (creature-c cr)) #f)) most)))
+      (fn (_ tag cr most) (%bl-step-within g s tag (fn (_ r c) (if (= r (creature-r cr)) (= c (creature-c cr)) #f)) most)))
     (def to-shown (if (match ((null? shown) #t) (shoots? #f) (#t (not (%bl-worth? g who shown)))) ()
-                    (step-to shown (if shoots? 9999 (%bl-at who (lit chase))))))
+                    (step-to (lit foe) shown (if shoots? 9999 (%bl-at who (lit chase))))))
     (unless (null? to-shown) (Vector set! 19 shown s))
     (def to-foe (if (null? to-shown) (%bl-to-quarry g s who step-to) to-shown))
     (def errand (if (game-screens? g) (%bl-errand g) ()))
