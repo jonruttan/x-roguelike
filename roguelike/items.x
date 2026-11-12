@@ -30,7 +30,7 @@
 (import roguelike/map
   map-walkable? map-reveal! map-rooms map-rooms! map-room-at room-r0 room-c0 room-r1 room-c1 map-tile
   tile-floor)
-(import roguelike/dungeon dungeon-spot)
+(import roguelike/dungeon dungeon-spot dungeon-secret-room!)
 (import roguelike/state
   game-rng game-set game-depth game-map game-player game-floor game-floor! game-pack game-pack! game-ask! state-in-sight?
   game-guises game-known game-known! game-param game-param1 game-goal-placed? game-goal-placed! game-band game-world-all
@@ -42,7 +42,7 @@
   item-make item-form item-class item-name item-prop item-prop1 item-count item-count! item-charges
   item-charges! item-enchant item-enchant! item-letter item-letter! item-r item-c item-at! item-class? item-class-in?
   state-say! state-tell! state-roll state-chance? state-creature-at state-items-at state-free?
-  state-remove-floor! state-remove-pack! state-ring? state-covers?)
+  state-remove-floor! state-remove-pack! state-ring? state-covers? state-dist)
 (import roguelike/combat combat-kill! combat-hurt-player!)
 (import roguelike/creatures creatures-wake-all! creatures-scare! creatures-kinds creatures-place!)
 
@@ -133,6 +133,81 @@
           ((fn (self n) (when (< 0 n) (do (%it-cache! g (List ref 1 c)) (self (- n 1)))))
            (state-roll (game-rng g) (List ref 2 c) (List ref 3 c))))
         (List filter (fn (_ p) (if (pair? p) (eq? (first p) (lit cache)) #f)) (rest (rest b)))))))
+
+; --- secret rooms ---------------------------------------------------------------
+
+; Rooms dug behind secret doors (dungeon.x) on the way down, by the set's
+; (secrets LO HI GOLD GUARDS): LO to HI a level, each with a hoard of
+; gold GOLD times in a hundred, three piles' worth, and GUARDS times in
+; a hundred a creature of the depth or two, asleep unless wakeful;
+; neither, now and then, and it is empty.  A band's (prize CLASS "NAME")
+; lies in one on a level of the band, once a game: owed level by level,
+; its share of the band's levels left, and laid in the open on the
+; band's last if no room could be dug there.
+(def %it-secret-size (fn (_ g) (pair (state-roll (game-rng g) 2 3) (state-roll (game-rng g) 3 5))))
+; A room's door out of sight and past the set's (elbow-room N), as a
+; creature is placed: none dug at the player's elbow.
+(def %it-far?
+  (fn (_ g r c)
+    (def p (game-player g))
+    (if (state-in-sight? g r c) #f (< (game-param1 g (lit elbow-room) 0) (state-dist r c (player-r p) (player-c p))))))
+(def %it-dig!
+  (fn (_ g)
+    ((fn (_ hw) (dungeon-secret-room! (game-rng g) (game-map g) (first hw) (rest hw) (fn (_ r c) (%it-far? g r c)) 200))
+     (%it-secret-size g))))
+(def %it-in-room
+  (fn (_ g room)
+    ((fn (self n)
+       (if (< n 1) ()
+         ((fn (_ r c) (if (state-free? g r c) (if (null? (state-items-at g r c)) (pair r c) (self (- n 1))) (self (- n 1))))
+          (state-roll (game-rng g) (List ref 0 room) (List ref 2 room)) (state-roll (game-rng g) (List ref 1 room) (List ref 3 room)))))
+     30)))
+(def %it-lay-in!
+  (fn (_ g room it)
+    (def at (%it-in-room g room))
+    (unless (null? at)
+      (do (item-at! it (first at) (rest at)) (game-floor! g (pair it (game-floor g)))))))
+(def %it-stock!
+  (fn (_ g room spec)
+    (def rng (game-rng g))
+    (when (state-chance? rng (List ref 2 spec))
+      (do (def gold (game-param g (lit gold) (list 35 5 25)))
+          (%it-lay-in! g room (item-make %it-gold-form
+                                (* 3 (if (< (game-depth g) 1) 1 (game-depth g)) (state-roll rng (List ref 1 gold) (List ref 2 gold))) 0))))
+    (when (state-chance? rng (List ref 3 spec))
+      (do (def kinds (creatures-kinds g (game-depth g)))
+          ((fn (self n)
+             (when (< 0 n)
+               (do (def at (%it-in-room g room))
+                   (unless (match ((null? kinds) #t) ((null? at) #t) (#t (not (%it-far? g (first at) (rest at)))))
+                     (do (def kind (rng choice kinds))
+                         (creatures-place! g kind (first at) (rest at)
+                           (if (data-trait? kind (lit wakeful)) (lit awake) (lit asleep)))))
+                   (self (- n 1)))))
+           (state-roll rng 1 2))))))
+(def %it-form-named
+  (fn (_ g class name)
+    (List find (fn (_ f) (if (eq? (first f) class) (str=? (List ref 1 f) name) #f)) (%it-forms g))))
+(def %it-prize!
+  (fn (_ g spec)
+    (def b (game-band g))
+    (def prize (if (null? b) () (data-prop b (lit prize) ())))
+    (def form (if (null? prize) () (%it-form-named g (first prize) (List ref 1 prize))))
+    (def key (if (null? b) "" (Str8 append "prize " (band-name b))))
+    (def levels (if (null? b) 1 (+ 1 (- (band-to b) (game-depth g)))))
+    (unless (match ((null? form) #t) ((game-sure? g key) #t) (#t (not (< ((game-rng g) int levels) 1))))
+      (do (def room (%it-dig! g))
+          (match ((not (null? room))
+                   (do (game-sure! g key) (%it-lay-in! g room (items-new g form)) (%it-stock! g room spec)))
+                 ((< levels 2) (do (game-sure! g key) (%it-put-form! g form)))
+                 (#t ()))))))
+(def items-place-secrets!
+  (fn (_ g)
+    (def spec (game-param g (lit secrets) ()))
+    (unless (null? spec)
+      (do (%it-prize! g spec)
+          ((fn (self n) (when (< 0 n) (do ((fn (_ room) (unless (null? room) (%it-stock! g room spec))) (%it-dig! g)) (self (- n 1)))))
+           (state-roll (game-rng g) (first spec) (List ref 1 spec)))))))
 
 ; The forms of CLASS whose depth covers the level.
 (def %it-class-here
@@ -586,7 +661,7 @@
     (state-tell! g (lit removed) "You take off {name}." (list (pair "name" (items-name g it))))))
 
 (provide roguelike/items
-  items-new items-spawn! items-place-sure! items-place-caches! items-place-goal! items-goal-held? items-page-named items-place-pages!
+  items-new items-spawn! items-place-sure! items-place-caches! items-place-secrets! items-place-goal! items-goal-held? items-page-named items-place-pages!
   items-known? items-know! items-name items-worn
   items-glyph items-pack-lines items-by-letter items-pickup! items-drop! items-quaff! items-read! items-target items-zap!
   items-eat! items-fill! items-wield! items-wear! items-take-off! items-put-on! items-remove! items-teleport! items-use-up!)

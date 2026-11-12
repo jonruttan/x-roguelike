@@ -12,7 +12,7 @@ them, what each asks, and what it pays.  On the delve set.
 ```roguelike
 (def g (spec-game-on (spec-set-named "delve") 4 ()))
 (player-hp! (game-player g) 1000)
-(def down! (fn (_) (def m (game-map g)) (player-at! (game-player g) (first (map-down m)) (rest (map-down m))) (game-key! g ">")))
+(def down! (fn (_) (def m (game-map g)) (player-at! (game-player g) (first (map-down m)) (rest (map-down m))) (game-key! g ">") (spec-settle! g)))
 (def none (List any? (fn (_ cr) (str=? (creature-name cr) "lampman")) (game-creatures g)))
 (down!)
 (def keeper (List find (fn (_ cr) (str=? (creature-name cr) "lampman")) (game-creatures g)))
@@ -27,7 +27,7 @@ them, what each asks, and what it pays.  On the delve set.
 ```roguelike
 (def g (spec-game-on (spec-set-named "delve") 4 ()))
 (player-hp! (game-player g) 1000)
-(def down! (fn (_) (def m (game-map g)) (player-at! (game-player g) (first (map-down m)) (rest (map-down m))) (game-key! g ">")))
+(def down! (fn (_) (def m (game-map g)) (player-at! (game-player g) (first (map-down m)) (rest (map-down m))) (game-key! g ">") (spec-settle! g)))
 (down!)
 (game-creatures! g (List filter (fn (_ cr) (creature-trait? cr 'talks)) (game-creatures g)))
 (def keeper (first (game-creatures g)))
@@ -48,7 +48,7 @@ them, what each asks, and what it pays.  On the delve set.
 ```roguelike
 (def g (spec-game-on (spec-set-named "delve") 4 ()))
 (player-hp! (game-player g) 1000)
-(def down! (fn (_) (def m (game-map g)) (player-at! (game-player g) (first (map-down m)) (rest (map-down m))) (game-key! g ">")))
+(def down! (fn (_) (def m (game-map g)) (player-at! (game-player g) (first (map-down m)) (rest (map-down m))) (game-key! g ">") (spec-settle! g)))
 (down!)
 (game-creatures! g (List filter (fn (_ cr) (creature-trait? cr 'talks)) (game-creatures g)))
 (def keeper (first (game-creatures g)))
@@ -59,7 +59,7 @@ them, what each asks, and what it pays.  On the delve set.
 (game-key! g ",")
 (def held (List map (fn (_ it) (items-name g it)) (game-pack g)))
 (game-key! g key)
-(def offered (list (spec-row g 0) (List any? (fn (_ r) (Str8 starts? " a) a miner's blade (str 14)   b) boiled leather [2] (str 12)" r)) (spec-screen g)) (game-quest-state g "the lamp")))
+(def offered (list (spec-row g 0) (List any? (fn (_ r) (if (Str8 starts? " a) a miner's blade (str 14)" r) (Str8 includes? "b) scale coat [4] (str 15)" r) #f)) (spec-screen g)) (game-quest-state g "the lamp")))
 (game-key! g "a")
 (def got (List map (fn (_ it) (items-name g it)) (game-pack g)))
 (game-key! g key)
@@ -76,7 +76,7 @@ row: the --More-- is answered before the next step down.
 ```roguelike
 (def g (spec-game-on (spec-set-named "delve") 4 ()))
 (player-hp! (game-player g) 1000)
-(def down! (fn (_) (def m (game-map g)) (player-at! (game-player g) (first (map-down m)) (rest (map-down m))) (game-key! g ">") (unless (null? (game-ask g)) (spec-dismiss! g))))
+(def down! (fn (_) (def m (game-map g)) (player-at! (game-player g) (first (map-down m)) (rest (map-down m))) (game-key! g ">") (spec-settle! g)))
 (down!)
 (down!)
 (game-creatures! g ())
@@ -109,7 +109,7 @@ row: the --More-- is answered before the next step down.
 ```roguelike
 (def g (spec-game-on (spec-set-named "delve") 4 ()))
 (player-hp! (game-player g) 1000)
-(def down! (fn (_) (def m (game-map g)) (player-at! (game-player g) (first (map-down m)) (rest (map-down m))) (game-key! g ">")))
+(def down! (fn (_) (def m (game-map g)) (player-at! (game-player g) (first (map-down m)) (rest (map-down m))) (game-key! g ">") (spec-settle! g)))
 (down!)
 (game-creatures! g (List filter (fn (_ cr) (creature-trait? cr 'talks)) (game-creatures g)))
 (def keeper (first (game-creatures g)))

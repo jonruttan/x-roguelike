@@ -38,7 +38,7 @@
 (import x/sys/gc)
 (import roguelike/map
   map-rows map-cols map-in? map-tile map-up map-down map-walkable? map-seen? map-light! map-light-radius! map-light-all! map-seen-whole?
-  map-place-at map-frontier? tile-rock tile-down tile-up tile-door tile-counter)
+  map-place-at map-frontier? tile-rock tile-down tile-up tile-door tile-counter tile-secret)
 (import roguelike/dungeon dungeon-generate dungeon-spot)
 (import x/core/doors int/)
 (import roguelike/state
@@ -55,12 +55,12 @@
   game-daylight? state-in-sight? state-say! state-tell! state-text state-clear-messages! state-clear-log! state-roll state-chance? state-dir state-dirs
   state-creature-at state-creature-named state-items-at state-free? state-ring? state-ring-bonus item-class? item-class-in? item-class
   item-name creature-name creature-r creature-c creature-trait? creature-prop creature-kind state-a-kind
-  creature-state creature-hp creature-whole creature-conditions player-conditions state-dist)
+  creature-state creature-hp creature-whole creature-conditions player-conditions state-dist state-adjacent?)
 (import roguelike/combat combat-player-attacks! combat-hurt-player!)
 (import roguelike/creatures
   creatures-spawn! creatures-guardian! creatures-wander! creatures-act! creatures-door-diagonal? creatures-shown?)
 (import roguelike/items
-  items-spawn! items-place-sure! items-place-caches! items-place-goal! items-place-pages! items-goal-held? items-name items-worn
+  items-spawn! items-place-sure! items-place-caches! items-place-secrets! items-place-goal! items-place-pages! items-goal-held? items-name items-worn
   items-pack-lines
   items-by-letter items-pickup!
   items-drop! items-quaff! items-read! items-zap! items-eat! items-fill! items-wield! items-wear! items-take-off!
@@ -164,6 +164,7 @@
     (quests-keepers! g)
     (quests-folk! g)
     (traps-place! g)
+    (unless hostile? (items-place-secrets! g))
     (%gm-light! g)
     (Heap collect)))
 
@@ -540,7 +541,7 @@
     (player-tick! (game-player g))
     (creatures-wander! g)
     (%gm-light! g)
-    (when (if (null? (game-over g)) (< 0 (%gm-keen-ring g)) #f) (traps-search! g 1))
+    (when (if (null? (game-over g)) (< 0 (%gm-keen-ring g)) #f) (do (traps-search! g 1) (%gm-find-secrets! g 1)))
     (%gm-home! g)))
 
 ; --- moving ------------------------------------------------------------------
@@ -837,11 +838,33 @@
   (fn (_ g it)
     (if (not (str=? (items-worn g it) "")) (do (items-remove! g it) #t) (do (items-put-on! g it) #t))))
 
+; Every secret door found within REACH cells of the player, as a trap is
+; (traps.x): beside, at 1; further, only one in sight.  A door from then
+; on.
+(def %gm-find-secrets!
+  (fn (_ g reach)
+    (def p (game-player g))
+    (def m (game-map g))
+    (def span (List range (- 0 reach) (+ reach 1)))
+    (List for-each
+      (fn (_ dr)
+        (List for-each
+          (fn (_ dc)
+            (def r (+ (player-r p) dr))
+            (def c (+ (player-c p) dc))
+            (when (match ((not (map-in? m r c)) #f) ((not (= (map-tile m r c) tile-secret)) #f)
+                         ((state-adjacent? r c (player-r p) (player-c p)) #t)
+                         (#t (state-in-sight? g r c)))
+              (do (map-set! m r c tile-door)
+                  (state-tell! g (lit found-secret) "You find a secret door." ()))))
+          span))
+      span)))
+
 ; (KEY . (fn (_ g) ...)): whether a turn passed.
 (def %gm-commands
   (list
     (pair "." (fn (_ g) #t))
-    (pair "s" (fn (_ g) (do (traps-search! g (%gm-keen g)) #t)))
+    (pair "s" (fn (_ g) (do (traps-search! g (%gm-keen g)) (%gm-find-secrets! g (%gm-keen g)) #t)))
     (pair ">" (fn (_ g) (%gm-stairs-down! g)))
     (pair "<" (fn (_ g) (%gm-stairs-up! g)))
     (pair "," (fn (_ g) (items-pickup! g)))

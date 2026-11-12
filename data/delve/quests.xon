@@ -17,7 +17,7 @@
        "something from the store I kept.")
   (again "No lamp yet.  It will be where the crawlers are.")
   (done "That is mine.  Set it there, where I can see it.  Now take your pick:")
-  (rewards (weapon "miner's blade") (armour "boiled leather")))
+  (rewards (weapon "miner's blade") (armour "scale coat")))
 
 (quest "the survey" "surveyor" (level 5)
   (wants explore)
@@ -27,7 +27,7 @@
   (again "Not the whole of it yet.  There are passages you have not walked.")
   (done "That is the shape of it.  Good.  The Guild will never see this map,"
         "but you will have something for it:")
-  (rewards (wand "sparks") (ring "warding")))
+  (rewards (wand "sparks") (ring "vigour")))
 
 (quest "the pump" "pump-wright" (level 9)
   (wants bring "pump valve" "pump crank" "pump seal")
@@ -38,4 +38,4 @@
   (again "Valve, crank, seal.  Not all three yet.")
   (done "That will do.  Go on down, then; I will have it drawing by the time"
         "you come back up, for all the good it will do either of us.  Take one:")
-  (rewards (weapon "foreman's pick") (armour "plated harness")))
+  (rewards (weapon "foreman's pick") (ring "silence")))

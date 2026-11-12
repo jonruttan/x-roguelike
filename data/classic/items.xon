@@ -13,8 +13,8 @@
 ;                   slow TURNS, teleport-other, drain LO HI
 ;   ring            (bonus KEY N): protection, strength, regeneration,
 ;                   sustenance, stealth, light (N cells lit with the
-;                   lamp out; with it lit, a search reaching N and what
-;                   is hidden beside noticed)
+;                   lamp out; with it lit, a search for traps and
+;                   secret doors reaching N, and those beside noticed)
 ;   weapon          (damage LO HI)
 ;   armour          (armour N)
 ;   food            (nutrition N)

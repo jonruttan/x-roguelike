@@ -30,7 +30,7 @@ blow on a sleeper -- is in 10-elements.
 (def g (spec-game-on (spec-set-named "delve") 4 ()))
 (player-hp! (game-player g) 1000)
 (def first-said (game-messages g))
-(def down! (fn (_) (def m (game-map g)) (player-at! (game-player g) (first (map-down m)) (rest (map-down m))) (game-key! g ">")))
+(def down! (fn (_) (def m (game-map g)) (player-at! (game-player g) (first (map-down m)) (rest (map-down m))) (game-key! g ">") (spec-settle! g)))
 (down!)
 (def second (game-messages g))
 (down!)
@@ -39,14 +39,14 @@ blow on a sleeper -- is in 10-elements.
 (write (list first-said second (game-depth g) (List reverse (List take 2 (game-log g)))))
 ```
 ---
-    (("You enter the Delve.  The Lodestar lies twelve levels down; bring it back up." "The Galleries: the worked mine, propped and railed, its lamps long out.") ("You climb down to level 2.") 4 ("You climb down to level 4." "The Flood: the water stands here, and runs one way."))
+    (("You enter the Delve.  The Lodestar lies twelve levels down; bring it back up." "The Galleries: the worked mine, propped and railed, its lamps long out.") ("throws stones." "You climb down to level 2.") 4 ("You climb down to level 4." "The Flood: the water stands here, and runs one way."))
 
 ### the band's guardian waits by the shaft down on its last level, and bars it while it lives; barred takes no turn
 
 ```roguelike
 (def g (spec-game-on (spec-set-named "delve") 4 ()))
 (player-hp! (game-player g) 1000)
-(def down! (fn (_) (def m (game-map g)) (player-at! (game-player g) (first (map-down m)) (rest (map-down m))) (game-key! g ">")))
+(def down! (fn (_) (def m (game-map g)) (player-at! (game-player g) (first (map-down m)) (rest (map-down m))) (game-key! g ">") (spec-settle! g)))
 (down!)
 (def none (List any? (fn (_ cr) (str=? (creature-name cr) "fireman")) (game-creatures g)))
 (down!)
@@ -207,7 +207,7 @@ blow on a sleeper -- is in 10-elements.
 (def g (spec-game-on (spec-set-named "delve") 4 ()))
 (player-hp! (game-player g) 1000)
 (player-at! (game-player g) (first (map-down (game-map g))) (rest (map-down (game-map g))))
-(game-key! g ">")
+(game-key! g ">") (spec-settle! g)
 (game-creatures! g ())
 (def open (spec-open g))
 (creatures-place! g (spec-creature g "pit ferret") (first (rest open)) (rest (rest open)) 'asleep)
@@ -389,7 +389,7 @@ blow on a sleeper -- is in 10-elements.
 (def none (List length (game-creatures g)))
 (def m (game-map g))
 (player-at! (game-player g) (first (map-down m)) (rest (map-down m)))
-(game-key! g ">")
+(game-key! g ">") (spec-settle! g)
 (game-creatures! g ())
 (spec-press-until g "s" (fn (_) (not (null? (game-creatures g)))) 400)
 (write (list alone none (game-depth g) (not (null? (game-creatures g)))
@@ -444,7 +444,7 @@ blow on a sleeper -- is in 10-elements.
 (def g (spec-game-on (spec-set-named "delve") 4 ()))
 (player-hp! (game-player g) 1000)
 (def food? (fn (_) (List any? (fn (_ it) (eq? (item-class it) 'food)) (game-floor g))))
-(def down! (fn (_) (def m (game-map g)) (player-at! (game-player g) (first (map-down m)) (rest (map-down m))) (game-key! g ">")))
+(def down! (fn (_) (def m (game-map g)) (player-at! (game-player g) (first (map-down m)) (rest (map-down m))) (game-key! g ">") (spec-settle! g)))
 (def first-food (food?))
 (down!)
 (def second-food (food?))
