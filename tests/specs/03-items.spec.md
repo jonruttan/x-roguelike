@@ -71,7 +71,7 @@ drunk, read, zapped, eaten, worn and dropped.
 (write (list names asked worn refused (game-messages g) (- (List length (game-floor g)) lying) (List length (game-pack g))))
 ```
 ---
-    (("a) a short blade" "b) leather armour [2]") "Wear what?" "Level:1  Gold:0  Hp:12(12)  Str:16(16)  Arm:2  Exp:1/0" ("You would have to take that off first.") ("You drop leather armour [2].") 1 1)
+    (("a) a short blade" "b) leather armour [2]") "Wear what?" "Level:1  Gold:0  Hp:12(12)  Str:16(16)  Arm:2  Exp:1/0  Food:65%" ("You would have to take that off first.") ("You drop leather armour [2].") 1 1)
 
 ### w wields; i shows what is in hand
 

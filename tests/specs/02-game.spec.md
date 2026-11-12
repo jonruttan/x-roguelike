@@ -110,7 +110,7 @@ stairs, and what the screen shows.
 (write (list (List ref 0 rows) (List ref 23 rows) (< 0 (List length (List filter (fn (_ r) (Str8 includes? "@" r)) rows)))))
 ```
 ---
-    ("You descend into the Sunken Vault.  Find the Sunstone, and bring it back up." "Level:1  Gold:0  Hp:12(12)  Str:16(16)  Arm:0  Exp:1/0" #t)
+    ("You descend into the Sunken Vault.  Find the Sunstone, and bring it back up." "Level:1  Gold:0  Hp:12(12)  Str:16(16)  Arm:0  Exp:1/0  Food:65%" #t)
 
 ### i lists the pack over the level until enter or space, and takes no turn
 

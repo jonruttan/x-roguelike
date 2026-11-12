@@ -24,7 +24,7 @@
 (import x/tui/style)
 (import x/tui/screen Screen screen-put!)
 (import roguelike/data data-glyph)
-(import x/core/doors str-make int& int>>)
+(import x/core/doors str-make int& int>> int/)
 (import roguelike/map
   map-rows map-cols map-tile map-seen? map-visible? map-down map-up map-row-glyphs! map-visible-next map-visible-run
   map-terrain map-kinds map-look map-look-run map-roofed? tile-down tile-up)
@@ -239,6 +239,38 @@
            ((= n 0) "Dark")
            ((if (< 0 n) (not (< (List ref 1 spec) n)) #f) "Lamp low")
            (#t ""))))
+; The stores the player draws down, for a front-end to show: a list of
+; (LABEL PERCENT LEVEL), food under the set's (hunger ...) then the lamp
+; under its (lamp ...), none where the set has neither.  LABEL is the
+; store's name, or what is wrong with it; PERCENT what is left of the
+; most it holds, a part of one counted whole and 0 for none; LEVEL 0
+; for well, 1 a warning, 2 danger.
+(def %dr-percent
+  (fn (_ n full)
+    (match ((< n 1) 0) ((< full n) 100) (#t (int/ (+ (* 100 n) (- full 1)) full)))))
+(def %dr-food-gauge
+  (fn (_ g)
+    (def spec (game-param g (lit hunger) (list 1300 300 150)))
+    (def word (draw-hunger g))
+    (if (< (List ref 0 spec) 1) ()
+      (list (list (if (str=? word "") "Food" word)
+                  (%dr-percent (player-food (game-player g)) (if (< 3 (List length spec)) (List ref 3 spec) 2000))
+                  (match ((str=? word "") 0) ((str=? word "Hungry") 1) (#t 2)))))))
+(def %dr-lamp-gauge
+  (fn (_ g)
+    (def spec (game-param g (lit lamp) ()))
+    (def n (player-lamp (game-player g)))
+    (def word (%dr-lamp g))
+    (if (null? spec) ()
+      (list (list (if (str=? word "") "Lamp" word)
+                  (if (< n 0) 100 (%dr-percent n (List ref 0 spec)))
+                  (match ((str=? word "") 0) ((str=? word "Dark") 2) (#t 1)))))))
+(def draw-gauges (fn (_ g) (List append (%dr-food-gauge g) (%dr-lamp-gauge g))))
+; A gauge as the standing row writes it: "Food:48%", "Lamp low:20%",
+; and the label alone with nothing left, "Dark".
+(def %dr-gauge-text
+  (fn (_ gauge)
+    (if (< 0 (List ref 1 gauge)) (Str8 append (first gauge) ":" (Str8 str (List ref 1 gauge)) "%") (first gauge))))
 (def %dr-conditions
   (fn (_ g)
     (def p (game-player g))
@@ -258,7 +290,8 @@
       "  Str:" (Str8 str (player-str p)) "(" (Str8 str (player-strmax p)) ")"
       "  Arm:" (Str8 str (state-defence g))
       "  Exp:" (Str8 str (player-level p)) "/" (Str8 str (player-exp p))
-      "  " (draw-hunger g) ((fn (_ s) (if (str=? s "") "" (Str8 append " " s))) (%dr-lamp g)) " " (%dr-conditions g))))
+      "  " (Str8 join "  " (List filter (fn (_ s) (not (str=? s "")))
+                             (List append (List map %dr-gauge-text (draw-gauges g)) (list (%dr-conditions g))))))))
 
 (def %dr-top
   (fn (_ g)
@@ -317,10 +350,10 @@
 (def draw-status (fn (_ g) (%dr-status g)))
 
 ; The standing in its parts, for a front-end that lays it out itself:
-; (PLACE DEPTH HP HPMAX GOLD STR STRMAX ARMOUR LEVEL WARNINGS).  PLACE is
-; the screen's name in a world of screens, else the band's, or ""; DEPTH
-; the level, nil in a world of screens; WARNINGS hunger, the lamp and
-; conditions, "" for none.
+; (PLACE DEPTH HP HPMAX GOLD STR STRMAX ARMOUR LEVEL CONDITIONS GAUGES).
+; PLACE is the screen's name in a world of screens, else the band's, or
+; ""; DEPTH the level, nil in a world of screens; CONDITIONS those the
+; player is under, "" for none; GAUGES as draw-gauges gives them.
 (def draw-standing
   (fn (_ g)
     (def p (game-player g))
@@ -329,6 +362,6 @@
           (if (game-screens? g) () (game-depth g))
           (player-hp p) (player-hpmax p) (player-gold p) (player-str p) (player-strmax p)
           (state-defence g) (player-level p)
-          (Str8 join " " (List filter (fn (_ s) (not (str=? s ""))) (list (draw-hunger g) (%dr-lamp g) (%dr-conditions g)))))))
+          (%dr-conditions g) (draw-gauges g))))
 
-(provide roguelike/draw game-draw! draw-top draw-status draw-standing draw-overlay draw-hunger)
+(provide roguelike/draw game-draw! draw-top draw-status draw-standing draw-overlay draw-hunger draw-gauges)
