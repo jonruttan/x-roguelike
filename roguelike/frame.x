@@ -23,7 +23,7 @@
 (import roguelike/data data-all data-glyph)
 (import roguelike/items items-glyph)
 (import roguelike/map map-terrain map-kinds map-rows map-cols map-tile map-seen? map-visible? map-in? map-opaque? map-chart
-  tile-rock tile-roof tile-door tile-water tile-shallow map-shown map-covered? map-roofed? map-roof-pitch)
+  tile-rock tile-roof tile-door tile-water tile-shallow map-shown map-covered? map-roofed? map-roof-pitch map-roof-at)
 (import roguelike/state game-map game-player game-floor game-creatures game-traps
   player-r player-c player-conditions item-r item-c item-class creature-r creature-c creature-name creature-glyph
   creature-state creature-condition game-set game-blows game-over)
@@ -87,7 +87,7 @@
 (def %fr-parts (list () (lit top) (lit face) (lit n) (lit e) (lit s) (lit w) (lit ne) (lit nw) (lit se) (lit sw)
                      (lit out-ne) (lit out-nw) (lit out-se) (lit out-sw) (lit face-w) (lit face-e) (lit shade)
                      (lit north) (lit ridge) (lit west) (lit ridge-ns) (lit east)
-                     (lit gable) (lit gable-w) (lit gable-e) (lit gable-ww) (lit gable-ee) (lit doorway)))
+                     (lit gable) (lit gable-w) (lit gable-e) (lit gable-ww) (lit gable-ee) (lit doorway) (lit stoop-n) (lit stoop-e) (lit stoop-s) (lit stoop-w)))
 
 ; A kind's pictures: ((PART . VARIANTS) ...) for each part it has.
 (def %fr-kind
@@ -197,8 +197,9 @@
 ; pictures PICS: its front where the street lies south, the gable where
 ; the roof runs north and south, and a door there its doorway over it;
 ; elsewhere the slope it is on (map.x, map-roof-pitch), a door too,
-; then the rims where the roof ends north, east and west.  Where PICS
-; has no picture of a gable or a slope, the roof's face or its top.
+; then the rims where the roof ends north, east and west.  A door is
+; found by the stoop outside it (%fr-stoops).  Where PICS has no
+; picture of a gable or a slope, the roof's face or its top.
 (def %fr-slopes (list (lit top) (lit north) (lit ridge) (lit top) (lit west) (lit ridge-ns) (lit east)))
 ; The gable's part at R C, a cell of pitch P: the peak under the ridge,
 ; a rake in the cell beside the ridge, a low end beyond; face where the
@@ -221,16 +222,8 @@
         (if (on? -1 0) () (list (lit n)))
         (if (on? 0 1) () (list (lit e)))
         (if (on? 0 -1) () (list (lit w)))))))
-; Whether the cell at R C of M is drawn as roof: under a roof that is
-; on, its door into the building too unless it is in the front, where
-; the doorway is drawn and who stands in it with it.
-(def %fr-hidden?
-  (fn (_ m r c)
-    (if (map-roofed? m r c) #t (if (map-covered? m r c) (%fr-covered? m (+ r 1) c) #f))))
-; Whether what lies at R C of M is drawn: seen, and not under the roof.
-(def %fr-seen? (fn (_ m r c) (if (map-seen? m r c) (not (%fr-hidden? m r c)) #f)))
-; Whether creature CR of G is drawn: shown, and not under the roof.
-(def %fr-shown? (fn (_ g cr) (if (creatures-shown? g cr) (not (%fr-hidden? (game-map g) (creature-r cr) (creature-c cr))) #f)))
+; Whether what lies at R C of M is drawn: seen, and under no roof.
+(def %fr-seen? (fn (_ m r c) (if (map-seen? m r c) (not (map-roofed? m r c)) #f)))
 
 ; What to draw for the cell at R C of M with art A, at X Y: the
 ; ground's picture, or a wall's parts, or the shade a wall's face
@@ -262,8 +255,31 @@
            ((= t tile-rock) (list (list (lit fill) x y frame-tile-size frame-tile-size)))
            ((= t tile-roof) (puts (%fr-roof-parts pics m r c seed) ()))
            ((map-opaque? t) (puts (frame-wall-parts (fn (_ dr dc) (%fr-solid? m (+ r dr) (+ c dc)))) ()))
-           ((%fr-solid? m (- r 1) c) (puts (List append (ground) (list (lit shade))) ()))
-           (#t (puts (ground) ())))))
+           ((%fr-solid? m (- r 1) c) (puts (List append (ground) (list (lit shade))) (%fr-stoops a m r c x y)))
+           (#t (puts (ground) (%fr-stoops a m r c x y))))))
+
+; The stoops on the ground at R C of M, art A, at X Y: one from the
+; roof's pictures for each door beside it into a building it is not
+; part of, on the side the door is, so a door is found from the street
+; whether its roof is on or off: stoop-s below a door to the north,
+; stoop-n above one to the south, stoop-e and stoop-w beside one to the
+; west and east.
+(def %fr-stoop-sides
+  (list (list -1 0 (lit stoop-s)) (list 1 0 (lit stoop-n)) (list 0 -1 (lit stoop-e)) (list 0 1 (lit stoop-w))))
+(def %fr-stoops
+  (fn (_ a m r c x y)
+    (def here (map-roof-at m r c))
+    (def pics (Vector ref tile-roof (first a)))
+    (List flat-map
+      (fn (_ s)
+        (def dr (first s))
+        (def dc (first (rest s)))
+        (def id (map-roof-at m (+ r dr) (+ c dc)))
+        (if (if (= (map-tile m (+ r dr) (+ c dc)) tile-door) (if (< 0 id) (not (= id here)) #f) #f)
+          ((fn (_ p) (if (null? p) () (list (list (lit tile) x y p))))
+           (%fr-pick pics (List ref 2 s) (+ (* r 80) c)))
+          ()))
+      %fr-stoop-sides)))
 
 ; Whether kind T is water, deep or shallow.
 (def %fr-wet? (fn (_ t) (if (= t tile-water) #t (= t tile-shallow))))
@@ -333,7 +349,7 @@
       (List flat-map (fn (_ it) (if (%fr-seen? m (item-r it) (item-c it))
                                   (%fr-put a cam (item-r it) (item-c it) (item-class it) #f (items-glyph g it) ()) ()))
         (game-floor g))
-      (List flat-map (fn (_ cr) (if (%fr-shown? g cr)
+      (List flat-map (fn (_ cr) (if (creatures-shown? g cr)
                                   (List append
                                     (%fr-put a cam (creature-r cr) (creature-c cr) (creature-name cr) #t (creature-glyph cr) cr)
                                     (%fr-marks a cam (creature-r cr) (creature-c cr) cr (%fr-creature-states cr)))
@@ -654,7 +670,7 @@
 (def %fr-unseen-at?
   (fn (_ g r c)
     (if (map-visible? (game-map g) r c)
-      (not (List any? (fn (_ cr) (if (if (= (creature-r cr) r) (= (creature-c cr) c) #f) (%fr-shown? g cr) #f))
+      (not (List any? (fn (_ cr) (if (if (= (creature-r cr) r) (= (creature-c cr) c) #f) (creatures-shown? g cr) #f))
              (game-creatures g)))
       #f)))
 
@@ -684,7 +700,7 @@
     (def m (game-map g))
     (List flat-map
       (fn (_ it)
-        (def at (if (if (map-visible? m (item-r it) (item-c it)) (not (%fr-hidden? m (item-r it) (item-c it))) #f)
+        (def at (if (if (map-visible? m (item-r it) (item-c it)) (not (map-roofed? m (item-r it) (item-c it))) #f)
                   (frame-place cam (item-r it) (item-c it)) ()))
         (if (null? at) ()
           (list (list (lit glint) (first at) (rest at) (int+ (int* (item-r it) 7) (int* (item-c it) 13))
