@@ -43,6 +43,6 @@
 (creature "pump-wright" "&" (depth 0 0) (level 1) (hp 1 1) (attack 0 0) (defence 0) (exp 0) (traits talks))
 
 ; The Heart, 10 to 12: what keeps the stone company.
-(creature "glister" "X" (depth 9 12) (level 9) (hp 28 40) (attack 5 11) (defence 8) (exp 150) (ranged 3 8) (shot "a shard of light") (traits ranged regen wakeful) (tale "A glister: one of the old people's men, cut from the stone's own" "glassy rock.  It throws shards of the stone's light."))
+(creature "glister" "X" (depth 9 12) (level 9) (hp 28 40) (attack 5 11) (defence 8) (exp 150) (ranged 3 8) (shot "a shard of light") (traits ranged regen) (tale "A glister: one of the old people's men, cut from the stone's own" "glassy rock.  It throws shards of the stone's light."))
 (creature "glow-midge" "v" (depth 10 12) (level 8) (hp 3 5) (attack 1 3) (defence 8) (exp 22) (pack 2 4) (traits fast erratic dazzle wakeful) (tale "Glow-midges: a swarm lit by the stone's water."))
 (creature "Old Man" "O" (depth 0 0) (article "the") (level 11) (hp 55 80) (attack 7 16) (defence 9) (exp 300) (summon "cave bat") (traits summon regen wakeful) (tale "The Old Man: the last of the old people's men, by the pool, who" "calls the bats.  The miners' name for whoever worked the ground" "before them; this is the oldest of all."))

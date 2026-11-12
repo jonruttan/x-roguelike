@@ -87,6 +87,17 @@ What it gives:
   and the glister, are fights to be answered and not traded; the old
   'un is 4%.
 
+## Forward from the starting numbers
+
+- **A fight that is to be turned down can be.**  A band whose afford
+  is under one asks for fights to be left; a kind that walks the
+  level from the first turn and shoots along a line cannot be left,
+  and its cost is paid whatever is played.
+- **The glister sleeps as the others do.**  It is not `wakeful`: it
+  starts asleep and wakes only in view, so a careful player goes round
+  it.  Its dice and its shot are as they were, so one met awake costs
+  what it did.
+
 ## Method
 
 1. **Arithmetic and logic first.**  A workable starting point is
