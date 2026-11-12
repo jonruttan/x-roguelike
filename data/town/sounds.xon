@@ -34,3 +34,73 @@
 
 (ambience "default" (bed "town-square") (random "cart" 12000 40) (random "hammer" 15000 35))
 (ambience "Kettle" (bed "town-square") (random "cart" 10000 40) (random "hammer" 12000 35) (random "church-bell" 40000 45))
+
+; --- the counter ---------------------------------------------------------------
+
+; Coins counted onto the counter as a thing is bought, and swept off it
+; into the purse as one is sold.
+(cue "bought" "coins-paid")
+(cue "sold" "coins-taken")
+
+(sound "coins-paid" (vary 40) (gain 30)
+  (voice (wave glass) (note "E6") (env (0 0) (1 40) (140 0)) (pan -10))
+  (voice (wave glass) (note "C6") (at 70) (env (0 0) (1 36) (160 0)))
+  (voice (wave glass) (note "G5") (at 140) (env (0 0) (1 32) (220 0)) (pan 10))
+  (voice (wave noise) (hz 1) (cut 30) (at 140) (env (0 0) (1 28) (40 0))))
+
+(sound "coins-taken" (vary 40) (gain 30)
+  (voice (wave noise) (hz 1) (cut 40) (env (0 0) (60 20) (120 0)))
+  (voice (wave glass) (note "G5") (at 60) (env (0 0) (1 34) (140 0)) (pan 10))
+  (voice (wave glass) (note "C6") (at 110) (env (0 0) (1 38) (160 0)))
+  (voice (wave glass) (note "G6") (at 160) (env (0 0) (1 40) (260 0)) (pan -10)))
+
+; --- under a roof --------------------------------------------------------------
+
+; A building's own air is heard under its roof, and its own song where
+; it has one (music.xon); a building without is heard as the street
+; outside.
+
+(sound "fire-pop" (vary 300) (gain 22)
+  (voice (wave noise) (hz 1) (cut 70) (env (0 0) (1 40) (25 0)))
+  (voice (wave noise) (hz 1) (cut 55) (at 90) (env (0 0) (1 25) (20 0))))
+
+(sound "tankard" (vary 200) (gain 18)
+  (voice (wave glass) (note "C6") (env (0 0) (1 30) (180 0)))
+  (voice (wave glass) (note "G6") (detune 12) (at 20) (env (0 0) (1 22) (140 0))))
+
+(sound "laugh" (vary 250) (gain 16)
+  (voice (wave reed) (note "A3") (cut 25) (env (0 0) (20 30) (90 0)))
+  (voice (wave reed) (note "A3") (cut 25) (at 140) (env (0 0) (20 26) (90 0)))
+  (voice (wave reed) (note "G3") (cut 25) (at 280) (env (0 0) (20 22) (120 0))))
+
+(sound "bellows" (vary 60) (gain 26)
+  (voice (wave noise) (hz 1) (cut 8) (env (0 0) (500 40) (1300 0)))
+  (voice (wave noise) (hz 1) (cut 20) (at 300) (env (0 0) (200 18) (900 0))))
+
+(sound "anvil" (vary 50) (gain 24)
+  (voice (wave glass) (note "D6") (env (0 0) (1 45) (600 0)))
+  (voice (wave glass) (note "A6") (detune 9) (env (0 0) (1 25) (400 0)))
+  (voice (wave noise) (hz 1) (cut 60) (env (0 0) (1 40) (25 0))))
+
+(sound "page" (vary 300) (gain 14)
+  (voice (wave noise) (hz 1) (cut 45) (env (0 0) (40 20) (200 10) (320 0))))
+
+(sound "clock" (gain 14)
+  (voice (wave glass) (note "B5") (cut 60) (env (0 0) (1 20) (40 0)))
+  (voice (wave glass) (note "G5") (cut 60) (at 1000) (env (0 0) (1 18) (40 0))))
+
+(ambience "the inn" (bed "hearth-room") (random "fire-pop" 4000 45) (random "tankard" 6000 40) (random "laugh" 11000 40))
+(ambience "the smithy" (bed "hearth") (random "anvil" 2500 50) (random "bellows" 7000 45))
+(ambience "the bakehouse" (bed "hearth") (random "fire-pop" 3500 45))
+(ambience "the mill" (bed "mill-race") (random "creak" 6000 45))
+(ambience "the pump-house" (bed "engine") (random "creak" 9000 35))
+(ambience "the engine house" (bed "engine") (random "creak" 9000 35))
+(ambience "the boiler house" (bed "hearth") (random "fire-pop" 5000 40))
+(ambience "the chapel" (bed "indoors") (random "creak" 20000 25))
+(ambience "the White Church" (bed "indoors") (random "creak" 25000 25) (random "page" 18000 30))
+(ambience "the council house" (bed "indoors") (random "clock" 9000 40) (random "page" 12000 35))
+(ambience "the Guild hall" (bed "indoors") (random "clock" 9000 40) (random "page" 10000 35))
+(ambience "the Guild's shop" (bed "indoors") (random "clock" 9000 35))
+(ambience "the chandler's" (bed "indoors") (random "creak" 15000 30))
+(ambience "the tannery" (bed "indoors") (random "drip" 7000 35))
+(ambience "the ropewalk" (bed "indoors") (random "creak" 8000 35))

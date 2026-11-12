@@ -23,7 +23,8 @@
 (import roguelike/data data-all data-glyph)
 (import roguelike/items items-glyph)
 (import roguelike/map map-terrain map-kinds map-rows map-cols map-tile map-seen? map-visible? map-in? map-opaque? map-chart
-  tile-rock tile-roof tile-water tile-shallow map-shown map-covered? map-roofed? map-roof-pitch map-roof-off map-drawn-buffers)
+  tile-rock tile-roof tile-door tile-water tile-shallow map-shown map-covered? map-roofed? map-roof-pitch map-roof-at
+  map-roof-off map-drawn-buffers)
 (import roguelike/state game-map game-player game-floor game-creatures game-traps
   player-r player-c player-conditions item-r item-c item-class creature-r creature-c creature-name creature-glyph
   creature-state creature-condition game-set game-blows game-over)
@@ -87,7 +88,7 @@
 (def %fr-parts (list () (lit top) (lit face) (lit n) (lit e) (lit s) (lit w) (lit ne) (lit nw) (lit se) (lit sw)
                      (lit out-ne) (lit out-nw) (lit out-se) (lit out-sw) (lit face-w) (lit face-e) (lit shade)
                      (lit north) (lit ridge) (lit west) (lit ridge-ns) (lit east)
-                     (lit gable) (lit gable-w) (lit gable-e) (lit gable-ww) (lit gable-ee)))
+                     (lit gable) (lit gable-w) (lit gable-e) (lit gable-ww) (lit gable-ee) (lit doorway) (lit stoop-n) (lit stoop-e) (lit stoop-s) (lit stoop-w)))
 
 ; A kind's pictures: ((PART . VARIANTS) ...) for each part it has.
 (def %fr-kind
@@ -195,10 +196,11 @@
 (def %fr-covered? (fn (_ m r c) (if (map-in? m r c) (map-covered? m r c) #f)))
 ; The parts the roofed cell at R C of M is drawn in, from the roof's
 ; pictures PICS: its front where the street lies south, the gable where
-; the roof runs north and south; elsewhere the slope it is on (map.x,
-; map-roof-pitch), then the rims where the roof ends north, east and
-; west.  Where PICS has no picture of a gable or a slope, the roof's
-; face or its top.
+; the roof runs north and south, and a door there its doorway over it;
+; elsewhere the slope it is on (map.x, map-roof-pitch), a door too,
+; then the rims where the roof ends north, east and west.  A door is
+; found by the stoop outside it (%fr-stoops).  Where PICS has no
+; picture of a gable or a slope, the roof's face or its top.
 (def %fr-slopes (list (lit top) (lit north) (lit ridge) (lit top) (lit west) (lit ridge-ns) (lit east)))
 ; The gable's part at R C, a cell of pitch P: the peak under the ridge,
 ; a rake in the cell beside the ridge, a low end beyond; face where the
@@ -215,7 +217,8 @@
     (def p (map-roof-pitch m r c))
     (def have (fn (_ part other) (if (null? (%fr-pick pics part seed)) other part)))
     (def slope (List ref p %fr-slopes))
-    (if (not (on? 1 0)) (list (have (%fr-gable m r c p) (lit face)))
+    (if (not (on? 1 0))
+      (pair (have (%fr-gable m r c p) (lit face)) (if (= (map-tile m r c) tile-door) (list (lit doorway)) ()))
       (List append (list (have slope (lit top)))
         (if (on? -1 0) () (list (lit n)))
         (if (on? 0 1) () (list (lit e)))
@@ -242,7 +245,7 @@
            (#t (list (list (lit fill) x y frame-tile-size frame-tile-size))))))
 (def %fr-cell
   (fn (_ a m r c)
-    (def t (map-shown m r c))
+    (def t ((fn (_ k) (if (= k tile-door) (if (map-covered? m r c) tile-roof k) k)) (map-shown m r c)))
     (def pics (Vector ref t (first a)))
     (def seed (+ (* r 80) c))
     ; The pictures of the parts PARTS, in order, in front of ACC.
@@ -261,8 +264,31 @@
            ((= t tile-rock) (lit dark))
            ((= t tile-roof) (puts (%fr-roof-parts pics m r c seed) ()))
            ((map-opaque? t) (puts (frame-wall-parts (fn (_ dr dc) (%fr-solid? m (+ r dr) (+ c dc)))) ()))
-           ((%fr-solid? m (- r 1) c) (puts (List append (ground) (list (lit shade))) ()))
-           (#t (puts (ground) ())))))
+           ((%fr-solid? m (- r 1) c) (puts (List append (ground) (list (lit shade))) (%fr-stoops a m r c)))
+           (#t (puts (ground) (%fr-stoops a m r c))))))
+
+; The stoops on the ground at R C of M, art A, their pictures: one from the
+; roof's pictures for each door beside it into a building it is not
+; part of, on the side the door is, so a door is found from the street
+; whether its roof is on or off: stoop-s below a door to the north,
+; stoop-n above one to the south, stoop-e and stoop-w beside one to the
+; west and east.
+(def %fr-stoop-sides
+  (list (list -1 0 (lit stoop-s)) (list 1 0 (lit stoop-n)) (list 0 -1 (lit stoop-e)) (list 0 1 (lit stoop-w))))
+(def %fr-stoops
+  (fn (_ a m r c)
+    (def here (map-roof-at m r c))
+    (def pics (Vector ref tile-roof (first a)))
+    (List flat-map
+      (fn (_ s)
+        (def dr (first s))
+        (def dc (first (rest s)))
+        (def id (map-roof-at m (+ r dr) (+ c dc)))
+        (if (if (= (map-tile m (+ r dr) (+ c dc)) tile-door) (if (< 0 id) (not (= id here)) #f) #f)
+          ((fn (_ p) (if (null? p) () (list p)))
+           (%fr-pick pics (List ref 2 s) (+ (* r 80) c)))
+          ()))
+      %fr-stoop-sides)))
 
 ; Whether kind T is water, deep or shallow.
 (def %fr-wet? (fn (_ t) (if (= t tile-water) #t (= t tile-shallow))))

@@ -194,11 +194,17 @@ seeping, chalked or hung with a lamp.
 ## Roofs
 
 A town's buildings and houses are under roofs (see the README, `(plan
-...)`).  A cell under a roof that is on, a door into it apart, is drawn from
-the set's `roof` pictures and nothing that stands or lies there is
-drawn; the roof the player stands under is off, and that building's
-cells are drawn as they are.  In the terminal a roofed cell is the
-`(glyph roof "^")`.
+...)`).  A cell under a roof that is on is drawn from the set's `roof`
+pictures and nothing that stands or lies there is drawn; the roof the
+player stands under is off, and that building's cells are drawn as
+they are.  A door into the building from the street is roof too, but
+in the front, where the cell to the south is open, the `doorway` is
+drawn over the front.  Outside every such door the ground has a
+stoop, from the roof's pictures, on the side the door opens to:
+`stoop-s` below a door in the front, `stoop-n`, `stoop-e`, `stoop-w`
+by the others, so a door is found from the street.  Who stands in a
+door is drawn.  In the terminal a roofed cell is the `(glyph roof
+"^")`, and a door into the building is its own glyph wherever it is.
 
 A roof is peaked, its ridge along its longer side, and a cell of it is
 drawn by the slope it is on:

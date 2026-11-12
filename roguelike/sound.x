@@ -15,7 +15,8 @@
 ; music.  What a turn sounded like is read from the game before and after
 ; it: a step, a blow (game-blows), and every change in the player's state
 ; the set gives a cue: hurt, healed, weak, stronger, hungry, poisoned,
-; up or down the stairs, into a new band, the lamp lit, low or out.  A
+; up or down the stairs, into a new band, the lamp lit, low or out, a
+; thing bought or sold.  A building has its own song and air inside.  A
 ; creature the turn woke cries out, seen or not, quieter the further off.
 ;
 ; Tension, 0 to 100, is what the player has to fear: a creature awake
@@ -38,8 +39,8 @@
 (import roguelike/state game-set game-player game-depth game-map game-creatures game-pack game-over game-blows game-turn
   game-band band-name game-place game-top-set game-param player-r player-c player-hp player-hpmax player-level player-gold
   player-food player-lamp player-conditions creature-r creature-c creature-state creature-name state-dist state-ring?
-  band-to band-prop1 state-creature-named)
-(import roguelike/map map-tile map-terrain)
+  band-to band-prop1 state-creature-named game-inside item-count)
+(import roguelike/map map-tile map-terrain map-roof-at map-place-at)
 (import roguelike/creatures creatures-shown?)
 
 (def %sd-rate 44100)
@@ -57,7 +58,8 @@
 ; 2 the music's stream, 3 the turn's streams, 4 the music's tracker, 5
 ; the bed's, 6 the sounds rendered, ((KEY . (REGION . BYTES)) ...), 7
 ; the tension, 8 the game as it was (%sd-glance), 9 the random state,
-; 10 blocks since a collect, 11 the place the music is for, 12 the
+; 10 blocks since a collect, 11 the places the music is for
+; (sound-places), 12 the
 ; place's random sounds, 13 how loud the turn's sounds are, a
 ; percentage (sound-volume!), 14 the creatures as they stood
 ; (%sd-states), 15 the class the sound is played through, Sdl or Web
@@ -118,12 +120,15 @@
     (def f (%sd-named set (lit song) name))
     (if (null? f) () (pair (lit song) f))))
 
-; What PLACE plays, from (music PLACE SONG) and (ambience PLACE (bed SONG)
-; (random SOUND EVERY-MS GAIN) ...), PLACE a band's name, a region's,
-; or default.
+; What the first of PLACES that has one plays, from (music PLACE SONG)
+; and (ambience PLACE (bed SONG) (random SOUND EVERY-MS GAIN) ...), a
+; PLACE a building's name, a band's, a region's, or default for the rest.
 (def %sd-for
-  (fn (_ set head place)
-    ((fn (_ hit) (if (null? hit) (%sd-named set head "default") hit)) (%sd-named set head place))))
+  (fn (_ set head places)
+    ((fn (self ps)
+       (if (null? ps) (%sd-named set head "default")
+         ((fn (_ hit) (if (null? hit) (self (rest ps)) hit)) (%sd-named set head (first ps)))))
+     places)))
 
 ; --- the streams ---------------------------------------------------------------
 
@@ -262,6 +267,21 @@
            ((str=? (game-place g) "") "default")
            (#t (game-place g)))))
 
+; The places G is heard in, the nearest first: the named building whose
+; roof is over the player, the interior stood in, then the band, else
+; the region, else default.  A building's own song and air are heard
+; inside it, and what it lacks is the place's around it.
+(def sound-places
+  (fn (_ g)
+    (def p (game-player g))
+    (def m (game-map g))
+    (def in (game-inside g))
+    (def at (if (int= 0 (map-roof-at m (player-r p) (player-c p))) () (map-place-at m (player-r p) (player-c p))))
+    (List append (if (null? at) () (list (first at))) (if (str? in) (list in) ()) (list (%sd-place-key g)))))
+(def %sd-same-places?
+  (fn (self a b)
+    (match ((null? a) (null? b)) ((null? b) #f) ((not (str=? (first a) (first b))) #f) (#t (self (rest a) (rest b))))))
+
 (def %sd-tracker!
   (fn (_ s k song)
     (def t (%sd-get s k))
@@ -310,7 +330,7 @@
     (def boss (%sd-boss s g))
     (def wants
       (List filter (fn (_ w) (not (null? w)))
-        (list (if (null? boss) () (%sd-for set (lit boss) (creature-name boss)))
+        (list (if (null? boss) () (%sd-for set (lit boss) (list (creature-name boss))))
               (if (int< 0 (%sd-get s 17)) (%sd-for set (lit fight) key) ())
               (%sd-for set (lit music) key))))
     (def song (if (null? wants) () (%sd-song set (List ref 1 (first wants)))))
@@ -351,8 +371,8 @@
 
 (def %sd-place!
   (fn (_ s g)
-    (def key (%sd-place-key g))
-    (unless (str=? key (%sd-get s 11))
+    (def key (sound-places g))
+    (unless (%sd-same-places? key (%sd-get s 11))
       (do (def set (%sd-get s 0))
           (%sd-put! s 11 key)
           (def amb (%sd-for set (lit ambience) key))
@@ -364,13 +384,26 @@
 ; --- a turn heard --------------------------------------------------------------
 
 ; What of G a turn's sounds are told from: (R C DEPTH HP HPMAX LEVEL
-; ITEMS GOLD FOOD CONDITIONS OVER PLACE LAMP).
+; ITEMS GOLD FOOD CONDITIONS OVER PLACE LAMP CARRIED), ITEMS the pack's
+; things and CARRIED the count of them, a stack counted as all it holds.
 (def %sd-glance
   (fn (_ g)
     (def p (game-player g))
     (list (player-r p) (player-c p) (game-depth g) (player-hp p) (player-hpmax p) (player-level p)
           (List length (game-pack g)) (player-gold p) (player-food p)
-          (List map first (player-conditions p)) (game-over g) (%sd-place-key g) (player-lamp p))))
+          (List map first (player-conditions p)) (game-over g) (%sd-place-key g) (player-lamp p)
+          (List fold (fn (_ n it) (int+ n (item-count it))) 0 (game-pack g)))))
+
+; The cue a change in the purse is heard as, the gold and the count of
+; things carried before and after: bought when the gold went down, as
+; only a counter takes it; sold when it came up as the pack went down;
+; gold when it came up else; nil when it did not change.
+(def sound-coin
+  (fn (_ gold-was gold-now carried-was carried-now)
+    (match ((int< gold-now gold-was) (lit bought))
+           ((not (int< gold-was gold-now)) ())
+           ((int< carried-now carried-was) (lit sold))
+           (#t (lit gold)))))
 
 (def %sd-cue
   (fn (_ s event side)
@@ -426,7 +459,7 @@
         (when (if (eq? (rest w) (lit asleep))
                 (if (eq? (creature-state cr) (lit asleep)) #f (List any? (fn (_ x) (same? x cr)) (game-creatures g)))
                 #f)
-          (do (def c (%sd-for set (lit cry) (creature-name cr)))
+          (do (def c (%sd-for set (lit cry) (list (creature-name cr))))
               (def d (state-dist (player-r p) (player-c p) (creature-r cr) (creature-c cr)))
               (def pct (int- 100 (int* fall (int- d 1))))
               (unless (if (null? c) #t (int< pct 1))
@@ -451,7 +484,7 @@
       (unless (int< (int* 4 (int- (at now 3) (at was 3))) (at now 4)) (%sd-cue s (lit healed) 0)))
     (when (int< (at was 5) (at now 5)) (%sd-cue s (lit level) 0))
     (when (int< (at was 6) (at now 6)) (%sd-cue s (lit pickup) 0))
-    (when (int< (at was 7) (at now 7)) (%sd-cue s (lit gold) 0))
+    ((fn (_ coin) (unless (null? coin) (%sd-cue s coin 0))) (sound-coin (at was 7) (at now 7) (at was 13) (at now 13)))
     (when (crossed? (List ref 1 hunger)) (%sd-cue s (lit hungry) 0))
     (when (crossed? (List ref 2 hunger)) (%sd-cue s (lit weak) 0))
     (unless (List all? (fn (_ c) (List includes? c (at was 9))) (at now 9)) (%sd-cue s (lit afflicted) 0))
@@ -501,7 +534,7 @@
             (%sd-put! s 8 (%sd-glance g))
             (%sd-put! s 9 (int& (game-depth g) 65535))
             (%sd-put! s 10 0)
-            (%sd-put! s 11 "")
+            (%sd-put! s 11 ())
             (%sd-put! s 12 ())
             (%sd-put! s 13 100)
             (%sd-put! s 14 (%sd-states g))
@@ -577,4 +610,5 @@
       (do ((%sd-front s) audio-close (%sd-get s 2))
           (List for-each (fn (_ st) ((%sd-front s) audio-close st)) (%sd-get s 3))))))
 
-(provide roguelike/sound sound-make sound-pump! sound-collect? sound-turn! sound-volume! sound-cue! sound-music sound-close)
+(provide roguelike/sound sound-make sound-pump! sound-collect? sound-turn! sound-volume! sound-cue! sound-music sound-close
+  sound-places sound-coin)

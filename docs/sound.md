@@ -50,6 +50,7 @@ first time it is wanted, at each of three pitches and three places.
 | `healed` | hit points back, a quarter of the most or more |
 | `level` | a level gained |
 | `pickup`, `gold` | something taken into the pack, gold found |
+| `bought`, `sold` | gold paid at a counter; gold taken for something out of the pack |
 | `stairs`, `arrived` | a level down or up; the first level of a new band |
 | `hungry`, `weak` | hunger crossing the set's `(hunger ...)` marks |
 | `afflicted`, `relieved` | a condition taken on, one worn off |
@@ -101,8 +102,13 @@ as a drum does.
 
 `(music "PLACE" "SONG")` names a place's song, and `(ambience "PLACE"
 (bed "SONG") (random "SOUND" EVERY-MS GAIN) ...)` its air: a bed song
-under the music and sounds heard at random, once in EVERY ms or so. A
-place is the band stood in, else the region, else `"default"`.
+under the music and sounds heard at random, once in EVERY ms or so.
+The places are looked for nearest first: the named building whose roof
+is over the player, the interior stood in, then the band, else the
+region, and `"default"` for the rest. A building or an interior with air
+or a song of its own is heard so inside, and what it lacks is the
+place's around it: the town's inn plays a reel by its fire, its
+churches a hymn, and a valley cellar has no wind in it.
 `(music-gain PCT)` and `(music-echo MS FEEDBACK WET)` are the music's
 loudness and room; the echoes are those of the set the game began on.
 
@@ -110,7 +116,8 @@ Every form here is looked for in the set stood in first, then in the set
 the game began on and each of its regions. A region's own songs, beds and
 footsteps are heard there, and what it lacks is the world's: the valley
 and the town (`data/kettle`, `data/town`) have their own music and air,
-and the blows, cues and cries of the Delve's set.
+the town its counter's coins, and the blows, cues and cries of the
+Delve's set.
 
 `(fight "PLACE" "SONG")` is the place's fight song: a blow struck either
 way brings it in, and it plays until `(fight-turns N)` turns pass without
