@@ -183,7 +183,13 @@ its item's `(price N)`, or its class's in the world's `(worth (CLASS
 N) ...)`, in gold, and the shop asks and pays its `(rate SELL BUY)`
 percent of that, 100 and 50 unless given; a thing worth nothing, worn
 or in hand is not bought.  `town`'s inn, bakehouse, smithy, tannery
-and chandler's keep shops, and the Guild's shop sells dear.  In a
+and chandler's keep shops, and the Guild's shop sells dear.  A shop's
+keeper stands at the back of it with a counter beside them, toward the
+door, and a step at the counter is a word with them as a step at the
+keeper is.  A screen's `(folk NAME LINE ...)` is one of its people out
+of doors: a creature that talks, put on open ground, who walked into
+says a LINE; with the `strolls` trait they wander the streets, never
+under a roof.  `town` names two on each district.  In a
 world of screens the bands run from
 the hub, ring 0, and any form a band names besides its own -- a level
 knob, a level style -- is in front of the set's on its screens, so

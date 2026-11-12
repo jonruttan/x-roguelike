@@ -27,7 +27,7 @@
 (import x/core/doors int/)
 (import roguelike/scale scale-rung)
 (import roguelike/chain chain-where chain-compass)
-(import roguelike/map map-rows map-cols map-tile map-seen? map-each! map-places map-roof-at map-floor? tile-rock)
+(import roguelike/map map-rows map-cols map-tile map-set! map-walkable? map-seen? map-each! map-places map-roof-at map-floor? tile-rock tile-door tile-counter)
 (import roguelike/dungeon dungeon-spot)
 (import roguelike/state
   game-rng game-set game-forms game-turn game-depth game-map game-player game-creatures game-creatures! game-floor game-floor!
@@ -222,17 +222,72 @@
     (List flat-map (fn (_ b) (List map (fn (_ k) (pair (first b) k)) (data-all (rest b) (lit keeper))))
       (data-all (game-forms g) (lit building)))))
 (def %qs-chain-giver? (fn (_ g name) (List any? (fn (_ q) (str=? (%qs-giver q) name)) (List map rest (game-chain g)))))
-; A free floor cell under the roof of the place P, (NAME R0 C0 R1 C1),
-; the middle one of them, or nil.
+; The cells of the place P, (NAME R0 C0 R1 C1), (R . C) each.
+(def %qs-cells
+  (fn (_ p)
+    (List flat-map (fn (_ r) (List map (fn (_ c) (pair r c)) (List range (List ref 2 p) (+ (List ref 4 p) 1))))
+      (List range (List ref 1 p) (+ (List ref 3 p) 1)))))
+; Whether AT is free floor under a roof.
+(def %qs-in?
+  (fn (_ g at)
+    (def m (game-map g))
+    (if (map-floor? m (first at) (rest at))
+      (if (< 0 (map-roof-at m (first at) (rest at))) (state-free? g (first at) (rest at)) #f)
+      #f)))
+; A free floor cell under the roof of the place P, the middle one of
+; them, or nil.
 (def %qs-inside
   (fn (_ g p)
-    (def m (game-map g))
-    (def cells (List flat-map (fn (_ r) (List map (fn (_ c) (pair r c)) (List range (List ref 2 p) (+ (List ref 4 p) 1))))
-                 (List range (List ref 1 p) (+ (List ref 3 p) 1))))
-    (def in? (fn (_ at) (if (map-floor? m (first at) (rest at)) (< 0 (map-roof-at m (first at) (rest at))) #f)))
-    (def free (List filter (fn (_ at) (if (in? at) (state-free? g (first at) (rest at)) #f)) cells))
+    (def free (List filter (fn (_ at) (%qs-in? g at)) (%qs-cells p)))
     (if (null? free) () (List ref (int/ (List length free) 2) free))))
-; Each keeper on the level just made, inside their building.
+
+; A shop's keeper stands at the back of it, the free floor cell under
+; its roof farthest from its doors, a counter on the cell beside them
+; nearest a door: (STAND . COUNTER), COUNTER nil where a counter there
+; would cut any of the building off, and nil with no door or no floor.
+(def %qs-abs (fn (_ n) (if (< n 0) (- 0 n) n)))
+(def %qs-key (fn (_ at) (+ (* 1000 (first at)) (rest at))))
+(def %qs-four (list (pair -1 0) (pair 1 0) (pair 0 -1) (pair 0 1)))
+(def %qs-beside (fn (_ at) (List map (fn (_ d) (pair (+ (first at) (first d)) (+ (rest at) (rest d)))) %qs-four)))
+; How many steps AT is from the nearest of DOORS, along rows and columns.
+(def %qs-far
+  (fn (_ doors at)
+    (List fold (fn (_ best d) ((fn (_ n) (if (< n best) n best)) (+ (%qs-abs (- (first d) (first at))) (%qs-abs (- (rest d) (rest at))))))
+      9999 doors)))
+; How many of the cells WALK, keys, can be walked to from START without
+; a step on the cell BLOCK.
+(def %qs-reach
+  (fn (_ walk start block)
+    (def on? (fn (_ k l) (List any? (fn (_ x) (= x k)) l)))
+    ((fn (self front seen)
+       (if (null? front) (List length seen)
+         ((fn (_ next) (self (List append (rest front) next) (List append next seen)))
+          (List filter (fn (_ k) (if (= k block) #f (if (on? k walk) (not (on? k seen)) #f)))
+            (List map (fn (_ d) (+ (first front) (+ (* 1000 (first d)) (rest d)))) %qs-four)))))
+     (list start) (list start))))
+(def %qs-behind
+  (fn (_ g p)
+    (def m (game-map g))
+    (def cells (%qs-cells p))
+    (def doors (List filter (fn (_ at) (= (map-tile m (first at) (rest at)) tile-door)) cells))
+    (def free (List filter (fn (_ at) (%qs-in? g at)) cells))
+    (if (if (null? free) #t (null? doors)) ()
+      ((fn (_ stand)
+         (def walk (List map %qs-key (List filter (fn (_ at) (map-walkable? m (first at) (rest at))) cells)))
+         (def whole (%qs-reach walk (%qs-key stand) -1))
+         (def spots
+           (List filter
+             (fn (_ at)
+               (if (%qs-in? g at)
+                 (if (< (%qs-far doors at) (%qs-far doors stand)) (= (%qs-reach walk (%qs-key stand) (%qs-key at)) (- whole 1)) #f)
+                 #f))
+             (%qs-beside stand)))
+         (pair stand
+           (if (null? spots) ()
+             (List fold (fn (_ best at) (if (< (%qs-far doors at) (%qs-far doors best)) at best)) (first spots) (rest spots)))))
+       (List fold (fn (_ best at) (if (< (%qs-far doors best) (%qs-far doors at)) at best)) (first free) (rest free))))))
+; Each keeper on the level just made, inside their building: a shop's
+; behind its counter, any other in the middle of the floor.
 (def quests-keepers!
   (fn (_ g)
     (List for-each
@@ -240,13 +295,53 @@
         (def place (List find (fn (_ p) (str=? (first p) (first bk))) (map-places (game-map g))))
         (def kind (%qs-kind g (List ref 1 bk)))
         (unless (if (null? place) #t (if (null? kind) #t (%qs-chain-giver? g (first kind))))
-          ((fn (_ at) (unless (null? at) (%qs-creature! g kind (first at) (rest at)))) (%qs-inside g place))))
+          ((fn (_ behind)
+             (if (null? behind)
+               ((fn (_ at) (unless (null? at) (%qs-creature! g kind (first at) (rest at)))) (%qs-inside g place))
+               (do (%qs-creature! g kind (first (first behind)) (rest (first behind)))
+                   (unless (null? (rest behind))
+                     (map-set! (game-map g) (first (rest behind)) (rest (rest behind)) tile-counter)))))
+           (if (null? (%qs-shop g (List ref 1 bk))) () (%qs-behind g place)))))
       (%qs-keepers g))))
-; The lines of the keeper NAME among the forms in force, or nil.
+
+; --- the people of the streets -----------------------------------------------
+
+; A screen's (folk NAME LINE ...) is one of the people out of doors on
+; it: a creature that talks, put on open ground when the level is made,
+; unless the game's chain gives NAME a screen of its own; walked into,
+; they say a LINE, the next each turn.  One with the strolls trait
+; wanders the streets (creatures.x).  They are spread over the open
+; ground in the order it is read, with no draw of the dice.
+(def %qs-folk (fn (_ g) (data-all (game-forms g) (lit folk))))
+(def quests-folk!
+  (fn (_ g)
+    (def m (game-map g))
+    (def folk
+      (List filter (fn (_ f) ((fn (_ kind) (if (null? kind) #f (not (%qs-chain-giver? g (first kind))))) (%qs-kind g (first f))))
+        (%qs-folk g)))
+    (unless (null? folk)
+      ((fn (_ open)
+         (def n (List length open))
+         (unless (= n 0)
+           (List for-each
+             (fn (_ i)
+               ((fn (_ at) (when (state-free? g (first at) (rest at)) (%qs-creature! g (%qs-kind g (first (List ref i folk))) (first at) (rest at))))
+                (List ref (int/ (* (+ i 1) n) (+ (List length folk) 1)) open)))
+             (List range 0 (List length folk)))))
+       (List filter
+         (fn (_ at)
+           (if (map-floor? m (first at) (rest at))
+             (if (= 0 (map-roof-at m (first at) (rest at))) (state-free? g (first at) (rest at)) #f)
+             #f))
+         (%qs-cells (list "" 1 1 (- (map-rows m) 2) (- (map-cols m) 2))))))))
+; The lines of the keeper, or the one of the streets, NAME among the
+; forms in force, or nil.
 (def %qs-lines
   (fn (_ g name)
     (def bk (List find (fn (_ bk) (str=? (List ref 1 bk) name)) (%qs-keepers g)))
-    (if (null? bk) () (rest (rest bk)))))
+    (if (null? bk)
+      ((fn (_ f) (if (null? f) () (rest f))) (List find (fn (_ f) (str=? (first f) name)) (%qs-folk g)))
+      (rest (rest bk)))))
 ; The forms of the building the keeper NAME keeps a shop in, among the
 ; forms in force, or nil.
 (def %qs-shop
@@ -379,4 +474,4 @@
                 (List for-each (fn (_ name) (unless (%qs-has? g name) (thing! name))) (%qs-items q))))))
       (%qs-quests g))))
 
-(provide roguelike/quests quests-place! quests-talk! quests-keepers! quests-leads quests-errands quests-sighted!)
+(provide roguelike/quests quests-place! quests-talk! quests-keepers! quests-folk! quests-leads quests-errands quests-sighted!)

@@ -48,6 +48,8 @@
 ; drawn as from outside it
 ; (see roofs, below).
 (def tile-roof 18)
+; A shop's counter: seen over, not stepped on.
+(def tile-counter 19)
 
 ; (CODE NAME SORT-OF PASSABLE? OPAQUE?) for every kind.
 (def map-terrain
@@ -80,8 +82,10 @@
         ; Floor under a hand of standing water: waded, not swum.
         (list tile-shallow (lit shallow) (lit floor) #t #f)
         ; The roof over a building, seen from outside it.
-        (list tile-roof (lit roof) (lit wall) #f #t)))
-(def map-kinds 19)
+        (list tile-roof (lit roof) (lit wall) #f #t)
+        ; A shop's counter, the keeper behind it.
+        (list tile-counter (lit counter) (lit wall) #f #f)))
+(def map-kinds 20)
 
 ; Each kind's passable and opaque flags in a vector by code, read through
 ; the object doors: sight asks a cell thousands of times a turn.
@@ -626,7 +630,7 @@
 
 (provide roguelike/map
   tile-rock tile-floor tile-wall tile-door tile-passage tile-down tile-up
-  tile-water tile-pillar tile-fall tile-dressed tile-hedge tile-gate tile-thicket tile-edge tile-bog tile-scar tile-shallow tile-roof
+  tile-water tile-pillar tile-fall tile-dressed tile-hedge tile-gate tile-thicket tile-edge tile-bog tile-scar tile-shallow tile-roof tile-counter
   map-terrain map-kinds map-look map-look-run
   map-roof-at map-roof! map-roof-off map-covered? map-roofed? map-shown map-roofs? map-roof-pitch
   map-make map-rows map-cols map-rooms map-rooms! map-down map-down! map-up map-up! map-places map-places! map-place-at

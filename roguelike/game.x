@@ -38,7 +38,7 @@
 (import x/sys/gc)
 (import roguelike/map
   map-rows map-cols map-in? map-tile map-up map-down map-walkable? map-seen? map-light! map-light-radius! map-light-all! map-seen-whole?
-  map-place-at map-frontier? tile-rock tile-down tile-up tile-door)
+  map-place-at map-frontier? tile-rock tile-down tile-up tile-door tile-counter)
 (import roguelike/dungeon dungeon-generate dungeon-spot)
 (import x/core/doors int/)
 (import roguelike/state
@@ -64,7 +64,7 @@
   items-by-letter items-pickup!
   items-drop! items-quaff! items-read! items-zap! items-eat! items-fill! items-wield! items-wear! items-take-off!
   items-put-on! items-remove!)
-(import roguelike/quests quests-place! quests-talk! quests-keepers! quests-leads quests-errands quests-sighted!)
+(import roguelike/quests quests-place! quests-talk! quests-keepers! quests-folk! quests-leads quests-errands quests-sighted!)
 (import roguelike/chain chain-build! chain-way)
 (import roguelike/traps traps-found-at traps-place! traps-step! traps-search!)
 (import roguelike/interiors interiors-door! interiors-params interiors-prop1)
@@ -160,6 +160,7 @@
     (items-place-pages! g)
     (quests-place! g)
     (quests-keepers! g)
+    (quests-folk! g)
     (traps-place! g)
     (%gm-light! g)
     (Heap collect)))
@@ -552,6 +553,7 @@
 ; A step DR DC, a blow at what stands there, or a word with it when it
 ; talks: whether a turn passed.  Confused, the step goes any way; held,
 ; a step goes nowhere, though a blow still lands.  A wall takes no turn.
+; A step at a counter is a word with whoever stands behind it.
 (def %gm-move!
   (fn (_ g dr dc)
     (def p (game-player g))
@@ -559,8 +561,13 @@
     (def r (+ (player-r p) (first d)))
     (def c (+ (player-c p) (rest d)))
     (def cr (state-creature-at g r c))
+    (def over
+      (if (if (map-in? (game-map g) r c) (= (map-tile (game-map g) r c) tile-counter) #f)
+        (state-creature-at g (+ r (first d)) (+ c (rest d)))
+        ()))
     (match
       ((not (null? cr)) (if (creature-trait? cr (lit talks)) (quests-talk! g cr) (do (combat-player-attacks! g cr) #t)))
+      ((if (null? over) #f (creature-trait? over (lit talks))) (quests-talk! g over))
       ((< 0 (player-condition p (lit held))) (do (state-tell! g (lit held-still) "You are held fast and cannot move." ()) #t))
       ((not (map-in? (game-map g) r c))
         (if (if (game-screens? g) (null? (game-inside g)) #f) (%gm-cross! g (first d) (rest d)) #f))
