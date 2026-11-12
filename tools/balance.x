@@ -66,12 +66,12 @@
   creature-r creature-c creature-state creature-glyph creature-trait? creature-condition creature-hp creature-prop creature-prop1 state-defence state-adjacent? state-dist state-shortfall state-creature-at state-items-at
   game-quest-state game-screens? game-screen game-screen-key game-hub game-chain game-inside state-creature-named
   game-top-set game-home game-place game-below?
-  game-rng game-rng! creature-hp! creature-name state-roll game-traps item-charges player-rings game-blows)
+  game-rng game-rng! creature-hp! creature-name state-roll game-traps item-charges player-rings game-blows creature-whole game-exploring?)
 (import roguelike/save save-write! save-read)
 (import roguelike/creatures creatures-shown? creatures-door-diagonal?)
 (import roguelike/items items-goal-held? items-worn items-target items-known?)
 (import roguelike/traps traps-found-at trap-r trap-c trap-found?)
-(import roguelike/game game-make game-key!)
+(import roguelike/game game-make game-key! game-explore!)
 (import roguelike/combat combat-player-dice combat-player-level combat-chill combat-dazzle)
 (import roguelike/odds odds-hit odds-swings odds-regen odds-hurt odds-aim)
 
@@ -127,7 +127,18 @@
         (pair cr (pair stirred (pair (creature-r cr) (creature-c cr))))))
     (Vector set! 23 (List append (List map note seen) kept) s)))
 (def %bl-watched (fn (_ s cr) (List find (fn (_ e) (same? (first e) cr)) (Vector ref 23 s))))
-(def %bl-stirring? (fn (_ s cr) ((fn (_ e) (if (null? e) #f (List ref 1 e))) (%bl-watched s cr))))
+; Whether CR, in view, is after the player or running from them: the
+; look (v) says each creature in view is asleep, has not noticed, is
+; awake or is fleeing.
+(def %bl-stirring?
+  (fn (_ s cr) (match ((eq? (creature-state cr) (lit awake)) #t) ((eq? (creature-state cr) (lit fleeing)) #t) (#t #f))))
+; How much of its kind's usual hit points CR has left, in eighths, by
+; the look's word for it: whole, hurt, badly hurt or nearly dead.
+(def %bl-wounds
+  (fn (_ cr)
+    (def hp (creature-hp cr))
+    (def whole (creature-whole cr))
+    (match ((not (< hp whole)) 8) ((< whole (* 2 hp)) 6) ((< whole (* 4 hp)) 3) (#t 1))))
 
 ; The creatures the bot has slowed with a wand, (CREATURE . UNTIL), and
 ; the turn its last scroll of stillness holds to: what it did itself,
@@ -139,10 +150,16 @@
 
 ; The turn as the bot's turn began.
 (def %bl-now (Vector of 0))
-(def %bl-slowed?
-  (fn (_ cr)
-    ((fn (_ e) (if (null? e) #f (< (Vector ref 0 %bl-now) (rest e))))
-     (List find (fn (_ e) (same? (first e) cr)) (Vector ref 0 %bl-slowed)))))
+(def %bl-slowed? (fn (_ cr) (< 0 (creature-condition cr (lit slowed)))))
+; A rest: under a lamp, a camp, the lamp put out and no oil burned, run
+; a turn at a time as a front end runs it, till it breaks; with no lamp
+; or none lit, a turn's wait.
+(def %bl-rest!
+  (fn (_ g)
+    (def run (fn (self n) (when (if (game-exploring? g) (< n 2000) #f) (do (game-explore! g) (Heap collect) (self (+ n 1))))))
+    (if (< 0 (player-lamp (game-player g)))
+      (do (%bl-key! g "c") (run 0))
+      (%bl-key! g "s"))))
 ; Whether IT is a wand the bot has tried and that has a charge left: a
 ; wand that is known shows its charges.
 (def %bl-wand-known?
@@ -603,7 +620,7 @@
 (def %bl-cost
   (fn (_ g cr)
     (def span (creature-prop cr (lit hp) (list 1 6)))
-    (def hp (int/ (+ (first span) (List ref 1 span) 1) 2))
+    (def hp (int/ (+ (* (%bl-wounds cr) (+ (first span) (List ref 1 span) 1)) 15) 16))
     (def t (odds-swings (odds-hit (combat-player-level g) (creature-prop1 cr (lit defence) 3)) (combat-player-dice g) 0 hp))
     (def speed (match ((creature-trait? cr (lit fast)) (lit fast)) ((creature-trait? cr (lit slow)) (lit slow)) (#t ())))
     (def aim (odds-aim (creature-prop1 cr (lit level) 1) (state-defence g) speed
@@ -842,7 +859,7 @@
       (fn (_ sum cr)
         (match ((not (%bl-hostile? cr)) sum)
                ((not (state-adjacent? (creature-r cr) (creature-c cr) (player-r p) (player-c p))) sum)
-               ((< (game-turn g) (Vector ref 0 %bl-still)) sum)
+               ((< 0 (creature-condition cr (lit held))) sum)
                (#t (+ sum (%bl-cost g cr)))))
       0 (%bl-seen g))))
 
@@ -1028,7 +1045,7 @@
     (def t (if up? tile-up tile-down))
     (def guardian (if (Vector ref 14 s) (%bl-guardian g) ()))
     (match
-      ((match ((not (null? shown)) #f) ((%bl-told? g "shoots") #f) (#t (%bl-under? p (%bl-mark g s who (lit ready))))) (%bl-key! g "s"))
+      ((match ((not (null? shown)) #f) ((%bl-told? g "shoots") #f) (#t (%bl-under? p (%bl-mark g s who (lit ready))))) (%bl-rest! g))
       ((not (null? guardian)) (%bl-hunt! g s guardian))
       ((if (Vector ref 14 s) (%bl-to-frontier! g s) #f) ())
       ((Vector ref 14 s) (do (Vector set! 14 #f s) (%bl-unstick! g s)))
@@ -1098,7 +1115,7 @@
           (%bl-toward-creature! g s foe)))
       ((if (null? food) #f (< (player-food p) hungry))
         (do (%bl-use! g "e" food) (Vector set! 3 (+ 1 (Vector ref 3 s)) s)))
-      ((match ((not (null? shown)) #f) ((%bl-told? g "shoots") #f) (#t (%bl-under? p (%bl-mark g s who (lit rest))))) (%bl-key! g "s"))
+      ((match ((not (null? shown)) #f) ((%bl-told? g "shoots") #f) (#t (%bl-under? p (%bl-mark g s who (lit rest))))) (%bl-rest! g))
       ((%bl-pour? g oil lamp)
         (do (%bl-use! g "f" oil) (Vector set! 10 (+ 1 (Vector ref 10 s)) s)))
       ((if (null? weapon) #f (if (same? weapon (player-weapon p)) #f (< 0 (%bl-weapon-worth g weapon))))
@@ -1279,7 +1296,7 @@
     (def shoots? (if (null? shown) #f (creature-trait? shown (lit ranged))))
     (def step-to
       (fn (_ tag cr most) (%bl-step-within g s tag (fn (_ r c) (if (= r (creature-r cr)) (= c (creature-c cr)) #f)) most)))
-    (def to-shown (if (match ((null? shown) #t) ((%bl-running? g) #t)
+    (def to-shown (if (match ((null? shown) #t) ((%bl-running? g) #t) ((eq? (creature-state shown) (lit fleeing)) #t)
                              ((List any? (fn (_ x) (same? x shown)) (Vector ref 20 s)) #t) (shoots? #f)
                              (#t (not (%bl-worth? g who shown))))
                     ()
