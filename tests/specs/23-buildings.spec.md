@@ -172,7 +172,7 @@ eye, whole, from inside.  The town set's districts each name theirs.
 ---
     (((1 1 2 3 3) (1 2 3 3) (4 5 6) 0) (1 1 2 3 3 3))
 
-### in the window a roofed cell takes the roof's pictures: the slope it is on with the rims at the roof's edge, and its front where the street lies south; inside, the cell's own
+### in the window a roofed cell takes the roof's pictures: the slope it is on with the rims at the roof's edge, and its front where the street lies south; a door in the front is a doorway in it, a door on another side is under the roof; inside, the cell's own
 
 ```roguelike
 (import roguelike/frame frame-art frame-cell)
@@ -185,11 +185,12 @@ eye, whole, from inside.  The town set's districts each name theirs.
 (def b23-c (List ref 2 b23-inn))
 (def b23-roofed (List map (fn (_ dr) (b23-pics (+ b23-r dr) (+ b23-c 6))) (List range 0 5)))
 (def b23-verge (b23-pics (+ b23-r 1) b23-c))
+(def b23-doors (list (b23-pics (+ b23-r 4) (+ b23-c 3)) (b23-pics (+ b23-r 2) (+ b23-c 12))))
 (game-key! b23-g "h")
-(write (list b23-roofed b23-verge (b23-pics (+ b23-r 2) (+ b23-c 3))))
+(write (list b23-roofed b23-verge b23-doors (b23-pics (+ b23-r 2) (+ b23-c 3))))
 ```
 ---
-    (((('roof 'north) ('roof 'n)) (('roof 'north)) (('roof 'ridge)) (('roof 'top)) (('roof 'face))) (('roof 'north) ('roof 'w)) (('floor ())))
+    (((('roof 'north) ('roof 'n)) (('roof 'north)) (('roof 'ridge)) (('roof 'top)) (('roof 'face))) (('roof 'north) ('roof 'w)) ((('roof 'face) ('roof 'doorway)) (('roof 'ridge) ('roof 'e))) (('floor ())))
 
 ### the front of a roof running north and south is its gable: the peak under the ridge, a rake either side of it, a low end beyond; a roof two wide has its peak and one rake
 

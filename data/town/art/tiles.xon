@@ -1172,6 +1172,46 @@
   "dddddddddddddddd"
   "kkkkkkkkkkkkkkkk"))
 
+; A door into a building from the street, drawn over the front: a
+; panelled door in a gritstone surround, the step under it.  A door on
+; another side is under the roof and not drawn.
+(tile roof (part doorway) (weight 3) (rows
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "....hhhhhhhh...."
+  "....RkkkkkkR...."
+  "....RkCccCkR...."
+  "....RkCcCCkR...."
+  "....RkCCCJkR...."
+  "....RkCccCkR...."
+  "....RkCcCCkR...."
+  "....RkkkkkkR...."
+  "...dhhhhhhhhd..."))
+
+; ... one painted red, the paint flaking.
+(tile roof (part doorway) (rows
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "................"
+  "....hhhhhhhh...."
+  "....RkkkkkkR...."
+  "....RkDOODkR...."
+  "....RkDODDkR...."
+  "....RkDDDJkR...."
+  "....RkDOtDkR...."
+  "....RkDODDkR...."
+  "....RkkkkkkR...."
+  "...dhhhhhhhhd..."))
+
 
 ; The gable, the front of a roof running north and south: the wall
 ; rising under its coping to the ridge, the slopes behind it.  The peak,
