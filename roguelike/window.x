@@ -44,6 +44,8 @@
 ; A frame's time while a turn's blows and steps are shown.
 (def %wn-step-us 20000)
 (def %wn-idle-us 10000)
+; The least time of a step while exploring.
+(def %wn-explore-us 30000)
 
 ; SDL's shift bits, and what a shifted key types on a US keyboard: the
 ; character after each unshifted one in this string.
@@ -333,13 +335,15 @@
       ((not (null? e)) (do ((%wn-front a) show! win (List ref 2 (paint-screen p))) (self g a p win tick)))
       ; A gamepad event that is no key yet: the next one at once.
       ((not (null? ev)) (self g a p win tick))
-      ; Exploring steps on without waiting for each step to be shown.
+      ; Exploring steps on without waiting for each step to be shown, a
+      ; step at least %wn-explore-us long.
       ((game-exploring? g)
-        (do (frame-pan! g 0 0)
+        (do (def t0 (%wn-ms))
+            (frame-pan! g 0 0)
             (game-explore! g)
             (sound-turn! snd g)
             (%wn-turn-shown! a p g win snd tick)
-            (Sys usleep 30000)
+            (%wn-rest-of %wn-explore-us t0)
             (self g a p win tick)))
       ; A turn's blows and steps shown a frame at a time, before anything
       ; else moves; a key pressed meanwhile is taken at once.

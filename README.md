@@ -1,15 +1,22 @@
 # x-roguelike
 
-A roguelike on x-lang, as a lang bundle: a dungeon of rooms and
-passages made anew each game, creatures that wake and hunt, things to
-find and work out, hunger, and one life.  Every creature, item, guise,
+A roguelike written in [x-lang](https://github.com/jonruttan/x-lang),
+loaded as a lang, and an original game, not a port of Rogue: a dungeon of
+rooms and passages made anew each game, creatures that wake and hunt,
+things to find and work out, hunger, and one life.  It plays at a
+terminal, in a window, or in a browser tab.  Every creature, item, guise,
 message and tuning number is read from a set of `.xon` files, so a set
 is a game of its own on the same engine; `classic`, `delve`, `kettle`
 and `town` are the four shipped, the last two worlds of screens rather
 than a descent.
 
     x -l roguelike -- [-s NAME] [-c GROUP=NAME]... [-S N] [-d DIR] [play]
+    x -l roguelike -- [-w [-z N]] | [-W [-L ADDRESS]] ...
     x -l roguelike -- [-s NAME] scores
+    x -l roguelike -- -V | -h
+
+With no `-s` the set is `classic`.  `-w` plays in a window and needs
+SDL3, with `-z` its zoom; `-W` plays in a browser tab.
 
 The goal lies on the deepest level.  Held, it opens the stairs up, and
 every level climbed is made again, roused and hostile; the surface is
@@ -32,6 +39,7 @@ Each set keeps its own save and scores, in `~/.x-roguelike/NAME/`.
     w                 wield a weapon           W  T      wear armour, take it off
     P  R              put on a ring, take it off
     f                 fill the lamp from a flask
+    c                 camp: rest with the lamp out, till healed or roused; a key stops
     S                 save and leave           Q         quit
     ?                 the keys                 Esc       stop asking
     Enter  Space      go on past --More--, put away what you look at
@@ -63,7 +71,8 @@ answer from the keyboard.
 Where there is no SDL3, `-W` (`--web`) plays the same game in a browser
 tab: the address to open is printed, the first one free from
 `http://127.0.0.1:8080/`.  In a container, `-L 0.0.0.0` listens where
-the host can reach it.  A browser starts the sound and goes fullscreen
+the host can reach it, and so can anyone else who reaches that address:
+the page asks for no login.  A browser starts the sound and goes fullscreen
 only after a key or a click on the page.
 
 The first row says what happened; the last is your standing: the
@@ -82,7 +91,7 @@ creature's tale waits for, and what stops a walk.
 ## A set
 
 A set is a directory of `.xon` files, every form in them read in
-file-name order.  `data/classic/` is the one shipped and documents each
+file-name order.  `data/classic/` is the one that documents each
 form: `game.xon` the tuning, `creatures.xon` what lives there and the
 traits it may have, `items.xon` what lies about and the effects an
 item may carry, `messages.xon` what the game says, `tui.xon` how the
@@ -211,7 +220,12 @@ people say it: the `(where "TEXT")` of the band it lies in and which
 way from here, "up in the hills, north-east of here".  A scene giving
 the goal stands on the hub; what it wants, another scene gives, a
 screen farther out, and so on, `(chain LO HI)` links at most; the last want lies on the ground a screen beyond, or
-with the token's `(carrier "kind")`.  A `(goal NAME GLYPH)` with no
+with the token's `(carrier "kind")`.  A token with `(below REGION
+LEVEL)` lies on that level of the region instead, and its `(where
+"TEXT")` is the way to it: in `kettle` a link at each step of the chain
+wants a thing lying down the pit, one to three levels into the Delve.
+The chain only walks through a link that can still reach its length,
+so one wanting a thing below is always the last.  A `(goal NAME GLYPH)` with no
 level lies nowhere and is the chain's to give.  The chain is read
 outward, by what each person says, and paid inward, by what each
 gives; the goal laid in Kettle's square is the win.  A quest a set writes
@@ -282,7 +296,10 @@ the seconds under nothing a set with no `(starve N)` dies at (150);
 `(lamp FULL LOW)` gives the player a lamp holding FULL seconds of oil,
 lit full at the start, or the first turn in the set when come from one
 without.  It burns on the clock, says when LOW seconds are left and
-when it goes out, and out, sight is the cells beside.  An `(item oil
+when it goes out, and out, sight is the cells beside.  `c` makes camp:
+the lamp is put out and burns no oil, and the player rests a turn at a
+time, the clock and hunger running on, until they are whole, struck,
+starving, or a creature comes up to them; a key breaks it.  An `(item oil
 NAME (oil N))` is N seconds of it, poured in with `f` to FULL at the
 most.  `delve` holds half an hour, and its flasks five minutes each:
 under it the lamp is what runs out, and food lasts the day.
@@ -328,13 +345,14 @@ river, the chapel by the terraces, the Guild hall on Guild Street.
 
 What a game is worth is the set's `(score (NAME POINTS) ...)`: POINTS
 for each of `gold`, `deepest` (the level reached, or the screens out
-from the hub), `won`, `quests` done, `screens` visited and `places`
-gone into, and `(par TURNS POINTS)`, POINTS a turn under TURNS on a
+from the hub), `won`, `quests` done, `screens` visited, `places`
+gone into and `goals`, a region's goal brought out of it, and `(par
+TURNS POINTS)`, POINTS a turn under TURNS on a
 win; what it does not name counts nothing.  A set without one scores
 gold, fifty a level and a thousand for the win.  The end of a game
 says a line for each, in the set's `(message score-NAME "TEXT")` where
-it has one.  `kettle` counts its errands, the screens walked and the
-doors gone through.
+it has one.  `kettle` counts its errands, the screens walked, the
+doors gone through and the Lodestar brought up the pit.
 
 A set may offer ways to play it: `(choice GROUP NAME . FORMS)` is one,
 picked with `-c GROUP=NAME`, `--choose GROUP=NAME`, one a group.  Its
@@ -384,7 +402,16 @@ in a line.  The header of tools/model.x has the formulas.
 
 ## Installing
 
+It needs x-lang at the release `lang.xon` declares.
+
     make install         into <share>/langs/roguelike, where `x -l` looks
+
+## Documentation
+
+- [The game in a window](docs/graphics.md): the windowed front end and a
+  set's pictures.
+- [Sound](docs/sound.md): the music and effects, synthesised from a set's
+  data.
 
 ## Licence
 

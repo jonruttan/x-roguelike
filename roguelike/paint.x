@@ -23,7 +23,7 @@
 (import roguelike/data data-load data-all)
 (import roguelike/state game-ask)
 (import roguelike/frame frame-tile-size frame-view-rows frame-view-cols frame-view! frame-level-y
-  frame-scene frame-light-map frame-named)
+  frame-scene frame-light-map frame-light-cache frame-named)
 (import roguelike/draw draw-top draw-standing draw-overlay)
 
 (def paint-width 640)
@@ -542,20 +542,23 @@
   (fn (_ p) (do (Vector set! 9 (int+ 1 (Vector ref 9 p)) p) (Vector set! 12 (int+ 1 (Vector ref 12 p)) p) p)))
 
 ; A painter: [SCREEN LAYER FONT SCENE PANEL WORK ZOOM WHERE SHOWN BLOW
-; TOP STANDING GLIDE CHART], the scene the last turn's, the panel the art's
-; nine-piece picture (a tile form) or nil, WORK the level drawn and lit
-; at the tile's size before it is shown at ZOOM, LAYER and WORK the
-; view's size; WHERE each walking thing's (WHO R . C) on the last turn,
+; TOP STANDING GLIDE CHART TOP-KEY TOP-DRAWN STANDING-KEY LIGHT], the
+; scene the last turn's, the panel the art's nine-piece picture (a tile
+; form) or nil, WORK the level drawn and lit at the tile's size before
+; it is shown at ZOOM, LAYER and WORK the view's size; WHERE each walking thing's (WHO R . C) on the last turn,
 ; SHOWN the tick that turn was first shown at, or -1 before it is; BLOW
 ; the frame the turn's blows are shown at; TOP and STANDING the strips
 ; the messages and the standing are drawn on, TOP a pair: two lines and
 ; three; GLIDE the frame the turn's steps are shown at; CHART the
-; turn's chart, (CANVAS . OP), or nil.
+; turn's chart, (CANVAS . OP), or nil; TOP-KEY what the top strip was
+; last drawn with, (TEXT . ASKING?), and TOP-DRAWN the strip it was
+; drawn on; STANDING-KEY what the standing was last drawn with; LIGHT the
+; light map's cache (frame-light-cache).
 (def paint-make
   (fn (_ font)
     (paint-zoom! (Vector of (Canvas make paint-width paint-height) () font () () () 0 () -1 %pt-blow-frames
                             (pair (Canvas make %pt-strip-w %pt-top-h) (Canvas make %pt-strip-w (int+ %pt-top-h %pt-pitch)))
-                            (Canvas make %pt-strip-w %pt-stand-h) %pt-glide-frames ())
+                            (Canvas make %pt-strip-w %pt-stand-h) %pt-glide-frames () () () () (frame-light-cache))
                  paint-zoom-first)))
 (def paint-screen (fn (_ p) (Vector ref 0 p)))
 (def %pt-over (fn (_ p) (rest (rest (Vector ref 3 p)))))
@@ -655,9 +658,10 @@
 
 ; The messages, or the question asked, on the top strip, the ground
 ; ruled off from the level below: two lines, or three over the level's
-; top when the text needs them.  STRIPS is (TWO . THREE).
+; top when the text needs them.  STRIPS is (TWO . THREE).  The strip
+; drawn.
 (def %pt-top!
-  (fn (_ s strips font text asking?)
+  (fn (_ strips font text asking?)
     (def lines (List take 3 (%pt-lines text %pt-cols)))
     (def strip (if (int< 2 (List length lines)) (rest strips) (first strips)))
     (def h (List ref 1 strip))
@@ -666,7 +670,7 @@
     (Canvas fill! strip 0 (int- h 1) %pt-strip-w 1 %pt-hud-rule)
     ((fn (self l y) (unless (null? l) (do (Canvas text! strip %pt-margin y (first l) colour font) (self (rest l) (int+ y %pt-pitch)))))
      lines 2)
-    (%pt-show! s strip 0)))
+    strip))
 
 ; LABEL dim then VALUE in COLOUR, on STRIP at X Y: the x after them.
 (def %pt-pair!
@@ -705,7 +709,7 @@
           (Canvas text! strip tx y text (if (int< level 1) %pt-bright colour) font)
           (self strip (int+ tx (int* %pt-advance (int+ (Str8 length text) 2))) y (rest gauges) font)))))
 (def %pt-standing!
-  (fn (_ s strip font st)
+  (fn (_ strip font st)
     (def place (List ref 0 st))
     (def depth (List ref 1 st))
     (def hp (List ref 2 st))
@@ -740,8 +744,7 @@
     (def x3 (%pt-pair! strip x2 y2 "Arm" (Str8 str (List ref 7 st)) %pt-bright font))
     (def x4 (%pt-pair! strip x3 y2 "Lv" (Str8 str (List ref 8 st)) %pt-bright font))
     (Canvas text! strip x4 y2 (%pt-fit warnings (int/ (int- right x4) %pt-advance)) %pt-warn font)
-    (%pt-gauges! strip %pt-margin (int+ y2 %pt-pitch) (List ref 10 st) font)
-    (%pt-show! s strip %pt-stand-y)))
+    (%pt-gauges! strip %pt-margin (int+ y2 %pt-pitch) (List ref 10 st) font)))
 
 ; LINES laid over the level on a panel at its top left: the art's
 ; nine-piece PANEL (a tile form) stretched round them, or a dark box
@@ -794,7 +797,7 @@
     ; screenful so the tick a tile steps by is never below zero.
     (%pt-ops! work over frame-level-y font (int+ tick (int+ (int* (int+ (rest cam) 128) 7) (int* (int+ (first cam) 128) 13))) (int- tick (Vector ref 8 p)))
     (Canvas light! work 0 0 lw lh
-      (frame-light-map (List find (fn (_ op) (eq? (first op) (lit view))) over)
+      (frame-light-map (Vector ref 17 p) (List find (fn (_ op) (eq? (first op) (lit view))) over)
                        (List filter (fn (_ op) (eq? (first op) (lit light))) over) tick)
       frame-tile-size)
     (%pt-glints! work over frame-level-y tick)
@@ -802,8 +805,19 @@
     (%pt-blows! work over blows k frame-level-y font)
     (Canvas nine! s 0 paint-level-y (int* zoom lw) (int* zoom lh) work 0 0 0 0)
     (%pt-chart! s (Vector ref 13 p) cam zoom tick)
-    (%pt-top! s (Vector ref 10 p) font (draw-top g) (not (null? (game-ask g))))
-    (%pt-standing! s (Vector ref 11 p) font (draw-standing g))
+    ; A strip is drawn again only when what it shows has changed.
+    ((fn (_ key)
+       (unless (equal? key (Vector ref 14 p))
+         (do (Vector set! 15 (%pt-top! (Vector ref 10 p) font (first key) (rest key)) p)
+             (Vector set! 14 key p))))
+     (pair (draw-top g) (not (null? (game-ask g)))))
+    (%pt-show! s (Vector ref 15 p) 0)
+    ((fn (_ st)
+       (unless (equal? st (Vector ref 16 p))
+         (do (%pt-standing! (Vector ref 11 p) font st)
+             (Vector set! 16 st p))))
+     (draw-standing g))
+    (%pt-show! s (Vector ref 11 p) %pt-stand-y)
     (%pt-overlay! s (Vector ref 4 p) font (draw-overlay g))
     s))
 

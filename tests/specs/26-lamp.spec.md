@@ -4,7 +4,8 @@
 roguelike/game: a set's (lamp FULL LOW) gives the player a lamp of
 FULL seconds of oil, lit full at the start, or the first turn in the
 set come from one without; it burns on the clock, is said at LOW and
-going out, and out, sight is the cells beside.  An oil flask, (oil N),
+going out, and out, sight is the cells beside.  A camp, c, is a rest
+with it put out: no oil burns.  An oil flask, (oil N),
 pours N seconds in with f, to FULL at the most.
 
 
@@ -101,6 +102,67 @@ pours N seconds in with f, to FULL at the most.
 ```
 ---
     (-1 ("You have no lamp to fill.") #t)
+
+## camping
+
+### camped, no oil burns, hit points come back on the clock and sight is the cells beside; rested, the camp breaks
+
+```roguelike
+(def g (spec-game-on (spec-set-named "delve") 4 ()))
+(def p (game-player g))
+(def m (game-map g))
+(game-creatures! g ())
+(game-key! g ".")
+(def in-view (fn (_) (List length (List flat-map (fn (_ r) (List filter (fn (_ c) (map-visible? m r c)) (List range 0 (map-cols m)))) (List range 0 (map-rows m))))))
+(def before (in-view))
+(player-hp! p (- (player-hpmax p) 2))
+(def lamp (player-lamp p))
+(def c0 (game-clock g))
+(game-key! g "c")
+(def made (list (game-messages g) (game-exploring? g) (< 9 before) (< (in-view) 10)))
+(def run (fn (self n) (when (if (game-exploring? g) (< n 200) #f) (do (game-creatures! g ()) (game-explore! g) (self (+ n 1))))))
+(run 0)
+(write (list made (= (player-hp p) (player-hpmax p)) (= lamp (player-lamp p)) (< 12 (- (game-clock g) c0)) (List includes? "You are rested, and break camp." (game-messages g)) (game-exploring? g) (= before (in-view))))
+```
+---
+    ((("You make camp.") #t #t #t) #t #t #t #t #f #t)
+
+### a key ends a camp, and the lamp burns again; with nothing to mend there is none to make
+
+```roguelike
+(def g (spec-game-on (spec-set-named "delve") 4 ()))
+(def p (game-player g))
+(game-creatures! g ())
+(game-key! g ".")
+(game-key! g "c")
+(def whole (list (game-messages g) (game-exploring? g)))
+(player-hp! p 1)
+(game-key! g "c")
+(game-creatures! g ())
+(def lamp (player-lamp p))
+(game-key! g ".")
+(write (list whole (game-exploring? g) (- lamp (player-lamp p))))
+```
+---
+    ((("You have no need of rest.") #f) #f 1)
+
+### a creature come beside the camp rouses it
+
+```roguelike
+(def g (spec-game-on (spec-set-named "delve") 4 ()))
+(def p (game-player g))
+(game-creatures! g ())
+(game-key! g ".")
+(player-hp! p 1)
+(game-key! g "c")
+(def open (spec-open g))
+(game-creatures! g ())
+(spec-place! g "mine rat" (first (rest open)) (rest (rest open)) 3 'asleep)
+(game-explore! g)
+(write (list (game-exploring? g) (List includes? "You start up: a mine rat is on you." (game-messages g))))
+```
+---
+    (#f #t)
 
 ## saving
 

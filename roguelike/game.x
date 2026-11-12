@@ -67,7 +67,7 @@
   items-put-on! items-remove!)
 (import roguelike/quests quests-place! quests-talk! quests-keepers! quests-folk! quests-leads quests-errands quests-sighted!)
 (import roguelike/chain chain-build! chain-way chain-compass)
-(import roguelike/traps traps-found-at traps-place! traps-step! traps-search!)
+(import roguelike/traps trap-r trap-c trap-found? traps-place! traps-step! traps-search!)
 (import roguelike/interiors interiors-door! interiors-params interiors-prop1)
 (import roguelike/data data-all data-one data-get data-region)
 (import roguelike/scale scale-rung scale-seconds scale-check!)
@@ -486,7 +486,8 @@
 
 ; The lamp, where the set has (lamp FULL LOW): FULL seconds of oil when
 ; full, lit full the first turn the player is there with none lit yet,
-; then burning a second a second, said when it is down to LOW and when
+; then burning a second a second but in a camp, said when it is down to
+; LOW and when
 ; it goes out.
 (def %gm-lamp!
   (fn (_ g was now)
@@ -494,16 +495,19 @@
     (def p (game-player g))
     (def before (player-lamp p))
     (def left ((fn (_ n) (if (< n 0) 0 n)) (- before (- now was))))
-    (match ((null? spec) ())
+    (match ((null? spec) ()) ((%gm-camping? g) ())
            ((< before 0) (do (player-lamp! p (List ref 0 spec)) (state-tell! g (lit lamp-lit) "You light your lamp." ())))
            (#t (do (player-lamp! p left)
                    (match ((%gm-reached? 0 before left) (state-tell! g (lit lamp-out) "Your lamp goes out." ()))
                           ((%gm-reached? (List ref 1 spec) before left) (state-tell! g (lit lamp-low) "Your lamp burns low." ()))
                           (#t ())))))))
 
-; Whether the lamp is out under the set's (lamp ...).
+; Whether the lamp is out under the set's (lamp ...): spent, or put out
+; for a camp.
 (def %gm-dark?
-  (fn (_ g) (if (null? (game-param g (lit lamp) ())) #f (= 0 (player-lamp (game-player g))))))
+  (fn (_ g)
+    (match ((null? (game-param g (lit lamp) ())) #f) ((%gm-camping? g) #t)
+           (#t (= 0 (player-lamp (game-player g)))))))
 
 (def %gm-creatures-act!
   (fn (_ g)
@@ -578,12 +582,8 @@
 
 ; --- exploring ---------------------------------------------------------------
 
-; Whether one of the people stands at R C: walking into them talks, so
-; a walk goes round them.
-(def %gm-person-at?
-  (fn (_ g r c)
-    (def cr (state-creature-at g r c))
-    (if (null? cr) #f (creature-trait? cr (lit talks)))))
+; The compass's eight steps, last first.
+(def %gm-compass-back (List reverse (state-dirs)))
 
 ; The first step, (DR . DC), of the shortest walk over seen cells, a
 ; found trap or one of the people never among them, from the player to the nearest frontier,
@@ -595,23 +595,39 @@
     (def m (game-map g))
     (def p (game-player g))
     (def cols (map-cols m))
-    (def came (Vector make (* (map-rows m) cols) ()))
+    (def n (* (map-rows m) cols))
+    (def came (Vector make n ()))
     (def at (fn (_ r c) (+ (* r cols) c)))
+    ; A found trap bars its cell, and one of the people theirs, walking
+    ; into them talking: marked reached before the search.  The first
+    ; trap and the first creature on a cell are the ones that count.
+    (def bar!
+      (fn (_ things r-of c-of bars?)
+        (def first-at (Vector make n ()))
+        (List for-each (fn (_ t) (when (map-in? m (r-of t) (c-of t)) (Vector set! (at (r-of t) (c-of t)) t first-at)))
+          (List reverse things))
+        (List for-each (fn (_ t) (when (map-in? m (r-of t) (c-of t))
+                                   (when (if (same? (Vector ref (at (r-of t) (c-of t)) first-at) t) (bars? t) #f)
+                                     (Vector set! (at (r-of t) (c-of t)) (lit barred) came))))
+          things)))
+    (bar! (game-traps g) trap-r trap-c trap-found?)
+    (bar! (game-creatures g) creature-r creature-c (fn (_ cr) (creature-trait? cr (lit talks))))
+    ; The cells a step from R C not yet reached, each marked with the
+    ; first step STEP of the walk to it, pushed onto BACK in the order of
+    ; the compass.
     (def reach
-      (fn (_ r c step)
-        (List reject null?
-          (List map (fn (_ d)
-                      (def rr (+ r (first d)))
-                      (def cc (+ c (rest d)))
-                      (match ((not (map-in? m rr cc)) ())
-                             ((not (map-seen? m rr cc)) ())
-                             ((not (map-walkable? m rr cc)) ())
-                             ((not (null? (traps-found-at g rr cc))) ())
-                             ((%gm-person-at? g rr cc) ())
-                             ((creatures-door-diagonal? m r c (first d) (rest d)) ())
-                             ((not (null? (Vector ref (at rr cc) came))) ())
-                             (#t (do (Vector set! (at rr cc) (if (null? step) d step) came) (pair rr cc)))))
-                    (state-dirs)))))
+      (fn (_ r c step back)
+        (List fold
+          (fn (_ acc d)
+            (def rr (+ r (first d)))
+            (def cc (+ c (rest d)))
+            (match ((not (map-in? m rr cc)) acc)
+                   ((not (null? (Vector ref (at rr cc) came))) acc)
+                   ((not (map-seen? m rr cc)) acc)
+                   ((not (map-walkable? m rr cc)) acc)
+                   ((creatures-door-diagonal? m r c (first d) (rest d)) acc)
+                   (#t (do (Vector set! (at rr cc) (if (null? step) d step) came) (pair (pair rr cc) acc)))))
+          back %gm-compass-back)))
     (def search
       (fn (self front back)
         (match
@@ -620,13 +636,15 @@
                   (def c (rest (first front)))
                   (def step (Vector ref (at r c) came))
                   (if (if (eq? step #t) #f (map-frontier? m r c)) step
-                    (self (rest front) (List append (reach r c (if (eq? step #t) () step)) back))))))))
+                    (self (rest front) (reach r c (if (eq? step #t) () step) back))))))))
     (Vector set! (at (player-r p) (player-c p)) #t came)
     (if (map-seen-whole? m) () (search (list (pair (player-r p) (player-c p))) ()))))
 
-; One step toward what is not yet seen, a turn: whether the walk goes
+; One step toward what is not yet seen, a turn, or a turn of a camp:
+; whether the walk goes
 ; on.  It ends with a creature in view that does not talk, a question
 ; asked, nothing left to see, a hundred steps taken, or the game over.
+; The caller collects the heap after each step, as after each key.
 (def game-explore!
   (fn (_ g)
     (def n (game-exploring g))
@@ -637,6 +655,7 @@
                                    (game-creatures g))))
     (match
       ((null? n) #f)
+      ((< n 0) (%gm-camp! g))
       ((not (null? (game-over g))) (stop))
       ((not (null? (game-ask g))) (stop))
       ((not (null? shown))
@@ -644,8 +663,58 @@
       ((= n 100) (stop))
       (#t ((fn (_ d)
              (if (null? d) (do (when (= n 0) (state-tell! g (lit explored) "Nothing left to explore." ())) (stop))
-               (do (%gm-move! g (first d) (rest d)) (%gm-end-turn! g) (Heap collect) (game-exploring! g (+ n 1)) #t)))
+               (do (%gm-move! g (first d) (rest d)) (%gm-end-turn! g) (game-exploring! g (+ n 1)) #t)))
            (%gm-explore-step g))))))
+
+; --- camping -----------------------------------------------------------------
+
+; A camp is a rest with the lamp put out: no oil burns, sight is the
+; cells beside, and the clock, hunger and the level go on.  It is kept
+; where a walk keeps its steps, as a count under nought, a turn a step,
+; so whatever drives a walk drives a camp, and a key ends either.
+(def %gm-camping? (fn (_ g) ((fn (_ n) (if (null? n) #f (< n 0))) (game-exploring g))))
+
+; A turn of the camp: whether it goes on.  It ends rested, at full hit
+; points; starving, when none come back; struck; with a creature in
+; view that does not talk; with a question asked; or with the game
+; over.  The lamp is lit again as it ends.
+(def %gm-camp!
+  (fn (_ g)
+    (def p (game-player g))
+    (def hp (player-hp p))
+    (def stop (fn (_ key text subs)
+                (game-exploring! g ())
+                (unless (null? key) (state-tell! g key text subs))
+                (%gm-light! g)
+                #f))
+    (def shown (List find (fn (_ cr) (match ((creature-trait? cr (lit talks)) #f)
+                                            ((not (creatures-shown? g cr)) #f)
+                                            (#t (state-in-sight? g (creature-r cr) (creature-c cr)))))
+                 (game-creatures g)))
+    (match
+      ((not (null? (game-over g))) (stop () "" ()))
+      ((not (null? (game-ask g))) (stop () "" ()))
+      ((not (null? shown))
+        (stop (lit camp-roused) "You start up: {a-name} is on you." (list (pair "name" (creature-name shown)) (pair "a-name" (state-a-kind (creature-kind shown))))))
+      ((not (< hp (player-hpmax p))) (stop (lit camp-rested) "You are rested, and break camp." ()))
+      ((%gm-starving? g) (stop (lit camp-hungry) "Hunger will not let you rest." ()))
+      (#t (do (%gm-end-turn! g)
+              (Heap collect)
+              (if (< (player-hp p) hp) (stop (lit camp-struck) "You start up, struck." ())
+                (do (unless (null? (game-exploring g)) (game-exploring! g (- (game-exploring g) 1))) #t)))))))
+
+; The camp made, and its first turn taken: the command's own turn is
+; none.  At full hit points there is nothing to rest for.
+(def %gm-make-camp!
+  (fn (_ g)
+    (def p (game-player g))
+    (if (not (< (player-hp p) (player-hpmax p)))
+      (do (state-tell! g (lit camp-no-need) "You have no need of rest." ()) #f)
+      (do (game-exploring! g -1)
+          (state-tell! g (lit camp-made) "You make camp." ())
+          (%gm-light! g)
+          (game-explore! g)
+          #f))))
 
 ; --- commands ----------------------------------------------------------------
 
@@ -779,6 +848,7 @@
     (pair "R" (fn (_ g) (%gm-ask-item! g "Remove what?" (lit ring) (fn (_ it) (%gm-use-ring! g it)))))
     (pair "d" (fn (_ g) (%gm-ask-item! g "Drop what?" () (fn (_ it) (items-drop! g it) #t))))
     (pair "o" (fn (_ g) (do (game-exploring! g 0) (game-explore! g) #f)))
+    (pair "c" (fn (_ g) (%gm-make-camp! g)))
     (pair "L" (fn (_ g) (%gm-look! g "Lately:" (List reverse (List take 20 (game-log g))))))
     (pair "m" (fn (_ g) (if (game-screens? g) (%gm-look! g (state-text g (lit world-map) "The world:" ()) (%gm-world-lines g))
                           (do (state-tell! g (lit no-world-map) "You know only the level you stand on." ()) #f))))
@@ -877,7 +947,8 @@
 ; A set's (score (NAME POINTS) ...), the set the game began on, below
 ; or not, is what a game is worth: POINTS for each of NAME, among gold,
 ; deepest (the level, or the screens out from the hub), won, quests (done), screens (visited) and places (gone
-; into); and (par TURNS POINTS), POINTS a turn under TURNS on a win.
+; into), goals (of the regions, brought out of them); and (par TURNS
+; POINTS), POINTS a turn under TURNS on a win.
 ; What it does not name counts nothing.  A set without one scores
 ; gold, fifty a level and a thousand for the win.
 (def %gm-score-default (list (list (lit gold) 1) (list (lit deepest) 50) (list (lit won) 1000)))
@@ -893,7 +964,19 @@
            ((eq? name (lit quests)) (List count-if (fn (_ p) (eq? (rest p) (lit done))) (game-quests g)))
            ((eq? name (lit screens)) (List count-if (fn (_ k) (not (place? k))) keys))
            ((eq? name (lit places)) (List count-if place? keys))
+           ((eq? name (lit goals)) (%gm-goals-out g))
            (#t 0))))
+
+; How many goals of the world's regions G holds out of their regions:
+; brought up, where one still in its region is only held.
+(def %gm-goals-out
+  (fn (_ g)
+    (def in (List map first (game-regions g)))
+    (def out
+      (List flat-map
+        (fn (_ r) (if (List any? (fn (_ n) (str=? n (first r))) in) () (list (first (data-one (rest r) (lit goal) (list ""))))))
+        (data-all (game-top-set g) (lit region))))
+    (List count-if (fn (_ it) (if (item-class? it (lit goal)) (List any? (fn (_ n) (str=? n (item-name it))) out) #f)) (game-pack g))))
 
 ; Each line of the score that counts, in the set's order: (NAME COUNT
 ; POINTS).  The par's count is the turns under it.
@@ -921,6 +1004,7 @@
         (list (lit quests) (lit score-quests) "{points} for quests done: {count}")
         (list (lit screens) (lit score-screens) "{points} for screens visited: {count}")
         (list (lit places) (lit score-places) "{points} for places gone into: {count}")
+        (list (lit goals) (lit score-goals) "{points} for goals brought up: {count}")
         (list (lit par) (lit score-par) "{points} for turns under par: {count}")))
 
 ; The score's lines in words, the set's (message score-NAME "TEXT")
@@ -950,6 +1034,7 @@
           "w      wield a weapon       W  T   wear armour, take it off"
           "P  R   put on a ring, take it off"
           "f      fill the lamp from a flask"
+          "c      camp: rest with the lamp out, till healed or roused; a key stops"
           "S      save and leave       Q      quit"
           "?      these keys           Esc    stop asking")))
 

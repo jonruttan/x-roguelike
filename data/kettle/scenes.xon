@@ -7,7 +7,7 @@
 ; here, "up in the hills, north-east of here".  Each game draws a chain
 ; from these: a scene giving the goal stands in Kettle's square; what
 ; it wants, another scene gives, a screen farther out; the last want
-; lies on the ground, or with its carrier (see items.xon).  The chain
+; lies on the ground, with its carrier, or down the pit (see items.xon).  The chain
 ; is read outward and paid inward.  Every way back from the goal runs
 ; five links deep, so the longest chain the valley holds, (chain 4 5),
 ; is always met (see choices.xon).
@@ -135,3 +135,42 @@
        "where I left it, {where}.  The smell keeps people off, mostly.")
   (again "The bark, {where}.")
   (done "Bark.  Take the roll from the top of the pile; it is the best of them."))
+
+; Who wants a thing from down the pit: one at each step of the chain,
+; each wanting what lies on a level of the Delve (see items.xon), so a
+; chain that ends with one of them ends below.  The chain only walks
+; through a link that still reaches its length, so one of these is
+; always the last.
+(scene "the checkweighman" "checkweighman" (wants "the foreman's keys") (gives goal)
+  (ask "I weighed every tub against the Guild's ledger, and I kept a copy of"
+       "it in my box at the pithead.  The box is the Guild's and so is its"
+       "lock; the key was on the foreman's ring, and the foreman went below."
+       "His keys will be {where}.")
+  (again "The foreman's keys, {where}.")
+  (done "His ring; I would know it anywhere.  The copy, then: every tub of it."))
+(scene "the minister" "minister" (wants "the muster roll") (gives token "a letter of the council")
+  (ask "The council sits in my vestry, and it will sign nothing against the"
+       "Guild without the names of those it sent below.  The foreman took the"
+       "muster roll down with him.  It is {where}, if the water has spared it.")
+  (again "The roll, {where}.")
+  (done "Every name, in the foreman's hand.  The council has signed; here is"
+        "its letter, and I will read the names on Sunday."))
+(scene "the onsetter" "onsetter" (wants "the onsetter's tally") (gives token "a flask of spirits")
+  (ask "I worked the shaft bottom till the water came, and I came up when"
+       "the others did not.  My brass tally still hangs on the board with"
+       "theirs, {where}.  Bring it up so it hangs with the living,"
+       "and my flask is yours.")
+  (again "My tally, {where}.")
+  (done "That is my number.  The flask; drink to the board."))
+(scene "the lamp-room lad" "lamp-room lad" (wants "a brass lamp check") (gives token "the lamp")
+  (ask "No lamp leaves my room except against its brass check, and the crew"
+       "went down with every check I had.  Bring one up from {where} and"
+       "you can have a lamp off the hook.")
+  (again "A lamp check, {where}.")
+  (done "Number forty.  I will hang it back on its peg.  Your lamp, trimmed."))
+(scene "the timberman" "timberman" (wants "the timberman's axe") (gives token "a billet of seasoned oak")
+  (ask "My props are seasoned oak, stacked three summers for the workings."
+       "I will part with a billet for my axe, which I drove into a prop"
+       "{where}, when the water came, and left there.")
+  (again "My axe, {where}.")
+  (done "Still sharp; the water does not take an edge off.  A billet, then."))

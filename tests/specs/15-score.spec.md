@@ -77,7 +77,7 @@ thousand for the win when the set names none; and its lines in words.
 
 ## the kettle set's own
 
-### kettle counts gold, errands, screens and doors, and the ledger home; a game just begun has walked the square's screen
+### kettle counts gold, errands, screens and doors, the Lodestar brought up the pit, and the ledger home; a game just begun has walked the square's screen
 
 ```roguelike
 (def set (spec-valley))
@@ -85,4 +85,4 @@ thousand for the win when the set names none; and its lines in words.
 (write (list (List map first (data-one set 'score ())) (game-score g) (game-score-text g)))
 ```
 ---
-    (('gold 'quests 'screens 'places 'won) 10 ("10 for screens of the valley walked: 1"))
+    (('gold 'quests 'screens 'places 'goals 'won) 10 ("10 for screens of the valley walked: 1"))

@@ -86,13 +86,28 @@
 
 ; --- the walk -----------------------------------------------------------------
 
+; The scenes not among the USED names that give what SCENE wants.
+(def %ch-givers
+  (fn (_ scenes scene used)
+    (List filter (fn (_ s) (if (List includes? (first s) used) #f (%ch-gives? s (%ch-wants scene)))) scenes)))
+; Whether a walk goes K links on from SCENE, none of USED again.
+(def %ch-reach?
+  (fn (self scenes scene used k)
+    (if (< k 1) #t
+      (List any? (fn (_ s) (self scenes s (pair (first s) used) (- k 1))) (%ch-givers scenes scene used)))))
+
 ; The links, hub first: SCENE, then a scene not among the USED names
 ; that gives what it wants, and so on, until none does or N stand.
+; USED holds a name for each link so far.  A scene that cannot reach
+; the N is taken only when none can, so a link whose want no scene
+; gives is the last of a chain that is long enough.
 (def %ch-walk
   (fn (self g scenes scene used n)
-    (def cands (List filter (fn (_ s) (if (List includes? (first s) used) #f (%ch-gives? s (%ch-wants scene)))) scenes))
+    (def cands (%ch-givers scenes scene used))
+    (def left (- n (+ 1 (List length used))))
+    (def far (List filter (fn (_ s) (%ch-reach? scenes s (pair (first s) used) left)) cands))
     (if (if (null? cands) #t (not (< (List length used) n))) (list scene)
-      (pair scene (self g scenes ((game-rng g) choice cands) (pair (first scene) used) n)))))
+      (pair scene (self g scenes ((game-rng g) choice (if (null? far) cands far)) (pair (first scene) used) n)))))
 
 ; The screens at distance D from the hub not among USED, or, with none
 ; left there, nearer in, never the hub.
@@ -121,35 +136,45 @@
     (List find (fn (_ f) (if (eq? (first f) (lit token)) (str=? (List ref 1 f) name) #f)) (data-all (game-set g) (lit item)))))
 
 ; Link SCENE on screen AT, what it wants on screen NEXT, as a quest
-; form; FIND? when the want lies there rather than being given.
+; form; FIND? when the want lies there rather than being given.  A want
+; whose token has (below REGION LEVEL) lies on that level of the region
+; instead, (lies-below REGION LEVEL), the way to it the token's (where
+; "TEXT").
 (def %ch-quest
   (fn (_ g scene at next find?)
     (def want (%ch-wants scene))
-    (def subs (list (pair "want" want) (pair "where" (chain-where g at next))))
+    (def token (%ch-token g want))
+    (def below (if (if find? (not (null? token)) #f) (data-prop token (lit below) ()) ()))
+    (def way (if (null? below) (chain-where g at next) (data-prop1 token (lit where) "")))
+    (def subs (list (pair "want" want) (pair "where" way)))
     (def lines (fn (_ key) (pair key (List map (fn (_ l) (state-fill l subs)) (data-prop scene key ())))))
     (def gives (%ch-gives scene))
     (def reward (if (eq? (first gives) (lit goal)) (list (lit goal) (first (game-param g (lit goal) (list "the prize" "*")))) gives))
-    (def token (%ch-token g want))
     (def carrier (if (null? token) () (data-prop token (lit carrier) ())))
     (List append
       (list (lit quest) (first scene) (%ch-giver scene)
             (list (lit screen) (first at) (rest at)) (list (lit wants) (lit bring) want)
             (list (lit found) (chain-where g (game-hub g) at)))
-      (if find? (list (list (lit lies) (first next) (rest next)) (list (lit lies-found) (chain-where g (game-hub g) next))) ())
+      (match ((not find?) ())
+             ((not (null? below)) (list (pair (lit lies-below) below) (list (lit lies-found) way)))
+             (#t (list (list (lit lies) (first next) (rest next)) (list (lit lies-found) (chain-where g (game-hub g) next)))))
       (if (if find? (not (null? carrier)) #f) (list (pair (lit carrier) carrier)) ())
       (list (lines (lit ask)) (lines (lit again)) (lines (lit done)) (list (lit rewards) reward)))))
 
 ; G's chain drawn from its set's scenes: a scene giving the goal on the
 ; hub, each link a screen farther out, the last link's want lying a
-; screen beyond it.
+; screen beyond it.  The length is drawn first, and the scene on the hub
+; is one that can reach it where any can.
 (def chain-build!
   (fn (_ g)
     (def scenes (data-all (game-set g) (lit scene)))
     (def starts (List filter %ch-gives-goal? scenes))
     (unless (if (null? starts) #t (not (game-screens? g)))
       (do (def range (game-param g (lit chain) (list 2 4)))
-          (def start ((game-rng g) choice starts))
-          (def links (%ch-walk g scenes start (list (first start)) (state-roll (game-rng g) (first range) (List ref 1 range))))
+          (def n (state-roll (game-rng g) (first range) (List ref 1 range)))
+          (def far (List filter (fn (_ s) (%ch-reach? scenes s (list (first s)) (- n 1))) starts))
+          (def start ((game-rng g) choice (if (null? far) starts far)))
+          (def links (%ch-walk g scenes start (list (first start)) n))
           (def screens (pair (game-hub g) (%ch-screens g (List length links) 1 (list (game-hub g)))))
           (def last (- (List length links) 1))
           (game-chain! g
