@@ -159,11 +159,17 @@
 (def %bl-key-for
   (fn (_ dr dc) (first (List find (fn (_ d) (if (= (first (rest d)) dr) (= (rest (rest d)) dc) #f)) %bl-dirs))))
 
-; Whether CR is a hostile in view that keeps its place, to be gone
+; The sleepers in view whose fight the bot would not start, set each
+; turn: they are left to sleep, and gone round as a sitter is.
+(def %bl-wary (Vector of ()))
+; Whether CR is a hostile in view that keeps its place, or a sleeper
+; best left, to be gone
 ; round: a walk shuns the cells beside it.
 (def %bl-sitter?
   (fn (_ g cr)
-    (match ((not (creature-trait? cr (lit stationary))) #f) ((creature-trait? cr (lit talks)) #f) (#t (creatures-shown? g cr)))))
+    (match ((creature-trait? cr (lit talks)) #f) ((not (creatures-shown? g cr)) #f)
+           ((List any? (fn (_ x) (same? x cr)) (Vector ref 0 %bl-wary)) #t)
+           (#t (creature-trait? cr (lit stationary))))))
 (def %bl-shunned?
   (fn (_ g r c)
     (List any? (fn (_ cr) (if (%bl-sitter? g cr) (state-adjacent? (creature-r cr) (creature-c cr) r c) #f)) (%bl-seen g))))
@@ -1064,6 +1070,11 @@
     (Vector set! 0 (game-turn g) %bl-now)
     (unless (null? (game-blows g)) (Vector set! 24 (pair (game-turn g) (game-blows g)) s))
     (%bl-watch! g s (< (player-hp p) (Vector ref 22 s)))
+    (Vector set! 0 (List filter (fn (_ cr) (match ((not (%bl-hostile? cr)) #f) ((%bl-stirring? s cr) #f)
+                                                  ((same? cr (%bl-guardian g)) #f)
+                                                  (#t (not (%bl-worth? g who cr)))))
+                     (%bl-seen g))
+                %bl-wary)
     (def slips (%bl-slips? g s))
     (Vector set! 22 (player-hp p) s)
     (match
