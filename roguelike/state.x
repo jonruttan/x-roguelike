@@ -29,7 +29,8 @@
 ; 16 rows, 17 columns, 18 the epitaph, 19 the seed, 20 whether the goal
 ; has been placed, 21 the names of the pages placed, 22 the quests,
 ; (NAME . STATE) each, 23 the names of what the quests have placed, 24
-; the level's traps, 25 the steps taken exploring, or nil when not, 26
+; the level's traps, 25 the steps taken exploring, the turns camped as a
+; count under nought, or nil when neither, 26
 ; the screen stood on, (X . Y), or nil in a descent, 27 the levels
 ; kept, (KEY . LEVEL) each, a LEVEL being (MAP CREATURES FLOOR TRAPS),
 ; 28 the chain: the quests made for this game from the set's scenes,

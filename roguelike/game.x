@@ -486,7 +486,8 @@
 
 ; The lamp, where the set has (lamp FULL LOW): FULL seconds of oil when
 ; full, lit full the first turn the player is there with none lit yet,
-; then burning a second a second, said when it is down to LOW and when
+; then burning a second a second but in a camp, said when it is down to
+; LOW and when
 ; it goes out.
 (def %gm-lamp!
   (fn (_ g was now)
@@ -494,16 +495,19 @@
     (def p (game-player g))
     (def before (player-lamp p))
     (def left ((fn (_ n) (if (< n 0) 0 n)) (- before (- now was))))
-    (match ((null? spec) ())
+    (match ((null? spec) ()) ((%gm-camping? g) ())
            ((< before 0) (do (player-lamp! p (List ref 0 spec)) (state-tell! g (lit lamp-lit) "You light your lamp." ())))
            (#t (do (player-lamp! p left)
                    (match ((%gm-reached? 0 before left) (state-tell! g (lit lamp-out) "Your lamp goes out." ()))
                           ((%gm-reached? (List ref 1 spec) before left) (state-tell! g (lit lamp-low) "Your lamp burns low." ()))
                           (#t ())))))))
 
-; Whether the lamp is out under the set's (lamp ...).
+; Whether the lamp is out under the set's (lamp ...): spent, or put out
+; for a camp.
 (def %gm-dark?
-  (fn (_ g) (if (null? (game-param g (lit lamp) ())) #f (= 0 (player-lamp (game-player g))))))
+  (fn (_ g)
+    (match ((null? (game-param g (lit lamp) ())) #f) ((%gm-camping? g) #t)
+           (#t (= 0 (player-lamp (game-player g)))))))
 
 (def %gm-creatures-act!
   (fn (_ g)
@@ -624,7 +628,8 @@
     (Vector set! (at (player-r p) (player-c p)) #t came)
     (if (map-seen-whole? m) () (search (list (pair (player-r p) (player-c p))) ()))))
 
-; One step toward what is not yet seen, a turn: whether the walk goes
+; One step toward what is not yet seen, a turn, or a turn of a camp:
+; whether the walk goes
 ; on.  It ends with a creature in view that does not talk, a question
 ; asked, nothing left to see, a hundred steps taken, or the game over.
 (def game-explore!
@@ -637,6 +642,7 @@
                                    (game-creatures g))))
     (match
       ((null? n) #f)
+      ((< n 0) (%gm-camp! g))
       ((not (null? (game-over g))) (stop))
       ((not (null? (game-ask g))) (stop))
       ((not (null? shown))
@@ -646,6 +652,56 @@
              (if (null? d) (do (when (= n 0) (state-tell! g (lit explored) "Nothing left to explore." ())) (stop))
                (do (%gm-move! g (first d) (rest d)) (%gm-end-turn! g) (Heap collect) (game-exploring! g (+ n 1)) #t)))
            (%gm-explore-step g))))))
+
+; --- camping -----------------------------------------------------------------
+
+; A camp is a rest with the lamp put out: no oil burns, sight is the
+; cells beside, and the clock, hunger and the level go on.  It is kept
+; where a walk keeps its steps, as a count under nought, a turn a step,
+; so whatever drives a walk drives a camp, and a key ends either.
+(def %gm-camping? (fn (_ g) ((fn (_ n) (if (null? n) #f (< n 0))) (game-exploring g))))
+
+; A turn of the camp: whether it goes on.  It ends rested, at full hit
+; points; starving, when none come back; struck; with a creature in
+; view that does not talk; with a question asked; or with the game
+; over.  The lamp is lit again as it ends.
+(def %gm-camp!
+  (fn (_ g)
+    (def p (game-player g))
+    (def hp (player-hp p))
+    (def stop (fn (_ key text subs)
+                (game-exploring! g ())
+                (unless (null? key) (state-tell! g key text subs))
+                (%gm-light! g)
+                #f))
+    (def shown (List find (fn (_ cr) (match ((creature-trait? cr (lit talks)) #f)
+                                            ((not (creatures-shown? g cr)) #f)
+                                            (#t (state-in-sight? g (creature-r cr) (creature-c cr)))))
+                 (game-creatures g)))
+    (match
+      ((not (null? (game-over g))) (stop () "" ()))
+      ((not (null? (game-ask g))) (stop () "" ()))
+      ((not (null? shown))
+        (stop (lit camp-roused) "You start up: {a-name} is on you." (list (pair "name" (creature-name shown)) (pair "a-name" (state-a-kind (creature-kind shown))))))
+      ((not (< hp (player-hpmax p))) (stop (lit camp-rested) "You are rested, and break camp." ()))
+      ((%gm-starving? g) (stop (lit camp-hungry) "Hunger will not let you rest." ()))
+      (#t (do (%gm-end-turn! g)
+              (Heap collect)
+              (if (< (player-hp p) hp) (stop (lit camp-struck) "You start up, struck." ())
+                (do (unless (null? (game-exploring g)) (game-exploring! g (- (game-exploring g) 1))) #t)))))))
+
+; The camp made, and its first turn taken: the command's own turn is
+; none.  At full hit points there is nothing to rest for.
+(def %gm-make-camp!
+  (fn (_ g)
+    (def p (game-player g))
+    (if (not (< (player-hp p) (player-hpmax p)))
+      (do (state-tell! g (lit camp-no-need) "You have no need of rest." ()) #f)
+      (do (game-exploring! g -1)
+          (state-tell! g (lit camp-made) "You make camp." ())
+          (%gm-light! g)
+          (game-explore! g)
+          #f))))
 
 ; --- commands ----------------------------------------------------------------
 
@@ -779,6 +835,7 @@
     (pair "R" (fn (_ g) (%gm-ask-item! g "Remove what?" (lit ring) (fn (_ it) (%gm-use-ring! g it)))))
     (pair "d" (fn (_ g) (%gm-ask-item! g "Drop what?" () (fn (_ it) (items-drop! g it) #t))))
     (pair "o" (fn (_ g) (do (game-exploring! g 0) (game-explore! g) #f)))
+    (pair "c" (fn (_ g) (%gm-make-camp! g)))
     (pair "L" (fn (_ g) (%gm-look! g "Lately:" (List reverse (List take 20 (game-log g))))))
     (pair "m" (fn (_ g) (if (game-screens? g) (%gm-look! g (state-text g (lit world-map) "The world:" ()) (%gm-world-lines g))
                           (do (state-tell! g (lit no-world-map) "You know only the level you stand on." ()) #f))))
@@ -950,6 +1007,7 @@
           "w      wield a weapon       W  T   wear armour, take it off"
           "P  R   put on a ring, take it off"
           "f      fill the lamp from a flask"
+          "c      camp: rest with the lamp out, till healed or roused; a key stops"
           "S      save and leave       Q      quit"
           "?      these keys           Esc    stop asking")))
 
