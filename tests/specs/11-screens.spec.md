@@ -50,7 +50,7 @@ descents, and their specs stand.
              (player-r p) (player-c p) (game-messages g) (List ref 23 (spec-screen g))))
 ```
 ---
-    (3 2 3 2 0 ("Guild clerk") 11 27 ("Kettle's square, by the well-head.  Someone here knows where the Guild's ledger is; ask about." "You make out the Guild clerk to the south-west.") "Screen:3,2  Gold:0  Hp:14(14)  Str:16(16)  Arm:0  Exp:1/0")
+    (3 2 3 2 0 ("Guild clerk") 11 27 ("Kettle's square, by the well-head.  Someone here knows where the Guild's ledger is; ask about." "You make out the Guild clerk to the south-east.") "Screen:3,2  Gold:0  Hp:14(14)  Str:16(16)  Arm:0  Exp:1/0")
 
 ## the edges
 

@@ -49,7 +49,7 @@ the level's scale.
                  '(rooms caves open town pit flood works well fields hills rim)))
 ```
 ---
-    (643903 639372 693083 415496 476974 50345 192723 172364 365536 816843 922674)
+    (643903 639372 693083 415496 476974 50345 192723 172364 66124 816843 922674)
 
 ### a hedge laid across a close stops short of a gate it would close, so every close can be walked to
 

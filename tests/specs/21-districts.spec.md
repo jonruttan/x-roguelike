@@ -34,7 +34,7 @@ brought to the square is the win.
              (game-log g)))
 ```
 ---
-    ("town" #t (1 . 1) 0 "the Square" "town" "kettle" "Kettle" #t #t ("You make out the Guild clerk to the south-west." "Kettle's square, by the well-head.  Someone here knows where the Guild's ledger is; ask about."))
+    ("town" #t (1 . 1) 0 "the Square" "town" "kettle" "Kettle" #t #t ("You make out the Guild clerk to the north." "Kettle's square, by the well-head.  Someone here knows where the Guild's ledger is; ask about."))
 
 ## the districts
 
