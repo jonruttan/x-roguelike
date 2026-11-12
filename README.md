@@ -212,7 +212,12 @@ people say it: the `(where "TEXT")` of the band it lies in and which
 way from here, "up in the hills, north-east of here".  A scene giving
 the goal stands on the hub; what it wants, another scene gives, a
 screen farther out, and so on, `(chain LO HI)` links at most; the last want lies on the ground a screen beyond, or
-with the token's `(carrier "kind")`.  A `(goal NAME GLYPH)` with no
+with the token's `(carrier "kind")`.  A token with `(below REGION
+LEVEL)` lies on that level of the region instead, and its `(where
+"TEXT")` is the way to it: in `kettle` a link at each step of the chain
+wants a thing lying down the pit, one to three levels into the Delve.
+The chain only walks through a link that can still reach its length,
+so one wanting a thing below is always the last.  A `(goal NAME GLYPH)` with no
 level lies nowhere and is the chain's to give.  The chain is read
 outward, by what each person says, and paid inward, by what each
 gives; the goal laid in Kettle's square is the win.  A quest a set writes
@@ -332,13 +337,14 @@ river, the chapel by the terraces, the Guild hall on Guild Street.
 
 What a game is worth is the set's `(score (NAME POINTS) ...)`: POINTS
 for each of `gold`, `deepest` (the level reached, or the screens out
-from the hub), `won`, `quests` done, `screens` visited and `places`
-gone into, and `(par TURNS POINTS)`, POINTS a turn under TURNS on a
+from the hub), `won`, `quests` done, `screens` visited, `places`
+gone into and `goals`, a region's goal brought out of it, and `(par
+TURNS POINTS)`, POINTS a turn under TURNS on a
 win; what it does not name counts nothing.  A set without one scores
 gold, fifty a level and a thousand for the win.  The end of a game
 says a line for each, in the set's `(message score-NAME "TEXT")` where
-it has one.  `kettle` counts its errands, the screens walked and the
-doors gone through.
+it has one.  `kettle` counts its errands, the screens walked, the
+doors gone through and the Lodestar brought up the pit.
 
 A set may offer ways to play it: `(choice GROUP NAME . FORMS)` is one,
 picked with `-c GROUP=NAME`, `--choose GROUP=NAME`, one a group.  Its

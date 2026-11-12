@@ -51,3 +51,12 @@
 (item token "a treadle strap" (rarity 0))
 (item token "an iron wedge" (rarity 0))
 (item token "a sack of oak bark" (rarity 0))
+
+; What lies down the pit: (below REGION LEVEL) lays it on that level of
+; the region, not on the valley's ground, and (where "TEXT") is the way
+; to it as the people say it.
+(item token "the foreman's keys" (rarity 0) (below "delve" 1) (where "down the pit, on the first level"))
+(item token "the muster roll" (rarity 0) (below "delve" 3) (where "down the pit, on the third level"))
+(item token "the onsetter's tally" (rarity 0) (below "delve" 1) (where "down the pit, on the first level"))
+(item token "a brass lamp check" (rarity 0) (below "delve" 2) (where "down the pit, on the second level"))
+(item token "the timberman's axe" (rarity 0) (below "delve" 2) (where "down the pit, on the second level"))

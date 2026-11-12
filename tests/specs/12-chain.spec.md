@@ -9,7 +9,7 @@ of it and the win at the hub.
 
 ## the set
 
-### the kettle set has nineteen scenes, two of them giving the goal, a goal with no level, and a chain of two or three
+### the kettle set has twenty-four scenes, three of them giving the goal, a goal with no level, and a chain of two or three
 
 ```roguelike
 (def set (spec-valley))
@@ -18,7 +18,7 @@ of it and the win at the hub.
              (List length (data-one set 'goal ())) (data-one set 'chain ())))
 ```
 ---
-    (19 2 2 (2 3))
+    (24 3 2 (2 3))
 
 ## the way to a screen
 

@@ -36,8 +36,9 @@
 (chain 2 3)
 
 ; What a game is worth: the gold, each errand run, each screen walked
-; and each door gone through, and the ledger brought home.
-(score (gold 1) (quests 100) (screens 10) (places 25) (won 1000))
+; and each door gone through, the Lodestar brought up the pit, and the
+; ledger brought home.
+(score (gold 1) (quests 100) (screens 10) (places 25) (goals 1000) (won 1000))
 
 ; What a thing is worth in gold at a counter, by its class; an item's own
 ; (price N) is in front of this.  A shop asks and pays its (rate SELL
