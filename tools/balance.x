@@ -16,7 +16,8 @@
 ; asked; drink; fight or step back from what is beside it; eat; rest;
 ; wield and wear the best it can lift; then pick up, walk to an item, go
 ; for a foe, run the errand on a world of screens, talk to a giver,
-; walk to the edge of the unseen, and take the stairs.  Every walk is
+; walk to the edge of the unseen, search a wall with unseen ground
+; behind it, and take the stairs.  Every walk is
 ; its own, over what it has seen; a creature it cannot reach is passed
 ; by, and it rests a turn only with nowhere at all to go.  The report:
 ; where games end, what ends them by band, the standing on arrival at
@@ -57,7 +58,7 @@
 (import x/num/random)
 (import x/core/doors int/)
 (import roguelike/data data-load data-one data-prop data-all)
-(import roguelike/map map-rows map-cols map-in? map-walkable? map-seen? map-down map-up map-tile map-frontier? tile-down tile-up tile-door)
+(import roguelike/map map-rows map-cols map-in? map-walkable? map-seen? map-down map-up map-tile map-frontier? tile-down tile-up tile-door tile-wall tile-secret)
 (import roguelike/state
   game-set game-depth game-deepest game-map game-player game-creatures game-pack game-over game-epitaph game-turn
   game-ask game-messages game-band band-name game-param
@@ -394,7 +395,11 @@
 ; slow creature last stepped clear of, and where it stood, 17 where the
 ; player last was, 18 how much the pack held at the last talk here, 19
 ; the foe last set out after, 20 the foes given up here, 21 where the
-; last turns were spent, 22 the hit points at the last turn.
+; last turns were spent, 22 the hit points at the last turn, 23 what
+; was watched of each creature, 24 the blows of the last turn, 25
+; whether a secret door has been found here since the level was last
+; explored, 26 the wall cells searched beside, a vector by cell, 27 the
+; secret doors found.
 
 ; Where the player stands, as text: the depth, or on a world of screens
 ; the screen and any interior.
@@ -405,8 +410,9 @@
       (Str8 str (game-depth g)))))
 (def %bl-here? (fn (_ g s) (str=? (Vector ref 1 s) (%bl-place g))))
 (def %bl-explored? (fn (_ g s) (if (%bl-here? g s) (Vector ref 0 s) #f)))
-(def %bl-explored! (fn (_ g s) (Vector set! 0 #t s) (Vector set! 1 (%bl-place g) s) (Vector set! 4 #f s)))
+(def %bl-explored! (fn (_ g s) (Vector set! 0 #t s) (Vector set! 1 (%bl-place g) s) (Vector set! 4 #f s) (Vector set! 25 #f s)))
 (def %bl-new-level! (fn (_ g s) (Vector set! 0 #f s) (Vector set! 1 (%bl-place g) s) (Vector set! 4 #f s) (Vector set! 9 () s) (Vector set! 12 () s)
+    (Vector set! 25 #f s) (Vector set! 26 () s)
     (Vector set! 13 (game-turn g) s) (Vector set! 14 #f s) (Vector set! 15 () s) (Vector set! 17 () s) (Vector set! 19 () s) (Vector set! 20 () s) (Vector set! 21 () s) (Vector set! 23 () s) (Vector set! 0 () %bl-slowed) (Vector set! 0 0 %bl-bold)))
 
 ; With nowhere at all to go on a level: the first time, the cells beside
@@ -536,6 +542,74 @@
     (def person? (fn (_ r c) ((fn (_ cr) (if (null? cr) #f (creature-trait? cr (lit talks)))) (%bl-seen-at g r c))))
     (%bl-walk! g s (lit frontier)
       (fn (_ r c) (match ((Vector ref (+ (* r cols) c) spent) #f) ((person? r c) #f) (#t (map-frontier? m r c)))))))
+
+; --- walls that could hide a room --------------------------------------------
+
+; A secret door draws as wall, and is read as one: whether the seen cell
+; at R C shows as wall.
+(def %bl-wall-shown?
+  (fn (_ m r c)
+    (if (map-seen? m r c) ((fn (_ t) (if (= t tile-wall) #t (= t tile-secret))) (map-tile m r c)) #f)))
+; Whether, past the wall a step from R C along DR DC, a block three
+; across lies two to four steps out and none of it seen: room enough for
+; the smallest room a secret door hides.
+(def %bl-unseen-behind?
+  (fn (_ m r c dr dc)
+    (List all?
+      (fn (_ k)
+        (List all?
+          (fn (_ j)
+            (def rr (+ r (+ (* k dr) (* j dc))))
+            (def cc (+ c (+ (* k dc) (* j dr))))
+            (if (map-in? m rr cc) (not (map-seen? m rr cc)) #f))
+          (list -1 0 1)))
+      (list 2 3 4))))
+; Whether R C is a place to search from: walkable and seen, a wall beside
+; it across a side not yet searched, unseen ground behind that wall.
+; Slot 26 of S holds the wall cells searched beside, a vector by cell.
+(def %bl-search-spot?
+  (fn (_ g s r c)
+    (def m (game-map g))
+    (def cols (map-cols m))
+    (def searched (Vector ref 26 s))
+    (if (if (map-seen? m r c) (map-walkable? m r c) #f)
+      (List any?
+        (fn (_ d)
+          (def wr (+ r (first d)))
+          (def wc (+ c (rest d)))
+          (match ((not (%bl-wall-shown? m wr wc)) #f) ((Vector ref (+ (* wr cols) wc) searched) #f)
+                 (#t (%bl-unseen-behind? m r c (first d) (rest d)))))
+        (list (pair -1 0) (pair 1 0) (pair 0 -1) (pair 0 1)))
+      #f)))
+; A search here, every wall beside the player kept as searched.
+(def %bl-search-here!
+  (fn (_ g s)
+    (def m (game-map g))
+    (def p (game-player g))
+    (def cols (map-cols m))
+    (List for-each
+      (fn (_ dr)
+        (List for-each
+          (fn (_ dc)
+            (def r (+ (player-r p) dr))
+            (def c (+ (player-c p) dc))
+            (when (map-in? m r c) (Vector set! (+ (* r cols) c) #t (Vector ref 26 s))))
+          (list -1 0 1)))
+      (list -1 0 1))
+    (%bl-key! g "s")))
+; With light left for the level and the goal not yet held, a search for
+; a secret door: here, at a place to search from, or a step toward the
+; nearest within SEARCH steps.  #f with none.
+(def %bl-to-wall!
+  (fn (_ g s who)
+    (def m (game-map g))
+    (def p (game-player g))
+    (def most (%bl-at who (lit search)))
+    (when (null? (Vector ref 26 s)) (Vector set! 26 (Vector make (* (map-rows m) (map-cols m)) #f) s))
+    (match ((< most 1) #f) ((items-goal-held? g) #f) ((if (str=? (%bl-env "BALANCE_DARK_SEARCH" "") "") (not (%bl-light-left? g s)) #f) #f)
+           ((%bl-search-spot? g s (player-r p) (player-c p)) (do (%bl-search-here! g s) #t))
+           (#t ((fn (_ d) (if (null? d) #f (do (%bl-key! g (%bl-key-for (first d) (rest d))) #t)))
+                (%bl-step-within g s (lit wall) (fn (_ r c) (%bl-search-spot? g s r c)) most))))))
 
 ; --- who the bot is ----------------------------------------------------------
 
@@ -1115,7 +1189,12 @@
     (def weapon (%bl-best g (lit weapon) %bl-weapon-worth))
     (def armour (%bl-best g (lit armour) %bl-armour-worth))
     (def shown ((fn (_ cr) (if (null? cr) (%bl-shooter g) cr)) (%bl-shown-hostile g)))
-    (unless (%bl-here? g s) (%bl-new-level! g s))
+    (unless (%bl-here? g s)
+      (do (%bl-new-level! g s)
+          (when %bl-tracing (%bl-line "secret doors here: " (%bl-secrets-text g)))))
+    ; A secret door found opens ground to be looked over.
+    (when (%bl-told? g "You find a secret door.")
+      (do (Vector set! 0 #f s) (Vector set! 25 #t s) (Vector set! 27 (+ 1 (Vector ref 27 s)) s)))
     (%bl-thrown! g s)
     (%bl-turning! g s foe shown)
     (Vector set! 0 (game-turn g) %bl-now)
@@ -1338,7 +1417,7 @@
     (unless (null? to-shown) (Vector set! 19 shown s))
     (def to-foe (if (null? to-shown) (%bl-to-quarry g s who step-to) to-shown))
     (def errand (if (game-screens? g) (%bl-errand g) ()))
-    (def curious? (match ((%bl-explored? g s) #f) ((%bl-surveying? g) #t) ((not (%bl-light-left? g s)) #f)
+    (def curious? (match ((%bl-explored? g s) #f) ((%bl-surveying? g) #t) ((Vector ref 25 s) #t) ((not (%bl-light-left? g s)) #f)
                          ((< 99 (%bl-at who (lit curiosity))) #t)
                          (#t (< (%bl-seen-pct g) (%bl-at who (lit curiosity))))))
     (match
@@ -1351,7 +1430,8 @@
         (do (%bl-toward-creature! g s giver) (Vector set! 4 #t s) (Vector set! 18 (List length (game-pack g)) s)))
       ((%bl-to-giver! g s) ())
       ((if curious? (%bl-to-frontier! g s) #f) ())
-      (curious? (do (%bl-explored! g s) (%bl-descend! g s who shown)))
+      (curious? (do (%bl-explored! g s) (unless (%bl-to-wall! g s who) (%bl-descend! g s who shown))))
+      ((%bl-to-wall! g s who) ())
       (#t (%bl-descend! g s who shown)))))
 
 ; --- a game ------------------------------------------------------------------
@@ -1369,6 +1449,15 @@
 ; The level as the game's end left it, for the trace: @ the player, a
 ; creature its glyph, ^ a found trap, > the way down, seen or not; of
 ; the rest, . ground seen, ? ground not seen, # other seen, and blank.
+; For the trace, not the bot: where the level's secret doors are, R,C
+; each, or "none".
+(def %bl-secrets-text
+  (fn (_ g)
+    (def m (game-map g))
+    (def at (List flat-map (fn (_ r) (List map (fn (_ c) (Str8 append (Str8 str r) "," (Str8 str c)))
+                                          (List filter (fn (_ c) (= (map-tile m r c) tile-secret)) (List range 0 (map-cols m)))))
+              (List range 0 (map-rows m))))
+    (if (null? at) "none" (Str8 join " " at))))
 (def %bl-chart
   (fn (_ g)
     (def m (game-map g))
@@ -1380,6 +1469,7 @@
                ((not (null? cr)) (creature-glyph cr))
                ((not (null? (traps-found-at g r c))) "^")
                ((= (map-tile m r c) tile-down) ">")
+               ((= (map-tile m r c) tile-secret) "S")
                ((map-walkable? m r c) (if (map-seen? m r c) "." "?"))
                ((map-seen? m r c) "#")
                (#t " "))))
@@ -1481,7 +1571,7 @@
     (def g (%bl-start set play))
     (unless (str=? path "") (File write-all path ""))
     (def kept (Vector of (str=? path "")))
-    (def s (Vector of #f "" 0 0 #f () () 0 () () 0 0 () 0 #f () () () -1 () () () 0 () ()))
+    (def s (Vector of #f "" 0 0 #f () () 0 () () 0 0 () 0 #f () () () -1 () () () 0 () () #f () 0))
     (def arrivals (Vector of (list (%bl-arrival g))))
     (def loop
       (fn (self turn stalled)
@@ -1503,7 +1593,7 @@
     (list seed (if (null? (game-over g)) (lit capped) (game-over g)) (game-epitaph g) (game-deepest g) (game-turn g)
           (Vector ref 2 s) (Vector ref 3 s) (List reverse (Vector ref 0 arrivals))
           (Vector ref 6 s) (if (null? (Vector ref 6 s)) (List length (Vector ref 5 s)) (Vector ref 7 s))
-          (Vector ref 10 s) (Vector ref 11 s))))
+          (Vector ref 10 s) (Vector ref 11 s) (Vector ref 27 s))))
 
 ; The numbers in the words of S.
 (def %bl-nums (fn (_ s) (List map %bl-int (List reject (fn (_ w) (str=? w "")) (Str8 split " " s)))))
@@ -1548,7 +1638,7 @@
           (unless (null? cr)
             (do (def hp (creature-prop cr (lit hp) (list 1 1)))
                 (creature-hp! cr (state-roll (game-rng g) (first hp) (List ref 1 hp)))))
-          (def s (Vector of #f "" 0 0 #f () () 0 () () 0 0 () 0 #f () () () -1 () () () 0 () ()))
+          (def s (Vector of #f "" 0 0 #f () () 0 () () 0 0 () 0 #f () () () -1 () () () 0 () () #f () 0))
           (def depth (game-depth g))
           (def start (game-turn g))
           (def loop
@@ -1694,7 +1784,7 @@
     (%bl-arrivals set games)
     (%bl-line "")
     (%bl-line "A game, on average: turns " (mean 4) "  potions drunk " (mean 5) "  foods eaten " (mean 6)
-              "  flasks poured " (mean 10) "  turns dark " (mean 11))))
+              "  flasks poured " (mean 10) "  turns dark " (mean 11) "  secret doors found " (mean 12))))
 
 ; --- the run -----------------------------------------------------------------
 
