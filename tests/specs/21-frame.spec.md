@@ -11,7 +11,7 @@ takes, a wall in parts by its neighbours, and the camera on the player.
 ### a wall's parts by its open neighbours
 
 ```roguelike
-(import roguelike/frame frame-art frame-art-band frame-named frame-wall-parts frame-camera frame-cell frame-level
+(import roguelike/frame frame-art frame-art-band frame-named frame-wall-parts frame-camera frame-cell frame-level frame-level-cache
   frame-view-rows frame-view-cols frame-level-y frame-tile-size)
 (def spec-solid (fn (_ open) (fn (_ dr dc) (not (List any? (fn (_ d) (if (= (first d) dr) (= (rest d) dc) #f)) open)))))
 (def spec-delve-art (data-load "data/delve/art"))
@@ -107,7 +107,7 @@ takes, a wall in parts by its neighbours, and the camera on the player.
 (def p (game-player g))
 (def cam (frame-camera (map-rows m) (map-cols m) (player-r p) (player-c p)))
 (def fa spec-fa)
-(def ops (frame-level fa m cam))
+(def ops (frame-level (frame-level-cache) fa m cam))
 (write (list (<= (* (frame-view-rows) (frame-view-cols)) (List length ops))
              (List all? (fn (_ op) (if (eq? (first op) 'tile) #t (eq? (first op) 'fill))) ops)
              (List all? (fn (_ op) (if (eq? (first op) 'tile) (pair? (List ref 3 op)) #t)) ops)
@@ -125,7 +125,7 @@ takes, a wall in parts by its neighbours, and the camera on the player.
 ```roguelike
 (import roguelike/frame frame-view)
 (import x/core/doors str-byte-ref char->int)
-(def off (frame-level fa m (pair -3 -5)))
+(def off (frame-level (frame-level-cache) fa m (pair -3 -5)))
 (def first-op (List find (fn (_ op) (if (= (List ref 1 op) 0) (= (List ref 2 op) frame-level-y) #f)) off))
 (def bytes (List ref 5 (frame-view m (pair -3 -5))))
 (write (list (first first-op) (char->int (str-byte-ref bytes 0))
@@ -134,12 +134,39 @@ takes, a wall in parts by its neighbours, and the camera on the player.
 ---
     ('fill 0 #t)
 
+### the level kept: after steps that see more, a tile changed and a new level, the cells a fresh cache draws
+
+```roguelike
+(import roguelike/game game-explore!)
+(import roguelike/state game-exploring!)
+(import roguelike/map map-set! tile-floor)
+(def lk-g (spec-game-on (spec-set-named "delve") 3 ()))
+(def lk-cache (frame-level-cache))
+(def lk-same?
+  (fn (_ g)
+    (def m (game-map g))
+    (def p (game-player g))
+    (def cam (frame-camera (map-rows m) (map-cols m) (player-r p) (player-c p)))
+    (equal? (frame-level lk-cache fa m cam) (frame-level (frame-level-cache) fa m cam))))
+(def lk-first (lk-same? lk-g))
+(game-exploring! lk-g 0)
+(def lk-steps (List map (fn (_ i) (game-explore! lk-g) (lk-same? lk-g)) '(1 2 3 4)))
+(game-exploring! lk-g ())
+(def lk-p (game-player lk-g))
+(map-set! (game-map lk-g) (+ (player-r lk-p) 1) (player-c lk-p) tile-floor)
+(def lk-set (lk-same? lk-g))
+(def lk-other (spec-game-on (spec-set-named "delve") 4 ()))
+(write (list lk-first lk-steps lk-set (lk-same? lk-other)))
+```
+---
+    (#t (#t #t #t #t) #t #t)
+
 ### what stands on it, the player last over a shadow; the view; the lights
 
 ```roguelike
-(import roguelike/frame frame-things frame-view frame-lights frame-scene frame-place)
+(import roguelike/frame frame-things frame-view frame-lights frame-scene frame-level-cache frame-place)
 (import x/core/doors str-byte-ref char->int)
-(def scene ((fn (_ s) (List append (List ref 1 s) (rest (rest s)))) (frame-scene g fa)))
+(def scene ((fn (_ s) (List append (List ref 1 s) (rest (rest s)))) (frame-scene (frame-level-cache) g fa)))
 (def tiles (List filter (fn (_ op) (eq? (first op) 'tile)) scene))
 (def view (List find (fn (_ op) (eq? (first op) 'view)) scene))
 (def cam (frame-camera (map-rows m) (map-cols m) (player-r p) (player-c p)))
@@ -189,7 +216,7 @@ takes, a wall in parts by its neighbours, and the camera on the player.
 
 ```roguelike
 (import roguelike/paint paint-art)
-(import roguelike/frame frame-art frame-scene)
+(import roguelike/frame frame-art frame-scene frame-level-cache)
 (import roguelike/state creature-condition! player-condition!)
 (def g (spec-game-on (spec-set-named "delve") 3 ()))
 (game-creatures! g ())
@@ -199,7 +226,7 @@ takes, a wall in parts by its neighbours, and the camera on the player.
 (def held (spec-place! g "mine rat" (player-r pl) (- (player-c pl) 4) 5 'awake))
 (creature-condition! held 'held 5)
 (player-condition! pl 'confused 5)
-(def ops (rest (rest (frame-scene g fa))))
+(def ops (rest (rest (frame-scene (frame-level-cache) g fa))))
 (def marks (List filter (fn (_ op) (if (eq? (first op) 'tile) (if (< 5 (List length op)) (eq? (List ref 5 op) 'mark) #f) #f)) ops))
 (def mark-of (fn (_ who) (List find (fn (_ op) (same? (first (List ref 4 op)) who)) marks)))
 (write (list (List length (List filter (fn (_ op) (eq? (first op) 'sleep)) ops))
@@ -218,7 +245,7 @@ takes, a wall in parts by its neighbours, and the camera on the player.
 ```roguelike
 (import roguelike/state state-blow! state-clear-messages! game-over!)
 (def player-op (fn (_) (List find (fn (_ op) (if (eq? (first op) 'tile) (if (< 4 (List length op)) (eq? (first (List ref 4 op)) 'player) #f) #f))
-                                (List filter (fn (_ op) (eq? (first (List ref 3 op)) 'player)) (List filter (fn (_ op) (eq? (first op) 'tile)) (rest (rest (frame-scene g fa))))))))
+                                (List filter (fn (_ op) (eq? (first (List ref 3 op)) 'player)) (List filter (fn (_ op) (eq? (first op) 'tile)) (rest (rest (frame-scene (frame-level-cache) g fa))))))))
 (def pose-of (fn (_ op) (if (< 5 (List length op)) (%probe-pose (List ref 1 (List ref 5 op))) ())))
 (def %probe-pose (fn (_ t) ((fn (_ p) (if (null? p) () (List ref 1 p))) (List find (fn (_ x) (if (pair? x) (eq? (first x) 'pose) #f)) (rest t)))))
 (state-clear-messages! g)
