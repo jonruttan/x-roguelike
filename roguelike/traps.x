@@ -10,10 +10,11 @@
 ; MESSAGE . PROPS) kinds on floor cells, hidden.  Stepping on one finds
 ; it, says its message and takes its (effect hurt LO HI), (effect hold
 ; N), (effect aggravate) or (effect teleport); searching finds every
-; one beside the player.  A found trap is drawn, and auto-explore walks
-; around it.  Creatures never set one off.  One that throws the player
-; elsewhere is never laid where it would leave no way from the stairs up
-; to the stairs down.
+; one beside the player, or within the reach the game gives (game.x: a
+; ring's light with the lamp lit).  A found trap is drawn, and
+; auto-explore walks around it.  Creatures never set one off.  One that
+; throws the player elsewhere is never laid where it would leave no way
+; from the stairs up to the stairs down.
 
 (module roguelike/traps)
 
@@ -23,7 +24,7 @@
 (import roguelike/dungeon dungeon-spot)
 (import roguelike/state
   game-rng game-set game-map game-player game-traps game-traps! game-param
-  player-r player-c player-condition! state-tell! state-roll state-adjacent? state-items-at state-gentle?)
+  player-r player-c player-condition! state-tell! state-roll state-adjacent? state-dist state-in-sight? state-items-at state-gentle?)
 (import roguelike/combat combat-hurt-player!)
 (import roguelike/creatures creatures-wake-all!)
 (import roguelike/items items-teleport!)
@@ -105,13 +106,18 @@
           (state-tell! g (lit trapped) (List ref 1 (trap-kind t)) ())
           (%tr-effect! g t)))))
 
-; Every hidden trap beside the player found.
+; Every hidden trap found within REACH cells of the player: beside, at
+; 1; further, only one in sight.
 (def traps-search!
-  (fn (_ g)
+  (fn (_ g reach)
     (def p (game-player g))
+    (def near? (fn (_ t)
+                 (match ((state-adjacent? (trap-r t) (trap-c t) (player-r p) (player-c p)) #t)
+                        ((< reach (state-dist (trap-r t) (trap-c t) (player-r p) (player-c p))) #f)
+                        (#t (state-in-sight? g (trap-r t) (trap-c t))))))
     (List for-each
       (fn (_ t)
-        (when (if (trap-found? t) #f (state-adjacent? (trap-r t) (trap-c t) (player-r p) (player-c p)))
+        (when (if (trap-found? t) #f (near? t))
           (do (trap-found! t)
               (state-tell! g (lit found-trap) "You find a {name}." (list (pair "name" (trap-name t)))))))
       (game-traps g))))

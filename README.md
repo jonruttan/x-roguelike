@@ -304,6 +304,13 @@ NAME (oil N))` is N seconds of it, poured in with `f` to FULL at the
 most.  `delve` holds half an hour, and its flasks five minutes each:
 under it the lamp is what runs out, and food lasts the day.
 
+A ring with `(bonus light N)` lights N cells round the player with the
+lamp out, drawn in the set's `(colour glow N)` in the terminal and a
+cold light in the window.  With the lamp lit it sharpens the eye
+instead: `s` finds hidden traps N cells off in sight, and those beside
+are noticed at every turn's end.  `delve`'s ring of illumination lights
+three.
+
 What a cell is and how it is drawn are kept apart.  `roguelike/map`
 reports each cell's kind of terrain -- floor, wall, door, water,
 pillar, hedge, gate, bog and the rest, `map-terrain` listing each with

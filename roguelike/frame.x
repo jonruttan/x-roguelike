@@ -28,6 +28,7 @@
   player-r player-c player-conditions item-r item-c item-class creature-r creature-c creature-name creature-glyph
   creature-state creature-condition game-set game-blows game-over)
 (import roguelike/draw draw-hunger)
+(import roguelike/game game-glow)
 (import roguelike/creatures creatures-shown?)
 (import roguelike/traps trap-r trap-c trap-found?)
 
@@ -618,8 +619,9 @@
     (def at (frame-place cam (player-r p) (player-c p)))
     (pair cam (pair (if (null? moving) level (List filter (fn (_ op) (not (in? op))) level))
       (List append (if (null? moving) () (List filter in? level))
-        things (list (frame-view m cam)) (frame-lights m cam (List append level things))
-        (if (null? at) () (list (List append (list (lit light) (int+ (first at) 8) (int+ (rest at) 8)) %fr-lantern)))
+        things (list (frame-view m cam))
+        (frame-lights m cam ((fn (_ ops) (if (int< 0 (game-glow g)) (List reject %fr-player-op? ops) ops)) (List append level things)))
+        (if (null? at) () (list (List append (list (lit light) (int+ (first at) 8) (int+ (rest at) 8)) (%fr-carried g))))
         (frame-glints g cam) (frame-blows g cam) (list (frame-chart g)))))))
 
 ; The turn's blows whose target is in view under camera CAM, oldest
@@ -666,6 +668,17 @@
 ; The hero's lantern, as a light's (R G B REACH FLICKER): warm, and
 ; wavering a little.
 (def %fr-lantern (list 255 222 170 5 4))
+; The light the player carries: with the lamp out and a ring's light
+; (game-glow), a cold sea-green out as far as it reaches, steady, and
+; the player's own picture's light left out; else the lantern.
+(def %fr-player-op?
+  (fn (_ op)
+    (match ((not (eq? (first op) (lit tile))) #f) ((null? (rest (rest (rest (rest op))))) #f)
+           (#t (eq? (first (List ref 4 op)) (lit player))))))
+(def %fr-carried
+  (fn (_ g)
+    (def reach (game-glow g))
+    (if (int< 0 reach) (list 110 235 190 reach 0) %fr-lantern)))
 
 ; A glint on each item in view, (glint X Y SEED GOLD?): a star that
 ; comes and goes on it, drawn over the light (paint.x).  SEED puts each

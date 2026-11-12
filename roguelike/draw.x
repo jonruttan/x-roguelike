@@ -38,7 +38,7 @@
 (import roguelike/creatures creatures-shown?)
 (import roguelike/items items-glyph items-pack-lines)
 (import roguelike/traps trap-r trap-c trap-found?)
-(import roguelike/game game-help game-score)
+(import roguelike/game game-help game-score game-glow)
 
 (def %dr-plain 0)
 (def %dr-dim (Style make (list (lit dim)) () ()))
@@ -174,14 +174,22 @@
   (fn (_ s m at bytes t)
     (when (if (null? at) #f (map-visible? m (first at) (rest at)))
       (screen-put! s (+ (first at) 1) (rest at) (bytes->str (list (Vector ref t bytes))) %dr-stairs))))
+; The style what is in view is drawn in: by a ring's light, with the
+; lamp out (game-glow), the set's (colour glow N) where it gives one;
+; else PLAIN.
+(def %dr-in-view
+  (fn (_ g plain)
+    (def colour (if (< 0 (game-glow g)) (%dr-colour (game-forms g) (lit glow)) ()))
+    (if (null? colour) plain (Style make () colour ()))))
 (def %dr-map!
   (fn (_ g s m)
     (%dr-cached! g)
     (def bytes (Vector ref 1 %dr-cache))
     (def buf (str-make (map-cols m)))
     (def styles (%dr-band-styles g))
+    (def plain (%dr-in-view g (rest styles)))
     (def looks (Vector ref 5 %dr-cache))
-    ((fn (self r) (when (< r (map-rows m)) (do (%dr-row! s m r bytes buf (first styles) (rest styles) looks) (self (+ r 1))))) 0)
+    ((fn (self r) (when (< r (map-rows m)) (do (%dr-row! s m r bytes buf (first styles) plain looks) (self (+ r 1))))) 0)
     (%dr-stairs! s m (map-down m) bytes tile-down)
     (%dr-stairs! s m (map-up m) bytes tile-up)))
 
