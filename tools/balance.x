@@ -1297,7 +1297,7 @@
     (def step-to
       (fn (_ tag cr most) (%bl-step-within g s tag (fn (_ r c) (if (= r (creature-r cr)) (= c (creature-c cr)) #f)) most)))
     (def to-shown (if (match ((null? shown) #t) ((%bl-running? g) #t) ((eq? (creature-state shown) (lit fleeing)) #t)
-                             ((List any? (fn (_ x) (same? x shown)) (Vector ref 20 s)) #t) (shoots? #f)
+                             ((List any? (fn (_ x) (same? x shown)) (Vector ref 20 s)) #t) (shoots? (%bl-losing? g shown))
                              (#t (not (%bl-worth? g who shown))))
                     ()
                     (step-to (lit foe) shown (if shoots? 9999 (%bl-at who (lit chase))))))
