@@ -75,6 +75,32 @@ pours N seconds in with f, to FULL at the most.
 ---
     (#t #t #t)
 
+### out, a ring put on with (bonus light 3) lights the cells within three, and no further
+
+```roguelike
+(def g (spec-game-on (spec-set-named "delve") 4 ()))
+(def p (game-player g))
+(def m (game-map g))
+(def seen (fn (_) (List flat-map (fn (_ r) (List flat-map (fn (_ c) (if (map-visible? m r c) (list (state-dist r c (player-r p) (player-c p))) ()))
+                                                    (List range 0 (map-cols m))))
+                    (List range 0 (map-rows m)))))
+(player-lamp! p 0)
+(game-creatures! g ())
+(game-key! g ".")
+(def bare (seen))
+(def ring (item-make (list 'ring "light" (list 'bonus 'light 3)) 1 0))
+(item-letter! ring "z")
+(game-pack! g (pair ring (game-pack g)))
+(game-creatures! g ())
+(game-key! g "P")
+(game-key! g "z")
+(def glowing (seen))
+(write (list (List all? (fn (_ d) (< d 2)) bare) (List length (player-rings p))
+             (List any? (fn (_ d) (< 1 d)) glowing) (List all? (fn (_ d) (< d 4)) glowing)))
+```
+---
+    (#t 1 #t #t)
+
 ## filling
 
 ### a flask pours five minutes in, the lamp full at the most, picking it up and pouring each a second

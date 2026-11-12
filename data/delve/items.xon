@@ -39,6 +39,9 @@
 (item ring "vigour" (rarity 10) (depth 5 12) (bonus strength 1))
 (item ring "mending" (rarity 10) (depth 5 12) (bonus regeneration 1))
 (item ring "silence" (rarity 8) (depth 6 12) (bonus stealth 1))
+; The stone's own light, cold and green: three cells round the player
+; with the lamp out, and with it lit, an eye for what is hidden.
+(item ring "illumination" (rarity 8) (depth 3 12) (bonus light 3))
 
 (item weapon "lantern pole" (rarity 10) (depth 1 6) (damage 1 4) (strength 10))
 (item weapon "pick" (rarity 14) (per-band 1) (damage 1 6) (strength 12))

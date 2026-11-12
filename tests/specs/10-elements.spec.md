@@ -73,6 +73,37 @@ searching, and the blow on a sleeper.  Each is off in classic.
 ---
     (#t #t #t (("You find a pit.") #t #t 1) ("You fall into a pit.") #t)
 
+### with the lamp lit, a ring of (bonus light 3) has s find a trap three off in sight, and one beside noticed at a turn's end
+
+```roguelike
+(def g (spec-game-on (spec-set-named "delve") 4 ()))
+(def p (game-player g))
+(player-at! p (first (map-down (game-map g))) (rest (map-down (game-map g))))
+(game-key! g ">")
+(game-creatures! g ())
+(def line (spec-open-line g 3))
+(def far (trap-make (first (rest line)) (rest (rest line)) (spec-trap g "pit") #f))
+(game-traps! g (list far))
+(game-key! g "s")
+(def bare (trap-found? far))
+(def ring (item-make (list 'ring "illumination" (list 'bonus 'light 3)) 1 0))
+(item-letter! ring "z")
+(game-pack! g (pair ring (game-pack g)))
+(game-key! g "P")
+(game-key! g "z")
+(game-creatures! g ())
+(game-key! g "s")
+(def keen (list (trap-found? far) (game-messages g)))
+(def open (spec-open g))
+(def near (trap-make (first (rest open)) (rest (rest open)) (spec-trap g "pit") #f))
+(game-traps! g (list near))
+(game-creatures! g ())
+(game-key! g ".")
+(write (list (not (null? line)) bare keen (trap-found? near)))
+```
+---
+    (#t #f (#t ("You find a pit.")) #t)
+
 ### a trap comes back from a save, found or not
 
 ```roguelike

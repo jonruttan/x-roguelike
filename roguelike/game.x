@@ -53,7 +53,7 @@
   player-r player-c player-at! player-hp player-hp! player-hpmax player-level player-food player-food! player-lamp player-lamp!
   player-condition player-tick! player-armour player-rings player-gold
   game-daylight? state-in-sight? state-say! state-tell! state-text state-clear-messages! state-clear-log! state-roll state-chance? state-dir state-dirs
-  state-creature-at state-creature-named state-items-at state-free? state-ring? item-class? item-class-in? item-class
+  state-creature-at state-creature-named state-items-at state-free? state-ring? state-ring-bonus item-class? item-class-in? item-class
   item-name creature-name creature-r creature-c creature-trait? creature-prop creature-kind state-a-kind
   creature-state creature-hp creature-whole creature-conditions player-conditions state-dist)
 (import roguelike/combat combat-player-attacks! combat-hurt-player!)
@@ -77,15 +77,16 @@
 ; --- levels ------------------------------------------------------------------
 
 ; What is in view, from where the player stands: by the room, or by
-; sight within the set's (view N); the cells beside, with the lamp out
-; under the set's (lamp ...); nothing, blind.  Under the sky of a set
+; sight within the set's (view N); with the lamp out under the set's
+; (lamp ...), the cells beside, or as far as the rings worn give by
+; (bonus light N); nothing, blind.  Under the sky of a set
 ; that says (light day) the whole level is in view, and a step under a
 ; roof is back to sight; what a creature goes by, and what is told or
 ; stops a walk, is still what is in sight (state-in-sight?).
 (def %gm-light!
   (fn (_ g)
     (def p (game-player g))
-    (def view (if (%gm-dark? g) 1 (game-param1 g (lit view) 0)))
+    (def view (if (%gm-dark? g) (if (< 1 (game-glow g)) (game-glow g) 1) (game-param1 g (lit view) 0)))
     (match ((< 0 (player-condition p (lit blind))) (map-light! (game-map g) -9 -9))
            ((game-daylight? g) (map-light-all! (game-map g) (player-r p) (player-c p)))
            ((< 0 view) (map-light-radius! (game-map g) (player-r p) (player-c p) view))
@@ -508,6 +509,15 @@
   (fn (_ g)
     (match ((null? (game-param g (lit lamp) ())) #f) ((%gm-camping? g) #t)
            (#t (= 0 (player-lamp (game-player g)))))))
+; How far the rings worn light with the lamp out, the sum of their
+; (bonus light N); 0 with the lamp lit or none worn.  A front end draws
+; what is in view by it in a light of its own.
+(def game-glow (fn (_ g) (if (%gm-dark? g) (state-ring-bonus g (lit light)) 0)))
+; How far a search reaches: a ring's light with the lamp lit, the cells
+; beside at the least.  With the two together the player notices what
+; is hidden beside them at every turn's end, unsearched.
+(def %gm-keen-ring (fn (_ g) (if (%gm-dark? g) 0 (state-ring-bonus g (lit light)))))
+(def %gm-keen (fn (_ g) (if (< 1 (%gm-keen-ring g)) (%gm-keen-ring g) 1)))
 
 (def %gm-creatures-act!
   (fn (_ g)
@@ -530,6 +540,7 @@
     (player-tick! (game-player g))
     (creatures-wander! g)
     (%gm-light! g)
+    (when (if (null? (game-over g)) (< 0 (%gm-keen-ring g)) #f) (traps-search! g 1))
     (%gm-home! g)))
 
 ; --- moving ------------------------------------------------------------------
@@ -830,7 +841,7 @@
 (def %gm-commands
   (list
     (pair "." (fn (_ g) #t))
-    (pair "s" (fn (_ g) (do (traps-search! g) #t)))
+    (pair "s" (fn (_ g) (do (traps-search! g (%gm-keen g)) #t)))
     (pair ">" (fn (_ g) (%gm-stairs-down! g)))
     (pair "<" (fn (_ g) (%gm-stairs-up! g)))
     (pair "," (fn (_ g) (items-pickup! g)))
@@ -1038,4 +1049,4 @@
           "S      save and leave       Q      quit"
           "?      these keys           Esc    stop asking")))
 
-(provide roguelike/game game-make game-key! game-waiting? game-explore! game-more! game-score game-score-lines game-score-text game-help)
+(provide roguelike/game game-make game-key! game-waiting? game-explore! game-more! game-score game-score-lines game-score-text game-help game-glow)

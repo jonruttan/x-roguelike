@@ -35,3 +35,7 @@
 (colour water 32)
 (colour shallow 74)
 (colour dressed 250)
+
+; What is in view by a ring's light alone, the lamp out: a pale
+; sea-green, no lamp's colour.
+(colour glow 79)
