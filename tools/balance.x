@@ -763,13 +763,18 @@
            ((not (match ((= ar 0) #t) ((= ac 0) #t) (#t (= ar ac)))) ())
            ((same? cr (items-target g (player-r p) (player-c p) (first way) (rest way) 8)) way)
            (#t ()))))
-; Whether CR is one to turn a wand on: a fight dearer than COURAGE
-; allows, or one that keeps its place, shoots, or mends.
+; Whether CR is one to turn a wand on.  Charges are few, and kept for
+; what cannot be had another way: a band's guardian; one that keeps its
+; place, when it holds the player or closes the way; and any other
+; only when the fight beside the player is likely lost.
 (def %bl-dear?
   (fn (_ g who cr)
-    (match ((creature-trait? cr (lit stationary)) #t) ((creature-trait? cr (lit ranged)) #t)
-           ((creature-trait? cr (lit regen)) #t)
-           (#t (not (%bl-worth? g who cr))))))
+    (def p (game-player g))
+    (def guardian (%bl-guardian g))
+    (match ((if (null? guardian) #f (same? guardian cr)) #t)
+           ((creature-trait? cr (lit stationary))
+             (if (< 0 (player-condition p (lit held))) #t (< 0 (Vector ref 0 %bl-bold))))
+           (#t (not (< (%bl-peril g) (player-hp p)))))))
 ; A wand zapped at CR when it is dear and in line: a bolt, a drain, a
 ; banishing, and on one neither slow nor fast, lethargy, after which it
 ; is outpaced.  #f with none zapped.
