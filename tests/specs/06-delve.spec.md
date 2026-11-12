@@ -31,15 +31,17 @@ blow on a sleeper -- is in 10-elements.
 (player-hp! (game-player g) 1000)
 (def first-said (game-messages g))
 (def down! (fn (_) (def m (game-map g)) (player-at! (game-player g) (first (map-down m)) (rest (map-down m))) (game-key! g ">") (spec-settle! g)))
+(def bands (list "The Galleries:" "The Flood:" "The Old Works:" "The Heart:"))
+(def said (fn (_ m) (if (Str8 starts? "You climb" m) #t (List any? (fn (_ b) (Str8 starts? b m)) bands))))
 (down!)
-(def second (game-messages g))
+(def second (List filter said (game-messages g)))
 (down!)
 (game-creatures! g ())
 (down!)
 (write (list first-said second (game-depth g) (List reverse (List take 2 (game-log g)))))
 ```
 ---
-    (("You enter the Delve.  The Lodestar lies twelve levels down; bring it back up." "The Galleries: the worked mine, propped and railed, its lamps long out.") ("throws stones." "You climb down to level 2.") 4 ("You climb down to level 4." "The Flood: the water stands here, and runs one way."))
+    (("You enter the Delve.  The Lodestar lies twelve levels down; bring it back up." "The Galleries: the worked mine, propped and railed, its lamps long out.") ("You climb down to level 2.") 4 ("You climb down to level 4." "The Flood: the water stands here, and runs one way."))
 
 ### the band's guardian waits by the shaft down on its last level, and bars it while it lives; barred takes no turn
 

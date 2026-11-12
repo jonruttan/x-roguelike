@@ -205,7 +205,8 @@ figures are how many of each a level holds, on average.
 A potion of mending heals 10 to 20 at every depth: most of a
 player's hit points on level 1, a quarter on level 12.  A flask of
 oil is 300 seconds of light, so a level below the first gives about
-100; a level takes 250 to 500.
+100 by chance, and each band lays three more, another 300 a level;
+a level takes 250 to 500.
 
 ## The errands' rewards
 
