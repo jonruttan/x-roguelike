@@ -16,8 +16,9 @@
 ; player, (strikes "SOUND") with one the player lands, and (mends
 ; "SOUND") with hit points come back a little at a time.  Either can
 ; change the music and the air while it holds: (pitch CENTS) higher or
-; lower, (pace PCT) of its tempo, (muffle PCT) its low-pass closed to
-; PCT, and (effect SPEC) an effect over them (Mixer effect!).  A ring's
+; lower, (pace PCT) of its tempo, (sway PCT PERIOD-MS) its tempo swung
+; PCT either way and back, (muffle PCT) its low-pass closed to PCT, and
+; (effect SPEC) an effect over them (Mixer effect!).  A ring's
 ; bonus is heard whether its kind is known or not: it can be told by
 ; ear.
 
@@ -246,7 +247,7 @@
 ; --- the conditions -------------------------------------------------------------
 
 (condition "confused" (on "woozy") (every "woozy" 3500 26) (steps 0 70 100)
-  (pitch -40) (effect (phase 1 6 2600 55 70)))
+  (pitch -40) (effect (phase 1 6 2600 55 70)) (sway 15 5600))
 (condition "slowed" (on "slow-down") (every "slow-tick" 1800 24) (steps -500 0 110)
   (pace 70) (pitch -300))
 (condition "hasted" (on "quicken") (every "fast-tick" 1100 18) (steps 400 0 80)

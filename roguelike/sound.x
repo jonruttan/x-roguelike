@@ -34,7 +34,7 @@
 
 (import x/audio/mixer)
 (import x/audio/tracker)
-(import x/core/doors int* int+ int- int/ int< int= int& obj-make obj-ref obj-set! str->sym
+(import x/core/doors int* int+ int- int/ int% int< int= int& obj-make obj-ref obj-set! str->sym
   str-make str->ptr ptr->int int->ptr mem-copy)
 (import roguelike/data data-all data-one data-get)
 (import roguelike/state game-set game-player game-depth game-map game-creatures game-pack game-over game-blows game-said game-turn
@@ -69,9 +69,10 @@
 ; game's turn last heard (%sd-turned?), 20 the set stood in when 0 was
 ; made, 21 the game's keys told last heard (game-said), 22 the sounds
 ; heard while a condition or a bonus holds, (SOUND EVERY GAIN) each
-; (%sd-held!), 23 the mix as last set, (PITCH PACE CUT EFFECTS) (%sd-mix!),
-; 24 the heartbeat's own mixer and 25 its stream, 26 how thin the turn's
-; sounds are (%sd-thin), and 27 the set's music effects, kept last.
+; (%sd-held!), 23 the mix as last set, (PITCH PACE CUT EFFECTS SWAY)
+; (%sd-mix!), 24 the heartbeat's own mixer and 25 its stream, 26 how
+; thin the turn's sounds are (%sd-thin), 27 the set's music effects,
+; kept last, and 28 the blocks the pace has been swung (%sd-sway!).
 
 (def %sd-vector-type ((prim-ref (lit type) (lit of)) (Vector make 0 ())))
 (def %sd-get (fn (_ s k) (obj-ref s (int+ k 1))))
@@ -505,12 +506,13 @@
     (if (if (null? t) #t (not (int< frac (first t)))) 0
       (int* 10 (int/ (int+ (int/ (int* (List ref 1 t) (int- (first t) frac)) (first t)) 5) 10)))))
 
-; The mix G's music and air want, (PITCH PACE CUT EFFECTS): the place's
-; (room PLACE SPEC ...), the nearest place that has one, and each
-; condition and bonus held's (pitch CENTS), added, (pace PCT),
-; multiplied, (muffle PCT), the least, and (effect SPEC), then the
-; thinning for the player's wounds (%sd-thin).  EFFECTS is ((NAME .
-; SPEC) ...), each named by the form it came from, the thinning by thin.
+; The mix G's music and air want, (PITCH PACE CUT EFFECTS SWAY): the
+; place's (room PLACE SPEC ...), the nearest place that has one, and
+; each condition and bonus held's (pitch CENTS), added, (pace PCT),
+; multiplied, (muffle PCT), the least, (effect SPEC), then the thinning
+; for the player's wounds (%sd-thin), and (sway PCT PERIOD-MS), the
+; widest.  EFFECTS is ((NAME . SPEC) ...), each named by the form it came
+; from, the thinning by thin; SWAY is (PCT PERIOD-MS), or nil for none.
 (def %sd-mix-want
   (fn (_ s g)
     (def holds (%sd-holds s g))
@@ -522,14 +524,16 @@
           (List fold (fn (_ n p) (if (int< (List ref 1 p) n) (List ref 1 p) n)) 100 (all (lit muffle)))
           (List append (if (null? room) () (List map (fn (_ e) (pair e e)) (rest room)))
                        (List map (fn (_ p) (pair p (List ref 1 p))) (all (lit effect)))
-                       (if (int= thin 0) () (list (pair (lit thin) (%sd-thin-spec thin))))))))
+                       (if (int= thin 0) () (list (pair (lit thin) (%sd-thin-spec thin)))))
+          (List fold (fn (_ w p) (if (if (null? w) #t (int< (first w) (List ref 1 p))) (rest p) w)) () (all (lit sway))))))
 
 ; The music and air brought to the mix G wants (%sd-mix-want), changing
 ; only what differs from the mix last set: an effect no longer wanted is
 ; taken off, and one wanted is put on or changed in its place.  The
 ; set's music effects (music-effect ...) are kept after every other, so
 ; a new one is put on before them; the thinning is kept for the turn's
-; sounds.
+; sounds.  The pace is set again when the sway changes, so one that ends
+; leaves the pace as the mix has it; the pump swings it (%sd-sway!).
 (def %sd-mix!
   (fn (_ s g)
     (def m (%sd-get s 1))
@@ -537,7 +541,7 @@
     (def now (%sd-mix-want s g))
     (%sd-put! s 26 (%sd-thin s g))
     (unless (= (List ref 0 was) (List ref 0 now)) (Mixer pitch! m (List ref 0 now)))
-    (unless (= (List ref 1 was) (List ref 1 now))
+    (unless (if (= (List ref 1 was) (List ref 1 now)) (equal? (List ref 4 was) (List ref 4 now)) #f)
       (List for-each (fn (_ k) (unless (null? (%sd-get s k)) (Tracker pace! (%sd-get s k) (List ref 1 now)))) (list 4 5)))
     (unless (= (List ref 2 was) (List ref 2 now)) (Mixer cut! m (List ref 2 now)))
     (def named (fn (_ es e) (List find (fn (_ x) (same? (first x) (first e))) es)))
@@ -727,8 +731,9 @@
             (List for-each (fn (_ e) (Mixer echo! heart (List ref 0 e) (List ref 1 e) (List ref 2 e))) (data-all top (lit music-echo)))
             (def lasts (List map (fn (_ p) (pair p (first p))) (data-all set (lit music-effect))))
             (List for-each (fn (_ e) (Mixer effect! m (first e) (rest e))) lasts)
-            (def s (obj-make %sd-vector-type 29))
-            (obj-set! s 0 28)
+            (def s (obj-make %sd-vector-type 30))
+            (obj-set! s 0 29)
+            (%sd-put! s 28 0)
             (%sd-put! s 24 heart)
             (%sd-put! s 26 0)
             (%sd-put! s 27 lasts)
@@ -756,7 +761,7 @@
             (%sd-put! s 17 0)
             (%sd-put! s 18 ())
             (%sd-put! s 19 (game-turn g))
-            (%sd-put! s 23 (list 0 100 100 ()))
+            (%sd-put! s 23 (list 0 100 100 () ()))
             (%sd-tension! s g)
             (%sd-place! s g)
             (%sd-held! s g)
@@ -767,6 +772,30 @@
             (sound-pump! s)
             s)))))
 
+; The music's pace swung by the mix's sway (%sd-mix-want), one block
+; on: (PCT PERIOD-MS) swings it PCT percent either side of the mix's
+; pace and back once in PERIOD-MS, from the pace itself, rising first.
+; Slot 28 counts the blocks swung; a tracker's pace is set only when it
+; changes.  Nothing without a sway.
+(def %sd-sway!
+  (fn (_ s)
+    (def mix (%sd-get s 23))
+    (def sway (List ref 4 mix))
+    (unless (null? sway)
+      (do (def clock (int+ (%sd-get s 28) 1))
+          (%sd-put! s 28 clock)
+          (def n (int/ (int/ (int* (List ref 1 sway) %sd-rate) 1000) %sd-block))
+          (def period (if (int< n 4) 4 n))
+          (def at (int% (int+ clock (int/ period 4)) period))
+          (def pct (List ref 0 sway))
+          (def swing (if (int< at (int/ period 2))
+                       (int+ (int- 0 pct) (int/ (int* (int* 4 pct) at) period))
+                       (int- (int* 3 pct) (int/ (int* (int* 4 pct) at) period))))
+          (def pace (int/ (int* (List ref 1 mix) (int+ 100 swing)) 100))
+          (List for-each
+            (fn (_ k) ((fn (_ t) (unless (null? t) (unless (int= (Tracker pace t) pace) (Tracker pace! t pace)))) (%sd-get s k)))
+            (list 4 5))))))
+
 ; The music kept ahead of the speaker: blocks rendered and queued until
 ; it is %sd-ahead bytes ahead.  Answers the blocks rendered.
 (def sound-pump!
@@ -774,7 +803,8 @@
     (if (null? s) 0
       ((fn (self n)
          (if (int< ((%sd-front s) audio-queued (%sd-get s 2)) %sd-ahead)
-           (do ((%sd-front s) audio-put! (%sd-get s 2) (Mixer block! (%sd-get s 1)) (int* 4 %sd-block))
+           (do (%sd-sway! s)
+               ((%sd-front s) audio-put! (%sd-get s 2) (Mixer block! (%sd-get s 1)) (int* 4 %sd-block))
                ((%sd-front s) audio-put! (%sd-get s 25) (Mixer block! (%sd-get s 24)) (int* 4 %sd-block))
                (%sd-put! s 10 (int+ (%sd-get s 10) 1))
                (self (int+ n 1)))
