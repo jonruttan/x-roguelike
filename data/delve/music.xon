@@ -2,9 +2,12 @@
 ; tracker songs (docs/sound.md): instruments, patterns of rows, an order.
 ;
 ; Each band has a song and a bed under it.  A song's calm layer plays
-; while nothing is near; its tension layer -- a pulse, a tick, a strained
-; note held against the drone -- comes in as the tension rises, and the
-; tempo with it, by (tension-bpm N) at the most.
+; while nothing is near; its tension layer comes in as the tension rises,
+; and the tempo with it, by (tension-bpm N) at the most.  Each band's
+; tension layer is its own, as it is heard most after a fight: the
+; Galleries a pulse, a tick and a strained note; the Flood a surge, drips
+; and an undertow; the Old Works a knell, a chisel and a grinding
+; tritone; the Heart a doubled throb, a shimmer and a choir.
 
 (music "default" "galleries")
 (music "The Galleries" "galleries")
@@ -69,30 +72,30 @@
   (instrument ripple (wave glass) (env (0 0) (3 30) (500 8) (1200 0)) (release 400) (gain 18)
     (voice (pan -35)) (voice (pan 35) (detune 7) (gain 60)))
   (instrument low (layer calm) (wave hollow) (cut 12) (env (0 0) (1500 30) (5000 26)) (release 2500) (gain 26))
-  (instrument pulse (layer tension) (wave sine) (cut 40) (env (0 0) (6 85) (170 0)) (release 60) (gain 50))
-  (instrument tick (layer tension) (wave noise) (hz 1) (cut 30) (env (0 0) (1 28) (30 0)) (release 20) (gain 20) (pan -35))
-  (instrument strain (layer tension) (wave thin) (cut 16) (env (0 0) (900 24) (3000 20)) (release 1500) (gain 20) (pan 20))
+  (instrument surge (layer tension) (wave warm) (cut 18) (env (0 0) (90 75) (380 0)) (release 120) (gain 44))
+  (instrument drip (layer tension) (wave glass) (env (0 0) (1 30) (140 0)) (release 60) (gain 18) (pan -35))
+  (instrument undertow (layer tension) (wave reed) (cut 8) (env (0 0) (1200 26) (3000 22)) (release 1500) (gain 22) (pan 20))
   (pattern fa
     (drone  "D2 .  .  .  .  .  .  .  .  .  .  .  .  .  .  .")
     (ripple "D4 A4 F4 A4 E4 A4 F4 A4 D4 A4 G4 A4 F4 A4 E4 C4")
     (low    "F3 .  .  .  .  .  .  .  A3 .  .  .  .  .  .  .")
-    (pulse  "D1 .  .  .  .  .  D1 .  D1 .  .  .  .  .  D1 .")
-    (tick   ".  C4 .  C4 .  C4 .  C4 .  C4 .  C4 .  C4 .  C4")
-    (strain "A3 .  .  .  .  .  .  .  G#3 . .  .  .  .  .  ."))
+    (surge  "D1 .  .  D1 .  .  .  .  D1 .  .  D1 .  .  .  .")
+    (drip   ".  .  .  .  .  E6 .  .  .  .  .  .  .  B5 .  .")
+    (undertow "A3 .  .  .  .  .  .  .  G#3 . .  .  .  .  .  ."))
   (pattern fb
     (drone  "C2 .  .  .  .  .  .  .  .  .  .  .  .  .  .  .")
     (ripple "C4 G4 E4 G4 D4 G4 E4 G4 C4 G4 F4 G4 E4 G4 D4 B3")
     (low    "E3 .  .  .  .  .  .  .  G3 .  .  .  .  .  .  .")
-    (pulse  "C1 .  .  .  .  .  C1 .  C1 .  .  .  .  .  C1 .")
-    (tick   ".  C4 .  C4 .  C4 .  C4 .  C4 .  C4 .  C4 .  C4")
-    (strain "G3 .  .  .  .  .  .  .  F#3 . .  .  .  .  .  ."))
+    (surge  "C1 .  .  C1 .  .  .  .  C1 .  .  C1 .  .  .  .")
+    (drip   ".  .  .  D6 .  .  .  .  .  .  A5 .  .  .  .  .")
+    (undertow "G3 .  .  .  .  .  .  .  F#3 . .  .  .  .  .  ."))
   (pattern fc
     (drone  "Bb1 . .  .  .  .  .  .  A1 .  .  .  .  .  .  .")
     (ripple "Bb3 F4 D4 F4 C4 F4 D4 F4 A3 E4 C#4 E4 A3 E4 C#4 E4")
     (low    "D3 .  .  .  .  .  .  .  C#3 . .  .  .  .  .  .")
-    (pulse  "Bb0 . .  .  .  .  Bb0 . A0 .  .  .  .  .  A0 .")
-    (tick   ".  C4 .  C4 .  C4 .  C4 .  C4 .  C4 .  C4 .  C4")
-    (strain "F3 .  .  .  .  .  .  .  E3 .  .  .  .  .  .  ."))
+    (surge  "Bb0 . .  Bb0 . .  .  .  A0 .  .  A0 .  .  .  .")
+    (drip   ".  .  .  .  .  F6 .  .  .  .  .  .  E6 .  .  C6")
+    (undertow "F3 .  .  .  .  .  .  .  E3 .  .  .  .  .  .  ."))
   (order fa fb fa fc))
 
 (song "flood-water" (bpm 60) (rows 1)
@@ -113,27 +116,27 @@
   (instrument bell (wave glass) (env (0 0) (5 30) (3000 0)) (release 1200) (gain 18) (pan -35))
   (instrument pad (layer calm) (wave warm) (cut 12) (env (0 0) (2500 30) (6000 26)) (release 3000) (gain 26)
     (voice (detune -9) (pan -60)) (voice (detune 9) (pan 60)))
-  (instrument pulse (layer tension) (wave sine) (cut 40) (env (0 0) (6 90) (200 0)) (release 60) (gain 52))
-  (instrument tick (layer tension) (wave noise) (hz 1) (cut 22) (env (0 0) (1 30) (40 0)) (release 20) (gain 22) (pan 30))
-  (instrument strain (layer tension) (wave thin) (cut 16) (env (0 0) (1000 24) (3000 20)) (release 1500) (gain 18))
+  (instrument knell (layer tension) (wave hollow) (cut 14) (env (0 0) (4 85) (700 0)) (release 200) (gain 46))
+  (instrument chisel (layer tension) (wave noise) (hz 1) (cut 55) (env (0 0) (1 26) (14 0)) (release 10) (gain 16) (pan 30))
+  (instrument grind (layer tension) (wave hollow) (cut 7) (env (0 0) (1500 26) (4000 22)) (release 2000) (gain 22) (voice (detune -6)) (voice (detune 6)))
   (pattern wa
     (organ  "E2 .  .  .  .  .  .  .  .  .  .  .  .  .  .  .")
     (organ  "B2 .  .  .  .  .  .  .  .  .  .  .  .  .  .  .")
     (chant  "E3 .  .  .  F3 .  .  .  G3 .  .  .  F3 .  E3 .")
     (bell   ".  .  .  .  .  .  .  .  .  .  .  .  B4 .  .  .")
     (pad    "G3 .  .  .  .  .  .  .  .  .  .  .  .  .  .  .")
-    (pulse  "E1 .  .  .  .  .  .  .  E1 .  .  .  E1 .  .  .")
-    (tick   ".  .  .  .  C4 .  .  .  .  .  .  .  C4 .  C4 .")
-    (strain "F4 .  .  .  .  .  .  .  .  .  .  .  .  .  .  ."))
+    (knell  "E1 .  .  .  .  .  .  .  .  .  .  .  E1 .  .  .")
+    (chisel ".  .  C4 C4 .  .  .  .  .  .  C4 C4 .  .  .  .")
+    (grind  "Bb2 . .  .  .  .  .  .  .  .  .  .  .  .  .  ."))
   (pattern wb
     (organ  "D2 .  .  .  .  .  .  .  .  .  .  .  .  .  .  .")
     (organ  "A2 .  .  .  .  .  .  .  .  .  .  .  .  .  .  .")
     (chant  "D3 .  .  .  E3 .  .  .  F3 .  .  .  E3 .  D3 .")
     (bell   ".  .  .  .  A4 .  .  .  .  .  .  .  .  .  .  .")
     (pad    "F3 .  .  .  .  .  .  .  .  .  .  .  .  .  .  .")
-    (pulse  "D1 .  .  .  .  .  .  .  D1 .  .  .  D1 .  .  .")
-    (tick   ".  .  .  .  C4 .  .  .  .  .  .  .  C4 .  C4 .")
-    (strain "Eb4 . .  .  .  .  .  .  .  .  .  .  .  .  .  ."))
+    (knell  "D1 .  .  .  .  .  .  .  .  .  .  .  D1 .  .  .")
+    (chisel ".  .  C4 C4 .  .  .  .  .  .  C4 C4 .  .  .  .")
+    (grind  "Ab2 . .  .  .  .  .  .  .  .  .  .  .  .  .  ."))
   (order wa wa wb wa))
 
 (song "works-air" (bpm 60) (rows 1)
@@ -156,25 +159,25 @@
     (voice (pan -40)) (voice (pan 40) (detune 8) (gain 50)))
   (instrument pad (layer calm) (wave warm) (cut 10) (env (0 0) (3000 28) (7000 24)) (release 3500) (gain 24)
     (voice (detune -7) (pan -60)) (voice (detune 7) (pan 60)))
-  (instrument pulse (layer tension) (wave sine) (cut 40) (env (0 0) (8 90) (220 0)) (release 60) (gain 54))
-  (instrument tick (layer tension) (wave noise) (hz 1) (cut 20) (env (0 0) (1 30) (40 0)) (release 20) (gain 20))
-  (instrument strain (layer tension) (wave thin) (cut 14) (env (0 0) (1200 24) (3000 20)) (release 1500) (gain 18) (pan 25))
+  (instrument throb (layer tension) (wave sine) (env (0 0) (25 90) (420 0)) (release 100) (gain 56))
+  (instrument shimmer (layer tension) (wave glass) (env (0 0) (250 14) (900 0)) (release 400) (gain 12) (voice (pan -50)) (voice (pan 50) (detune 11)))
+  (instrument choir (layer tension) (wave warm) (cut 9) (env (0 0) (1600 26) (4000 22)) (release 2000) (gain 18) (voice (detune -12) (pan -40)) (voice (detune 12) (pan 40)))
   (pattern ha
     (deep   "C2 .  .  .  .  .  .  .  .  .  .  .  .  .  .  .")
     (bell   "G4 .  .  .  .  .  .  .  .  .  .  .  E5 .  .  .")
     (bell   ".  .  .  .  .  .  C5 .  .  .  .  .  .  .  .  .")
     (pad    "E3 .  .  .  .  .  .  .  D3 .  .  .  .  .  .  .")
-    (pulse  "C1 .  .  .  .  .  .  .  C1 .  .  .  C1 .  C1 .")
-    (tick   ".  .  .  .  .  .  C4 .  .  .  .  .  .  .  C4 .")
-    (strain "Db4 . .  .  .  .  .  .  .  .  .  .  .  .  .  ."))
+    (throb  "C1 .  C1 .  .  .  .  .  C1 .  C1 .  .  .  .  .")
+    (shimmer "C7 .  .  .  .  .  .  .  Db7 . .  .  .  .  .  .")
+    (choir  "Db4 . .  .  .  .  .  .  .  .  .  .  .  .  .  ."))
   (pattern hb
     (deep   "Ab1 . .  .  .  .  .  .  .  .  .  .  .  .  .  .")
     (bell   "Eb5 . .  .  .  .  .  .  .  .  .  .  C5 .  .  .")
     (bell   ".  .  .  .  .  .  G4 .  .  .  .  .  .  .  .  .")
     (pad    "C3 .  .  .  .  .  .  .  Eb3 . .  .  .  .  .  .")
-    (pulse  "Ab0 . .  .  .  .  .  .  Ab0 . .  .  Ab0 . Ab0 .")
-    (tick   ".  .  .  .  .  .  C4 .  .  .  .  .  .  .  C4 .")
-    (strain "D4 .  .  .  .  .  .  .  .  .  .  .  .  .  .  ."))
+    (throb  "Ab0 . Ab0 . .  .  .  .  Ab0 . Ab0 . .  .  .  .")
+    (shimmer "C7 .  .  .  .  .  .  .  Db7 . .  .  .  .  .  .")
+    (choir  "D4 .  .  .  .  .  .  .  .  .  .  .  .  .  .  ."))
   (order ha ha hb))
 
 (song "heart-air" (bpm 60) (rows 1)
