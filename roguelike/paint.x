@@ -21,7 +21,7 @@
 (import x/gfx/canvas)
 (import x/core/doors int+ int- int* int/ int% int< int= str-make str->ptr ptr-ref ptr-set!)
 (import roguelike/data data-load data-all)
-(import roguelike/state game-ask)
+(import roguelike/state game-ask game-blows)
 (import roguelike/frame frame-tile-size frame-view-rows frame-view-cols frame-view! frame-level-y
   frame-scene frame-light-map frame-light-cache frame-level-cache frame-named)
 (import roguelike/draw draw-top draw-standing draw-overlay)
@@ -542,24 +542,25 @@
   (fn (_ p) (do (Vector set! 9 (int+ 1 (Vector ref 9 p)) p) (Vector set! 12 (int+ 1 (Vector ref 12 p)) p) p)))
 
 ; A painter: [SCREEN LAYER FONT SCENE PANEL WORK ZOOM WHERE SHOWN BLOW
-; TOP STANDING GLIDE CHART TOP-KEY TOP-DRAWN STANDING-KEY LIGHT LEVEL],
-; the scene the last turn's, the panel the art's nine-piece picture (a
-; tile form) or nil, WORK the level drawn and lit at the tile's size
-; before it is shown at ZOOM, LAYER and WORK the view's size; WHERE each
-; walking thing's (WHO R . C) on the last turn, SHOWN the tick that turn
-; was first shown at, or -1 before it is; BLOW the frame the turn's
-; blows are shown at; TOP and STANDING the strips the messages and the
-; standing are drawn on, TOP a pair: two lines and three; GLIDE the
-; frame the turn's steps are shown at; CHART the turn's chart, (CANVAS
-; . OP), or nil; TOP-KEY what the top strip was last drawn with, (TEXT
-; . ASKING?), and TOP-DRAWN the strip it was drawn on; STANDING-KEY what
-; the standing was last drawn with; LIGHT the light map's cache
-; (frame-light-cache); LEVEL the level's (frame-level-cache).
+; TOP STANDING GLIDE CHART TOP-KEY TOP-DRAWN STANDING-KEY LIGHT LEVEL
+; BLOWS], the scene the last turn's, the panel the art's nine-piece
+; picture (a tile form) or nil, WORK the level drawn and lit at the
+; tile's size before it is shown at ZOOM, LAYER and WORK the view's
+; size; WHERE each walking thing's (WHO R . C) on the last turn, SHOWN
+; the tick that turn was first shown at, or -1 before it is; BLOW the
+; frame the turn's blows are shown at; TOP and STANDING the strips the
+; messages and the standing are drawn on, TOP a pair: two lines and
+; three; GLIDE the frame the turn's steps are shown at; CHART the
+; turn's chart, (CANVAS . OP), or nil; TOP-KEY what the top strip was
+; last drawn with, (TEXT . ASKING?), and TOP-DRAWN the strip it was
+; drawn on; STANDING-KEY what the standing was last drawn with; LIGHT
+; the light map's cache (frame-light-cache); LEVEL the level's
+; (frame-level-cache); BLOWS the game's blows last drawn (game-blows).
 (def paint-make
   (fn (_ font)
     (paint-zoom! (Vector of (Canvas make paint-width paint-height) () font () () () 0 () -1 %pt-blow-frames
                             (pair (Canvas make %pt-strip-w %pt-top-h) (Canvas make %pt-strip-w (int+ %pt-top-h %pt-pitch)))
-                            (Canvas make %pt-strip-w %pt-stand-h) %pt-glide-frames () () () () (frame-light-cache) (frame-level-cache))
+                            (Canvas make %pt-strip-w %pt-stand-h) %pt-glide-frames () () () () (frame-light-cache) (frame-level-cache) ())
                  paint-zoom-first)))
 (def paint-screen (fn (_ p) (Vector ref 0 p)))
 (def %pt-over (fn (_ p) (rest (rest (Vector ref 3 p)))))
@@ -615,7 +616,9 @@
 
 ; The turn's scene of game G with art A taken, and its level drawn into
 ; the layer: once a turn, not a frame.  Each walking thing is marked
-; moving or still against where it stood on the turn before.
+; moving or still against where it stood on the turn before.  A turn's
+; blows are shown once: drawn again for the same blows, as after a key
+; the game did not take, they are shown at their end.
 (def paint-turn!
   (fn (_ p g a)
     (def scene (frame-scene (Vector ref 18 p) g a))
@@ -627,7 +630,8 @@
     (Vector set! 7 (%pt-where over) p)
     (Vector set! 8 -1 p)
     (Vector set! 4 (frame-named a (lit panel) 0) p)
-    (Vector set! 9 0 p)
+    (Vector set! 9 (if (same? (game-blows g) (Vector ref 19 p)) (%pt-blows-end (%pt-blow-ops (%pt-over p))) 0) p)
+    (Vector set! 19 (game-blows g) p)
     (Vector set! 12 0 p)
     (Vector set! 13 ((fn (_ op) (if (null? op) () (%pt-chart op))) (List find (fn (_ op) (eq? (first op) (lit chart))) over)) p)
     p))

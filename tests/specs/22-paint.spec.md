@@ -162,6 +162,29 @@ each frame that layer, what stands on it, the light and the text.
 ---
     (#f #t #t 8 #f)
 
+### a turn drawn again, as after a key the game does not take, shows its blows no more; the next turn's are shown
+
+```roguelike
+(import roguelike/game game-key! game-waiting?)
+(import roguelike/state game-ask!)
+(state-clear-messages! g)
+(state-blow! g (player-r pl) (+ (player-c pl) 1) (player-r pl) (player-c pl) 'hit 3 ())
+(game-ask! g (list 'more "" () (list "more to say")))
+(paint-turn! p g fa)
+(def first-time (paint-animating? p))
+(def waiting (game-waiting? g))
+(game-key! g "x")
+(paint-turn! p g fa)
+(def again (paint-animating? p))
+(game-ask! g ())
+(state-clear-messages! g)
+(state-blow! g (player-r pl) (+ (player-c pl) 1) (player-r pl) (player-c pl) 'miss 0 ())
+(paint-turn! p g fa)
+(write (list first-time waiting again (paint-animating? p)))
+```
+---
+    (#t #t #f #t)
+
 ### a blow from no one drawn stirs the air in the striker's cell: a pale ring, gone when the blow is
 
 ```roguelike
