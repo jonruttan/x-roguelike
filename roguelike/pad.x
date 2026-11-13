@@ -45,6 +45,23 @@
 ; Between the view's moves while the right stick holds it.
 (def %pd-look 90)
 
+; What each of the gamepad's buttons does, as the game's help shows
+; the keys: the lines of the help the window shows in place of the keys
+; when the gamepad was used last.
+(def pad-help
+  (list "Left stick, d-pad   move, in eight directions; held, keep moving"
+        "Right stick         move the view off you; any move brings it back"
+        "A      pick up; go on past a message or a list"
+        "B      stop asking"
+        "X      your pack                 Y      explore"
+        "LB     up, or out of a door      RB     down, or in a door"
+        "Left stick click    rest         Right stick click    search"
+        "Start  pause: options, help, save and quit"
+        "Back   actions: every other command, the last one taken chosen"
+        ""
+        "In a menu, up and down choose, A takes and B goes back.  A question"
+        "that wants a thing, such as what to quaff, is a menu of the answers."))
+
 (def %pd-buttons
   (list (pair (lit south) ",") (pair (lit east) (lit escape))
         (pair (lit west) "i") (pair (lit north) "o")
@@ -158,4 +175,4 @@
       (#t (do (Vector set! 10 (+ now %pd-look) s)
               (list (lit look) (first looking) (rest looking)))))))
 
-(provide roguelike/pad pad-make pad-key pad-event? pad-fullscreen? pad-fullscreen!)
+(provide roguelike/pad pad-make pad-key pad-event? pad-fullscreen? pad-fullscreen! pad-help)

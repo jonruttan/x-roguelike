@@ -1088,7 +1088,7 @@
         (pair "w" "Wield a weapon") (pair "W" "Wear armour") (pair "T" "Take off armour")
         (pair "P" "Put on a ring") (pair "R" "Take off a ring") (pair "d" "Drop a thing")
         (pair "v" "Who is in view") (pair "L" "What has been said lately") (pair "m" "The map of the world")
-        (pair "?" "The keys")))
+        (pair "?" "Help: what each button does")))
 
 ; The answers the question G is asking takes, (KEY . LABEL) each, for a
 ; front end with no letters to type: the pack's items it can take, yes

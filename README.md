@@ -54,7 +54,7 @@ make it quieter and louder.  Shift with an arrow, the mouse dragged,
 or the right stick moves the view to look off the screen; any other key
 brings it back.  Esc, when the
 game is not asking anything, pauses it: back to the game, the options,
-the keys, or save and quit.  Alt-Enter (Option-Return on a Mac)
+help, or save and quit.  Alt-Enter (Option-Return on a Mac)
 switches to fullscreen and back, and a gamepad plays too:
 
     left stick, d-pad  move, in eight directions; held, it keeps moving
@@ -68,9 +68,10 @@ switches to fullscreen and back, and a gamepad plays too:
 Back opens a menu of every other command: search, rest, camp, quaff,
 read, zap, eat, fill the lamp, wield, wear, take off, put on and take
 off a ring, drop, who is in view, what was said lately, the map of the
-world and the keys.  The last one taken is chosen when it opens again.
+world and help.  The last one taken is chosen when it opens again.
 A question that wants a letter, the thing to quaff or wear, what to
-buy, yes or no, is a menu of its answers once the gamepad was used.
+buy, yes or no, is a menu of its answers once the gamepad was used,
+and help, from the pause or the actions, shows what each button does.
 
 Where there is no SDL3, `-W` (`--web`) plays the same game in a browser
 tab: the address to open is printed, the first one free from

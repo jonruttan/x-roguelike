@@ -129,3 +129,16 @@ step it.
 ```
 ---
     (("z") (("y" . "Yes") ("n" . "No")) () ())
+
+### the gamepad's help names each button and stick, and what a menu and a question take
+
+```roguelike
+(import roguelike/pad pad-help)
+(def ph-text (Str8 join "\n" pad-help))
+(write (list (List filter (fn (_ name) (not (Str8 includes? name ph-text)))
+               (list "Left stick" "d-pad" "Right stick" "A " "B " "X " "Y " "LB " "RB " "Left stick click" "Right stick click" "Start " "Back "))
+             (Str8 includes? "In a menu" ph-text)
+             (List all? (fn (_ l) (< (Str8 length l) 79)) pad-help)))
+```
+---
+    (() #t #t)
