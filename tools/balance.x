@@ -201,24 +201,35 @@
 ; Whether the bot, with nowhere left to go on a level, has given up
 ; going round what sits there.
 (def %bl-bold (Vector of 0))
+; Where sitters were seen on this level, (R . C) each, gone round out
+; of sight as in it: a player remembers what sleeps there, and drops it
+; once the place is seen empty.
+(def %bl-sat (Vector of ()))
+(def %bl-sat!
+  (fn (_ g)
+    (def here (List map (fn (_ cr) (pair (creature-r cr) (creature-c cr))) (List filter (fn (_ cr) (%bl-sitter? g cr)) (%bl-seen g))))
+    (def kept (List reject (fn (_ at) (state-in-sight? g (first at) (rest at))) (Vector ref 0 %bl-sat)))
+    (Vector set! 0 (List append here kept) %bl-sat)))
 
 ; The cells a walk does not cross, a vector by cell: #t where a creature
 ; stands and where a trap has been found, which a walk may still end
-; on, and `shun` beside a sitter, which it may not.
+; on, and `shun` beside a sitter, which it may not: one in view, or one
+; remembered where it was seen (%bl-sat).
 (def %bl-barred
   (fn (_ g cols n)
     (def v (Vector make n #f))
     (def m (game-map g))
-    (List for-each
-      (fn (_ cr)
-        (when (if (< 0 (Vector ref 0 %bl-bold)) #f (%bl-sitter? g cr))
-          (List for-each
-            (fn (_ d)
-              (def r (+ (creature-r cr) (first (rest d))))
-              (def c (+ (creature-c cr) (rest (rest d))))
-              (when (map-in? m r c) (Vector set! (+ (* r cols) c) (lit shun) v)))
-            %bl-dirs)))
-      (%bl-seen g))
+    (def shun!
+      (fn (_ at)
+        (List for-each
+          (fn (_ d)
+            (def r (+ (first at) (first (rest d))))
+            (def c (+ (rest at) (rest (rest d))))
+            (when (map-in? m r c) (Vector set! (+ (* r cols) c) (lit shun) v)))
+          %bl-dirs)))
+    (when (< (Vector ref 0 %bl-bold) 1)
+      (do (List for-each (fn (_ cr) (when (%bl-sitter? g cr) (shun! (pair (creature-r cr) (creature-c cr))))) (%bl-seen g))
+          (List for-each (fn (_ at) (shun! at) (Vector set! (+ (* (first at) cols) (rest at)) #t v)) (Vector ref 0 %bl-sat))))
     (List for-each (fn (_ cr) (Vector set! (+ (* (creature-r cr) cols) (creature-c cr)) #t v)) (%bl-seen g))
     (List for-each (fn (_ t) (when (if (< 1 (Vector ref 0 %bl-bold)) #f (trap-found? t)) (Vector set! (+ (* (trap-r t) cols) (trap-c t)) #t v))) (game-traps g))
     v))
@@ -418,7 +429,7 @@
 (def %bl-explored! (fn (_ g s) (Vector set! 0 #t s) (Vector set! 1 (%bl-place g) s) (Vector set! 4 #f s) (Vector set! 25 #f s)))
 (def %bl-new-level! (fn (_ g s) (Vector set! 0 #f s) (Vector set! 1 (%bl-place g) s) (Vector set! 4 #f s) (Vector set! 9 () s) (Vector set! 12 () s)
     (Vector set! 25 #f s) (Vector set! 26 () s) (Vector set! 28 0 s)
-    (Vector set! 13 (game-turn g) s) (Vector set! 14 #f s) (Vector set! 15 () s) (Vector set! 17 () s) (Vector set! 19 () s) (Vector set! 20 () s) (Vector set! 21 () s) (Vector set! 23 () s) (Vector set! 0 () %bl-slowed) (Vector set! 0 0 %bl-bold)))
+    (Vector set! 13 (game-turn g) s) (Vector set! 14 #f s) (Vector set! 15 () s) (Vector set! 17 () s) (Vector set! 19 () s) (Vector set! 20 () s) (Vector set! 21 () s) (Vector set! 23 () s) (Vector set! 0 () %bl-slowed) (Vector set! 0 0 %bl-bold) (Vector set! 0 () %bl-sat)))
 
 ; With nowhere at all to go on a level: the first time, the cells beside
 ; the unseen are all to be stood on again and what sits is no longer
@@ -1267,6 +1278,7 @@
                                                   (#t (not (%bl-worth? g who cr)))))
                      (%bl-seen g))
                 %bl-wary)
+    (%bl-sat! g)
     (def slips (%bl-slips? g s))
     (Vector set! 22 (player-hp p) s)
     (match
