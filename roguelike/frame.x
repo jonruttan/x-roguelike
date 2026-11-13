@@ -798,7 +798,7 @@
 ; wavering a little.
 (def %fr-lantern (list 255 222 170 5 4))
 ; The lights the player carries, each (R G B REACH FLICKER): with the
-; lamp out and a ring's light (game-glow), a cold sea-green out as far
+; lamp out and a ring's light (game-glow), a cold blue out as far
 ; as it reaches, steady, and the player's own picture's light left out;
 ; else the lantern, and a ring's light laid over it.  Then each ring
 ; worn casts a little light of its own just round the player, in the
@@ -809,7 +809,7 @@
   (fn (_ op)
     (match ((not (eq? (first op) (lit tile))) #f) ((null? (rest (rest (rest (rest op))))) #f)
            (#t (eq? (first (List ref 4 op)) (lit player))))))
-(def %fr-eerie (fn (_ reach) (list 110 235 190 reach 0)))
+(def %fr-eerie (fn (_ reach) (list 120 170 255 reach 0)))
 (def %fr-ring-reach 2)
 (def %fr-ring-flicker 14)
 (def %fr-ring-tint 220)

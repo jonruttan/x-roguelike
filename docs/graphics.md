@@ -278,7 +278,7 @@ colour in percent.
   word on arrival), so no torch burns in a bracket there.  Deeper, the
   light is the stone's water: "light from the rock".
 - What the player carries: the lantern while the lamp burns.  A ring
-  of light lays a cold sea-green over it, out as far as the ring
+  of light lays a cold blue over it, out as far as the ring
   reaches, and with the lamp out is the only light.
 - A ring worn casts an odd light of its own, two cells round the
   player, pulsing and tinting hard, so the lantern does not wash it

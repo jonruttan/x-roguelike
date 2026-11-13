@@ -7,5 +7,5 @@
 
 (glow "tin" 90 200 255)
 (glow "horn" 255 140 20)
-(glow "bone" 190 255 100)
+(glow "bone" 130 160 255)
 (glow "silver" 160 120 255)

@@ -213,7 +213,7 @@ takes, a wall in parts by its neighbours, and the camera on the player.
 ---
     ((200 255 200) (200 255 200) (88 255 88))
 
-### the lights the player carries: the lantern; a ring worn its guise's glow round them, tinting hard; the ring of light's sea-green over the lantern, alone with the lamp out
+### the lights the player carries: the lantern; a ring worn its guise's glow round them, tinting hard; the ring of light's cold blue over the lantern, alone with the lamp out
 
 ```roguelike
 (import roguelike/items items-new items-guise)
@@ -238,7 +238,7 @@ takes, a wall in parts by its neighbours, and the camera on the player.
 (write ring-out)
 ```
 ---
-    ("jade" "garnet" ((255 196 118 5 10) (255 222 170 5 4)) ((255 196 118 5 10) (255 222 170 5 4) (240 10 60 2 14 220)) ((255 196 118 5 10) (255 222 170 5 4) (110 235 190 3 0) (50 235 110 2 14 220) (240 10 60 2 14 220)) ((110 235 190 3 0) (50 235 110 2 14 220) (240 10 60 2 14 220)))
+    ("jade" "garnet" ((255 196 118 5 10) (255 222 170 5 4)) ((255 196 118 5 10) (255 222 170 5 4) (240 10 60 2 14 220)) ((255 196 118 5 10) (255 222 170 5 4) (120 170 255 3 0) (60 190 255 2 14 220) (240 10 60 2 14 220)) ((120 170 255 3 0) (60 190 255 2 14 220) (240 10 60 2 14 220)))
 
 ### a set with no art: what stands on the level is its glyph
 

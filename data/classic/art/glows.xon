@@ -4,7 +4,7 @@
 ; guise, not by kind, so a ring not yet known shows only what it looks
 ; like.
 
-(glow "jade" 50 235 110)
+(glow "jade" 60 190 255)
 (glow "onyx" 130 60 255)
 (glow "amber" 255 150 10)
 (glow "opal" 90 200 255)
