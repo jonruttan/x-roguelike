@@ -68,7 +68,7 @@
 ; game's turn last heard (%sd-turned?), 20 the set stood in when 0 was
 ; made, 21 the game's keys told last heard (game-said), 22 the sounds
 ; heard while a condition or a bonus holds, (SOUND EVERY GAIN) each
-; (%sd-held!).
+; (%sd-held!), 23 the mix as last set, (PITCH PACE CUT EFFECTS) (%sd-mix!).
 
 (def %sd-vector-type ((prim-ref (lit type) (lit of)) (Vector make 0 ())))
 (def %sd-get (fn (_ s k) (obj-ref s (int+ k 1))))
@@ -303,7 +303,7 @@
       (#t (Tracker song! t song)))))
 
 (def %sd-tracker-make
-  (fn (_ s song) (Tracker play! (Tracker tension! (Tracker make song) (%sd-get s 7)) (%sd-get s 1))))
+  (fn (_ s song) (Tracker play! (Tracker pace! (Tracker tension! (Tracker make song) (%sd-get s 7)) (List ref 1 (%sd-get s 23))) (%sd-get s 1))))
 
 ; The guardian of G's band, on the band's last level and alive, or nil.
 (def %sd-guardian
@@ -435,6 +435,42 @@
 (def %sd-held!
   (fn (_ s g)
     (%sd-put! s 22 (List flat-map (fn (_ f) (List map rest (%sd-props f (lit every)))) (%sd-holds s g)))))
+
+; The mix G's music and air want, (PITCH PACE CUT EFFECTS): the place's
+; (room PLACE SPEC ...), the nearest place that has one, and each
+; condition and bonus held's (pitch CENTS), added, (pace PCT),
+; multiplied, (muffle PCT), the least, and (effect SPEC).  EFFECTS is
+; ((NAME . SPEC) ...), each named by the form it came from.
+(def %sd-mix-want
+  (fn (_ s g)
+    (def holds (%sd-holds s g))
+    (def all (fn (_ key) (List flat-map (fn (_ f) (%sd-props f key)) holds)))
+    (def room (%sd-for (%sd-get s 0) (lit room) (%sd-get s 11)))
+    (list (List fold (fn (_ n p) (int+ n (List ref 1 p))) 0 (all (lit pitch)))
+          (List fold (fn (_ n p) (int/ (int* n (List ref 1 p)) 100)) 100 (all (lit pace)))
+          (List fold (fn (_ n p) (if (int< (List ref 1 p) n) (List ref 1 p) n)) 100 (all (lit muffle)))
+          (List append (if (null? room) () (List map (fn (_ e) (pair e e)) (rest room)))
+                       (List map (fn (_ p) (pair p (List ref 1 p))) (all (lit effect)))))))
+
+; The music and air brought to the mix G wants (%sd-mix-want), changing
+; only what differs from the mix last set: an effect no longer wanted is
+; taken off, and one wanted is put on or changed in its place.
+(def %sd-mix!
+  (fn (_ s g)
+    (def m (%sd-get s 1))
+    (def was (%sd-get s 23))
+    (def now (%sd-mix-want s g))
+    (unless (= (List ref 0 was) (List ref 0 now)) (Mixer pitch! m (List ref 0 now)))
+    (unless (= (List ref 1 was) (List ref 1 now))
+      (List for-each (fn (_ k) (unless (null? (%sd-get s k)) (Tracker pace! (%sd-get s k) (List ref 1 now)))) (list 4 5)))
+    (unless (= (List ref 2 was) (List ref 2 now)) (Mixer cut! m (List ref 2 now)))
+    (def named (fn (_ es e) (List find (fn (_ x) (same? (first x) (first e))) es)))
+    (List for-each (fn (_ e) (when (null? (named (List ref 3 now) e)) (Mixer effect! m (first e) ()))) (List ref 3 was))
+    (List for-each
+      (fn (_ e) ((fn (_ old) (when (if (null? old) #t (not (equal? (rest old) (rest e)))) (Mixer effect! m (first e) (rest e))))
+                 (named (List ref 3 was) e)))
+      (List ref 3 now))
+    (%sd-put! s 23 now)))
 
 ; The sound of each message key G told this turn that the set gives one,
 ; (said "KEY" "SOUND"), each key once; a turn's keys are heard once.
@@ -608,8 +644,9 @@
             (def m (Mixer make %sd-rate %sd-block))
             (Mixer gain! m (data-get set (lit music-gain) 80))
             (List for-each (fn (_ e) (Mixer echo! m (List ref 0 e) (List ref 1 e) (List ref 2 e))) (data-all top (lit music-echo)))
-            (def s (obj-make %sd-vector-type 24))
-            (obj-set! s 0 23)
+            (List for-each (fn (_ p) (Mixer effect! m p (first p))) (data-all set (lit music-effect)))
+            (def s (obj-make %sd-vector-type 25))
+            (obj-set! s 0 24)
             (%sd-put! s 21 (game-said g))
             (%sd-put! s 22 ())
             (%sd-put! s 15 front)
@@ -633,9 +670,11 @@
             (%sd-put! s 17 0)
             (%sd-put! s 18 ())
             (%sd-put! s 19 (game-turn g))
+            (%sd-put! s 23 (list 0 100 100 ()))
             (%sd-tension! s g)
             (%sd-place! s g)
             (%sd-held! s g)
+            (%sd-mix! s g)
             (%sd-music! s g)
             (Mixer source! m (%sd-heart s) 0)
             (Mixer source! m (%sd-randoms s) %sd-rate)
@@ -676,6 +715,7 @@
           (%sd-tension! s g)
           (%sd-place! s g)
           (%sd-held! s g)
+          (%sd-mix! s g)
           (%sd-fight! s g)
           (%sd-music! s g)
           (%sd-put! s 19 (game-turn g))

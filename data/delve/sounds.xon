@@ -22,6 +22,7 @@
 (music-gain 75)
 (music-echo 430 42 26)
 (music-echo 610 30 14)
+(music-effect (limit 92 150))
 
 ; --- feet: (footstep TERRAIN "SOUND"), "default" for the rest ------------------
 
@@ -327,3 +328,12 @@
 (ambience "The Old Works" (bed "works-air") (random "settle" 15000 55) (random "drip" 9000 35))
 (ambience "The Heart" (bed "heart-air") (random "chime" 9000 45) (random "settle" 20000 45))
 (ambience "default" (bed "galleries-air") (random "drip" 8000 40))
+
+; --- rooms: (room PLACE SPEC ...), effects over the music and the air ---------
+
+; The Galleries are worked and dry, the Flood wide and wet, the Old Works
+; hard stone and old iron, the Heart a cavern that rings.
+(room "The Galleries" (reverb 90 55 18))
+(room "The Flood" (reverb 140 75 26) (chorus 2 22 5 5000 25))
+(room "The Old Works" (reverb 110 65 20) (drive 160 30))
+(room "The Heart" (reverb 190 85 32))

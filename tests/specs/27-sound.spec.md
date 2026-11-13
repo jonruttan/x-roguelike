@@ -115,3 +115,24 @@ device.
 ```
 ---
     #t
+
+### every room, music effect and held effect of the Kettle world is one the mixer takes, and every room is a place's
+
+```roguelike
+(import x/audio/mixer)
+(def spec-t (data-load "data/kettle"))
+(def spec-world (List append spec-t (List flat-map rest (data-all spec-t 'region))))
+(def spec-m (Mixer make 8000 256))
+(def spec-takes? (fn (_ spec) (guard (e #f) (do (Mixer effect! spec-m 'spec spec) #t))))
+(def spec-held (fn (_ key) (List flat-map (fn (_ f) (List map (fn (_ p) (List ref 1 p)) (List filter (fn (_ p) (if (pair? p) (eq? (first p) key) #f)) (rest f))))
+                                (List append (data-all spec-world 'condition) (data-all spec-world 'bonus)))))
+(def spec-place? (fn (_ n) (List any? (fn (_ f) (str=? (first f) n)) (List append (data-all spec-world 'ambience) (data-all spec-world 'music)))))
+(write (list (List all? spec-takes? (List flat-map rest (data-all spec-world 'room)))
+             (List all? spec-takes? (List map first (data-all spec-world 'music-effect)))
+             (List all? spec-takes? (spec-held 'effect))
+             (List all? (fn (_ r) (spec-place? (first r))) (data-all spec-world 'room))
+             (List all? (fn (_ n) (< -10000 n)) (List append (spec-held 'pitch) (spec-held 'pace) (spec-held 'muffle)))
+             (List map (fn (_ l) (List length l)) (list (data-all spec-world 'room) (spec-held 'effect) (spec-held 'pitch)))))
+```
+---
+    (#t #t #t #t #t (11 3 3))

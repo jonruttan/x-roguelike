@@ -37,3 +37,35 @@ made with, and both answer the same messages.
 ```
 ---
     (#f #t #t)
+
+### the place's room and the music's limit go over the mix, and a condition's pitch, pace and effect come and go with it
+
+```roguelike
+(import x/sys/web)
+(import x/audio/mixer)
+(import x/audio/tracker)
+(import roguelike/sound sound-make sound-turn! sound-close)
+(import roguelike/state player-condition! player-conditions!)
+(Web listen! "127.0.0.1" 0)
+(def spec-win (Web open "spec" 8 8 1))
+(def spec-g (game-make (data-load "data/delve") 1 24 80))
+(def spec-s (sound-make spec-g Web))
+(def spec-m (obj-ref spec-s 2))
+(def spec-heard
+  (fn (_)
+    (list (List map rest (Mixer effects spec-m)) (Mixer pitch spec-m) (Tracker pace (obj-ref spec-s 5)) (Mixer cut spec-m))))
+(def spec-calm (spec-heard))
+(player-condition! (game-player spec-g) 'slowed 10)
+(player-condition! (game-player spec-g) 'confused 10)
+(sound-turn! spec-s spec-g)
+(def spec-held (spec-heard))
+(player-conditions! (game-player spec-g) ())
+(sound-turn! spec-s spec-g)
+(write (list spec-calm (List ref 1 spec-held) (List ref 2 spec-held)
+             (List includes? '(phase 1 6 2600 55 70) (first spec-held))
+             (equal? spec-calm (spec-heard))))
+(sound-close spec-s)
+(Web close spec-win)
+```
+---
+    (((('echo 430 42 26) ('echo 610 30 14) ('limit 92 150) ('reverb 90 55 18)) 0 100 100) -340 70 #t #t)

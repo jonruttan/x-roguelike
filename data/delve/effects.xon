@@ -14,7 +14,10 @@
 ; nought, heard as much as WANDER percent of the time a side off, at PCT
 ; percent.  A bonus has (struck "SOUND") with a blow that lands on the
 ; player, (strikes "SOUND") with one the player lands, and (mends
-; "SOUND") with hit points come back a little at a time.  A ring's
+; "SOUND") with hit points come back a little at a time.  Either can
+; change the music and the air while it holds: (pitch CENTS) higher or
+; lower, (pace PCT) of its tempo, (muffle PCT) its low-pass closed to
+; PCT, and (effect SPEC) an effect over them (Mixer effect!).  A ring's
 ; bonus is heard whether its kind is known or not: it can be told by
 ; ear.
 
@@ -242,12 +245,18 @@
 
 ; --- the conditions -------------------------------------------------------------
 
-(condition "confused" (on "woozy") (every "woozy" 3500 26) (steps 0 70 100))
-(condition "slowed" (on "slow-down") (every "slow-tick" 1800 24) (steps -500 0 110))
-(condition "hasted" (on "quicken") (every "fast-tick" 1100 18) (steps 400 0 80))
-(condition "held" (on "strain") (every "strain" 2600 28) (off "free"))
-(condition "seeing" (on "clarity") (every "glint" 5000 18) (off "dim"))
-(condition "blind" (on "dim") (every "blind-hum" 4000 22) (steps 0 0 130) (off "clarity"))
+(condition "confused" (on "woozy") (every "woozy" 3500 26) (steps 0 70 100)
+  (pitch -40) (effect (phase 1 6 2600 55 70)))
+(condition "slowed" (on "slow-down") (every "slow-tick" 1800 24) (steps -500 0 110)
+  (pace 70) (pitch -300))
+(condition "hasted" (on "quicken") (every "fast-tick" 1100 18) (steps 400 0 80)
+  (pace 135) (pitch 200))
+(condition "held" (on "strain") (every "strain" 2600 28) (off "free")
+  (effect (sweep 180 700 3200 70)))
+(condition "seeing" (on "clarity") (every "glint" 5000 18) (off "dim")
+  (effect (chorus 3 18 4 3600 35)))
+(condition "blind" (on "dim") (every "blind-hum" 4000 22) (steps 0 0 130) (off "clarity")
+  (muffle 30))
 
 (sound "woozy" (vary 50) (gain 26)
   (voice (note "A3") (slide "G3") (detune -20) (env (0 0) (200 30) (900 0)) (pan -50))
@@ -296,7 +305,7 @@
 (bonus "protection" (on "ward-on") (struck "ward"))
 (bonus "strength" (on "might-on") (strikes "heft"))
 (bonus "regeneration" (on "mend-on") (mends "mend-tick"))
-(bonus "stealth" (on "hush-on") (steps 0 0 40))
+(bonus "stealth" (on "hush-on") (steps 0 0 40) (muffle 70))
 (bonus "light" (on "glow-on") (every "glow" 6000 18))
 
 ; Warding: metal answers a blow that lands.
