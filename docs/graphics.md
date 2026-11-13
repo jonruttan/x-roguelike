@@ -125,6 +125,9 @@ world's people and things look the same wherever they are carried.
 
 A set's pictures are in `data/SET/art/*.xon`.  The set is the `.xon`
 files of `data/SET` alone, so the terminal game never reads these.
+Every creature of a set has a picture of its own name (the art spec
+checks it); a terrain kind with none is drawn as the kind it is a sort
+of, a hedge as the band's wall.
 
     (size 16 16)
     (colour "k" 20 16 15)          ; a colour named by one character

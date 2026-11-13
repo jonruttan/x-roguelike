@@ -84,6 +84,12 @@ each the art's size, held TICKS a picture.
                                          (List map (fn (_ c) (first c)) (data-all set 'creature))))))
     (def bands (data-all set 'band))
     (List flat-map (fn (_ t) (%art-tile t size chars known tiles bands)) tiles)))
+; The creatures of SET with no tile in ART, drawn as their letter.
+(def art-undrawn
+  (fn (_ set art)
+    (def drawn (List filter str? (List map first (data-all art 'tile))))
+    (List filter (fn (_ n) (not (List any? (fn (_ d) (str=? d n)) drawn)))
+      (List map first (data-all set 'creature)))))
 (write (art-problems (spec-set-named "delve")
   (list '(size 2 2) '(colour "a" 1 2 3)
         '(tile wall (rows "aa" "a")) '(tile floor (rows "ab" "aa")) '(tile up (rows "aa"))
@@ -105,37 +111,37 @@ each the art's size, held TICKS a picture.
 
 ```roguelike
 (def art (data-load "data/delve/art"))
-(write (list (art-problems (spec-set-named "delve") art) (List length (data-all art 'tile))))
+(write (list (art-problems (spec-set-named "delve") art) (List length (data-all art 'tile)) (art-undrawn (spec-set-named "delve") art)))
 ```
 ---
-    (() 223)
+    (() 223 ())
 
 ### classic's art is whole
 
 ```roguelike
 (def art (data-load "data/classic/art"))
-(write (list (art-problems (spec-set-named "classic") art) (List length (data-all art 'tile))))
+(write (list (art-problems (spec-set-named "classic") art) (List length (data-all art 'tile)) (art-undrawn (spec-set-named "classic") art)))
 ```
 ---
-    (() 70)
+    (() 70 ())
 
 ### kettle's art is whole
 
 ```roguelike
 (def art (data-load "data/kettle/art"))
-(write (list (art-problems (spec-set-named "kettle") art) (List length (data-all art 'tile))))
+(write (list (art-problems (spec-set-named "kettle") art) (List length (data-all art 'tile)) (art-undrawn (spec-set-named "kettle") art)))
 ```
 ---
-    (() 159)
+    (() 178 ())
 
 ### town's art is whole, the town's walls, setts and roofs with it
 
 ```roguelike
 (def art (data-load "data/town/art"))
-(write (list (art-problems (spec-set-named "town") art) (List length (data-all art 'tile))))
+(write (list (art-problems (spec-set-named "town") art) (List length (data-all art 'tile)) (art-undrawn (spec-set-named "town") art)))
 ```
 ---
-    (() 86)
+    (() 86 ())
 
 
 ## the font
