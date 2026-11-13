@@ -207,12 +207,12 @@ drunk, read, zapped, eaten, worn and dropped.
 ---
     ("2 dried fishes" "3 oil flasks" "a miner's tin" "an oil flask")
 
-### an item's (plural NAME) is its name counted past one: Kettle's loaves of bread and wedges of cheese
+### an item's (plural NAME) is its name counted past one, its (single NAME) one alone: Kettle's loaves of bread and wedges of cheese
 
 ```roguelike
 (def g (spec-game-on (spec-valley) 4 ()))
 (def named (fn (_ name n) (items-name g (item-make (spec-item g name) n 0))))
-(write (list (named "bread" 2) (named "cheese" 3) (named "bread" 1)))
+(write (list (named "bread" 2) (named "cheese" 3) (named "bread" 1) (named "cheese" 1)))
 ```
 ---
-    ("2 loaves of bread" "3 wedges of cheese" "a bread")
+    ("2 loaves of bread" "3 wedges of cheese" "a loaf of bread" "a wedge of cheese")

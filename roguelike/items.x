@@ -319,7 +319,11 @@
     (match ((not (str=? own "")) own)
            ((List any? (fn (_ e) (Str8 ends? e s)) (list "s" "x" "z" "ch" "sh")) (Str8 append s "es"))
            (#t (Str8 append s "s")))))
-(def %it-plural (fn (_ it s) (if (< 1 (item-count it)) (Str8 append (Str8 str (item-count it)) " " (%it-plural-of it s)) (%it-an s))))
+; One alone: its (single NAME), or S, after its article.
+(def %it-plural
+  (fn (_ it s)
+    (if (< 1 (item-count it)) (Str8 append (Str8 str (item-count it)) " " (%it-plural-of it s))
+      (%it-an ((fn (_ own) (if (str=? own "") s own)) (item-prop1 it (lit single) ""))))))
 ; " (str N)" for a thing that asks strength, N less its enchantment.
 (def %it-need
   (fn (_ it)

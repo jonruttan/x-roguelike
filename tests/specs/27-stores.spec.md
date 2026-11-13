@@ -88,7 +88,7 @@ asked and paid.
 (write (list offered (player-gold p) (item-count loaf) (first (game-messages g)) (first (game-ask g))))
 ```
 ---
-    (('item "Sell what?" ('food)) 2 1 "You sell a bread for 2 gold." 'choose)
+    (('item "Sell what?" ('food)) 2 1 "You sell a loaf of bread for 2 gold." 'choose)
 
 ### with nothing the keeper takes, s says so; a thing in hand is not sold
 
