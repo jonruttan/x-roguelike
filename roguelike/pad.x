@@ -11,11 +11,13 @@
 ;     X  the pack           Y  explore
 ;     LB go up (<)          RB go down (>)
 ;     left stick click  rest (.)      right stick click  search (s)
-;     Start  the pause menu    Back  the map of the world (m)
+;     Start  the pause menu    Back  the actions (actions)
 ;
-; A command that asks for a thing -- quaff, read, wear -- is still a
-; key on the keyboard.  The right stick moves the view, a cell at a time
-; while held, as (look DX DY): the window's, not the game's.
+; Back opens the window's menu of every other command -- search, quaff,
+; read, wear, the map of the world -- and a question that wants a
+; letter, an item or a choice, is a menu of its answers (window.x).
+; The right stick moves the view, a cell at a time while held, as (look
+; DX DY): the window's, not the game's.
 ;
 ; A direction moves once it has held for a moment, so a stick pushed to
 ; a diagonal crosses no straight direction on the way there, and again
@@ -48,7 +50,7 @@
         (pair (lit west) "i") (pair (lit north) "o")
         (pair (lit left-shoulder) "<") (pair (lit right-shoulder) ">")
         (pair (lit left-stick) ".") (pair (lit right-stick) "s")
-        (pair (lit start) (lit pause)) (pair (lit back) "m")))
+        (pair (lit start) (lit pause)) (pair (lit back) (lit actions))))
 
 ; The game's key for a step of DX across and DY down, each -1, 0 or 1.
 (def %pd-dirs

@@ -63,10 +63,14 @@ switches to fullscreen and back, and a gamepad plays too:
     X  your pack       Y  explore
     LB go up (<)       RB go down (>)
     left stick click   rest           right stick click  search
-    Start  pause       Back  the map of the world
+    Start  pause       Back  the actions
 
-A command that asks for a thing, such as quaff or wear, takes its
-answer from the keyboard.
+Back opens a menu of every other command: search, rest, camp, quaff,
+read, zap, eat, fill the lamp, wield, wear, take off, put on and take
+off a ring, drop, who is in view, what was said lately, the map of the
+world and the keys.  The last one taken is chosen when it opens again.
+A question that wants a letter, the thing to quaff or wear, what to
+buy, yes or no, is a menu of its answers once the gamepad was used.
 
 Where there is no SDL3, `-W` (`--web`) plays the same game in a browser
 tab: the address to open is printed, the first one free from

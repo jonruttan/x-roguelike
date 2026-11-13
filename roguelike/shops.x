@@ -102,15 +102,17 @@
               (do (state-tell! g (lit nothing-to-sell) "You have nothing the {keeper} buys." (list (pair "keeper" name))) (reopen) #f)
               (do (game-ask! g (list (lit item) "Sell what?" sell buys)) #f)))
           (#t #f))))
-    (def counter
+    (def wares
       (List map (fn (_ i)
                   (def f (List ref i goods))
-                  (Str8 append (List ref i %sh-letters) ") " (List ref 1 f) ", " (Str8 str (asked f)) " gold"))
+                  (pair (List ref i %sh-letters) (Str8 append (List ref 1 f) ", " (Str8 str (asked f)) " gold")))
         (List range 0 (List length goods))))
+    (def counter (List map (fn (_ w) (Str8 append (first w) ") " (rest w))) wares))
     (game-ask! g
       (list (lit choose) (Str8 append "The " name ": what will you have?") pick
         (List append (if (str=? line "") () (list line "")) counter
           (if (null? buys) () (list "s) sell something"))
-          (list "" (Str8 append "You have " (Str8 str (player-gold p)) " gold.")))))))
+          (list "" (Str8 append "You have " (Str8 str (player-gold p)) " gold.")))
+        (List append wares (if (null? buys) () (list (pair "s" "Sell something"))))))))
 
 (provide roguelike/shops shops-kept? shops-open!)
