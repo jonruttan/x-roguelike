@@ -28,12 +28,13 @@
 (import x/sys/gc)
 (import x/type/vector)
 (import x/core/doors int& int+ int- int* int/ int< int= str-make str->ptr ptr-set! str-byte-ref char->int str-byte-len)
-(import roguelike/state game-over game-over! game-exploring? game-exploring! game-band band-name game-place game-ask)
+(import roguelike/state game-over game-over! game-exploring? game-exploring! game-band band-name game-place game-ask game-ask!
+  state-clear-messages!)
 (import roguelike/frame frame-art frame-tile-size frame-pan frame-pan!)
 (import roguelike/game game-key! game-waiting? game-explore! game-actions game-answers)
 (import roguelike/paint paint-width paint-height paint-make paint-screen paint-turn! paint-view! paint-frame! paint-flickers?
   paint-zoom paint-zoom! paint-animating? paint-step! paint-menu!)
-(import roguelike/pad pad-make pad-key pad-event? pad-fullscreen? pad-fullscreen!)
+(import roguelike/pad pad-make pad-key pad-event? pad-fullscreen? pad-fullscreen! pad-help)
 (import roguelike/sound sound-make sound-pump! sound-collect? sound-turn! sound-volume! sound-cue! sound-close)
 (import roguelike/menu menu-make menu-chosen menu-key)
 (import roguelike/options options-names options-get options-set options-step options-line options-path options-read options-write!)
@@ -268,11 +269,19 @@
       ((not (eq? (first act) (lit take))) (self g a p win m))
       ((eq? id (lit resume)) ())
       ((eq? id (lit options)) (if (eq? (%wn-options g a p win (%wn-options-menu)) (lit close)) (lit close) (self g a p win m)))
-      ((eq? id (lit keys)) (do (game-key! g "?") ()))
+      ((eq? id (lit keys)) (do (%wn-give! a g "?") ()))
       (#t (do (game-over! g (lit saved)) ())))))
 (def %wn-pause-items
   (list (pair (lit resume) "Back to the game") (pair (lit options) "Options")
-        (pair (lit keys) "Keys") (pair (lit leave) "Save and quit")))
+        (pair (lit keys) "Help") (pair (lit leave) "Save and quit")))
+
+; KEY given game G; ?, the help, shows the gamepad's buttons (pad-help)
+; in place of the keys when the last key came from the gamepad.
+(def %wn-give!
+  (fn (_ a g key)
+    (if (if (Vector ref 6 a) (if (str? key) (str=? key "?") #f) #f)
+      (do (state-clear-messages! g) (game-ask! g (list (lit look) "The buttons:" () pad-help)))
+      (game-key! g key))))
 
 ; Game G played in window WIN with art A and painter P until it ends or
 ; the window is closed; a closed window saves the game.  Escape, when
@@ -384,7 +393,7 @@
 (def %wn-key!
   (fn (_ a p g win snd tick key)
     (frame-pan! g 0 0)
-    (game-key! g key)
+    (%wn-give! a g key)
     (sound-turn! snd g)
     (%wn-turn-shown! a p g win snd tick)
     (%wn-answer! a p g win snd tick)))
