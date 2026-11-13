@@ -1,0 +1,335 @@
+; effects.xon -- the delve set's sounds for what the player does and
+; what holds them: the messages a turn tells, the conditions they are
+; under, and the bonuses their rings give (docs/sound.md).
+;
+; (said "KEY" "SOUND") is heard when a turn tells message KEY.  A key
+; whose event has a cue of its own (a blow, gold, the stairs, hunger,
+; the lamp) is left to the cue.
+;
+; (condition "NAME" PROP ...) and (bonus "NAME" PROP ...) shape what is
+; heard while the player is under a condition or wears a ring of a
+; bonus: (on "SOUND") as it begins, (off "SOUND") as it ends, (every
+; "SOUND" EVERY-MS GAIN) heard now and again while it holds, and (steps
+; CENTS WANDER PCT) the player's steps CENTS sharper, flatter below
+; nought, heard as much as WANDER percent of the time a side off, at PCT
+; percent.  A bonus has (struck "SOUND") with a blow that lands on the
+; player, (strikes "SOUND") with one the player lands, and (mends
+; "SOUND") with hit points come back a little at a time.  A ring's
+; bonus is heard whether its kind is known or not: it can be told by
+; ear.
+
+; --- the messages ---------------------------------------------------------------
+
+(said "door" "door-creak")
+(said "go-in" "door-creak")
+(said "go-into" "door-creak")
+(said "go-out" "door-creak")
+(said "found-secret" "stone-grind")
+(said "found-trap" "trap-click")
+(said "trapped" "trap-snap")
+(said "teleported" "blink")
+(said "banished" "blink")
+(said "mapped" "unfurl")
+(said "ate" "munch")
+(said "filled" "glug")
+(said "put-on" "clink")
+(said "took-off" "clink-off")
+(said "removed" "clink-off")
+(said "wielding" "draw")
+(said "wearing" "rustle")
+(said "dropped" "drop")
+(said "bolt" "zap")
+(said "shot" "twang")
+(said "breath" "breath-roar")
+(said "summoned" "summon")
+(said "stolen" "snatch")
+(said "clamour" "alarm")
+(said "feared" "panic")
+(said "held-others" "stillness")
+(said "slowed-other" "slow-down")
+(said "surprised" "gasp")
+(said "unseen-hit" "muffled")
+(said "unseen-miss" "muffled")
+(said "no-charges" "fizzle")
+(said "nothing-happens" "fizzle")
+(said "unaffected" "fizzle")
+(said "camp-made" "camp")
+(said "found-goal" "fanfare")
+(said "quest-over" "fanfare")
+(said "restored" "restore")
+(said "stronger" "stronger")
+(said "upgraded" "anvil")
+(said "weakened" "drain")
+(said "drained" "drain")
+(said "poisoned" "sicken")
+(said "starving" "faint")
+(said "faint" "faint")
+(said "explored" "explored")
+(said "cannot-afford" "nope")
+(said "pack-full" "nope")
+(said "hands-full" "nope")
+(said "no-such-item" "nope")
+(said "wrong-kind" "nope")
+(said "unknown-key" "nope")
+(said "none-such" "nope")
+(said "no-stairs" "nope")
+(said "no-way-up" "nope")
+(said "no-way-on" "nope")
+(said "not-wearing" "nope")
+(said "already-wearing" "nope")
+(said "in-use" "nope")
+(said "no-lamp" "nope")
+(said "no-words" "nope")
+(said "no-world-map" "nope")
+(said "nothing-here" "nope")
+(said "nothing-to-sell" "nope")
+(said "not-bought" "nope")
+(said "barred" "nope")
+(said "edge" "nope")
+
+(sound "door-creak" (vary 150) (gain 30)
+  (voice (wave reed) (note "D2") (slide "G2") (cut 8) (env (0 0) (120 40) (500 0)))
+  (voice (hz 140) (slide 100) (cut 30) (at 420) (env (0 0) (1 45) (80 0))))
+
+(sound "stone-grind" (vary 60) (gain 36)
+  (voice (wave noise) (hz 1) (cut 3) (env (0 0) (200 60) (900 50) (1300 0)))
+  (voice (wave hollow) (note "A1") (slide "G1") (cut 6) (env (0 0) (200 35) (1200 0)))
+  (voice (wave glass) (note "E6") (at 1200) (env (0 0) (2 25) (700 0))))
+
+(sound "trap-click" (vary 100) (gain 26)
+  (voice (wave noise) (hz 1) (cut 70) (env (0 0) (1 50) (8 0)))
+  (voice (wave glass) (note "C7") (at 60) (env (0 0) (1 18) (90 0))))
+
+(sound "trap-snap" (vary 80) (gain 48)
+  (voice (wave noise) (hz 1) (cut 60) (env (0 0) (1 90) (40 0)))
+  (voice (wave thin) (note "G#3") (cut 40) (env (0 0) (1 45) (350 0)))
+  (voice (hz 90) (slide 40) (env (0 0) (1 60) (180 0))))
+
+(sound "blink" (vary 100) (gain 32) (echo 120 30 30)
+  (voice (wave glass) (note "C5") (slide "C7") (env (0 0) (20 30) (300 0)))
+  (voice (wave noise) (hz 1) (cut 30) (env (0 0) (60 35) (320 0))))
+
+(sound "unfurl" (vary 60) (gain 28) (echo 160 30 25)
+  (voice (wave noise) (hz 1) (cut 45) (env (0 0) (40 30) (300 10) (450 0)))
+  (voice (wave glass) (note "C5") (at 300) (env (0 0) (3 26) (500 0)))
+  (voice (wave glass) (note "G5") (at 380) (env (0 0) (3 24) (500 0)))
+  (voice (wave glass) (note "E6") (at 460) (env (0 0) (3 22) (700 0))))
+
+(sound "munch" (vary 200) (gain 30)
+  (voice (wave noise) (hz 1) (cut 25) (env (0 0) (5 55) (60 0)))
+  (voice (wave noise) (hz 1) (cut 22) (at 180) (env (0 0) (5 50) (60 0)))
+  (voice (wave noise) (hz 1) (cut 28) (at 360) (env (0 0) (5 45) (60 0))))
+
+(sound "glug" (vary 150) (gain 28)
+  (voice (note "G3") (slide "C3") (env (0 0) (10 40) (140 0)))
+  (voice (note "A3") (slide "D3") (at 200) (env (0 0) (10 36) (140 0)))
+  (voice (note "F3") (slide "Bb2") (at 400) (env (0 0) (10 32) (160 0))))
+
+(sound "clink" (vary 120) (gain 24)
+  (voice (wave glass) (note "A6") (env (0 0) (1 40) (300 0)))
+  (voice (wave glass) (note "E7") (at 40) (env (0 0) (1 20) (200 0))))
+
+(sound "clink-off" (vary 120) (gain 22)
+  (voice (wave glass) (note "E6") (env (0 0) (1 36) (250 0)))
+  (voice (wave glass) (note "A5") (at 50) (env (0 0) (1 24) (250 0))))
+
+(sound "draw" (vary 80) (gain 30)
+  (voice (wave noise) (hz 1) (cut 45) (env (0 0) (120 40) (260 0)))
+  (voice (wave thin) (note "E5") (at 200) (env (0 0) (2 22) (700 0))))
+
+(sound "rustle" (vary 100) (gain 26)
+  (voice (wave noise) (hz 1) (cut 10) (env (0 0) (90 40) (300 30) (500 0)))
+  (voice (wave noise) (hz 1) (cut 16) (at 250) (env (0 0) (60 25) (300 0))))
+
+(sound "drop" (vary 120) (gain 32)
+  (voice (hz 110) (slide 60) (env (0 0) (2 55) (140 0)))
+  (voice (wave noise) (hz 1) (cut 12) (env (0 0) (2 40) (90 0))))
+
+(sound "zap" (vary 80) (gain 38)
+  (voice (wave thin) (note "C6") (slide "C3") (cut 50) (env (0 0) (5 45) (280 0)))
+  (voice (wave noise) (hz 1) (cut 80) (env (0 0) (1 40) (60 20) (240 0))))
+
+(sound "twang" (vary 100) (gain 30)
+  (voice (wave reed) (note "A3") (slide "E3") (cut 40) (env (0 0) (1 45) (220 0)))
+  (voice (wave noise) (hz 1) (cut 40) (at 60) (env (0 0) (20 25) (120 0))))
+
+(sound "breath-roar" (vary 60) (gain 44)
+  (voice (wave noise) (hz 1) (cut 6) (env (0 0) (150 70) (700 50) (1100 0)))
+  (voice (wave reed) (note "A1") (slide "E1") (cut 10) (env (0 0) (100 35) (1000 0))))
+
+(sound "summon" (vary 60) (gain 34) (echo 200 35 30)
+  (voice (wave hollow) (note "C2") (slide "C3") (cut 10) (env (0 0) (400 40) (900 0)))
+  (voice (wave thin) (note "F#4") (cut 20) (at 300) (env (0 0) (100 22) (700 0))))
+
+(sound "snatch" (vary 120) (gain 32)
+  (voice (wave noise) (hz 1) (cut 40) (env (0 0) (15 50) (90 0)))
+  (voice (wave glass) (note "E6") (at 80) (env (0 0) (1 25) (200 0)))
+  (voice (wave glass) (note "B6") (at 130) (env (0 0) (1 20) (200 0))))
+
+(sound "alarm" (gain 34)
+  (voice (wave reed) (note "E4") (cut 40) (env (0 0) (5 40) (180 0)))
+  (voice (wave reed) (note "C4") (cut 40) (at 220) (env (0 0) (5 40) (180 0)))
+  (voice (wave reed) (note "E4") (cut 40) (at 440) (env (0 0) (5 40) (180 0)))
+  (voice (wave reed) (note "C4") (cut 40) (at 660) (env (0 0) (5 40) (240 0))))
+
+(sound "panic" (gain 34)
+  (voice (wave thin) (note "B4") (cut 40) (env (0 0) (5 35) (500 0)))
+  (voice (wave thin) (note "C5") (cut 40) (env (0 0) (5 35) (500 0)))
+  (voice (wave noise) (hz 1) (cut 20) (env (0 0) (100 25) (400 0))))
+
+(sound "stillness" (gain 26) (echo 240 40 30)
+  (voice (wave glass) (note "C5") (env (0 0) (100 25) (1400 0)))
+  (voice (wave glass) (note "G5") (env (0 0) (100 20) (1400 0)))
+  (voice (wave warm) (note "C3") (cut 10) (env (0 0) (200 25) (1400 0))))
+
+(sound "slow-down" (vary 40) (gain 32)
+  (voice (wave thin) (note "A4") (slide "A2") (cut 30) (env (0 0) (10 35) (900 0)))
+  (voice (wave hollow) (note "A2") (slide "A1") (cut 10) (env (0 0) (50 30) (900 0))))
+
+(sound "gasp" (vary 80) (gain 34)
+  (voice (wave noise) (hz 1) (cut 30) (env (0 0) (80 40) (200 0)))
+  (voice (wave thin) (note "F#4") (cut 40) (at 60) (env (0 0) (2 35) (300 0))))
+
+(sound "muffled" (vary 120) (gain 26)
+  (voice (hz 80) (slide 50) (cut 6) (env (0 0) (3 50) (140 0)))
+  (voice (wave noise) (hz 1) (cut 3) (env (0 0) (3 40) (100 0))))
+
+(sound "fizzle" (vary 80) (gain 22)
+  (voice (wave thin) (note "E4") (slide "B3") (cut 25) (env (0 0) (5 30) (250 0)))
+  (voice (wave noise) (hz 1) (cut 40) (env (0 0) (20 18) (200 0))))
+
+(sound "camp" (vary 100) (gain 28)
+  (voice (wave noise) (hz 1) (cut 30) (env (0 0) (3 40) (40 0)))
+  (voice (wave noise) (hz 1) (cut 34) (at 150) (env (0 0) (3 35) (40 0)))
+  (voice (wave noise) (hz 1) (cut 6) (at 60) (env (0 0) (300 30) (900 0)))
+  (voice (wave warm) (note "C3") (cut 12) (at 100) (env (0 0) (300 22) (900 0))))
+
+(sound "fanfare" (gain 34) (echo 200 35 30)
+  (voice (wave reed) (note "C4") (cut 40) (env (0 0) (5 40) (300 0)))
+  (voice (wave reed) (note "E4") (cut 40) (at 150) (env (0 0) (5 40) (300 0)))
+  (voice (wave reed) (note "G4") (cut 40) (at 300) (env (0 0) (5 40) (300 0)))
+  (voice (wave glass) (note "C6") (at 450) (env (0 0) (5 34) (1200 0))))
+
+(sound "restore" (gain 30) (echo 160 35 30)
+  (voice (wave glass) (note "G5") (env (0 0) (4 30) (600 0)))
+  (voice (wave glass) (note "D6") (at 90) (env (0 0) (4 28) (600 0)))
+  (voice (wave glass) (note "G6") (at 180) (env (0 0) (4 26) (900 0))))
+
+(sound "stronger" (gain 34)
+  (voice (wave reed) (note "C3") (cut 30) (env (0 0) (40 40) (600 0)))
+  (voice (wave reed) (note "G3") (cut 30) (at 200) (env (0 0) (40 40) (800 0))))
+
+(sound "anvil" (vary 60) (gain 34) (echo 140 30 25)
+  (voice (wave glass) (note "A5") (env (0 0) (1 45) (900 0)))
+  (voice (wave thin) (note "E6") (env (0 0) (1 25) (600 0)))
+  (voice (wave noise) (hz 1) (cut 60) (env (0 0) (1 40) (30 0))))
+
+(sound "drain" (vary 60) (gain 32)
+  (voice (wave hollow) (note "E3") (slide "E1") (cut 12) (env (0 0) (50 40) (800 0)))
+  (voice (wave noise) (hz 1) (cut 10) (env (0 0) (400 30) (800 0))))
+
+(sound "faint" (gain 34)
+  (voice (wave hollow) (note "D3") (slide "A1") (cut 10) (env (0 0) (100 35) (1200 0)))
+  (voice (wave thin) (note "D4") (slide "C#4") (cut 20) (env (0 0) (300 18) (1200 0))))
+
+(sound "explored" (gain 20) (echo 180 35 30)
+  (voice (wave glass) (note "E5") (env (0 0) (4 26) (500 0)))
+  (voice (wave glass) (note "B5") (at 140) (env (0 0) (4 22) (700 0))))
+
+(sound "nope" (vary 40) (gain 22)
+  (voice (wave hollow) (note "E3") (cut 20) (env (0 0) (3 35) (120 0)))
+  (voice (wave hollow) (note "C3") (cut 20) (at 110) (env (0 0) (3 35) (160 0))))
+
+; --- the conditions -------------------------------------------------------------
+
+(condition "confused" (on "woozy") (every "woozy" 3500 26) (steps 0 70 100))
+(condition "slowed" (on "slow-down") (every "slow-tick" 1800 24) (steps -500 0 110))
+(condition "hasted" (on "quicken") (every "fast-tick" 1100 18) (steps 400 0 80))
+(condition "held" (on "strain") (every "strain" 2600 28) (off "free"))
+(condition "seeing" (on "clarity") (every "glint" 5000 18) (off "dim"))
+(condition "blind" (on "dim") (every "blind-hum" 4000 22) (steps 0 0 130) (off "clarity"))
+
+(sound "woozy" (vary 50) (gain 26)
+  (voice (note "A3") (slide "G3") (detune -20) (env (0 0) (200 30) (900 0)) (pan -50))
+  (voice (note "A3") (slide "B3") (detune 20) (env (0 0) (200 30) (900 0)) (pan 50)))
+
+(sound "slow-tick" (vary 30) (gain 26)
+  (voice (wave hollow) (note "C2") (cut 14) (env (0 0) (4 45) (300 0)))
+  (voice (wave noise) (hz 1) (cut 12) (env (0 0) (2 30) (60 0))))
+
+(sound "quicken" (vary 40) (gain 30)
+  (voice (wave thin) (note "A3") (slide "A5") (cut 40) (env (0 0) (10 30) (350 0)))
+  (voice (wave noise) (hz 1) (cut 40) (env (0 0) (200 25) (350 0))))
+
+(sound "fast-tick" (vary 60) (gain 18)
+  (voice (wave noise) (hz 1) (cut 70) (env (0 0) (1 40) (12 0)))
+  (voice (wave noise) (hz 1) (cut 70) (at 90) (env (0 0) (1 32) (12 0))))
+
+(sound "strain" (vary 120) (gain 28)
+  (voice (wave reed) (note "E2") (slide "F2") (cut 8) (env (0 0) (300 35) (700 0)))
+  (voice (wave noise) (hz 1) (cut 5) (env (0 0) (300 20) (600 0))))
+
+(sound "free" (vary 80) (gain 30)
+  (voice (wave noise) (hz 1) (cut 40) (env (0 0) (1 50) (60 0)))
+  (voice (wave reed) (note "A2") (slide "D3") (cut 20) (env (0 0) (5 30) (200 0))))
+
+(sound "sicken" (vary 60) (gain 30)
+  (voice (wave reed) (note "F3") (slide "C#3") (cut 14) (env (0 0) (100 35) (700 0)))
+  (voice (note "C4") (slide "F3") (at 200) (env (0 0) (10 25) (200 0))))
+
+(sound "clarity" (gain 26) (echo 160 35 30)
+  (voice (wave glass) (note "E5") (slide "E6") (env (0 0) (100 25) (800 0)))
+  (voice (wave glass) (note "B5") (at 120) (env (0 0) (4 20) (900 0))))
+
+(sound "glint" (vary 400) (gain 16)
+  (voice (wave glass) (note "B6") (env (0 0) (2 20) (500 0))))
+
+(sound "dim" (gain 26)
+  (voice (wave glass) (note "E6") (slide "E5") (env (0 0) (50 22) (800 0)))
+  (voice (wave hollow) (note "E2") (cut 8) (env (0 0) (200 25) (900 0))))
+
+(sound "blind-hum" (vary 60) (gain 20)
+  (voice (wave hollow) (note "C2") (cut 4) (env (0 0) (800 30) (2000 0))))
+
+; --- the bonuses: each ring's own -----------------------------------------------
+
+(bonus "protection" (on "ward-on") (struck "ward"))
+(bonus "strength" (on "might-on") (strikes "heft"))
+(bonus "regeneration" (on "mend-on") (mends "mend-tick"))
+(bonus "stealth" (on "hush-on") (steps 0 0 40))
+(bonus "light" (on "glow-on") (every "glow" 6000 18))
+
+; Warding: metal answers a blow that lands.
+(sound "ward-on" (gain 26) (echo 140 30 25)
+  (voice (wave thin) (note "E5") (env (0 0) (2 30) (900 0)))
+  (voice (wave glass) (note "B5") (detune 9) (env (0 0) (2 22) (900 0))))
+(sound "ward" (vary 60) (gain 28)
+  (voice (wave thin) (note "E6") (env (0 0) (1 30) (500 0)))
+  (voice (wave glass) (note "B6") (detune 9) (env (0 0) (1 20) (400 0))))
+
+; Vigour: a weight behind every blow the player lands.
+(sound "might-on" (gain 32)
+  (voice (wave reed) (note "C2") (cut 14) (env (0 0) (100 40) (700 0)))
+  (voice (hz 55) (env (0 0) (100 40) (700 0))))
+(sound "heft" (vary 60) (gain 40)
+  (voice (hz 60) (slide 35) (env (0 0) (2 80) (220 0)))
+  (voice (wave noise) (hz 1) (cut 5) (env (0 0) (2 50) (120 0))))
+
+; Mending: a small rising note each time a wound closes a little.
+(sound "mend-on" (gain 26)
+  (voice (wave warm) (note "C4") (slide "G4") (cut 20) (env (0 0) (200 30) (700 0))))
+(sound "mend-tick" (vary 80) (gain 16)
+  (voice (wave glass) (note "G5") (env (0 0) (2 20) (250 0)))
+  (voice (wave glass) (note "C6") (at 80) (env (0 0) (2 18) (300 0))))
+
+; Silence: a hush, and the player's own steps quieter.
+(sound "hush-on" (gain 24)
+  (voice (wave noise) (hz 1) (cut 25) (env (0 0) (300 30) (900 0))))
+
+; Illumination: the stone's light, cold and green, singing faintly.
+(sound "glow-on" (gain 26) (echo 200 40 30)
+  (voice (wave glass) (note "G#5") (env (0 0) (300 24) (1500 0)))
+  (voice (wave glass) (note "D#6") (detune 7) (env (0 0) (400 18) (1500 0))))
+(sound "glow" (vary 200) (gain 14)
+  (voice (wave glass) (note "G#6") (env (0 0) (400 14) (1600 0)))
+  (voice (wave glass) (note "D#7") (detune 11) (at 200) (env (0 0) (400 10) (1400 0))))

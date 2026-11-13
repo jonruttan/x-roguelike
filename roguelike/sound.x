@@ -34,12 +34,12 @@
 
 (import x/audio/mixer)
 (import x/audio/tracker)
-(import x/core/doors int* int+ int- int/ int< int= int& obj-make obj-ref obj-set!)
+(import x/core/doors int* int+ int- int/ int< int= int& obj-make obj-ref obj-set! str->sym)
 (import roguelike/data data-all data-one data-get)
-(import roguelike/state game-set game-player game-depth game-map game-creatures game-pack game-over game-blows game-turn
+(import roguelike/state game-set game-player game-depth game-map game-creatures game-pack game-over game-blows game-said game-turn
   game-band band-name game-place game-top-set game-param player-r player-c player-hp player-hpmax player-level player-gold
-  player-food player-lamp player-conditions creature-r creature-c creature-state creature-name state-dist state-ring?
-  band-to band-prop1 state-creature-named game-inside item-count)
+  player-food player-lamp player-conditions creature-r creature-c creature-state creature-name state-dist
+  band-to band-prop1 state-creature-named game-inside item-count item-prop player-rings)
 (import roguelike/map map-tile map-terrain map-roof-at map-place-at)
 (import roguelike/creatures creatures-shown?)
 
@@ -66,7 +66,9 @@
 ; (%sd-front), 16 the name of the song last asked for (%sd-music!), 17
 ; the turns left of a fight, 18 the guardian fought, or nil, 19 the
 ; game's turn last heard (%sd-turned?), 20 the set stood in when 0 was
-; made.
+; made, 21 the game's keys told last heard (game-said), 22 the sounds
+; heard while a condition or a bonus holds, (SOUND EVERY GAIN) each
+; (%sd-held!).
 
 (def %sd-vector-type ((prim-ref (lit type) (lit of)) (Vector make 0 ())))
 (def %sd-get (fn (_ s k) (obj-ref s (int+ k 1))))
@@ -132,8 +134,11 @@
 
 ; --- the streams ---------------------------------------------------------------
 
+; The bytes rendered for NAME, made by MAKE the first time and kept:
+; the key is a symbol, so the lookup is an eq? one.
 (def %sd-bytes
-  (fn (_ s key make)
+  (fn (_ s name make)
+    (def key (str->sym name))
     (def hit (Assoc entry key (%sd-get s 6)))
     (if (null? hit)
       ((fn (_ b) (do (%sd-put! s 6 (pair (pair key b) (%sd-get s 6))) b)) (make))
@@ -161,17 +166,21 @@
 ; Sound NAME played as %sd-play! does at PCT percent of the turn's
 ; loudness, to the nearest tenth, so that a sound far off is rendered
 ; at only a few loudnesses.
-(def %sd-play-at!
-  (fn (_ s name side pct)
+(def %sd-play-at! (fn (_ s name side pct) (%sd-play-with! s name side 0 pct)))
+
+; Sound NAME played as %sd-play-at! does, CENTS sharper (flatter below
+; nought).
+(def %sd-play-with!
+  (fn (_ s name side cents pct)
     (def set (%sd-get s 0))
     (def f (%sd-sound set name))
     (def vol (int* 10 (int/ (int+ (int/ (int* (%sd-get s 13) pct) 100) 5) 10)))
     (unless (if (null? f) #t (int< vol 1))
       (do (def vary (%sd-prop1 f (lit vary) 0))
           (def pick (int- (%sd-random! s 3) 1))
-          (def key (Str8 append name "/" (Str8 str pick) "/" (Str8 str side) "/" (Str8 str vol)))
+          (def key (Str8 append name "/" (Str8 str pick) "/" (Str8 str side) "/" (Str8 str vol) "/" (Str8 str cents)))
           (def b (%sd-bytes s key
-                   (fn (_) (Mixer render %sd-rate (%sd-louder (%sd-voices f (int* pick vary) (int* side 55)) vol)
+                   (fn (_) (Mixer render %sd-rate (%sd-louder (%sd-voices f (int+ cents (int* pick vary)) (int* side 55)) vol)
                                      (List map rest (%sd-props f (lit echo)))))))
           ((%sd-front s) audio-put! (%sd-free-stream s) (first b) (rest b))))))
 
@@ -244,8 +253,10 @@
               (%sd-play-in-music! s (first h) 0 (int+ 30 (int/ (int* 70 (int- t from)) (int- 100 from))) 0))
             (int+ now (int/ (int* %sd-rate 60) bpm)))))))
 
-; The place's random sounds as a source: each (random SOUND EVERY GAIN)
-; heard once in EVERY ms or so, left, ahead or right, at GAIN percent.
+; The place's random sounds as a source, and those a condition or a
+; bonus held gives: each (random SOUND EVERY GAIN) or (every SOUND EVERY
+; GAIN) heard once in EVERY ms or so, left, ahead or right, at GAIN
+; percent.
 (def %sd-randoms
   (fn (_ s)
     (fn (_ m now)
@@ -253,7 +264,7 @@
         (fn (_ r)
           (when (int< (%sd-random! s 1000) (int/ 250000 (List ref 1 r)))
             (%sd-play-in-music! s (first r) (int- (%sd-random! s 3) 1) (List ref 2 r) (%sd-random! s (int/ %sd-rate 4)))))
-        (%sd-get s 12))
+        (List append (%sd-get s 12) (%sd-get s 22)))
       (int+ now (int/ %sd-rate 4)))))
 
 ; --- the music for a place -----------------------------------------------------
@@ -383,16 +394,72 @@
 
 ; --- a turn heard --------------------------------------------------------------
 
+; The names of the bonuses G's player wears, one a ring.
+(def %sd-bonuses
+  (fn (_ g)
+    (List flat-map (fn (_ r) ((fn (_ b) (if (null? b) () (list (symbol->str (first b))))) (item-prop r (lit bonus) ())))
+      (player-rings (game-player g)))))
+
 ; What of G a turn's sounds are told from: (R C DEPTH HP HPMAX LEVEL
-; ITEMS GOLD FOOD CONDITIONS OVER PLACE LAMP CARRIED), ITEMS the pack's
-; things and CARRIED the count of them, a stack counted as all it holds.
+; ITEMS GOLD FOOD CONDITIONS OVER PLACE LAMP CARRIED BONUSES), ITEMS the
+; pack's things and CARRIED the count of them, a stack counted as all it
+; holds, and BONUSES those worn (%sd-bonuses).
 (def %sd-glance
   (fn (_ g)
     (def p (game-player g))
     (list (player-r p) (player-c p) (game-depth g) (player-hp p) (player-hpmax p) (player-level p)
           (List length (game-pack g)) (player-gold p) (player-food p)
           (List map first (player-conditions p)) (game-over g) (%sd-place-key g) (player-lamp p)
-          (List fold (fn (_ n it) (int+ n (item-count it))) 0 (game-pack g)))))
+          (List fold (fn (_ n it) (int+ n (item-count it))) 0 (game-pack g))
+          (%sd-bonuses g))))
+
+; The forms that shape what G's player hears: the set's (condition
+; "NAME" PROP ...) for each condition the player is under, and its
+; (bonus "NAME" PROP ...) for each bonus worn.
+(def %sd-holds
+  (fn (_ s g)
+    (def set (%sd-get s 0))
+    (List append
+      (List flat-map (fn (_ c) ((fn (_ f) (if (null? f) () (list f))) (%sd-named set (lit condition) (symbol->str (first c)))))
+        (player-conditions (game-player g)))
+      (List flat-map (fn (_ b) ((fn (_ f) (if (null? f) () (list f))) (%sd-named set (lit bonus) b)))
+        (%sd-bonuses g)))))
+
+; The sound of each of FORMS's (KEY SOUND) props, played ahead.
+(def %sd-each!
+  (fn (_ s forms key side)
+    (List for-each (fn (_ f) (List for-each (fn (_ p) (%sd-play! s (List ref 1 p) side)) (%sd-props f key))) forms)))
+
+; The sounds heard while G's conditions and bonuses hold, each
+; (every SOUND EVERY-MS GAIN) of them, kept for the music's source.
+(def %sd-held!
+  (fn (_ s g)
+    (%sd-put! s 22 (List flat-map (fn (_ f) (List map rest (%sd-props f (lit every)))) (%sd-holds s g)))))
+
+; The sound of each message key G told this turn that the set gives one,
+; (said "KEY" "SOUND"), each key once; a turn's keys are heard once.
+(def %sd-said!
+  (fn (_ s g)
+    (def keys (game-said g))
+    (unless (same? keys (%sd-get s 21))
+      (do (%sd-put! s 21 keys)
+          (List for-each
+            (fn (_ k)
+              (def f (%sd-named (%sd-get s 0) (lit said) (symbol->str k)))
+              (unless (null? f) (%sd-play! s (List ref 1 f) 0)))
+            (List fold (fn (_ acc k) (if (List includes? k acc) acc (pair k acc))) () keys))))))
+
+; The sounds of names gone into NOW from WAS, each one's form under HEAD
+; giving its (KEY SOUND), or the set's cue FALLBACK.
+(def %sd-begun!
+  (fn (_ s head was now key fallback)
+    (List for-each
+      (fn (_ n)
+        (unless (List includes? n was)
+          (do (def f (%sd-named (%sd-get s 0) head (if (str? n) n (symbol->str n))))
+              (if (if (null? f) #t (null? (%sd-props f key))) (unless (null? fallback) (%sd-cue s fallback 0))
+                (%sd-each! s (list f) key 0)))))
+      now)))
 
 ; The cue a change in the purse is heard as, the gold and the count of
 ; things carried before and after: bought when the gold went down, as
@@ -420,25 +487,42 @@
     (def row (List find (fn (_ k) (= (first k) t)) map-terrain))
     (if (null? row) "floor" (symbol->str (List ref 1 row)))))
 
+; The player's step, the terrain's (footstep "TERRAIN" "SOUND"), changed
+; by each condition and bonus held's (steps CENTS WANDER PCT): CENTS
+; sharper, flatter below nought, heard as far as WANDER percent of a
+; side off at random, and at PCT percent.
 (def %sd-step!
   (fn (_ s g)
     (def p (game-player g))
     (def f (%sd-named (%sd-get s 0) (lit footstep) (%sd-terrain-name g (player-r p) (player-c p))))
     (def d (%sd-named (%sd-get s 0) (lit footstep) "default"))
     (def hit (if (null? f) d f))
-    (unless (null? hit)
-      (%sd-play-at! s (List ref 1 hit) 0 (if (state-ring? g (lit stealth)) (data-get (%sd-get s 0) (lit stealth-steps) 40) 100)))))
+    (def steps (List flat-map (fn (_ h) (List map rest (%sd-props h (lit steps)))) (%sd-holds s g)))
+    (def cents (List fold (fn (_ n st) (int+ n (List ref 0 st))) 0 steps))
+    (def wander (List fold (fn (_ n st) (if (int< n (List ref 1 st)) (List ref 1 st) n)) 0 steps))
+    (def pct (List fold (fn (_ n st) (int/ (int* n (List ref 2 st)) 100)) 100 steps))
+    (def side (if (int< (%sd-random! s 100) wander) (int- (int* 2 (%sd-random! s 2)) 1) 0))
+    (unless (null? hit) (%sd-play-with! s (List ref 1 hit) side cents pct))))
 
+; The turn's blows: the player's own, a creature's on the player, and
+; those between others, each with its cue; a blow that lands on the
+; player has each bonus worn's (struck SOUND) too, and one the player
+; lands each one's (strikes SOUND).
 (def %sd-blows!
   (fn (_ s g)
     (def p (game-player g))
+    (def holds (%sd-holds s g))
     (List for-each
       (fn (_ b)
         (def at-player (if (= (List ref 3 b) (player-r p)) (= (List ref 4 b) (player-c p)) #f))
+        (def by-player (if (= (List ref 1 b) (player-r p)) (= (List ref 2 b) (player-c p)) #f))
         (def how (List ref 5 b))
+        (def lands (if (eq? how (lit hit)) #t (eq? how (lit kill))))
         (if at-player
-          (%sd-cue s (match ((eq? how (lit miss)) (lit dodged)) (#t (lit struck))) (%sd-side (player-c p) (List ref 2 b)))
-          (%sd-cue s how (%sd-side (player-c p) (List ref 4 b)))))
+          (do (%sd-cue s (match ((eq? how (lit miss)) (lit dodged)) (#t (lit struck))) (%sd-side (player-c p) (List ref 2 b)))
+              (when lands (%sd-each! s holds (lit struck) (%sd-side (player-c p) (List ref 2 b)))))
+          (do (%sd-cue s how (%sd-side (player-c p) (List ref 4 b)))
+              (when (if by-player lands #f) (%sd-each! s holds (lit strikes) (%sd-side (player-c p) (List ref 4 b)))))))
       (if (%sd-turned? s g) (game-blows g) ()))))
 
 ; G's creatures and how each stands, ((CREATURE . STATE) ...).
@@ -481,14 +565,19 @@
     (when (int< (at now 3) (at was 3))
       (%sd-cue s (if (if (int< (frac now) low) (not (int< (frac was) low)) #f) (lit low) (lit hurt)) 0))
     (when (int< (at was 3) (at now 3))
-      (unless (int< (int* 4 (int- (at now 3) (at was 3))) (at now 4)) (%sd-cue s (lit healed) 0)))
+      (if (int< (int* 4 (int- (at now 3) (at was 3))) (at now 4))
+        (%sd-each! s (%sd-holds s g) (lit mends) 0)
+        (%sd-cue s (lit healed) 0)))
     (when (int< (at was 5) (at now 5)) (%sd-cue s (lit level) 0))
     (when (int< (at was 6) (at now 6)) (%sd-cue s (lit pickup) 0))
     ((fn (_ coin) (unless (null? coin) (%sd-cue s coin 0))) (sound-coin (at was 7) (at now 7) (at was 13) (at now 13)))
     (when (crossed? (List ref 1 hunger)) (%sd-cue s (lit hungry) 0))
     (when (crossed? (List ref 2 hunger)) (%sd-cue s (lit weak) 0))
-    (unless (List all? (fn (_ c) (List includes? c (at was 9))) (at now 9)) (%sd-cue s (lit afflicted) 0))
-    (unless (List all? (fn (_ c) (List includes? c (at now 9))) (at was 9)) (%sd-cue s (lit relieved) 0))
+    (%sd-begun! s (lit condition) (at was 9) (at now 9) (lit on) (lit afflicted))
+    (%sd-begun! s (lit condition) (at now 9) (at was 9) (lit off) (lit relieved))
+    (%sd-begun! s (lit bonus) (at was 14) (at now 14) (lit on) ())
+    (%sd-begun! s (lit bonus) (at now 14) (at was 14) (lit off) ())
+    (%sd-said! s g)
     (unless (str=? (at was 11) (at now 11)) (%sd-cue s (lit arrived) 0))
     (def lamp (game-param g (lit lamp) ()))
     (unless (null? lamp)
@@ -519,8 +608,10 @@
             (def m (Mixer make %sd-rate %sd-block))
             (Mixer gain! m (data-get set (lit music-gain) 80))
             (List for-each (fn (_ e) (Mixer echo! m (List ref 0 e) (List ref 1 e) (List ref 2 e))) (data-all top (lit music-echo)))
-            (def s (obj-make %sd-vector-type 22))
-            (obj-set! s 0 21)
+            (def s (obj-make %sd-vector-type 24))
+            (obj-set! s 0 23)
+            (%sd-put! s 21 (game-said g))
+            (%sd-put! s 22 ())
             (%sd-put! s 15 front)
             (%sd-put! s 0 set)
             (%sd-put! s 20 (game-set g))
@@ -544,6 +635,7 @@
             (%sd-put! s 19 (game-turn g))
             (%sd-tension! s g)
             (%sd-place! s g)
+            (%sd-held! s g)
             (%sd-music! s g)
             (Mixer source! m (%sd-heart s) 0)
             (Mixer source! m (%sd-randoms s) %sd-rate)
@@ -583,6 +675,7 @@
           (%sd-put! s 14 (%sd-states g))
           (%sd-tension! s g)
           (%sd-place! s g)
+          (%sd-held! s g)
           (%sd-fight! s g)
           (%sd-music! s g)
           (%sd-put! s 19 (game-turn g))
