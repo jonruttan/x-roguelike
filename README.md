@@ -40,6 +40,7 @@ Each set keeps its own save and scores, in `~/.x-roguelike/NAME/`.
     P  R              put on a ring, take it off
     f                 fill the lamp from a flask
     c                 camp: rest with the lamp out, till healed or roused; a key stops
+    x                 put the lamp out, or light it again
     S                 save and leave           Q         quit
     ?                 the keys                 Esc       stop asking
     Enter  Space      go on past --More--, put away what you look at
@@ -300,7 +301,10 @@ the seconds under nothing a set with no `(starve N)` dies at (150);
 `(lamp FULL LOW)` gives the player a lamp holding FULL seconds of oil,
 lit full at the start, or the first turn in the set when come from one
 without.  It burns on the clock, says when LOW seconds are left and
-when it goes out, and out, sight is the cells beside.  `c` makes camp:
+when it goes out, and out, sight is the cells beside.  `x` puts it
+out, to save oil, and lights it again while it holds any; out, it
+burns none, and the dark is the same as when it runs dry, a saved game
+keeping which.  `c` makes camp:
 the lamp is put out and burns no oil, and the player rests a turn at a
 time, the clock and hunger running on, until they are whole, struck,
 starving, or a creature comes up to them; a key breaks it.  `(camp

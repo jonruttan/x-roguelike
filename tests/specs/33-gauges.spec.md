@@ -43,6 +43,19 @@ standing.
 ---
     ((("Starving" 0 2) ("Dark" 0 2)) #t)
 
+### a lamp put out with oil in it is a warning, its oil still shown
+
+```roguelike
+(player-food! p 43200)
+(player-lamp! p 900)
+(player-doused! p #t)
+(def out (list (draw-gauges g) (Str8 includes? "Lamp out:50%" (spec-row g 23))))
+(player-doused! p #f)
+(write out)
+```
+---
+    ((("Food" 50 0) ("Lamp out" 50 1)) #t)
+
 ### fuller than the set's most is full
 
 ```roguelike

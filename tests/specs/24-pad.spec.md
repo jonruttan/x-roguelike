@@ -108,7 +108,7 @@ step it.
              (List filter (fn (_ act) (List any? (fn (_ k) (str=? k (first act))) (list "," "i" "o" "<" ">"))) game-actions)))
 ```
 ---
-    (18 () ())
+    (19 () ())
 
 ### a question that wants a letter offers its answers: the items it takes, yes and no; one that goes on offers none
 
