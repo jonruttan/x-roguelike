@@ -610,11 +610,14 @@
     (def k (look (int+ base c)))
     ((fn (self c) (if (if (int< c cols) (= (look (int+ base c)) k) #f) (self (int+ c 1)) c)) (int+ c 1))))
 
-; Every cell seen: a map scroll's doing.
+; Every cell seen, and a secret door a door: a map scroll's doing.
 (def map-reveal!
   (fn (_ m)
     (map-each! 0 0 (- (map-rows m) 1) (- (map-cols m) 1)
-      (fn (_ r c) (unless (= (map-tile m r c) tile-rock) (map-seen! m r c))))))
+      (fn (_ r c)
+        (unless (= (map-tile m r c) tile-rock)
+          (do (when (= (map-tile m r c) tile-secret) (map-set! m r c tile-door))
+              (map-seen! m r c)))))))
 
 ; Whether the cell at R C of M is not seen yet and not rock: one still
 ; to find.

@@ -76,3 +76,27 @@ out, and each band's prize behind one on a level of the band.
 ```
 ---
     (#t #t)
+
+### a scroll of survey shows a secret room, and its door a door
+
+```roguelike
+(def g (spec-game-on (spec-set-named "delve") 4 ()))
+(def p (game-player g))
+(def down! (fn (_) (game-creatures! g ()) (player-at! p (first (map-down (game-map g))) (rest (map-down (game-map g)))) (game-key! g ">") (spec-settle! g)))
+(def cells (fn (_) (List flat-map (fn (_ r) (List map (fn (_ c) (pair r c)) (List range 0 (map-cols (game-map g))))) (List range 0 (map-rows (game-map g))))))
+(def secrets (fn (_) (List filter (fn (_ rc) (= (map-tile (game-map g) (first rc) (rest rc)) tile-secret)) (cells))))
+(def find-level (fn (self n) (if (if (null? (secrets)) (< 0 n) #f) (do (down!) (self (- n 1))) (secrets))))
+(def doors (find-level 8))
+(def scroll (item-make (spec-item g "survey") 1 0))
+(item-letter! scroll "z")
+(game-pack! g (pair scroll (game-pack g)))
+(game-creatures! g ())
+(game-key! g "r")
+(game-key! g "z")
+(def m (game-map g))
+(write (list (not (null? doors))
+             (List all? (fn (_ d) (if (= (map-tile m (first d) (rest d)) tile-door) (map-seen? m (first d) (rest d)) #f)) doors)
+             (null? (secrets))))
+```
+---
+    (#t #t #t)
