@@ -105,7 +105,9 @@
 (def %bl-seen-at
   (fn (_ g r c) (List find (fn (_ cr) (if (= (creature-r cr) r) (= (creature-c cr) c) #f)) (%bl-seen g))))
 ; Whether CR is a creature in sight, not one only sensed: what breaks a
-; camp (game.x), and what a rest waits on.
+; camp (game.x), and what a rest waits on.  One the bot cannot see can
+; break a camp too, the game saying "You start up": the rest waits a
+; turn on that as well, or the camp is made and broken without end.
 (def %bl-in-sight?
   (fn (_ g cr) (if (null? cr) #f (state-in-sight? g (creature-r cr) (creature-c cr)))))
 ; Whether the game has just said TEXT.
@@ -1169,7 +1171,7 @@
     (def t (if up? tile-up tile-down))
     (def guardian (if (Vector ref 14 s) (%bl-guardian g) ()))
     (match
-      ((match ((%bl-in-sight? g shown) #f) ((%bl-told? g "shoots") #f) (#t (%bl-under? p (%bl-mark g s who (lit ready))))) (%bl-rest! g))
+      ((match ((%bl-in-sight? g shown) #f) ((%bl-told? g "shoots") #f) ((%bl-told? g "You start up") #f) (#t (%bl-under? p (%bl-mark g s who (lit ready))))) (%bl-rest! g))
       ((not (null? guardian)) (%bl-hunt! g s guardian))
       ((if (Vector ref 14 s) (%bl-to-frontier! g s) #f) ())
       ((Vector ref 14 s) (do (Vector set! 14 #f s) (%bl-unstick! g s)))
@@ -1244,7 +1246,7 @@
           (%bl-toward-creature! g s foe)))
       ((if (null? food) #f (< (player-food p) hungry))
         (do (%bl-use! g "e" food) (Vector set! 3 (+ 1 (Vector ref 3 s)) s)))
-      ((match ((%bl-in-sight? g shown) #f) ((%bl-told? g "shoots") #f) (#t (%bl-under? p (%bl-mark g s who (lit rest))))) (%bl-rest! g))
+      ((match ((%bl-in-sight? g shown) #f) ((%bl-told? g "shoots") #f) ((%bl-told? g "You start up") #f) (#t (%bl-under? p (%bl-mark g s who (lit rest))))) (%bl-rest! g))
       ((%bl-pour? g oil lamp)
         (do (%bl-use! g "f" oil) (Vector set! 10 (+ 1 (Vector ref 10 s)) s)))
       ((if (null? weapon) #f (if (same? weapon (player-weapon p)) #f (< 0 (%bl-weapon-worth g weapon))))
@@ -1503,7 +1505,7 @@
     (def p (game-player g))
     (def keys (List reverse (Vector ref 0 %bl-pressed)))
     (Vector set! 0 () %bl-pressed)
-    (%bl-line (Str8 str (game-turn g)) " L" (Str8 str (game-depth g)) " hp " (Str8 str (player-hp p)) "/" (Str8 str (player-hpmax p))
+    (%bl-line (Str8 str (game-turn g)) " L" (Str8 str (game-depth g)) " t" (Str8 str (int/ (Sys clock) 1000)) " hp " (Str8 str (player-hp p)) "/" (Str8 str (player-hpmax p))
               " at " (Str8 str (player-r p)) "," (Str8 str (player-c p))
               " [" (Str8 join "" (List map (fn (_ k) (if (str? k) k (Str8 append "<" (symbol->str k) ">"))) keys)) "]  "
               (Str8 join " | " (game-messages g)))))
