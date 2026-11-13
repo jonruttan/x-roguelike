@@ -997,9 +997,9 @@
 ; The slow FOE beside the player, outpaced: struck on the turn it cannot
 ; answer; on the turn it can, one not yet after the player waited on,
 ; one that follows stepped clear of, and one that stays struck, two
-; blows to its one.  With nowhere clear to step, one whose fight WHO
-; would not start is walked away from, and any other struck all the
-; same.
+; blows to its one.  With nowhere clear of every hostile to step, a step
+; out of its reach all the same, so its turn goes on following; with
+; none, it is struck.
 (def %bl-outpace!
   (fn (_ g s who foe)
     (def stood (pair foe (pair (creature-r foe) (creature-c foe))))
@@ -1007,7 +1007,7 @@
            ((not (%bl-stirring? s foe)) (%bl-key! g "s"))
            ((%bl-stays? s foe) (%bl-toward-creature! g s foe))
            ((%bl-clear-step! g) (Vector set! 16 stood s))
-           ((if (%bl-worth? g who foe) #f (%bl-away! g foe)) ())
+           ((%bl-away! g foe) (Vector set! 16 stood s))
            (#t (%bl-toward-creature! g s foe)))))
 ; Whether to wait for CR to come: slow, awake, and two cells off, so its
 ; next step brings it beside the player on a turn it cannot strike.
@@ -1501,7 +1501,8 @@
     step))
 
 ; With nothing pressing: what lies here, an item within reach (within
-; GREED with a hostile in view), a foe in view within CHASE whose fight
+; GREED with a hostile in view, unless already on the way to it, so a
+; hostile coming into view and out again does not turn the bot about), a foe in view within CHASE whose fight
 ; is worth it to COURAGE, the errand on a world of screens, the giver, the level
 ; until CURIOSITY of it is seen, the stairs.  A foe it cannot reach is
 ; passed by.
@@ -1510,9 +1511,10 @@
     (def p (game-player g))
     (def giver (%bl-beside g (fn (_ cr) (creature-trait? cr (lit talks)))))
     (def here (%bl-wanted-at g s (player-r p) (player-c p)))
-    (def reach (if (null? shown) 9999 (%bl-at who (lit greed))))
+    (def wanted? (fn (_ r c) (not (null? (%bl-wanted-at g s r c)))))
+    (def reach (match ((null? shown) 9999) ((not (null? (%bl-kept g s (lit item) wanted? 9999))) 9999) (#t (%bl-at who (lit greed)))))
     (def to-item (if (if (< 0 reach) (%bl-any-wanted? g s) #f)
-                   (%bl-step-within g s (lit item) (fn (_ r c) (not (null? (%bl-wanted-at g s r c)))) reach) ()))
+                   (%bl-step-within g s (lit item) wanted? reach) ()))
     (def shoots? (if (null? shown) #f (creature-trait? shown (lit ranged))))
     (def step-to
       (fn (_ tag cr most) (%bl-step-within g s tag (fn (_ r c) (if (= r (creature-r cr)) (= c (creature-c cr)) #f)) most)))
