@@ -762,6 +762,7 @@
           (match ((not (map-in? m r c)) best) ((not (map-walkable? m r c)) best)
                  ((not (null? (%bl-seen-at g r c))) best)
                  ((not (null? (traps-found-at g r c))) best)
+                 ((creatures-door-diagonal? m (player-r p) (player-c p) (first (rest d)) (rest (rest d))) best)
                  ((< (first best) (far r c)) (pair (far r c) (first d)))
                  (#t best)))
         (pair (far (player-r p) (player-c p)) ()) %bl-dirs))
@@ -1365,6 +1366,14 @@
               ((not (if (Vector ref 34 s) #t (%bl-under? p (%bl-at who (lit quaff))))) #f)
               (#t (do (Vector set! 34 #t s) (%bl-away! g shown))))
         ())
+      ; One that shoots, in whose line the player stands, whose fight is
+      ; not worth it: a step out of its line, not on under its fire.
+      ((match ((null? shown) #f) ((not (null? foe)) #f)
+              ((not (if (creature-trait? shown (lit ranged)) #t (creature-trait? shown (lit breath)))) #f)
+              ((not (%bl-in-line? shown (player-r p) (player-c p))) #f)
+              ((%bl-worth? g who shown) #f)
+              (#t (%bl-away! g shown)))
+        ())
       ((if (null? food) #f (< (player-food p) hungry))
         (do (%bl-use! g "e" food) (Vector set! 3 (+ 1 (Vector ref 3 s)) s)))
       ((match ((%bl-in-sight? g shown) #f) ((%bl-told? g "shoots") #f) ((%bl-told? g "You start up") #f) (#t (%bl-under? p (%bl-mark g s who (lit rest))))) (%bl-rest! g))
@@ -1528,7 +1537,7 @@
     (def there? (if (null? at) #f (if (= (first at) (player-r p)) (= (rest at) (player-c p)) #f)))
     (def step
       (match ((null? cr) ()) ((null? was) ())
-             ((if (creature-trait? cr (lit ranged)) #f (not (%bl-worth? g who cr))) ())
+             ((not (%bl-worth? g who cr)) ())
              (seen? (step-to (lit quarry) cr (%bl-at who (lit chase))))
              (there? ())
              (#t (%bl-step-within g s (lit quarry) (fn (_ r c) (if (= r (first at)) (= c (rest at)) #f)) (%bl-at who (lit chase))))))
