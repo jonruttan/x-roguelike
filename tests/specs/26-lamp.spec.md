@@ -254,3 +254,66 @@ pours N seconds in with f, to FULL at the most.
 ```
 ---
     777
+
+## put out
+
+### x puts the lamp out: it burns no oil and sight is the cells beside; x lights it again, and it burns
+
+```roguelike
+(def g (spec-game-on (spec-set-named "delve") 4 ()))
+(def p (game-player g))
+(def m (game-map g))
+(def in-view (fn (_) (List length (List filter (fn (_ rc) (map-visible? m (first rc) (rest rc)))
+                                     (List flat-map (fn (_ r) (List map (fn (_ c) (pair r c)) (List range 0 (map-cols m)))) (List range 0 (map-rows m)))))))
+(game-creatures! g ())
+(game-key! g ".")
+(def bright (in-view))
+(game-key! g "x")
+(def said-out (first (game-log g)))
+(def oil (player-lamp p))
+(game-creatures! g ())
+(game-key! g ".")
+(game-creatures! g ())
+(game-key! g ".")
+(def kept (= oil (player-lamp p)))
+(def dim (in-view))
+(game-key! g "x")
+(def said-lit (first (game-log g)))
+(game-creatures! g ())
+(game-key! g ".")
+(write (list said-out kept (< 9 bright) (not (< 9 dim)) said-lit (< 9 (in-view)) (< (player-lamp p) oil)))
+```
+---
+    ("You put out your lamp." #t #t #t "You light your lamp." #t #t)
+
+### a dry lamp put out is not lit again: x says so and takes no turn
+
+```roguelike
+(def g (spec-game-on (spec-set-named "delve") 4 ()))
+(def p (game-player g))
+(game-creatures! g ())
+(game-key! g "x")
+(player-lamp! p 0)
+(def t (game-turn g))
+(game-key! g "x")
+(write (list (player-doused? p) (= t (game-turn g)) (first (game-log g))))
+```
+---
+    (#t #t "Your lamp is dry.")
+
+### a lamp put out is saved so, and read back out
+
+```roguelike
+(def g (spec-game-on (spec-set-named "delve") 4 ()))
+(game-creatures! g ())
+(game-key! g "x")
+(def tmp (File temp "/tmp/x-roguelike-"))
+(File close (first tmp))
+(def path (rest tmp))
+(save-write! g path)
+(def h (save-read path (spec-set-named "delve") 24 80))
+(File unlink path)
+(write (list (player-doused? (game-player g)) (player-doused? (game-player h))))
+```
+---
+    (#t #t)

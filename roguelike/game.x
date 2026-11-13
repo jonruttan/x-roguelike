@@ -51,7 +51,7 @@
   game-deepest game-deepest! game-rows game-cols game-param game-param1 game-new game-epitaph! game-kept game-quests
   game-messages game-messages! game-log game-band game-band-from band-to band-prop1 game-forms
   player-r player-c player-at! player-hp player-hp! player-hpmax player-level player-food player-food! player-lamp player-lamp!
-  player-condition player-tick! player-armour player-rings player-gold
+  player-doused? player-doused! player-condition player-tick! player-armour player-rings player-gold
   game-daylight? state-in-sight? state-say! state-tell! state-text state-clear-messages! state-clear-log! state-roll state-chance? state-dir state-dirs
   state-creature-at state-creature-named state-items-at state-free? state-ring? state-ring-bonus item-class? item-class-in? item-class
   item-name item-letter creature-name creature-r creature-c creature-trait? creature-prop creature-kind state-a-kind
@@ -492,28 +492,37 @@
 
 ; The lamp, where the set has (lamp FULL LOW): FULL seconds of oil when
 ; full, lit full the first turn the player is there with none lit yet,
-; then burning a second a second but in a camp, said when it is down to
-; LOW and when
-; it goes out.
+; then burning a second a second but in a camp or put out, said when it
+; is down to LOW and when it goes out.
 (def %gm-lamp!
   (fn (_ g was now)
     (def spec (game-param g (lit lamp) ()))
     (def p (game-player g))
     (def before (player-lamp p))
     (def left ((fn (_ n) (if (< n 0) 0 n)) (- before (- now was))))
-    (match ((null? spec) ()) ((%gm-camping? g) ())
+    (match ((null? spec) ()) ((%gm-camping? g) ()) ((player-doused? p) ())
            ((< before 0) (do (player-lamp! p (List ref 0 spec)) (state-tell! g (lit lamp-lit) "You light your lamp." ())))
            (#t (do (player-lamp! p left)
                    (match ((%gm-reached? 0 before left) (state-tell! g (lit lamp-out) "Your lamp goes out." ()))
                           ((%gm-reached? (List ref 1 spec) before left) (state-tell! g (lit lamp-low) "Your lamp burns low." ()))
                           (#t ())))))))
 
-; Whether the lamp is out under the set's (lamp ...): spent, or put out
-; for a camp.
+; Whether the lamp is out under the set's (lamp ...): spent, put out for
+; a camp, or put out by the player.
 (def %gm-dark?
   (fn (_ g)
-    (match ((null? (game-param g (lit lamp) ())) #f) ((%gm-camping? g) #t)
+    (match ((null? (game-param g (lit lamp) ())) #f) ((%gm-camping? g) #t) ((player-doused? (game-player g)) #t)
            (#t (= 0 (player-lamp (game-player g)))))))
+; The lamp put out, or lit again: a turn.  Lit again only with oil in
+; it; nothing to do in a set with no lamp.
+(def %gm-douse!
+  (fn (_ g)
+    (def p (game-player g))
+    (match ((null? (game-param g (lit lamp) ())) (do (state-tell! g (lit no-lamp) "You have no lamp." ()) #f))
+           ((player-doused? p)
+             (if (= 0 (player-lamp p)) (do (state-tell! g (lit lamp-dry) "Your lamp is dry." ()) #f)
+               (do (player-doused! p #f) (state-tell! g (lit lamp-lit) "You light your lamp." ()) (%gm-light! g) #t)))
+           (#t (do (player-doused! p #t) (state-tell! g (lit lamp-doused) "You put out your lamp." ()) (%gm-light! g) #t)))))
 ; How far the rings worn light with the lamp out, the sum of their
 ; (bonus light N); 0 with the lamp lit or none worn.  A front end draws
 ; what is in view by it in a light of its own.
@@ -890,6 +899,7 @@
     (pair "d" (fn (_ g) (%gm-ask-item! g "Drop what?" () (fn (_ it) (items-drop! g it) #t))))
     (pair "o" (fn (_ g) (do (game-exploring! g 0) (game-explore! g) #f)))
     (pair "c" (fn (_ g) (%gm-make-camp! g)))
+    (pair "x" (fn (_ g) (%gm-douse! g)))
     (pair "L" (fn (_ g) (%gm-look! g "Lately:" (List reverse (List take 20 (game-log g))))))
     (pair "m" (fn (_ g) (if (game-screens? g) (%gm-look! g (state-text g (lit world-map) "The world:" ()) (%gm-world-lines g))
                           (do (state-tell! g (lit no-world-map) "You know only the level you stand on." ()) #f))))
@@ -1075,6 +1085,7 @@
           "w      wield a weapon       W  T   wear armour, take it off"
           "P  R   put on a ring, take it off"
           "f      fill the lamp from a flask"
+          "x      put the lamp out, or light it again"
           "c      camp: rest with the lamp out, till healed or roused; a key stops"
           "S      save and leave       Q      quit"
           "?      these keys           Esc    stop asking")))
@@ -1084,7 +1095,7 @@
 (def game-actions
   (list (pair "s" "Search beside you") (pair "." "Rest a turn") (pair "c" "Camp till healed or roused")
         (pair "q" "Quaff a potion") (pair "r" "Read a scroll or a page") (pair "z" "Zap a wand")
-        (pair "e" "Eat") (pair "f" "Fill the lamp from a flask")
+        (pair "e" "Eat") (pair "f" "Fill the lamp from a flask") (pair "x" "Put out or light the lamp")
         (pair "w" "Wield a weapon") (pair "W" "Wear armour") (pair "T" "Take off armour")
         (pair "P" "Put on a ring") (pair "R" "Take off a ring") (pair "d" "Drop a thing")
         (pair "v" "Who is in view") (pair "L" "What has been said lately") (pair "m" "The map of the world")

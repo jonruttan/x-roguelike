@@ -45,7 +45,7 @@
   player-r player-c player-at! player-hp player-hp! player-hpmax player-hpmax! player-str player-str!
   player-strmax player-strmax! player-level player-level! player-exp player-exp! player-gold player-gold!
   player-armour player-armour! player-weapon player-weapon! player-rings player-rings! player-food
-  player-food! player-conditions player-conditions! player-lamp player-lamp!
+  player-food! player-conditions player-conditions! player-lamp player-lamp! player-doused? player-doused!
   creature-make creature-kind creature-r creature-c creature-hp creature-state creature-carried
   creature-carried! creature-name creature-whole creature-whole!
   item-make item-form item-class item-name item-count item-charges item-enchant item-letter item-letter!
@@ -157,7 +157,7 @@
     (List append
       (list (pair (lit saved) (List append (list (game-seed g) (game-depth g) (game-turn g) (game-deepest g) (if (game-goal-placed? g) 1 0)) screen (list (game-clock g))))
             (list (lit player) (player-r p) (player-c p) (player-hp p) (player-hpmax p) (player-str p) (player-strmax p)
-                  (player-level p) (player-exp p) (player-gold p) (player-food p) (player-lamp p))
+                  (player-level p) (player-exp p) (player-gold p) (player-food p) (player-lamp p) (if (player-doused? p) 1 0))
             (pair (lit conditions) (List flat-map (fn (_ c) (list (symbol->str (first c)) (rest c))) (player-conditions p)))
             (pair (lit known) (game-known g))
             (pair (lit told) (game-told g))
@@ -302,6 +302,7 @@
     (player-level! p (List ref 6 a)) (player-exp! p (List ref 7 a))
     (player-gold! p (List ref 8 a)) (player-food! p (List ref 9 a))
     (when (< 10 (List length a)) (player-lamp! p (List ref 10 a)))
+    (player-doused! p (if (< 11 (List length a)) (= 1 (List ref 11 a)) #f))
     (player-conditions! p (%sv-conditions (%sv-one forms (lit conditions))))
     (def worn (%sv-one forms (lit worn)))
     (player-weapon! p (%sv-by-letter (game-pack g) (List ref 0 worn)))
