@@ -428,7 +428,7 @@
 (def %bl-explored? (fn (_ g s) (if (%bl-here? g s) (Vector ref 0 s) #f)))
 (def %bl-explored! (fn (_ g s) (Vector set! 0 #t s) (Vector set! 1 (%bl-place g) s) (Vector set! 4 #f s) (Vector set! 25 #f s)))
 (def %bl-new-level! (fn (_ g s) (Vector set! 0 #f s) (Vector set! 1 (%bl-place g) s) (Vector set! 4 #f s) (Vector set! 9 () s) (Vector set! 12 () s)
-    (Vector set! 25 #f s) (Vector set! 26 () s) (Vector set! 28 0 s)
+    (Vector set! 25 #f s) (Vector set! 26 () s) (Vector set! 28 0 s) (Vector set! 31 (List length (%bl-secrets g)) s) (Vector set! 33 #f s)
     (Vector set! 13 (game-turn g) s) (Vector set! 14 #f s) (Vector set! 15 () s) (Vector set! 17 () s) (Vector set! 19 () s) (Vector set! 20 () s) (Vector set! 21 () s) (Vector set! 23 () s) (Vector set! 0 () %bl-slowed) (Vector set! 0 0 %bl-bold) (Vector set! 0 () %bl-sat)))
 
 ; With nowhere at all to go on a level: the first time, the cells beside
@@ -661,7 +661,8 @@
     (%bl-key! g "s")))
 ; With the goal not yet held, a search for a secret door: here, at a
 ; place to search from, or a step toward the nearest within SEARCH
-; steps, a pocket's before any other.  With no light left for the
+; steps, a pocket's before any other; none on a level a survey has
+; shown, which opens them all.  With no light left for the
 ; level the lamp is put out first and the walls searched in the dark,
 ; a search beside needing none; it is lit again when there is light to
 ; spare or nothing left to search.  #f with nothing to do.
@@ -677,7 +678,7 @@
         (if (%bl-search-spot? g s pocket? (player-r p) (player-c p)) (lit here)
           (%bl-step-within g s tag (fn (_ r c) (%bl-search-spot? g s pocket? r c)) most))))
     (def lit? (if (str=? (%bl-env "BALANCE_DARK_SEARCH" "") "") (%bl-light-left? g s) #t))
-    (def a (match ((< most 1) ()) ((items-goal-held? g) ())
+    (def a (match ((< most 1) ()) ((items-goal-held? g) ()) ((Vector ref 33 s) ())
                   (#t ((fn (_ a) (if (null? a) (aim (lit wall) #f) a)) (aim (lit pocket) #t)))))
     (def out? (player-doused? p))
     (when (if %bl-tracing (not lit?) #f)
@@ -1272,7 +1273,12 @@
           (when %bl-tracing (%bl-line "secret doors here: " (%bl-secrets-text g)))))
     ; A secret door found opens ground to be looked over.
     (when (%bl-told? g "You find a secret door.")
-      (do (Vector set! 0 #f s) (Vector set! 25 #t s) (Vector set! 27 (+ 1 (Vector ref 27 s)) s)))
+      (do (Vector set! 0 #f s) (Vector set! 25 #t s) (Vector set! 27 (+ 1 (Vector ref 27 s)) s)
+          (Vector set! 31 (- (Vector ref 31 s) 1) s)))
+    ; A survey read opens every secret door on the level: none is left
+    ; to search for, and those it opened are counted, for the tally.
+    (when (if (Vector ref 33 s) #f (%bl-told? g "The level's shape comes to you."))
+      (do (Vector set! 33 #t s) (Vector set! 32 (+ (Vector ref 32 s) (Vector ref 31 s)) s) (Vector set! 31 0 s)))
     ; The lamp burnt here: what it has fallen by since the last turn, a
     ; flask poured not counted.
     (when (< (player-lamp p) (Vector ref 29 s))
@@ -1540,13 +1546,13 @@
 ; the rest, . ground seen, ? ground not seen, # other seen, and blank.
 ; For the trace, not the bot: where the level's secret doors are, R,C
 ; each, or "none".
-(def %bl-secrets-text
+(def %bl-secrets
   (fn (_ g)
     (def m (game-map g))
-    (def at (List flat-map (fn (_ r) (List map (fn (_ c) (Str8 append (Str8 str r) "," (Str8 str c)))
-                                          (List filter (fn (_ c) (= (map-tile m r c) tile-secret)) (List range 0 (map-cols m)))))
-              (List range 0 (map-rows m))))
-    (if (null? at) "none" (Str8 join " " at))))
+    (List flat-map (fn (_ r) (List map (fn (_ c) (Str8 append (Str8 str r) "," (Str8 str c)))
+                                   (List filter (fn (_ c) (= (map-tile m r c) tile-secret)) (List range 0 (map-cols m)))))
+          (List range 0 (map-rows m)))))
+(def %bl-secrets-text (fn (_ g) ((fn (_ at) (if (null? at) "none" (Str8 join " " at))) (%bl-secrets g))))
 (def %bl-chart
   (fn (_ g)
     (def m (game-map g))
@@ -1662,7 +1668,7 @@
     (def g (%bl-start set play))
     (unless (str=? path "") (File write-all path ""))
     (def kept (Vector of (str=? path "")))
-    (def s (Vector of #f "" 0 0 #f () () 0 () () 0 0 () 0 #f () () () -1 () () () 0 () () #f () 0 0 -1 ()))
+    (def s (Vector of #f "" 0 0 #f () () 0 () () 0 0 () 0 #f () () () -1 () () () 0 () () #f () 0 0 -1 () 0 0 #f))
     (def arrivals (Vector of (list (%bl-arrival g))))
     (def loop
       (fn (self turn stalled)
@@ -1685,7 +1691,7 @@
     (list seed (if (null? (game-over g)) (lit capped) (game-over g)) (game-epitaph g) (game-deepest g) (game-turn g)
           (Vector ref 2 s) (Vector ref 3 s) (List reverse (Vector ref 0 arrivals))
           (Vector ref 6 s) (if (null? (Vector ref 6 s)) (List length (Vector ref 5 s)) (Vector ref 7 s))
-          (Vector ref 10 s) (Vector ref 11 s) (Vector ref 27 s))))
+          (Vector ref 10 s) (Vector ref 11 s) (Vector ref 27 s) (Vector ref 32 s))))
 
 ; The numbers in the words of S.
 (def %bl-nums (fn (_ s) (List map %bl-int (List reject (fn (_ w) (str=? w "")) (Str8 split " " s)))))
@@ -1730,7 +1736,7 @@
           (unless (null? cr)
             (do (def hp (creature-prop cr (lit hp) (list 1 1)))
                 (creature-hp! cr (state-roll (game-rng g) (first hp) (List ref 1 hp)))))
-          (def s (Vector of #f "" 0 0 #f () () 0 () () 0 0 () 0 #f () () () -1 () () () 0 () () #f () 0 0 -1 ()))
+          (def s (Vector of #f "" 0 0 #f () () 0 () () 0 0 () 0 #f () () () -1 () () () 0 () () #f () 0 0 -1 () 0 0 #f))
           (def depth (game-depth g))
           (def start (game-turn g))
           (def loop
@@ -1877,7 +1883,8 @@
     (%bl-line "")
     (%bl-line "A game, on average: turns " (mean 4) "  potions drunk " (mean 5) "  foods eaten " (mean 6)
               "  flasks poured " (mean 10) "  turns dark " (mean 11))
-    (%bl-line "Secret doors found, in all: " (Str8 str (List fold (fn (_ n r) (+ n (List ref 12 r))) 0 games)))))
+    (%bl-line "Secret doors found, in all: " (Str8 str (List fold (fn (_ n r) (+ n (List ref 12 r))) 0 games))
+              "  opened by a survey: " (Str8 str (List fold (fn (_ n r) (+ n (List ref 13 r))) 0 games)))))
 
 ; --- the run -----------------------------------------------------------------
 
