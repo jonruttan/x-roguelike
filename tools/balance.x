@@ -573,23 +573,49 @@
 ; Whether, past the wall a step from R C along DR DC, a block two deep
 ; and three across lies unseen, the cells straight behind the wall among
 ; them: room enough for the smallest room a secret door hides, two deep
-; and three wide, its door anywhere along it.
+; and three wide, its door anywhere along it, and its far side inside
+; BOX, the block the seen level spans.
 (def %bl-unseen-behind?
-  (fn (_ m r c dr dc)
+  (fn (_ m box r c dr dc)
     (def unseen?
       (fn (_ k j)
         (def rr (+ r (+ (* k dr) (* j dc))))
         (def cc (+ c (+ (* k dc) (* j dr))))
         (if (map-in? m rr cc) (not (map-seen? m rr cc)) #f)))
-    (List any?
-      (fn (_ from)
-        (List all? (fn (_ k) (List all? (fn (_ j) (unseen? k j)) (List range from (+ from 3)))) (list 2 3)))
-      (list -2 -1 0))))
+    (if (List any?
+          (fn (_ from)
+            (List all? (fn (_ k) (List all? (fn (_ j) (unseen? k j)) (List range from (+ from 3)))) (list 2 3)))
+          (list -2 -1 0))
+      (%bl-in-box? box (+ r (* 3 dr)) (+ c (* 3 dc)))
+      #f)))
+; The rows and columns the seen cells span, (TOP BOTTOM LEFT RIGHT): the
+; level is rooms packed in a block, and unseen ground inside the block
+; is room enough for one, where rock past its edge is only rock.
+(def %bl-seen-box
+  (fn (_ m)
+    (def rows (List filter (fn (_ r) (List any? (fn (_ c) (map-seen? m r c)) (List range 0 (map-cols m)))) (List range 0 (map-rows m))))
+    (def cols (List filter (fn (_ c) (List any? (fn (_ r) (map-seen? m r c)) rows)) (List range 0 (map-cols m))))
+    (if (null? rows) (list 0 -1 0 -1) (list (first rows) (first (List reverse rows)) (first cols) (first (List reverse cols))))))
+(def %bl-in-box?
+  (fn (_ box r c)
+    (if (< r (first box)) #f (if (< (List ref 1 box) r) #f (if (< c (List ref 2 box)) #f (not (< (List ref 3 box) c)))))))
+; Whether the unseen ground at R C is a pocket the level closes round:
+; of the four ways out of it, three meet a seen cell within 16 unseen
+; ones, not the map's edge.
+(def %bl-enclosed?
+  (fn (_ m r c)
+    (def shut?
+      (fn (self rr cc dr dc n)
+        (match ((not (map-in? m rr cc)) #f) ((map-seen? m rr cc) #t) ((< 15 n) #f)
+               (#t (self (+ rr dr) (+ cc dc) dr dc (+ n 1))))))
+    (< 2 (List length (List filter (fn (_ d) (shut? (+ r (first d)) (+ c (rest d)) (first d) (rest d) 0))
+                                   (list (pair -1 0) (pair 1 0) (pair 0 -1) (pair 0 1)))))))
 ; Whether R C is a place to search from: walkable and seen, a wall beside
-; it across a side not yet searched, unseen ground behind that wall.
-; Slot 26 of S holds the wall cells searched beside, a vector by cell.
+; it across a side not yet searched, unseen ground behind that wall, and
+; with POCKET? that ground a pocket.  Slot 26 of S holds the wall cells
+; searched beside, a vector by cell.
 (def %bl-search-spot?
-  (fn (_ g s r c)
+  (fn (_ g s pocket? r c)
     (def m (game-map g))
     (def cols (map-cols m))
     (def searched (Vector ref 26 s))
@@ -599,7 +625,9 @@
           (def wr (+ r (first d)))
           (def wc (+ c (rest d)))
           (match ((not (%bl-wall-shown? m wr wc)) #f) ((Vector ref (+ (* wr cols) wc) searched) #f)
-                 (#t (%bl-unseen-behind? m r c (first d) (rest d)))))
+                 ((not (%bl-unseen-behind? m (Vector ref 30 s) r c (first d) (rest d))) #f)
+                 (pocket? (%bl-enclosed? m (+ r (* 2 (first d))) (+ c (* 2 (rest d)))))
+                 (#t #t)))
         (list (pair -1 0) (pair 1 0) (pair 0 -1) (pair 0 1)))
       #f)))
 ; A search here, every wall beside the player kept as searched.
@@ -620,17 +648,23 @@
     (%bl-key! g "s")))
 ; With light left for the level and the goal not yet held, a search for
 ; a secret door: here, at a place to search from, or a step toward the
-; nearest within SEARCH steps.  #f with none.
+; nearest within SEARCH steps, a pocket's before any other.  #f with
+; none.
 (def %bl-to-wall!
   (fn (_ g s who)
     (def m (game-map g))
     (def p (game-player g))
     (def most (%bl-at who (lit search)))
     (when (null? (Vector ref 26 s)) (Vector set! 26 (Vector make (* (map-rows m) (map-cols m)) #f) s))
+    (Vector set! 30 (%bl-seen-box m) s)
+    (def go
+      (fn (_ tag pocket?)
+        (if (%bl-search-spot? g s pocket? (player-r p) (player-c p)) (do (%bl-search-here! g s) #t)
+          ((fn (_ d) (if (null? d) #f (do (%bl-key! g (%bl-key-for (first d) (rest d))) #t)))
+           (%bl-step-within g s tag (fn (_ r c) (%bl-search-spot? g s pocket? r c)) most)))))
     (match ((< most 1) #f) ((items-goal-held? g) #f) ((if (str=? (%bl-env "BALANCE_DARK_SEARCH" "") "") (not (%bl-light-left? g s)) #f) #f)
-           ((%bl-search-spot? g s (player-r p) (player-c p)) (do (%bl-search-here! g s) #t))
-           (#t ((fn (_ d) (if (null? d) #f (do (%bl-key! g (%bl-key-for (first d) (rest d))) #t)))
-                (%bl-step-within g s (lit wall) (fn (_ r c) (%bl-search-spot? g s r c)) most))))))
+           ((go (lit pocket) #t) #t)
+           (#t (go (lit wall) #f)))))
 
 ; --- who the bot is ----------------------------------------------------------
 
@@ -1516,7 +1550,8 @@
     (%bl-line (Str8 str (game-turn g)) " L" (Str8 str (game-depth g)) " t" (Str8 str (int/ (Sys clock) 1000)) " hp " (Str8 str (player-hp p)) "/" (Str8 str (player-hpmax p))
               " at " (Str8 str (player-r p)) "," (Str8 str (player-c p))
               " [" (Str8 join "" (List map (fn (_ k) (if (str? k) k (Str8 append "<" (symbol->str k) ">"))) keys)) "]  "
-              (Str8 join " | " (game-messages g)))))
+              (Str8 join " | " (game-messages g)))
+    (when (List any? (fn (_ k) (if (str? k) (str=? k "{stairs found}") #f)) keys) (%bl-chart g))))
 
 ; The hostile creatures in view join those met, slot 5 of S, once each;
 ; the turn a weapon is first held is slot 6, and the count met by then
@@ -1597,7 +1632,7 @@
     (def g (%bl-start set play))
     (unless (str=? path "") (File write-all path ""))
     (def kept (Vector of (str=? path "")))
-    (def s (Vector of #f "" 0 0 #f () () 0 () () 0 0 () 0 #f () () () -1 () () () 0 () () #f () 0 0 -1))
+    (def s (Vector of #f "" 0 0 #f () () 0 () () 0 0 () 0 #f () () () -1 () () () 0 () () #f () 0 0 -1 ()))
     (def arrivals (Vector of (list (%bl-arrival g))))
     (def loop
       (fn (self turn stalled)
@@ -1664,7 +1699,7 @@
           (unless (null? cr)
             (do (def hp (creature-prop cr (lit hp) (list 1 1)))
                 (creature-hp! cr (state-roll (game-rng g) (first hp) (List ref 1 hp)))))
-          (def s (Vector of #f "" 0 0 #f () () 0 () () 0 0 () 0 #f () () () -1 () () () 0 () () #f () 0 0 -1))
+          (def s (Vector of #f "" 0 0 #f () () 0 () () 0 0 () 0 #f () () () -1 () () () 0 () () #f () 0 0 -1 ()))
           (def depth (game-depth g))
           (def start (game-turn g))
           (def loop
