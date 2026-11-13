@@ -1135,12 +1135,15 @@
           #t))))
 
 ; With the fight beside the player likely lost, a scroll read to get out
-; of it: stillness, panic, or a blink away.  What stillness holds is
+; of it: stillness, panic, or a blink away.  A blow from something
+; unseen, with no sight of it, counts as lost: its cost cannot be
+; weighed.  What stillness holds is
 ; remembered for as long as its (effect hold N) gives.  #f with none
 ; read.
 (def %bl-flee!
   (fn (_ g)
-    (def scroll (if (< (%bl-peril g) (player-hp (game-player g))) ()
+    (def unseen? (if (%bl-told? g "Something unseen hits") (= 0 (player-condition (game-player g) (lit seeing))) #f))
+    (def scroll (if (if unseen? #f (< (%bl-peril g) (player-hp (game-player g)))) ()
                   (%bl-first-effect g (lit scroll) (list (lit hold) (lit fear) (lit teleport)))))
     (def e (if (null? scroll) () (item-prop scroll (lit effect) ())))
     (if (null? scroll) #f
