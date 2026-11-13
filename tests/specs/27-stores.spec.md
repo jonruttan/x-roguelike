@@ -24,6 +24,15 @@ asked and paid.
 ---
     ('choose "The innkeeper: what will you have?" ("a) cheese, 4 gold" "b) bread, 4 gold" "s) sell something" "" "You have 0 gold."))
 
+### the counter's answers, for a gamepad: each of the goods by its letter, and selling
+
+```roguelike
+(import roguelike/game game-answers)
+(write (game-answers g))
+```
+---
+    (("a" . "cheese, 4 gold") ("b" . "bread, 4 gold") ("s" . "Sell something"))
+
 ## buying
 
 ### a letter pays the price, puts the thing in the pack and leaves the counter up with the purse counted again

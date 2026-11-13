@@ -54,7 +54,7 @@
   player-condition player-tick! player-armour player-rings player-gold
   game-daylight? state-in-sight? state-say! state-tell! state-text state-clear-messages! state-clear-log! state-roll state-chance? state-dir state-dirs
   state-creature-at state-creature-named state-items-at state-free? state-ring? state-ring-bonus item-class? item-class-in? item-class
-  item-name creature-name creature-r creature-c creature-trait? creature-prop creature-kind state-a-kind
+  item-name item-letter creature-name creature-r creature-c creature-trait? creature-prop creature-kind state-a-kind
   creature-state creature-hp creature-whole creature-conditions player-conditions state-dist state-adjacent?)
 (import roguelike/combat combat-player-attacks! combat-hurt-player!)
 (import roguelike/creatures
@@ -1079,4 +1079,29 @@
           "S      save and leave       Q      quit"
           "?      these keys           Esc    stop asking")))
 
-(provide roguelike/game game-make game-key! game-waiting? game-explore! game-more! game-score game-score-lines game-score-text game-help game-glow)
+; The commands a gamepad's menu of actions offers, (KEY . LABEL) each,
+; in the order shown: those its buttons do not.
+(def game-actions
+  (list (pair "s" "Search beside you") (pair "." "Rest a turn") (pair "c" "Camp till healed or roused")
+        (pair "q" "Quaff a potion") (pair "r" "Read a scroll or a page") (pair "z" "Zap a wand")
+        (pair "e" "Eat") (pair "f" "Fill the lamp from a flask")
+        (pair "w" "Wield a weapon") (pair "W" "Wear armour") (pair "T" "Take off armour")
+        (pair "P" "Put on a ring") (pair "R" "Take off a ring") (pair "d" "Drop a thing")
+        (pair "v" "Who is in view") (pair "L" "What has been said lately") (pair "m" "The map of the world")
+        (pair "?" "The keys")))
+
+; The answers the question G is asking takes, (KEY . LABEL) each, for a
+; front end with no letters to type: the pack's items it can take, yes
+; and no, or a choice's; nil where it takes a direction or goes on.
+(def game-answers
+  (fn (_ g)
+    (def q (game-ask g))
+    (match ((null? q) ())
+           ((eq? (first q) (lit item))
+             (List map (fn (_ it) (pair (item-letter it) (Str8 append (items-name g it) (items-worn g it))))
+               (List filter (fn (_ it) (item-class-in? it (List ref 3 q))) (game-pack g))))
+           ((eq? (first q) (lit yn)) (list (pair "y" "Yes") (pair "n" "No")))
+           ((eq? (first q) (lit choose)) (if (< 4 (List length q)) (List ref 4 q) ()))
+           (#t ()))))
+
+(provide roguelike/game game-make game-key! game-waiting? game-explore! game-more! game-score game-score-lines game-score-text game-help game-glow game-actions game-answers)

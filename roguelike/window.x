@@ -30,7 +30,7 @@
 (import x/core/doors int& int+ int- int* int/ int< int= str-make str->ptr ptr-set! str-byte-ref char->int str-byte-len)
 (import roguelike/state game-over game-over! game-exploring? game-exploring! game-band band-name game-place game-ask)
 (import roguelike/frame frame-art frame-tile-size frame-pan frame-pan!)
-(import roguelike/game game-key! game-waiting? game-explore!)
+(import roguelike/game game-key! game-waiting? game-explore! game-actions game-answers)
 (import roguelike/paint paint-width paint-height paint-make paint-screen paint-turn! paint-view! paint-frame! paint-flickers?
   paint-zoom paint-zoom! paint-animating? paint-step! paint-menu!)
 (import roguelike/pad pad-make pad-key pad-event? pad-fullscreen? pad-fullscreen!)
@@ -120,10 +120,11 @@
       (#t ((fn (_ hit) (if (null? hit) () (rest hit))) (List find (fn (_ e) (= (first e) code)) %wn-named))))))
 
 ; The window's cache A: [ARTS KEY ART PAD SOUND OPTIONS PAD? FRONT
-; DRAG], ARTS KEY and ART for %wn-art, the gamepad's state, the game's
-; sound or nil, the options (roguelike/options), whether the last key
-; came from the gamepad, so the prompts show its buttons, the class the
-; window is drawn through, Sdl or Web, and the drag under way.
+; DRAG ACTIONS], ARTS KEY and ART for %wn-art, the gamepad's state, the
+; game's sound or nil, the options (roguelike/options), whether the last
+; key came from the gamepad, so the prompts show its buttons, the class
+; the window is drawn through, Sdl or Web, the drag under way, and the
+; gamepad's menu of actions, the last one taken chosen.
 (def %wn-front (fn (_ a) (Vector ref 7 a)))
 
 ; The next event of window WIN and the key it is, (EVENT . KEY): a
@@ -324,11 +325,12 @@
       ; The frame goes on screen before the heap is collected: the
       ; collect's cost comes after the key's answer, not before it.  A
       ; key brings a dragged view back to the player.
+      ; A gamepad's Back: its menu of actions, when nothing is asked.
+      ((eq? key (lit actions))
+        (do (when (null? (game-ask g)) (%wn-actions! a p g win snd tick))
+            (self g a p win tick)))
       ((not (null? key))
-        (do (frame-pan! g 0 0)
-            (if (game-exploring? g) (game-exploring! g ()) (game-key! g key))
-            (sound-turn! snd g)
-            (%wn-turn-shown! a p g win snd tick)
+        (do (if (game-exploring? g) (game-exploring! g ()) (%wn-key! a p g win snd tick key))
             (self g a p win tick)))
       ; Any other event -- a resize, the window shown again -- may have
       ; lost what was presented: the frame is presented again.
@@ -376,6 +378,53 @@
     ((%wn-front a) show! win (List ref 2 (paint-frame! p g tick)))
     (sound-pump! snd)
     (Heap collect)))
+
+; KEY taken by game G as a turn's key: the view brought back to the
+; player, the turn shown, and what it asks answered by %wn-answer!.
+(def %wn-key!
+  (fn (_ a p g win snd tick key)
+    (frame-pan! g 0 0)
+    (game-key! g key)
+    (sound-turn! snd g)
+    (%wn-turn-shown! a p g win snd tick)
+    (%wn-answer! a p g win snd tick)))
+
+; --- the gamepad's menus -------------------------------------------------------
+
+; Menu M over game G headed HEADING, its items' text LINES: (take . ID)
+; for the item taken, back, or close when the window is closed; left
+; and right change nothing.
+(def %wn-choose
+  (fn (self a p g win m heading lines)
+    ((%wn-front a) show! win (List ref 2 (paint-menu! p g heading #f lines (menu-chosen m) (%wn-prompts a #f) (Vector ref 6 a))))
+    (def act (%wn-menu g a p win m heading #f #f (fn (_) lines)))
+    (if (if (pair? act) (eq? (first act) (lit change)) #f) (self a p g win m heading lines) act)))
+
+; The gamepad's menu of actions (game-actions): the one taken given the
+; game as its key; back shows the turn again.
+(def %wn-actions!
+  (fn (_ a p g win snd tick)
+    (def m (Vector ref 9 a))
+    (def act (%wn-choose a p g win m "Actions" (List map rest game-actions)))
+    (match ((eq? act (lit close)) (game-over! g (lit saved)))
+           ((pair? act) (%wn-key! a p g win snd tick (rest act)))
+           (#t ((%wn-front a) show! win (List ref 2 (paint-frame! p g tick)))))))
+
+; What game G asks answered from a menu of its answers (game-answers),
+; when the last key came from the gamepad, which has no letters to
+; type: the one taken given as its key, back as escape, until nothing
+; is asked that wants a letter.
+(def %wn-answer!
+  (fn (self a p g win snd tick)
+    (def answers (game-answers g))
+    (unless (if (Vector ref 6 a) (null? answers) #t)
+      ((fn (_ act)
+         (if (eq? act (lit close)) (game-over! g (lit saved))
+           (do (game-key! g (if (pair? act) (rest act) (lit escape)))
+               (sound-turn! snd g)
+               (%wn-turn-shown! a p g win snd tick)
+               (self a p g win snd tick))))
+       (%wn-choose a p g win (menu-make answers) (List ref 1 (game-ask g)) (List map rest answers))))))
 
 ; --- dragging the view ---------------------------------------------------------
 
@@ -462,7 +511,7 @@
 (def window-play
   (fn (_ front saved fresh arts font scale zoom title)
     (def o (options-read (options-path)))
-    (def a (Vector of arts "" () (pad-make) () (if (null? zoom) o (options-set o (lit zoom) zoom)) #f front ()))
+    (def a (Vector of arts "" () (pad-make) () (if (null? zoom) o (options-set o (lit zoom) zoom)) #f front () (menu-make game-actions)))
     ; Fullscreen on a Mac stays on the desktop's Space: a Space of its
     ; own slides in, and a switch back before the slide ends leaves an
     ; empty screen with the window gone.

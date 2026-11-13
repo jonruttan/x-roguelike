@@ -193,7 +193,8 @@
         (if (if (null? i) #t (not (< i (List length forms)))) #f
           (do (%qs-give! g (List ref i forms)) (game-quest-state! g (%qs-name q) (lit done)) #t))))
     (if (null? forms) (do (game-quest-state! g (%qs-name q) (lit done)) (%qs-look! g cr (data-prop q (lit done) ())))
-      (game-ask! g (list (lit choose) "Which will you take?" pick (List append (data-prop q (lit done) ()) (list "" choices)))))))
+      (game-ask! g (list (lit choose) "Which will you take?" pick (List append (data-prop q (lit done) ()) (list "" choices))
+                     (List map (fn (_ i) (pair (List ref i letters) (List ref i names))) (List range 0 (List length names))))))))
 
 ; The giver CR walked into: its quest opened, pressed, met, or over, a
 ; keeper with no quest or one over saying a line, over the counter when

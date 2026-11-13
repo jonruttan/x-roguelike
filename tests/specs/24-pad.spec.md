@@ -14,11 +14,11 @@ step it.
 (def s (pad-make))
 (write (list (pad-key s '(pad-down south 1) 0) (pad-key s '(pad-up south 1) 0)
              (pad-key s '(pad-down east 1) 0) (pad-key s '(pad-down right-shoulder 1) 0)
-             (pad-key s '(pad-down start 1) 0) (pad-key s '(pad-down guide 1) 0)
+             (pad-key s '(pad-down start 1) 0) (pad-key s '(pad-down back 1) 0) (pad-key s '(pad-down guide 1) 0)
              (pad-event? '(pad-axis left-x 0 1)) (pad-event? '(key-down 97 0 #f)) (pad-event? ())))
 ```
 ---
-    ("," () 'escape ">" 'pause () #t #f #f)
+    ("," () 'escape ">" 'pause 'actions () #t #f #f)
 
 ### an event with nothing after its name, a quit or a close, is no key
 
@@ -87,3 +87,45 @@ step it.
 ```
 ---
     (('look 1 0) () ('look 1 0) 'up ())
+
+## what the gamepad reaches
+
+### each of the actions Back offers is a command the game takes, and the buttons' commands are not among them
+
+```roguelike
+(import roguelike/game game-actions game-key!)
+(import roguelike/state game-ask! game-messages)
+(def pa-g (spec-game-on (spec-set-named "delve") 3 ()))
+(def pa-unknown
+  (List filter
+    (fn (_ act)
+      (game-ask! pa-g ())
+      (game-key! pa-g (first act))
+      (game-ask! pa-g ())
+      (List any? (fn (_ m) (str=? m "Unknown key.  ? lists them.")) (game-messages pa-g)))
+    game-actions))
+(write (list (List length game-actions) pa-unknown
+             (List filter (fn (_ act) (List any? (fn (_ k) (str=? k (first act))) (list "," "i" "o" "<" ">"))) game-actions)))
+```
+---
+    (18 () ())
+
+### a question that wants a letter offers its answers: the items it takes, yes and no; one that goes on offers none
+
+```roguelike
+(import roguelike/game game-answers game-key!)
+(def pq-g (spec-game-on (spec-set-named "delve") 3 ()))
+(def pq-potion (item-make (spec-item pq-g "mending") 1 0))
+(item-letter! pq-potion "z")
+(game-pack! pq-g (pair pq-potion (game-pack pq-g)))
+(game-key! pq-g "q")
+(def pq-quaff (List map first (game-answers pq-g)))
+(game-key! pq-g 'escape)
+(game-key! pq-g "Q")
+(def pq-quit (game-answers pq-g))
+(game-key! pq-g "n")
+(game-key! pq-g "i")
+(write (list pq-quaff pq-quit (game-answers pq-g) (game-answers (spec-game-on (spec-set-named "delve") 3 ()))))
+```
+---
+    (("z") (("y" . "Yes") ("n" . "No")) () ())
