@@ -200,6 +200,46 @@ takes, a wall in parts by its neighbours, and the camera on the player.
 ---
     ((20 10) (255 236 208 255) (255 238 210 255) (148 155 164 255) (0 0 0 255) (117 105 108 89))
 
+### a light's TINT takes its cells harder toward its colour: green kept, red and blue taken down
+
+```roguelike
+(def tinted
+  (fn (_ tint)
+    (def map (frame-light-map (frame-light-cache) view
+               (list (List append (list 'light (+ 8 (first at)) (+ 8 (rest at)) 0 255 0 2 0) tint)) 0))
+    (List map (fn (_ k) (ptr-ref (str->ptr (List ref 2 map)) (+ (* cell 4) k) 1)) '(0 1 2))))
+(write (list (tinted ()) (tinted '(100)) (tinted '(300))))
+```
+---
+    ((200 255 200) (200 255 200) (88 255 88))
+
+### the lights the player carries: the lantern; a ring worn its guise's glow round them, tinting hard; the ring of light's sea-green over the lantern, alone with the lamp out
+
+```roguelike
+(import roguelike/items items-new items-guise)
+(import roguelike/state player-rings! player-lamp! player-lamp)
+(def carried
+  (fn (_)
+    (List map (fn (_ op) (List drop 3 op))
+      (List filter (fn (_ op) (if (eq? (first op) 'light) (= (List ref 1 op) (+ 8 (first at))) #f))
+        (rest (rest (frame-scene (frame-level-cache) g fa)))))))
+(def ring-lit (items-new g (spec-item g "illumination")))
+(def ring-ward (items-new g (spec-item g "warding")))
+(def ring-lamp (player-lamp p))
+(def ring-bare (carried))
+(player-rings! p (list ring-ward))
+(def ring-warded (carried))
+(player-rings! p (list ring-lit ring-ward))
+(def ring-both (carried))
+(player-lamp! p 0)
+(def ring-out (list (items-guise g ring-lit) (items-guise g ring-ward) ring-bare ring-warded ring-both (carried)))
+(player-rings! p ())
+(player-lamp! p ring-lamp)
+(write ring-out)
+```
+---
+    ("jade" "garnet" ((255 196 118 5 10) (255 222 170 5 4)) ((255 196 118 5 10) (255 222 170 5 4) (240 10 60 2 14 220)) ((255 196 118 5 10) (255 222 170 5 4) (110 235 190 3 0) (50 235 110 2 14 220) (240 10 60 2 14 220)) ((110 235 190 3 0) (50 235 110 2 14 220) (240 10 60 2 14 220)))
+
 ### a set with no art: what stands on the level is its glyph
 
 ```roguelike
