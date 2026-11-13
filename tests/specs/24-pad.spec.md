@@ -129,3 +129,35 @@ step it.
 ```
 ---
     (("z") (("y" . "Yes") ("n" . "No")) () ())
+
+## bindings
+
+### a trigger does nothing until bound; bound, a pull past the line is one press, and none again until it comes back
+
+```roguelike
+(import roguelike/pad pad-make pad-key pad-buttons!)
+(def s (pad-make))
+(def before (list (pad-key s '(pad-axis left-trigger 32767 1) 0) (pad-key s '(pad-axis left-trigger 0 1) 0)))
+(pad-buttons! s (list (pair 'left-trigger "s") (pair 'west "q")))
+(write (list before
+             (pad-key s '(pad-axis left-trigger 20000 1) 0) (pad-key s '(pad-axis left-trigger 32767 1) 0)
+             (pad-key s '(pad-axis left-trigger 12000 1) 0) (pad-key s '(pad-axis left-trigger 30000 1) 0)
+             (pad-key s '(pad-axis left-trigger 100 1) 0) (pad-key s '(pad-axis left-trigger 30000 1) 0)
+             (pad-key s '(pad-down west 1) 0) (pad-key s '(pad-down north 1) 0) (pad-key s '(pad-down south 1) 0)
+             (pad-key s '(pad-axis right-trigger 32767 1) 0)))
+```
+---
+    ((() ()) "s" () () () () "s" "q" "o" "," ())
+
+### a button bound to nothing does nothing; the defaults back when unbound
+
+```roguelike
+(import roguelike/pad pad-make pad-key pad-buttons!)
+(def s (pad-make))
+(pad-buttons! s (list (pair 'right-stick ())))
+(def none (pad-key s '(pad-down right-stick 1) 0))
+(pad-buttons! s ())
+(write (list none (pad-key s '(pad-down right-stick 1) 0)))
+```
+---
+    (() "s")

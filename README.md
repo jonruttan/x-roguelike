@@ -48,7 +48,11 @@ Each set keeps its own save and scores, in `~/.x-roguelike/NAME/`.
 In a window (`-w`), the game opens on the set's title screen: continue
 the saved game, start a new one, set the options, or quit.  The options
 are the zoom, fullscreen, how loud the music and the sounds are, and
-mute; they are kept in `~/.x-roguelike/options` for every set.  In the
+mute, and the keys and the gamepad's buttons: Keys lists every command
+and its keys, a command taken waits for the key to do it; Gamepad lists
+X, Y, the shoulders, the triggers and the stick clicks, left and right
+going through the commands.  They are kept in `~/.x-roguelike/options`
+for every set.  In the
 game, + and - zoom, M mutes the sound and brings it back, and [ and ]
 make it quieter and louder.  Shift with an arrow, the mouse dragged,
 or the right stick moves the view to look off the screen; any other key
@@ -64,6 +68,7 @@ switches to fullscreen and back, and a gamepad plays too:
     LB go up (<)       RB go down (>)
     left stick click   rest           right stick click  search
     Start  pause       Back  the actions
+    LT, RT             nothing, until bound in the options
 
 Back opens a menu of every other command: search, rest, camp, quaff,
 read, zap, eat, fill the lamp, wield, wear, take off, put on and take
