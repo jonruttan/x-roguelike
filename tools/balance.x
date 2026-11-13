@@ -62,7 +62,7 @@
 (import roguelike/state
   game-set game-depth game-deepest game-map game-player game-creatures game-pack game-over game-epitaph game-turn
   game-ask game-messages game-band band-name game-param
-  player-r player-c player-hp player-hpmax player-str player-food player-lamp player-weapon player-armour player-condition
+  player-r player-c player-hp player-hpmax player-str player-food player-lamp player-doused? player-weapon player-armour player-condition
   item-class item-name item-prop item-prop1 item-enchant item-letter item-r item-c game-floor
   creature-r creature-c creature-state creature-glyph creature-trait? creature-condition creature-hp creature-prop creature-prop1 state-defence state-adjacent? state-in-sight? state-dist state-shortfall state-creature-at state-items-at
   game-quest-state game-screens? game-screen game-screen-key game-hub game-chain game-inside state-creature-named
@@ -659,10 +659,12 @@
           (list -1 0 1)))
       (list -1 0 1))
     (%bl-key! g "s")))
-; With light left for the level and the goal not yet held, a search for
-; a secret door: here, at a place to search from, or a step toward the
-; nearest within SEARCH steps, a pocket's before any other.  #f with
-; none.
+; With the goal not yet held, a search for a secret door: here, at a
+; place to search from, or a step toward the nearest within SEARCH
+; steps, a pocket's before any other.  With no light left for the
+; level the lamp is put out first and the walls searched in the dark,
+; a search beside needing none; it is lit again when there is light to
+; spare or nothing left to search.  #f with nothing to do.
 (def %bl-to-wall!
   (fn (_ g s who)
     (def m (game-map g))
@@ -670,16 +672,22 @@
     (def most (%bl-at who (lit search)))
     (when (null? (Vector ref 26 s)) (Vector set! 26 (Vector make (* (map-rows m) (map-cols m)) #f) s))
     (Vector set! 30 (%bl-seen-box m) s)
-    (def go
+    (def aim
       (fn (_ tag pocket?)
-        (if (%bl-search-spot? g s pocket? (player-r p) (player-c p)) (do (%bl-search-here! g s) #t)
-          ((fn (_ d) (if (null? d) #f (do (%bl-key! g (%bl-key-for (first d) (rest d))) #t)))
-           (%bl-step-within g s tag (fn (_ r c) (%bl-search-spot? g s pocket? r c)) most)))))
-    (match ((< most 1) #f) ((items-goal-held? g) #f)
-           ((if (str=? (%bl-env "BALANCE_DARK_SEARCH" "") "") (not (%bl-light-left? g s)) #f)
-             (do (when %bl-tracing (Vector set! 0 (pair (Str8 append "{no light: " (Str8 str (Vector ref 28 s)) " burnt}") (Vector ref 0 %bl-pressed)) %bl-pressed)) #f))
-           ((go (lit pocket) #t) #t)
-           (#t (go (lit wall) #f)))))
+        (if (%bl-search-spot? g s pocket? (player-r p) (player-c p)) (lit here)
+          (%bl-step-within g s tag (fn (_ r c) (%bl-search-spot? g s pocket? r c)) most))))
+    (def lit? (if (str=? (%bl-env "BALANCE_DARK_SEARCH" "") "") (%bl-light-left? g s) #t))
+    (def a (match ((< most 1) ()) ((items-goal-held? g) ())
+                  (#t ((fn (_ a) (if (null? a) (aim (lit wall) #f) a)) (aim (lit pocket) #t)))))
+    (def out? (player-doused? p))
+    (when (if %bl-tracing (not lit?) #f)
+      (Vector set! 0 (pair (Str8 append "{dark: " (Str8 str (Vector ref 28 s)) " burnt}") (Vector ref 0 %bl-pressed)) %bl-pressed))
+    (match ((null? a) (if (if out? (< 0 (player-lamp p)) #f) (do (%bl-key! g "x") #t) #f))
+           ((if out? lit? #f) (do (%bl-key! g "x") #t))
+           ((if lit? #f (if out? #f (< 0 (player-lamp p))))
+             (if (null? (%bl-shown-hostile g)) (do (%bl-key! g "x") #t) #f))
+           ((eq? a (lit here)) (do (%bl-search-here! g s) #t))
+           (#t (do (%bl-key! g (%bl-key-for (first a) (rest a))) #t)))))
 
 ; --- who the bot is ----------------------------------------------------------
 
@@ -1282,9 +1290,14 @@
                 %bl-wary)
     (%bl-sat! g)
     (def slips (%bl-slips? g s))
+    (def struck? (< (player-hp p) (Vector ref 22 s)))
     (Vector set! 22 (player-hp p) s)
     (match
       ((not (null? q)) (%bl-answer! g q))
+      ; Searching in the dark, a foe shown or a blow from the unseen
+      ; lights the lamp again.
+      ((if (player-doused? p) (if (< 0 (player-lamp p)) (if struck? #t (not (null? (if (null? foe) shown foe)))) #f) #f)
+        (%bl-key! g "x"))
       ((if (null? potion) #f (%bl-under? p (%bl-at who (lit quaff))))
         (do (%bl-use! g "q" potion) (Vector set! 2 (+ 1 (Vector ref 2 s)) s)))
       ((%bl-drink-now? g foe potion)
