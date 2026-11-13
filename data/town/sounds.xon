@@ -104,3 +104,12 @@
 (ambience "the chandler's" (bed "indoors") (random "creak" 15000 30))
 (ambience "the tannery" (bed "indoors") (random "drip" 7000 35))
 (ambience "the ropewalk" (bed "indoors") (random "creak" 8000 35))
+
+; Rooms: (room PLACE SPEC ...), effects over the music and the air (docs/sound.md).
+; The square is open air; the churches ring, the inn and the smithy are low
+; and close.
+(room "the inn" (reverb 40 45 14))
+(room "the smithy" (reverb 35 40 12))
+(room "the chapel" (reverb 150 80 28))
+(room "the White Church" (reverb 200 85 34))
+(room "the Guild hall" (reverb 120 70 22))

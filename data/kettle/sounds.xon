@@ -51,3 +51,7 @@
 (ambience "farmhouse cellar" (bed "indoors") (random "drip" 6000 45) (random "settle" 14000 35))
 (ambience "shepherd's bothy" (bed "indoors") (random "gust" 10000 25) (random "creak" 12000 35))
 (ambience "old city vault" (bed "indoors") (random "drip" 5000 45) (random "rumble" 20000 35) (random "trickle" 15000 30))
+
+; Underground the air rings: (room PLACE SPEC ...) (docs/sound.md).
+(room "farmhouse cellar" (reverb 50 50 16))
+(room "old city vault" (reverb 130 75 26))

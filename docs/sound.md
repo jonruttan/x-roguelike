@@ -25,6 +25,8 @@ through a low-pass, placed left or right.
 | `(slide PITCH)` | the pitch it slides to over its envelope |
 | `(env (MS PCT) ...)` | its level, straight lines between points; the voice ends at the last |
 | `(cut PCT)` | the low-pass, 100 open, 1 a dull rumble |
+| `(filter (MS PCT) ...)` | the low-pass's path, PCT of its cut at each MS, straight between: a sound that opens or closes |
+| `(bend (MS CENTS) ...)` | the pitch's path, CENTS from it at each MS, straight between and a jump where two share an MS |
 | `(pan -100..100)` | left to right |
 | `(gain PCT)`, `(detune CENTS)`, `(at MS)` | its loudness, a little off its pitch, a delay before it starts |
 
@@ -91,6 +93,10 @@ not, so it can be told by ear.
 | `(struck "SOUND")` | with a blow that lands on the player |
 | `(strikes "SOUND")` | with a blow the player lands |
 | `(mends "SOUND")` | with hit points come back a little at a time |
+| `(pitch CENTS)` | the music and the air CENTS higher (lower below nought); more than one add |
+| `(pace PCT)` | the music and the air at PCT percent of their tempo; more than one multiply |
+| `(muffle PCT)` | the music and the air through a low-pass closed to PCT percent; the most closed is heard |
+| `(effect SPEC)` | an effect over the music and the air, as a room's (Music, below) |
 
 ## Fear
 
@@ -102,6 +108,18 @@ tension layer and takes away its calm one, and the bed's dread under
 both. Past `(heart "SOUND" FROM SLOW FAST)`'s FROM the player hears
 their own heart, SLOW beats a minute rising to FAST and growing louder
 as the tension reaches 100.
+
+Wounds thin what is heard. Under `(thin-hp FROM MOST)`'s FROM percent of
+the player's hit points, the music, the air and the turn's sounds lose
+their low end, toward MOST percent of it gone with none left: the fewer
+the hit points, the tinnier the world. The heart is heard whole, on a
+mixer of its own, so neither the thinning nor a room nor a condition
+touches it.
+
+A hungry stomach growls. `(growl "SOUND" SLOWEST-MS FASTEST-MS GAIN)` is
+heard once in SLOWEST-MS or so when the food first falls under the
+hungry mark of `(hunger ...)`, and more often as it runs out, once in
+FASTEST-MS with none.
 
 ## Music
 
@@ -124,6 +142,15 @@ each: a note starts that note, `.` carries on, `-` lets it go, and
 `NOTE:PCT` plays at PCT percent. A voice with a pitch of its own keeps it,
 as a drum does.
 
+A cell can carry effects after its note, `/` then a letter and its
+numbers, timed in ticks, `(ticks N)` a row (6 unless the song says):
+`E3/v14,16` wavers 14 cents either way every 16 ticks. The letters are
+`a` arpeggio, `v` vibrato, `s` slide, `p` portamento from the channel's
+last note, `t` tremolo, `f` fade, `l` low-pass, `c` cut, `d` delay and
+`r` retrigger (x-lang's `x/audio/tracker` has the whole of each). The
+Galleries' strained note wavers, the Flood's undertow sinks as it is
+held, and the Old Works' grind beats.
+
 `(music "PLACE" "SONG")` names a place's song, and `(ambience "PLACE"
 (bed "SONG") (random "SOUND" EVERY-MS GAIN) ...)` its air: a bed song
 under the music and sounds heard at random, once in EVERY ms or so.
@@ -135,6 +162,26 @@ place's around it: the town's inn plays a reel by its fire, its
 churches a hymn, and a valley cellar has no wind in it.
 `(music-gain PCT)` and `(music-echo MS FEEDBACK WET)` are the music's
 loudness and room; the echoes are those of the set the game began on.
+`(music-effect SPEC)`, from any set of the world, is an effect over all
+of it: the Delve's `(limit 92 150)` keeps the music under clipping
+however its rooms and conditions stack.
+
+`(room "PLACE" SPEC ...)` is a place's room: effects over the music and
+the air while the player is there, found as `(ambience ...)` is, the
+nearest place first. A SPEC is any of `x/audio/mixer`'s effects:
+`(echo MS FB WET)`, `(reverb SIZE DECAY WET)`, `(phase LEAST-MS MOST-MS
+PERIOD-MS FB WET)`, `(chorus VOICES MS DEPTH-MS PERIOD-MS WET)`, `(drive
+GAIN WET)`, `(crush BITS HZ)`, `(sweep LOW-HZ HIGH-HZ PERIOD-MS RES)` or
+`(limit CEILING RELEASE-MS)`. The Flood is wide and wet, the Old Works
+grits its teeth, the Heart rings, and the town's churches ring too while
+the inn stays close. A turn's own sounds keep the room each was made
+with.
+
+A condition or a bonus can change the music and the air while it holds
+(see Conditions and bonuses): slowed plays them slower and lower,
+hasted faster and higher, confused swirls them, held strains them, the
+seeing shimmer, and the blind and the stealthy hear them as through a
+wall.
 
 Every form here is looked for in the set stood in first, then in the set
 the game began on and each of its regions. A region's own songs, beds and
