@@ -788,9 +788,10 @@
           (def period (if (int< n 4) 4 n))
           (def at (int% (int+ clock (int/ period 4)) period))
           (def pct (List ref 0 sway))
-          (def swing (if (int< at (int/ period 2))
-                       (int+ (int- 0 pct) (int/ (int* (int* 4 pct) at) period))
-                       (int- (int* 3 pct) (int/ (int* (int* 4 pct) at) period))))
+          (def half (int/ period 2))
+          (def swing (if (int< at half)
+                       (int- (int/ (int* (int* 4 pct) at) period) pct)
+                       (int- pct (int/ (int* (int* 4 pct) (int- at half)) period))))
           (def pace (int/ (int* (List ref 1 mix) (int+ 100 swing)) 100))
           (List for-each
             (fn (_ k) ((fn (_ t) (unless (null? t) (unless (int= (Tracker pace t) pace) (Tracker pace! t pace)))) (%sd-get s k)))

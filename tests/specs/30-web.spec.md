@@ -43,7 +43,6 @@ made with, and both answer the same messages.
 ```roguelike
 (import x/sys/web)
 (import x/audio/mixer)
-(import x/audio/tracker)
 (import roguelike/sound sound-make sound-turn! sound-close)
 (import roguelike/state player-condition! player-conditions!)
 (Web listen! "127.0.0.1" 0)
@@ -53,7 +52,7 @@ made with, and both answer the same messages.
 (def spec-m (obj-ref spec-s 2))
 (def spec-heard
   (fn (_)
-    (list (List map rest (Mixer effects spec-m)) (Mixer pitch spec-m) (Tracker pace (obj-ref spec-s 5)) (Mixer cut spec-m))))
+    (list (List map rest (Mixer effects spec-m)) (Mixer pitch spec-m) (List ref 1 (obj-ref spec-s 24)) (Mixer cut spec-m))))
 (def spec-calm (spec-heard))
 (player-condition! (game-player spec-g) 'slowed 10)
 (player-condition! (game-player spec-g) 'confused 10)
