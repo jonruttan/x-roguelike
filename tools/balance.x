@@ -313,7 +313,9 @@
 ; The first step, (DR . DC), of the walk TAG names to a cell GOAL?
 ; allows no more than MOST steps away, or nil: the walk kept from the
 ; turn before while it serves, searched for afresh when it does not,
-; and not searched for again from where none was found.
+; and not searched for again from where none was found.  A search can
+; make millions of objects, and a turn tries several: the heap is swept
+; before each, so a turn's peak is one search's, not their sum.
 (def %bl-step-within
   (fn (_ g s tag goal? most)
     (def p (game-player g))
@@ -321,7 +323,7 @@
     (def standing (%bl-standing g))
     (def kept (%bl-kept g s tag goal? most))
     (def none? (if (null? kept) (%bl-no-way? s tag most standing) #f))
-    (def path (match (none? ()) ((null? kept) (%bl-search g goal? most)) (#t kept)))
+    (def path (match (none? ()) ((null? kept) (do (Heap collect) (%bl-search g goal? most))) (#t kept)))
     (when %bl-tracing
       (Vector set! 0 (pair (Str8 append "{" (symbol->str tag) (match ((not (null? kept)) " kept") ((null? path) " none") (#t " found")) "}")
                            (Vector ref 0 %bl-pressed))
@@ -1624,6 +1626,7 @@
   (fn (_ set play cap who)
     (def seed (first play))
     (def trace? (not (str=? (%bl-env "BALANCE_TRACE" "") "")))
+    (def heap? (not (str=? (%bl-env "BALANCE_HEAP" "") "")))
     (def keep (%bl-env "BALANCE_KEEP" ""))
     (def boss (%bl-env "BALANCE_BOSS" "fireman"))
     (def deep (%bl-int (%bl-env "BALANCE_DEPTH" "0")))
@@ -1645,6 +1648,7 @@
               (unless (match ((Vector ref 0 kept) #t) ((if (< 0 deep) (not (< (game-depth g) deep)) #f) #f)
                              (#t (null? (%bl-boss-shown g boss))))
                 (do (save-write! g path) (Vector set! 0 #t kept)))
+              (when heap? (%bl-line "heap " (Str8 str (game-turn g)) " " (Str8 str (Heap count))))
               (Heap collect)
               (unless (= depth (game-depth g)) (Vector set! 0 (pair (%bl-arrival g) (Vector ref 0 arrivals)) arrivals))
               (self (game-turn g) (if (= turn (game-turn g)) (+ stalled 1) 0))))))
