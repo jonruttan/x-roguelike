@@ -1550,7 +1550,8 @@
 ; hostile coming into view and out again does not turn the bot about), a foe in view within CHASE whose fight
 ; is worth it to COURAGE, the errand on a world of screens, the giver, the level
 ; until CURIOSITY of it is seen, the stairs.  A foe it cannot reach is
-; passed by.
+; passed by, and none is gone after under the READY mark: a fight is
+; picked rested.
 (def %bl-onward!
   (fn (_ g s who shown)
     (def p (game-player g))
@@ -1563,13 +1564,14 @@
     (def shoots? (if (null? shown) #f (creature-trait? shown (lit ranged))))
     (def step-to
       (fn (_ tag cr most) (%bl-step-within g s tag (fn (_ r c) (if (= r (creature-r cr)) (= c (creature-c cr)) #f)) most)))
-    (def to-shown (if (match ((null? shown) #t) ((%bl-running? g) #t) ((Vector ref 34 s) #t) ((eq? (creature-state shown) (lit fleeing)) #t)
+    (def wounded? (%bl-under? p (%bl-mark g s who (lit ready))))
+    (def to-shown (if (match ((null? shown) #t) ((%bl-running? g) #t) ((Vector ref 34 s) #t) (wounded? #t) ((eq? (creature-state shown) (lit fleeing)) #t)
                              ((List any? (fn (_ x) (same? x shown)) (Vector ref 20 s)) #t)
                              (#t (not (%bl-worth? g who shown))))
                     ()
                     (step-to (lit foe) shown (if shoots? 9999 (%bl-at who (lit chase))))))
     (unless (null? to-shown) (Vector set! 19 shown s))
-    (def to-foe (if (null? to-shown) (%bl-to-quarry g s who step-to) to-shown))
+    (def to-foe (match ((not (null? to-shown)) to-shown) (wounded? ()) (#t (%bl-to-quarry g s who step-to))))
     (def errand (if (game-screens? g) (%bl-errand g) ()))
     (def curious? (match ((%bl-explored? g s) #f) ((%bl-surveying? g) #t) ((Vector ref 25 s) #t) ((not (%bl-light-left? g s)) #f)
                          ((< 99 (%bl-at who (lit curiosity))) #t)
