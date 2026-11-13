@@ -109,6 +109,18 @@ both. Past `(heart "SOUND" FROM SLOW FAST)`'s FROM the player hears
 their own heart, SLOW beats a minute rising to FAST and growing louder
 as the tension reaches 100.
 
+Wounds thin what is heard. Under `(thin-hp FROM MOST)`'s FROM percent of
+the player's hit points, the music, the air and the turn's sounds lose
+their low end, toward MOST percent of it gone with none left: the fewer
+the hit points, the tinnier the world. The heart is heard whole, on a
+mixer of its own, so neither the thinning nor a room nor a condition
+touches it.
+
+A hungry stomach growls. `(growl "SOUND" SLOWEST-MS FASTEST-MS GAIN)` is
+heard once in SLOWEST-MS or so when the food first falls under the
+hungry mark of `(hunger ...)`, and more often as it runs out, once in
+FASTEST-MS with none.
+
 ## Music
 
 `(song "NAME" ...)` is a tracker song (x-lang's `x/audio/tracker`):

@@ -84,6 +84,12 @@
 
 ; Hurt by anything; the wound that takes them under (low-hp PCT).
 (low-hp 30)
+
+; Wounds thin what is heard: under (thin-hp FROM MOST) FROM percent of
+; the player's hit points the music, the air and the turn's sounds lose
+; their low end, toward MOST percent of it gone with none left.  The
+; heart is heard whole.
+(thin-hp 80 85)
 (sound "hurt" (vary 40) (gain 34)
   (voice (wave reed) (note "A1") (slide "F1") (cut 14) (env (0 0) (25 45) (260 0))))
 
@@ -294,6 +300,19 @@
   (voice (wave noise) (hz 1) (cut 2) (env (0 0) (6 70) (70 0)))
   (voice (hz 48) (slide 38) (cut 30) (at 170) (env (0 0) (8 70) (110 0)))
   (voice (wave noise) (hz 1) (cut 2) (at 170) (env (0 0) (6 50) (60 0))))
+
+; The hungry stomach: (growl "SOUND" SLOWEST-MS FASTEST-MS GAIN) heard
+; once in SLOWEST-MS or so at the hungry mark, and more often as the food
+; runs out, once in FASTEST-MS with none.  It rolls and gurgles: its
+; pitch wanders by its bend and its low-pass opens and closes.
+(growl "growl" 40000 8000 45)
+
+(sound "growl" (vary 250) (gain 40)
+  (voice (wave reed) (note "A1") (cut 8) (bend (0 0) (250 250) (500 -150) (800 300) (1100 -200) (1400 -500))
+    (filter (0 30) (300 100) (700 40) (1000 90) (1400 20)) (env (0 0) (120 45) (900 35) (1400 0)))
+  (voice (wave noise) (hz 1) (cut 3) (filter (0 40) (400 100) (900 50) (1300 80) (1500 10))
+    (env (0 0) (200 30) (1200 25) (1500 0)))
+  (voice (wave hollow) (note "E2") (cut 6) (at 600) (bend (0 0) (300 -400)) (env (0 0) (60 25) (400 0))))
 
 ; --- places: (ambience PLACE (bed "SONG") (random "SOUND" EVERY-MS GAIN) ...) --
 

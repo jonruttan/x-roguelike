@@ -34,7 +34,8 @@
 
 (import x/audio/mixer)
 (import x/audio/tracker)
-(import x/core/doors int* int+ int- int/ int< int= int& obj-make obj-ref obj-set! str->sym)
+(import x/core/doors int* int+ int- int/ int< int= int& obj-make obj-ref obj-set! str->sym
+  str-make str->ptr ptr->int int->ptr mem-copy)
 (import roguelike/data data-all data-one data-get)
 (import roguelike/state game-set game-player game-depth game-map game-creatures game-pack game-over game-blows game-said game-turn
   game-band band-name game-place game-top-set game-param player-r player-c player-hp player-hpmax player-level player-gold
@@ -68,7 +69,9 @@
 ; game's turn last heard (%sd-turned?), 20 the set stood in when 0 was
 ; made, 21 the game's keys told last heard (game-said), 22 the sounds
 ; heard while a condition or a bonus holds, (SOUND EVERY GAIN) each
-; (%sd-held!), 23 the mix as last set, (PITCH PACE CUT EFFECTS) (%sd-mix!).
+; (%sd-held!), 23 the mix as last set, (PITCH PACE CUT EFFECTS) (%sd-mix!),
+; 24 the heartbeat's own mixer and 25 its stream, 26 how thin the turn's
+; sounds are (%sd-thin), and 27 the set's music effects, kept last.
 
 (def %sd-vector-type ((prim-ref (lit type) (lit of)) (Vector make 0 ())))
 (def %sd-get (fn (_ s k) (obj-ref s (int+ k 1))))
@@ -179,17 +182,53 @@
       (do (def vary (%sd-prop1 f (lit vary) 0))
           (def pick (int- (%sd-random! s 3) 1))
           (def key (Str8 append name "/" (Str8 str pick) "/" (Str8 str side) "/" (Str8 str vol) "/" (Str8 str cents)))
+          (def thin (%sd-get s 26))
+          (def key (Str8 append name "/" (Str8 str pick) "/" (Str8 str side) "/" (Str8 str vol) "/" (Str8 str cents)
+                                (if (int= thin 0) "" (Str8 append "/" (Str8 str thin)))))
           (def b (%sd-bytes s key
-                   (fn (_) (Mixer render %sd-rate (%sd-louder (%sd-voices f (int+ cents (int* pick vary)) (int* side 55)) vol)
-                                     (List map rest (%sd-props f (lit echo)))))))
+                   (fn (_) (%sd-render (%sd-louder (%sd-voices f (int+ cents (int* pick vary)) (int* side 55)) vol)
+                                       (List map rest (%sd-props f (lit echo))) thin))))
           ((%sd-front s) audio-put! (%sd-free-stream s) (first b) (rest b))))))
 
+; The thinning THIN, 0 to 100, as an effect: each frame less THIN percent
+; of the frame before, which takes the low end away and leaves the high,
+; the more the higher THIN.
+(def %sd-thin-spec (fn (_ thin) (list (lit phase) 0 0 1000 0 (int- 0 thin))))
+
+; VOICES with their ECHOES rendered alone, as Mixer render does, through
+; the thinning THIN (%sd-thin-spec), none at 0: (REGION . BYTES).
+(def %sd-render
+  (fn (_ voices echoes thin)
+    (if (int= thin 0) (Mixer render %sd-rate voices echoes)
+      (do (def m (Mixer make %sd-rate %sd-block))
+          (List for-each (fn (_ e) (Mixer echo! m (List ref 0 e) (List ref 1 e) (List ref 2 e))) echoes)
+          (Mixer effect! m (lit thin) (%sd-thin-spec thin))
+          (Mixer play! m voices 0 100)
+          (def prop (fn (_ v key default) ((fn (_ p) (if (null? p) default (rest p)))
+                                           (List find (fn (_ p) (if (pair? p) (eq? (first p) key) #f)) v))))
+          (def ms (int+ (List fold (fn (_ n e) (int+ n (first e))) 0 echoes)
+                        (List fold (fn (_ n v) ((fn (_ t) (if (int< n t) t n))
+                                                (int+ (first (prop v (lit at) (list 0))) (first (List ref -1 (prop v (lit env) (lit ((0 100) (200 0)))))))))
+                                   0 voices)))
+          (def blocks (int+ 1 (int/ (int/ (int* ms %sd-rate) 1000) %sd-block)))
+          (def bytes (int* blocks (int* 4 %sd-block)))
+          (def out (str-make (int+ bytes 8)))
+          ((fn (self i)
+             (when (int< i blocks)
+               (do (mem-copy (int->ptr (int+ (ptr->int (str->ptr out)) (int* i (int* 4 %sd-block)))) (str->ptr (Mixer block! m)) (int* 4 %sd-block))
+                   (self (int+ i 1)))))
+           0)
+          (pair out bytes)))))
+
 ; Sound NAME's voices started in the music, AT frames on, at GAIN percent.
-(def %sd-play-in-music!
-  (fn (_ s name side gain at)
+(def %sd-play-in-music! (fn (_ s name side gain at) (%sd-play-into! s (%sd-get s 1) name side gain at)))
+
+; Sound NAME's voices started in mixer M, as %sd-play-in-music! does.
+(def %sd-play-into!
+  (fn (_ s m name side gain at)
     (def f (%sd-sound (%sd-get s 0) name))
     (unless (null? f)
-      (Mixer play! (%sd-get s 1) (%sd-voices f (int* (int- (%sd-random! s 3) 1) (%sd-prop1 f (lit vary) 0)) (int* side 40)) at gain))))
+      (Mixer play! m (%sd-voices f (int* (int- (%sd-random! s 3) 1) (%sd-prop1 f (lit vary) 0)) (int* side 40)) at gain))))
 
 ; A number from 0 below N, from the sound's own sequence: the game's
 ; random source is left as it is, so a seed plays the same game heard or
@@ -237,9 +276,10 @@
     (unless (null? (%sd-get s 4)) (Tracker tension! (%sd-get s 4) next))
     (unless (null? (%sd-get s 5)) (Tracker tension! (%sd-get s 5) next))))
 
-; The heartbeat as a source of the music: off below the set's (heart
-; SOUND FROM SLOW FAST) FROM, then SLOW to FAST beats a minute and louder
-; as the tension rises to 100.
+; The heartbeat as a source of its own mixer, so that nothing done to the
+; music (a room, a condition, the thinning) is done to it: off below the
+; set's (heart SOUND FROM SLOW FAST) FROM, then SLOW to FAST beats a
+; minute and louder as the tension rises to 100.
 (def %sd-heart
   (fn (_ s)
     (fn (_ m now)
@@ -250,7 +290,7 @@
         (do (def from (List ref 1 h))
             (def bpm (int+ (List ref 2 h) (int/ (int* (int- (List ref 3 h) (List ref 2 h)) t) 100)))
             (when (int< from t)
-              (%sd-play-in-music! s (first h) 0 (int+ 30 (int/ (int* 70 (int- t from)) (int- 100 from))) 0))
+              (%sd-play-into! s m (first h) 0 (int+ 30 (int/ (int* 70 (int- t from)) (int- 100 from))) 0))
             (int+ now (int/ (int* %sd-rate 60) bpm)))))))
 
 ; The place's random sounds as a source, and those a condition or a
@@ -430,36 +470,72 @@
   (fn (_ s forms key side)
     (List for-each (fn (_ f) (List for-each (fn (_ p) (%sd-play! s (List ref 1 p) side)) (%sd-props f key))) forms)))
 
-; The sounds heard while G's conditions and bonuses hold, each
-; (every SOUND EVERY-MS GAIN) of them, kept for the music's source.
+; The sounds heard now and again while G's conditions and bonuses hold,
+; each (every SOUND EVERY-MS GAIN) of them, and the stomach's growl
+; while the player is hungry, kept for the music's source.
 (def %sd-held!
   (fn (_ s g)
-    (%sd-put! s 22 (List flat-map (fn (_ f) (List map rest (%sd-props f (lit every)))) (%sd-holds s g)))))
+    (%sd-put! s 22 (List append (List flat-map (fn (_ f) (List map rest (%sd-props f (lit every)))) (%sd-holds s g))
+                                (%sd-growl s g)))))
+
+; The set's (growl "SOUND" SLOWEST-MS FASTEST-MS GAIN) as a sound heard
+; now and again, (SOUND EVERY GAIN), once the player's food is under the
+; set's hungry mark (hunger ...): once in SLOWEST-MS or so there, and
+; more often as the food runs out, once in FASTEST-MS with none.  Nil
+; when the player is not hungry or the set has no growl.
+(def %sd-growl
+  (fn (_ s g)
+    (def f (data-one (%sd-get s 0) (lit growl) ()))
+    (def mark (List ref 1 (game-param g (lit hunger) (list 1300 300 150))))
+    (def food (player-food (game-player g)))
+    (if (if (null? f) #t (not (int< food mark))) ()
+      (list (list (List ref 0 f)
+                  (int+ (List ref 2 f) (int/ (int* (int- (List ref 1 f) (List ref 2 f)) (if (int< food 0) 0 food)) (if (int< mark 1) 1 mark)))
+                  (List ref 3 f))))))
+
+; How thin the music and the turn's sounds are for the player's wounds,
+; 0 to 100: none above the set's (thin-hp FROM MOST) FROM percent of
+; their hit points, rising to MOST with none left, by tens so that a
+; turn's sounds are rendered at only a few.  0 when the set has none.
+(def %sd-thin
+  (fn (_ s g)
+    (def t (data-one (%sd-get s 0) (lit thin-hp) ()))
+    (def p (game-player g))
+    (def frac (int/ (int* 100 (if (int< (player-hp p) 0) 0 (player-hp p))) (if (int< (player-hpmax p) 1) 1 (player-hpmax p))))
+    (if (if (null? t) #t (not (int< frac (first t)))) 0
+      (int* 10 (int/ (int+ (int/ (int* (List ref 1 t) (int- (first t) frac)) (first t)) 5) 10)))))
 
 ; The mix G's music and air want, (PITCH PACE CUT EFFECTS): the place's
 ; (room PLACE SPEC ...), the nearest place that has one, and each
 ; condition and bonus held's (pitch CENTS), added, (pace PCT),
-; multiplied, (muffle PCT), the least, and (effect SPEC).  EFFECTS is
-; ((NAME . SPEC) ...), each named by the form it came from.
+; multiplied, (muffle PCT), the least, and (effect SPEC), then the
+; thinning for the player's wounds (%sd-thin).  EFFECTS is ((NAME .
+; SPEC) ...), each named by the form it came from, the thinning by thin.
 (def %sd-mix-want
   (fn (_ s g)
     (def holds (%sd-holds s g))
+    (def thin (%sd-thin s g))
     (def all (fn (_ key) (List flat-map (fn (_ f) (%sd-props f key)) holds)))
     (def room (%sd-for (%sd-get s 0) (lit room) (%sd-get s 11)))
     (list (List fold (fn (_ n p) (int+ n (List ref 1 p))) 0 (all (lit pitch)))
           (List fold (fn (_ n p) (int/ (int* n (List ref 1 p)) 100)) 100 (all (lit pace)))
           (List fold (fn (_ n p) (if (int< (List ref 1 p) n) (List ref 1 p) n)) 100 (all (lit muffle)))
           (List append (if (null? room) () (List map (fn (_ e) (pair e e)) (rest room)))
-                       (List map (fn (_ p) (pair p (List ref 1 p))) (all (lit effect)))))))
+                       (List map (fn (_ p) (pair p (List ref 1 p))) (all (lit effect)))
+                       (if (int= thin 0) () (list (pair (lit thin) (%sd-thin-spec thin))))))))
 
 ; The music and air brought to the mix G wants (%sd-mix-want), changing
 ; only what differs from the mix last set: an effect no longer wanted is
-; taken off, and one wanted is put on or changed in its place.
+; taken off, and one wanted is put on or changed in its place.  The
+; set's music effects (music-effect ...) are kept after every other, so
+; a new one is put on before them; the thinning is kept for the turn's
+; sounds.
 (def %sd-mix!
   (fn (_ s g)
     (def m (%sd-get s 1))
     (def was (%sd-get s 23))
     (def now (%sd-mix-want s g))
+    (%sd-put! s 26 (%sd-thin s g))
     (unless (= (List ref 0 was) (List ref 0 now)) (Mixer pitch! m (List ref 0 now)))
     (unless (= (List ref 1 was) (List ref 1 now))
       (List for-each (fn (_ k) (unless (null? (%sd-get s k)) (Tracker pace! (%sd-get s k) (List ref 1 now)))) (list 4 5)))
@@ -470,6 +546,8 @@
       (fn (_ e) ((fn (_ old) (when (if (null? old) #t (not (equal? (rest old) (rest e)))) (Mixer effect! m (first e) (rest e))))
                  (named (List ref 3 was) e)))
       (List ref 3 now))
+    (when (List any? (fn (_ e) (null? (named (List ref 3 was) e))) (List ref 3 now))
+      (List for-each (fn (_ e) (do (Mixer effect! m (first e) ()) (Mixer effect! m (first e) (rest e)))) (%sd-get s 27)))
     (%sd-put! s 23 now)))
 
 ; The sound of each message key G told this turn that the set gives one,
@@ -644,9 +722,16 @@
             (def m (Mixer make %sd-rate %sd-block))
             (Mixer gain! m (data-get set (lit music-gain) 80))
             (List for-each (fn (_ e) (Mixer echo! m (List ref 0 e) (List ref 1 e) (List ref 2 e))) (data-all top (lit music-echo)))
-            (List for-each (fn (_ p) (Mixer effect! m p (first p))) (data-all set (lit music-effect)))
-            (def s (obj-make %sd-vector-type 25))
-            (obj-set! s 0 24)
+            (def heart (Mixer make %sd-rate %sd-block))
+            (Mixer gain! heart (data-get set (lit music-gain) 80))
+            (List for-each (fn (_ e) (Mixer echo! heart (List ref 0 e) (List ref 1 e) (List ref 2 e))) (data-all top (lit music-echo)))
+            (def lasts (List map (fn (_ p) (pair p (first p))) (data-all set (lit music-effect))))
+            (List for-each (fn (_ e) (Mixer effect! m (first e) (rest e))) lasts)
+            (def s (obj-make %sd-vector-type 29))
+            (obj-set! s 0 28)
+            (%sd-put! s 24 heart)
+            (%sd-put! s 26 0)
+            (%sd-put! s 27 lasts)
             (%sd-put! s 21 (game-said g))
             (%sd-put! s 22 ())
             (%sd-put! s 15 front)
@@ -654,6 +739,7 @@
             (%sd-put! s 20 (game-set g))
             (%sd-put! s 1 m)
             (%sd-put! s 2 ((%sd-front s) audio-open %sd-rate 2))
+            (%sd-put! s 25 ((%sd-front s) audio-open %sd-rate 2))
             (%sd-put! s 3 ((fn (self n) (if (int< n 1) () (pair ((%sd-front s) audio-open %sd-rate 2) (self (int- n 1))))) %sd-effect-streams))
             (%sd-put! s 4 ())
             (%sd-put! s 5 ())
@@ -676,7 +762,7 @@
             (%sd-held! s g)
             (%sd-mix! s g)
             (%sd-music! s g)
-            (Mixer source! m (%sd-heart s) 0)
+            (Mixer source! heart (%sd-heart s) 0)
             (Mixer source! m (%sd-randoms s) %sd-rate)
             (sound-pump! s)
             s)))))
@@ -689,6 +775,7 @@
       ((fn (self n)
          (if (int< ((%sd-front s) audio-queued (%sd-get s 2)) %sd-ahead)
            (do ((%sd-front s) audio-put! (%sd-get s 2) (Mixer block! (%sd-get s 1)) (int* 4 %sd-block))
+               ((%sd-front s) audio-put! (%sd-get s 25) (Mixer block! (%sd-get s 24)) (int* 4 %sd-block))
                (%sd-put! s 10 (int+ (%sd-get s 10) 1))
                (self (int+ n 1)))
            n))
@@ -727,7 +814,8 @@
 (def sound-volume!
   (fn (_ s music effects)
     (unless (null? s)
-      (do (Mixer gain! (%sd-get s 1) (int/ (int* music (data-get (%sd-get s 0) (lit music-gain) 80)) 100))
+      (do (List for-each (fn (_ k) (Mixer gain! (%sd-get s k) (int/ (int* music (data-get (%sd-get s 0) (lit music-gain) 80)) 100)))
+            (list 1 24))
           (%sd-put! s 13 effects)))))
 
 ; The name of the song S last asked for (%sd-music!), "" for none.
@@ -741,6 +829,7 @@
   (fn (_ s)
     (unless (null? s)
       (do ((%sd-front s) audio-close (%sd-get s 2))
+          ((%sd-front s) audio-close (%sd-get s 25))
           (List for-each (fn (_ st) ((%sd-front s) audio-close st)) (%sd-get s 3))))))
 
 (provide roguelike/sound sound-make sound-pump! sound-collect? sound-turn! sound-volume! sound-cue! sound-music sound-close

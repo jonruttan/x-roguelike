@@ -68,4 +68,33 @@ made with, and both answer the same messages.
 (Web close spec-win)
 ```
 ---
-    (((('echo 430 42 26) ('echo 610 30 14) ('limit 92 150) ('reverb 90 55 18)) 0 100 100) -340 70 #t #t)
+    (((('echo 430 42 26) ('echo 610 30 14) ('reverb 90 55 18) ('limit 92 150)) 0 100 100) -340 70 #t #t)
+
+### wounds thin the music but not the heart, and hunger growls the more the emptier
+
+```roguelike
+(import x/sys/web)
+(import x/audio/mixer)
+(import roguelike/sound sound-make sound-turn! sound-close)
+(import roguelike/state player-hp! player-hpmax! player-food!)
+(Web listen! "127.0.0.1" 0)
+(def spec-win (Web open "spec" 8 8 1))
+(def spec-g (game-make (data-load "data/delve") 1 24 80))
+(def spec-s (sound-make spec-g Web))
+(def spec-p (game-player spec-g))
+(def spec-thin (fn (_ m) (List find (fn (_ e) (same? (first e) 'thin)) (Mixer effects m))))
+(def spec-calm (list (spec-thin (obj-ref spec-s 2)) (obj-ref spec-s 23)))
+(player-hpmax! spec-p 100)
+(player-hp! spec-p 10)
+(player-food! spec-p 0)
+(sound-turn! spec-s spec-g)
+(def spec-low (list (rest (spec-thin (obj-ref spec-s 2))) (null? (spec-thin (obj-ref spec-s 25)))
+                    (same? (obj-ref spec-s 2) (obj-ref spec-s 25)) (obj-ref spec-s 23)))
+(player-food! spec-p 7200)
+(sound-turn! spec-s spec-g)
+(write (list spec-calm spec-low (obj-ref spec-s 23)))
+(sound-close spec-s)
+(Web close spec-win)
+```
+---
+    ((() ()) (('phase 0 0 1000 0 -70) #t #f (("growl" 8000 45))) (("growl" 24000 45)))

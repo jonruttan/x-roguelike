@@ -40,7 +40,7 @@ device.
 ---
     (#t #t #t #t #t)
 
-### every cue, footstep, heartbeat and random sound names a sound of the set
+### every cue, footstep, heartbeat, growl and random sound names a sound of the set
 
 ```roguelike
 (def spec-set (data-load "data/delve"))
@@ -49,10 +49,11 @@ device.
 (write (list (List all? (fn (_ c) (spec-sound? (List ref 1 c))) (data-all spec-set 'cue))
              (List all? (fn (_ c) (spec-sound? (List ref 1 c))) (data-all spec-set 'footstep))
              (spec-sound? (first (data-one spec-set 'heart ())))
+             (spec-sound? (first (data-one spec-set 'growl ())))
              (List all? spec-sound? spec-randoms)))
 ```
 ---
-    (#t #t #t #t)
+    (#t #t #t #t #t)
 
 ### every cry names a sound of the set and a creature of it, and there is a default
 
