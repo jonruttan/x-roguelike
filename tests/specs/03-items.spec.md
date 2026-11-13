@@ -196,3 +196,23 @@ drunk, read, zapped, eaten, worn and dropped.
 ```
 ---
     ("Which way?" ("The bolt strikes the cave rat." "You have slain the cave rat.") () 2 #t #t 2)
+
+### more than one of a thing: "es" after s, x, z, ch and sh, "s" after the rest; one alone has its article
+
+```roguelike
+(def g (spec-game-on (spec-set-named "delve") 4 ()))
+(def named (fn (_ name n) (items-name g (item-make (spec-item g name) n 0))))
+(write (list (named "dried fish" 2) (named "oil flask" 3) (named "miner's tin" 1) (named "oil flask" 1)))
+```
+---
+    ("2 dried fishes" "3 oil flasks" "a miner's tin" "an oil flask")
+
+### an item's (plural NAME) is its name counted past one, its (single NAME) one alone: Kettle's loaves of bread and wedges of cheese
+
+```roguelike
+(def g (spec-game-on (spec-valley) 4 ()))
+(def named (fn (_ name n) (items-name g (item-make (spec-item g name) n 0))))
+(write (list (named "bread" 2) (named "cheese" 3) (named "bread" 1) (named "cheese" 1)))
+```
+---
+    ("2 loaves of bread" "3 wedges of cheese" "a loaf of bread" "a wedge of cheese")

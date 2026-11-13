@@ -19,6 +19,10 @@
 ;   armour          (armour N)
 ;   food            (nutrition N)
 ;
+; Food and oil counted past one take "es" after s, x, z, ch and sh and
+; "s" after the rest, or an item's own (plural NAME); one alone is its
+; name, or its own (single NAME), after "a" or "an".
+;
 ; A potion, scroll, wand or ring is known by a (guise CLASS NAME ...)
 ; until one is used; the guises are dealt out afresh each game.
 

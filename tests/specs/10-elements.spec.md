@@ -104,6 +104,25 @@ searching, and the blow on a sleeper.  Each is off in classic.
 ---
     (#t #f (#t ("You find a pit.")) #t)
 
+### a trap found is named after its article: an alarm, a drop shaft
+
+```roguelike
+(def g (spec-game-on (spec-set-named "delve") 4 ()))
+(def p (game-player g))
+(player-at! p (first (map-down (game-map g))) (rest (map-down (game-map g))))
+(game-key! g ">") (spec-settle! g)
+(def found
+  (fn (_ name)
+    (def open (spec-open g))
+    (game-traps! g (list (trap-make (first (rest open)) (rest (rest open)) (spec-trap g name) #f)))
+    (game-creatures! g ())
+    (game-key! g "s")
+    (game-messages g)))
+(write (list (found "alarm") (found "drop shaft")))
+```
+---
+    (("You find an alarm.") ("You find a drop shaft."))
+
 ### a trap comes back from a save, found or not
 
 ```roguelike

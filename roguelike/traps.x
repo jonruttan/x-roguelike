@@ -24,7 +24,8 @@
 (import roguelike/dungeon dungeon-spot)
 (import roguelike/state
   game-rng game-set game-map game-player game-traps game-traps! game-param
-  player-r player-c player-condition! state-tell! state-roll state-adjacent? state-dist state-in-sight? state-items-at state-gentle?)
+  player-r player-c player-condition! state-tell! state-roll state-adjacent? state-dist state-in-sight? state-items-at state-gentle?
+  state-a-kind)
 (import roguelike/combat combat-hurt-player!)
 (import roguelike/creatures creatures-wake-all!)
 (import roguelike/items items-teleport!)
@@ -119,7 +120,7 @@
       (fn (_ t)
         (when (if (trap-found? t) #f (near? t))
           (do (trap-found! t)
-              (state-tell! g (lit found-trap) "You find a {name}." (list (pair "name" (trap-name t)))))))
+              (state-tell! g (lit found-trap) "You find {a-name}." (list (pair "name" (trap-name t)) (pair "a-name" (state-a-kind (trap-kind t))))))))
       (game-traps g))))
 
 (provide roguelike/traps
