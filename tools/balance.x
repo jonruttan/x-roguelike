@@ -735,12 +735,25 @@
            ((< (%bl-at who (lit lit)) full) (%bl-at who (lit lit)))
            (#t full))))
 
-; A step that takes the player furthest from CR, or #f when none gains.
+; A step out of CR's reach, one beside no other hostile first, then the
+; furthest, then one out of the line of every hostile in view that
+; shoots or breathes; or #f when none gains.  Backing off beside
+; another is struck by it, and down a shooter's line is shot all the
+; way.
 (def %bl-away!
   (fn (_ g cr)
     (def p (game-player g))
     (def m (game-map g))
-    (def far (fn (_ r c) (state-dist r c (creature-r cr) (creature-c cr))))
+    (def shooters (List filter (fn (_ x) (if (%bl-hostile? x) (if (creature-trait? x (lit ranged)) #t (creature-trait? x (lit breath))) #f))
+                               (%bl-seen g)))
+    (def others (List filter (fn (_ x) (if (same? x cr) #f (%bl-hostile? x))) (%bl-seen g)))
+    (def far
+      (fn (_ r c)
+        ((fn (_ d)
+           (match ((< d 2) (* 2 d))
+                  (#t (+ (if (List any? (fn (_ x) (state-adjacent? (creature-r x) (creature-c x) r c)) others) 0 100)
+                         (* 2 d) (if (List any? (fn (_ x) (%bl-in-line? x r c)) shooters) 0 1)))))
+         (state-dist r c (creature-r cr) (creature-c cr)))))
     (def best
       (List fold
         (fn (_ best d)
@@ -941,8 +954,26 @@
     (grow (list (pair r c)) (list (+ (* r cols) c)) 1)))
 ; A step to a cell beside nothing hostile, the one with the most room
 ; past it, or #f with none.
-(def %bl-clear-step!
+(def %bl-clear-step! (fn (_ g) (%bl-step-clear-of! g %bl-hostile?)))
+; With slow and other hostiles beside the player, on the slow ones'
+; turn: a step to a cell beside none of the slow, so they spend it
+; following and the rest are fought alone.  #f with no such step, or
+; when every one beside is slow (outpaced) or none is.
+(def %bl-shed-slow!
   (fn (_ g)
+    (def p (game-player g))
+    (def beside (List filter (fn (_ cr) (if (%bl-hostile? cr) (state-adjacent? (creature-r cr) (creature-c cr) (player-r p) (player-c p)) #f))
+                             (%bl-seen g)))
+    (match ((not (%bl-slow-next? g)) #f)
+           ((< 0 (player-condition p (lit slowed))) #f)
+           ((< 0 (player-condition p (lit held))) #f)
+           ((not (List any? %bl-slow? beside)) #f)
+           ((List all? %bl-slow? beside) #f)
+           (#t (%bl-step-clear-of! g (fn (_ cr) (if (%bl-hostile? cr) (%bl-slow? cr) #f)))))))
+; A step to a cell beside none that COUNTS? allows, the one with the
+; most room past it, or #f with none.
+(def %bl-step-clear-of!
+  (fn (_ g counts?)
     (def p (game-player g))
     (def m (game-map g))
     (def best
@@ -952,7 +983,7 @@
           (def c (+ (player-c p) (rest (rest d))))
           (match ((not (%bl-free?-cell g r c)) best)
                  ((creatures-door-diagonal? m (player-r p) (player-c p) (first (rest d)) (rest (rest d))) best)
-                 ((%bl-hostile-beside? g r c) best)
+                 ((List any? (fn (_ cr) (if (counts? cr) (state-adjacent? (creature-r cr) (creature-c cr) r c) #f)) (%bl-seen g)) best)
                  (#t ((fn (_ room) (if (< (first best) room) (pair room (first d)) best)) (%bl-room g r c 24)))))
         (pair 0 ()) %bl-dirs))
     (if (null? (rest best)) #f (do (%bl-key! g (rest best)) #t))))
@@ -1316,11 +1347,13 @@
                               ((null? shown) (List find (fn (_ cr) (%bl-sitter? g cr)) (%bl-seen g)))
                               ((not (%bl-stirring? s shown)) ()) (#t shown))) ())
       ((if (null? foe) #f slips) (%bl-onward! g s who shown))
+      ((if (null? foe) #f (%bl-shed-slow! g)) ())
       ((if (null? foe) #f (%bl-to-passage! g)) ())
       ((if (null? foe) #f (%bl-outpace? g)) (%bl-outpace! g s who foe))
       ((not (null? foe))
         (unless (if (if (< 0 (%bl-at who (lit retreat))) (%bl-free? g foe) #f)
-                  (if (if (%bl-losing? g foe) #t (%bl-under? p (%bl-at who (lit retreat)))) (%bl-away! g foe) #f) #f)
+                  (if (if (%bl-losing? g foe) #t (%bl-under? p (%bl-at who (lit retreat))))
+                    (if (%bl-away! g foe) (do (Vector set! 34 #t s) #t) #f) #f) #f)
           (%bl-toward-creature! g s foe)))
       ; Low, with no mending to drink and a hostile in view: a step away
       ; from it, not on to the next thing; out of its view, a rest.  Once
