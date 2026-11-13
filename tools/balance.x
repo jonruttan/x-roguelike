@@ -568,20 +568,21 @@
 (def %bl-wall-shown?
   (fn (_ m r c)
     (if (map-seen? m r c) ((fn (_ t) (if (= t tile-wall) #t (= t tile-secret))) (map-tile m r c)) #f)))
-; Whether, past the wall a step from R C along DR DC, a block three
-; across lies two to four steps out and none of it seen: room enough for
-; the smallest room a secret door hides.
+; Whether, past the wall a step from R C along DR DC, a block two deep
+; and three across lies unseen, the cells straight behind the wall among
+; them: room enough for the smallest room a secret door hides, two deep
+; and three wide, its door anywhere along it.
 (def %bl-unseen-behind?
   (fn (_ m r c dr dc)
-    (List all?
-      (fn (_ k)
-        (List all?
-          (fn (_ j)
-            (def rr (+ r (+ (* k dr) (* j dc))))
-            (def cc (+ c (+ (* k dc) (* j dr))))
-            (if (map-in? m rr cc) (not (map-seen? m rr cc)) #f))
-          (list -1 0 1)))
-      (list 2 3 4))))
+    (def unseen?
+      (fn (_ k j)
+        (def rr (+ r (+ (* k dr) (* j dc))))
+        (def cc (+ c (+ (* k dc) (* j dr))))
+        (if (map-in? m rr cc) (not (map-seen? m rr cc)) #f)))
+    (List any?
+      (fn (_ from)
+        (List all? (fn (_ k) (List all? (fn (_ j) (unseen? k j)) (List range from (+ from 3)))) (list 2 3)))
+      (list -2 -1 0))))
 ; Whether R C is a place to search from: walkable and seen, a wall beside
 ; it across a side not yet searched, unseen ground behind that wall.
 ; Slot 26 of S holds the wall cells searched beside, a vector by cell.
