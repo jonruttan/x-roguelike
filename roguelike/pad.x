@@ -19,6 +19,10 @@
 ; The right stick moves the view, a cell at a time while held, as (look
 ; DX DY): the window's, not the game's.
 ;
+; X, Y, the shoulders, the triggers and the stick clicks are the
+; player's to bind to other commands in the options (pad-buttons!);
+; the triggers, LT and RT, do nothing until they are bound.
+;
 ; A direction moves once it has held for a moment, so a stick pushed to
 ; a diagonal crosses no straight direction on the way there, and again
 ; at a steady rate while it is held.
@@ -45,29 +49,60 @@
 ; Between the view's moves while the right stick holds it.
 (def %pd-look 90)
 
+; S with spaces after it to WIDE.
+(def %pd-pad (fn (self s wide) (if (< (Str8 length s) wide) (self (Str8 append s " ") wide) s)))
+; A button's NAME and what it does, TEXT, as a help line's half.
+(def %pd-half
+  (fn (_ name text)
+    (Str8 append (%pd-pad name (if (< (Str8 length name) 7) 7 (+ (Str8 length name) 4))) text)))
+; HALVES two to a line while they fit in 78 columns.
+(def %pd-lines
+  (fn (self halves)
+    (match ((null? halves) ())
+           ((null? (rest halves)) halves)
+           (#t ((fn (_ both)
+                  (if (< (Str8 length both) 79)
+                    (pair both (self (rest (rest halves))))
+                    (pair (first halves) (self (rest halves)))))
+                (Str8 append (%pd-pad (first halves) 33) (first (rest halves))))))))
+
 ; What each of the gamepad's buttons does, as the game's help shows
 ; the keys: the lines of the help the window shows in place of the keys
-; when the gamepad was used last.
+; when the gamepad was used last.  SAID is the bindable buttons' (NAME .
+; TEXT), each as the player has it bound, a button bound to nothing left
+; out.
 (def pad-help
-  (list "Left stick, d-pad   move, in eight directions; held, keep moving"
-        "Right stick         move the view off you; any move brings it back"
-        "A      pick up; go on past a message or a list"
-        "B      stop asking"
-        "X      your pack                 Y      explore"
-        "LB     up, or out of a door      RB     down, or in a door"
-        "Left stick click    rest         Right stick click    search"
-        "Start  pause: options, help, save and quit"
-        "Back   actions: every other command, the last one taken chosen"
-        ""
-        "In a menu, up and down choose, A takes and B goes back.  A question"
-        "that wants a thing, such as what to quaff, is a menu of the answers."))
+  (fn (_ said)
+    (List append
+      (list "Left stick, d-pad   move, in eight directions; held, keep moving"
+            "Right stick         move the view off you; any move brings it back"
+            "A      pick up; go on past a message or a list"
+            "B      stop asking")
+      (%pd-lines (List map (fn (_ s) (%pd-half (first s) (rest s))) said))
+      (list "Start  pause: options, help, save and quit"
+            "Back   actions: every other command, the last one taken chosen"
+            ""
+            "In a menu, up and down choose, A takes and B goes back.  A question"
+            "that wants a thing, such as what to quaff, is a menu of the answers."))))
 
-(def %pd-buttons
+; Each button's command, (BUTTON . KEY): A, B, Start and Back are the
+; menus' and are always theirs; the rest are the player's to bind
+; (pad-bindable), these their defaults, the triggers bound to nothing.
+(def %pd-fixed
   (list (pair (lit south) ",") (pair (lit east) (lit escape))
-        (pair (lit west) "i") (pair (lit north) "o")
-        (pair (lit left-shoulder) "<") (pair (lit right-shoulder) ">")
-        (pair (lit left-stick) ".") (pair (lit right-stick) "s")
         (pair (lit start) (lit pause)) (pair (lit back) (lit actions))))
+(def pad-defaults
+  (list (pair (lit west) "i") (pair (lit north) "o")
+        (pair (lit left-shoulder) "<") (pair (lit right-shoulder) ">")
+        (pair (lit left-trigger) ()) (pair (lit right-trigger) ())
+        (pair (lit left-stick) ".") (pair (lit right-stick) "s")))
+; The buttons a player binds, (BUTTON . NAME) each, in the order the
+; gamepad's settings list them.
+(def pad-bindable
+  (list (pair (lit west) "X") (pair (lit north) "Y")
+        (pair (lit left-shoulder) "LB") (pair (lit right-shoulder) "RB")
+        (pair (lit left-trigger) "LT") (pair (lit right-trigger) "RT")
+        (pair (lit left-stick) "Left stick click") (pair (lit right-stick) "Right stick click")))
 
 ; The game's key for a step of DX across and DY down, each -1, 0 or 1.
 (def %pd-dirs
@@ -82,12 +117,22 @@
      (List find (fn (_ e) (if (= (first (first e)) dx) (= (rest (first e)) dy) #f)) %pd-dirs))))
 
 ; A pad's state: [STICK-X STICK-Y DPAD HELD NEXT FIRST? FULLSCREEN?
-; LOOK-X LOOK-Y LOOKING LOOK-NEXT], the left stick's two directions,
-; the d-pad buttons down, the direction held, when it next moves,
-; whether that is its first move, whether the window is fullscreen; the
-; right stick's two directions, the way it holds the view, and when the
-; view next moves.
-(def pad-make (fn (_) (Vector of 0 0 () () 0 #t #f 0 0 () 0)))
+; LOOK-X LOOK-Y LOOKING LOOK-NEXT BUTTONS LT RT], the left stick's two
+; directions, the d-pad buttons down, the direction held, when it next
+; moves, whether that is its first move, whether the window is
+; fullscreen; the right stick's two directions, the way it holds the
+; view, and when the view next moves; each button's command, (BUTTON .
+; KEY); and whether each trigger is pulled.
+(def pad-make (fn (_) (Vector of 0 0 () () 0 #t #f 0 0 () 0 (List append %pd-fixed pad-defaults) #f #f)))
+
+; Pad state S with the bindable buttons' commands BOUND, ((BUTTON .
+; KEY) ...), the defaults for any not there.
+(def pad-buttons!
+  (fn (_ s bound)
+    (Vector set! 11
+      (List append %pd-fixed
+        (List map (fn (_ d) ((fn (_ hit) (if (null? hit) d hit)) (List find (fn (_ b) (eq? (first b) (first d))) bound))) pad-defaults))
+      s)))
 
 (def pad-fullscreen? (fn (_ s) (Vector ref 6 s)))
 (def pad-fullscreen! (fn (_ s on) (Vector set! 6 on s)))
@@ -142,18 +187,33 @@
         (Vector set! 2 (List filter (fn (_ h) (not (eq? h name))) (Vector ref 2 s)) s))
       (#t ()))))
 
+; The trigger event E pulled, left-trigger or right-trigger, as a
+; button pressed: once it goes past %pd-on, and not again until it has
+; come back under %pd-off.  Nil for any other event.
+(def %pd-pulled!
+  (fn (_ s e)
+    (def name (if (null? e) () (if (eq? (first e) (lit pad-axis)) (List ref 1 e) ())))
+    (def k (match ((eq? name (lit left-trigger)) 12) ((eq? name (lit right-trigger)) 13) (#t ())))
+    (if (null? k) ()
+      ((fn (_ v was)
+         (match ((if (< %pd-on v) (not was) #f) (do (Vector set! k #t s) name))
+                ((< v %pd-off) (do (Vector set! k #f s) ()))
+                (#t ())))
+       (List ref 2 e) (Vector ref k s)))))
+
 ; The game's key for event E -- nil when there is none -- from pad
 ; state S at NOW milliseconds, the state moved on.  E may be nil, or an
 ; event from anywhere: a held direction moves when its time comes
 ; whatever arrives.
 (def pad-key
   (fn (_ s e now)
+    (def pulled (%pd-pulled! s e))
     (%pd-take! s e)
+    (def pressed (if (if (null? e) #f (eq? (first e) (lit pad-down))) (List ref 1 e) pulled))
     (def button
-      (if (if (null? e) #f (eq? (first e) (lit pad-down)))
+      (if (null? pressed) ()
         ((fn (_ hit) (if (null? hit) () (rest hit)))
-         (List find (fn (_ b) (eq? (first b) (List ref 1 e))) %pd-buttons))
-        ()))
+         (List find (fn (_ b) (eq? (first b) pressed)) (Vector ref 11 s)))))
     (def pointing (%pd-pointing s))
     (unless (%pd-same? pointing (Vector ref 3 s))
       (do (Vector set! 3 pointing s)
@@ -175,4 +235,4 @@
       (#t (do (Vector set! 10 (+ now %pd-look) s)
               (list (lit look) (first looking) (rest looking)))))))
 
-(provide roguelike/pad pad-make pad-key pad-event? pad-fullscreen? pad-fullscreen! pad-help)
+(provide roguelike/pad pad-make pad-key pad-event? pad-fullscreen? pad-fullscreen! pad-help pad-defaults pad-bindable pad-buttons!)

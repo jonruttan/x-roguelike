@@ -130,15 +130,53 @@ step it.
 ---
     (("z") (("y" . "Yes") ("n" . "No")) () ())
 
-### the gamepad's help names each button and stick, and what a menu and a question take
+### the gamepad's help names each button and stick, and what a menu and a question take; the bound buttons say what they are bound to, two to a line while they fit
 
 ```roguelike
 (import roguelike/pad pad-help)
-(def ph-text (Str8 join "\n" pad-help))
+(def ph-said (list (pair "X" "your pack") (pair "Y" "explore") (pair "LB" "up, or out of a door") (pair "RB" "down, or in a door")
+                   (pair "Left stick click" "rest") (pair "Right stick click" "search")))
+(def ph-lines (pad-help ph-said))
+(def ph-text (Str8 join "\n" ph-lines))
+(def ph-long (pad-help (list (pair "LT" "camp till healed or roused") (pair "Right stick click" "what has been said lately"))))
 (write (list (List filter (fn (_ name) (not (Str8 includes? name ph-text)))
                (list "Left stick" "d-pad" "Right stick" "A " "B " "X " "Y " "LB " "RB " "Left stick click" "Right stick click" "Start " "Back "))
              (Str8 includes? "In a menu" ph-text)
-             (List all? (fn (_ l) (< (Str8 length l) 79)) pad-help)))
+             (List all? (fn (_ l) (< (Str8 length l) 79)) ph-lines)
+             (List ref 4 ph-lines) (List ref 6 ph-lines)
+             (List ref 4 ph-long) (List ref 5 ph-long)))
 ```
 ---
-    (() #t #t)
+    (() #t #t "X      your pack                 Y      explore" "Left stick click    rest         Right stick click    search" "LT     camp till healed or roused" "Right stick click    what has been said lately")
+
+## bindings
+
+### a trigger does nothing until bound; bound, a pull past the line is one press, and none again until it comes back
+
+```roguelike
+(import roguelike/pad pad-make pad-key pad-buttons!)
+(def s (pad-make))
+(def before (list (pad-key s '(pad-axis left-trigger 32767 1) 0) (pad-key s '(pad-axis left-trigger 0 1) 0)))
+(pad-buttons! s (list (pair 'left-trigger "s") (pair 'west "q")))
+(write (list before
+             (pad-key s '(pad-axis left-trigger 20000 1) 0) (pad-key s '(pad-axis left-trigger 32767 1) 0)
+             (pad-key s '(pad-axis left-trigger 12000 1) 0) (pad-key s '(pad-axis left-trigger 30000 1) 0)
+             (pad-key s '(pad-axis left-trigger 100 1) 0) (pad-key s '(pad-axis left-trigger 30000 1) 0)
+             (pad-key s '(pad-down west 1) 0) (pad-key s '(pad-down north 1) 0) (pad-key s '(pad-down south 1) 0)
+             (pad-key s '(pad-axis right-trigger 32767 1) 0)))
+```
+---
+    ((() ()) "s" () () () () "s" "q" "o" "," ())
+
+### a button bound to nothing does nothing; the defaults back when unbound
+
+```roguelike
+(import roguelike/pad pad-make pad-key pad-buttons!)
+(def s (pad-make))
+(pad-buttons! s (list (pair 'right-stick ())))
+(def none (pad-key s '(pad-down right-stick 1) 0))
+(pad-buttons! s ())
+(write (list none (pad-key s '(pad-down right-stick 1) 0)))
+```
+---
+    (() "s")

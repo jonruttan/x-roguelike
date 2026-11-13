@@ -89,7 +89,9 @@ the foot what the keys do.  The foot names the gamepad's buttons, A on
 green and B on red as the buttons are, when the last key came from the
 pad, and the keyboard's otherwise.  The choice moves with the keys the
 game takes for up and down; enter, space or A take it, Esc or B go
-back, and left and right change an option (`roguelike/menu`).
+back, and left and right change an option (`roguelike/menu`).  A list
+longer than the screen holds scrolls with the choice, marked above and
+below where more is.
 
 ## What every set needs
 

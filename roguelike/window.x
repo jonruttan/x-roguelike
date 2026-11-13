@@ -31,13 +31,14 @@
 (import roguelike/state game-over game-over! game-exploring? game-exploring! game-band band-name game-place game-ask game-ask!
   state-clear-messages!)
 (import roguelike/frame frame-art frame-tile-size frame-pan frame-pan!)
-(import roguelike/game game-key! game-waiting? game-explore! game-actions game-answers)
+(import roguelike/game game-key! game-waiting? game-explore! game-actions game-answers game-commands)
 (import roguelike/paint paint-width paint-height paint-make paint-screen paint-turn! paint-view! paint-frame! paint-flickers?
   paint-zoom paint-zoom! paint-animating? paint-step! paint-menu!)
-(import roguelike/pad pad-make pad-key pad-event? pad-fullscreen? pad-fullscreen! pad-help)
+(import roguelike/pad pad-make pad-key pad-event? pad-fullscreen? pad-fullscreen! pad-help pad-defaults pad-bindable pad-buttons!)
 (import roguelike/sound sound-make sound-pump! sound-collect? sound-turn! sound-volume! sound-cue! sound-close)
 (import roguelike/menu menu-make menu-chosen menu-key)
-(import roguelike/options options-names options-get options-set options-step options-line options-path options-read options-write!)
+(import roguelike/options options-names options-get options-set options-step options-line options-path options-read options-write!
+  options-key options-keys-for options-key-bind options-buttons options-button-bind options-unbind-all)
 
 ; A frame's time while a light flickers, drawing it and the wait after,
 ; and the wait for a key when nothing moves, in microseconds.
@@ -129,18 +130,25 @@
 (def %wn-front (fn (_ a) (Vector ref 7 a)))
 
 ; The next event of window WIN and the key it is, (EVENT . KEY): a
-; gamepad's events go to its state and come back as keys.  Whether the
-; key came from the gamepad is kept in A.  A held fullscreen key
-; switches once.  The mouse is in the screen's pixels.
-(def %wn-input
-  (fn (_ a win)
+; gamepad's events go to its state and come back as keys, and a typed
+; key is the key typed.  Whether the key
+; came from the gamepad is kept in A.  A held fullscreen key switches
+; once.  The mouse is in the screen's pixels.
+(def %wn-input (fn (_ a win) (%wn-read a win #f)))
+; As %wn-input, a typed key taken to the command it is bound to in the
+; options when BOUND?: in play, not when a question or a message wants
+; the key as it is.
+(def %wn-read
+  (fn (_ a win bound?)
     ; Sdl places the mouse in the screen's pixels given the window; Web
     ; has no mouse.
     (def ev (if (eq? (%wn-front a) Sdl) (Sdl poll win) ((%wn-front a) poll)))
     (def typed? (if (null? ev) #f (eq? (first ev) (lit key-down))))
     (def typed (if typed? (window-key (List ref 1 ev) (List ref 2 ev)) ()))
     (def key (if typed?
-               (if (if (eq? typed (lit fullscreen)) (List ref 3 ev) #f) () typed)
+               (match ((if (eq? typed (lit fullscreen)) (List ref 3 ev) #f) ())
+                      ((if bound? (not (null? typed)) #f) (options-key (Vector ref 5 a) typed))
+                      (#t typed))
                (pad-key (Vector ref 3 a) ev (%wn-ms))))
     (unless (null? key) (Vector set! 6 (not typed?) a))
     (%wn-follow! a ev)
@@ -164,7 +172,8 @@
 (def %wn-closed? (fn (_ e) (if (null? e) #f (if (eq? (first e) (lit quit)) #t (eq? (first e) (lit close))))))
 
 ; The options of A put to work on window WIN, painter P and game G: the
-; zoom, fullscreen and how loud the sound is; then kept.
+; zoom, fullscreen, how loud the sound is and the gamepad's buttons;
+; then kept.
 (def %wn-apply!
   (fn (_ a p g win)
     (def o (Vector ref 5 a))
@@ -177,6 +186,7 @@
     (if (int= 1 (options-get o (lit mute)))
       (sound-volume! (Vector ref 4 a) 0 0)
       (sound-volume! (Vector ref 4 a) (options-get o (lit music)) (options-get o (lit effects))))
+    (pad-buttons! pad (options-buttons o))
     (guard (e ()) (options-write! o (options-path)))))
 (def %wn-option! (fn (_ a name v) (Vector set! 5 (options-set (Vector ref 5 a) name v) a)))
 
@@ -236,24 +246,146 @@
 
 ; The options screen over game G until it is left: each option changed
 ; with left and right, a switch with enter as well, each change put to
-; work at once.  Close when the window is closed, else nil.
+; work at once; and Keys and Gamepad, the screens that bind them.
+; Close when the window is closed, else nil.
 (def %wn-options
   (fn (self g a p win m)
-    (def lines (fn (_) (List append (List map (fn (_ n) (options-line (Vector ref 5 a) n)) options-names) (list "Back"))))
-    ((%wn-front a) show! win (List ref 2 (paint-menu! p g "Options" #f (lines) (menu-chosen m) (%wn-prompts a #t) (Vector ref 6 a))))
-    (def act (%wn-menu g a p win m "Options" #f #t lines))
+    (def lines (fn (_) (List append (List map (fn (_ n) (options-line (Vector ref 5 a) n)) options-names) (list "Keys" "Gamepad" "Back"))))
+    (def act (%wn-choose-values a p g win m "Options" lines))
+    (def id (if (pair? act) (if (eq? (first act) (lit change)) (first (rest act)) (rest act)) ()))
     (def step!
       (fn (_ name dir)
         (Vector set! 5 (options-step (Vector ref 5 a) name dir) a)
         (%wn-apply! a p g win)
         (self g a p win m)))
+    (def then (fn (_ shown) (if (eq? shown (lit close)) shown (self g a p win m))))
     (match
       ((eq? act (lit close)) act)
       ((eq? act (lit back)) ())
-      ((eq? (first act) (lit change)) (if (eq? (first (rest act)) (lit back)) (self g a p win m) (step! (first (rest act)) (rest (rest act)))))
-      ((eq? (rest act) (lit back)) ())
-      (#t (step! (rest act) 1)))))
-(def %wn-options-menu (fn (_) (menu-make (List append (List map (fn (_ n) (pair n "")) options-names) (list (pair (lit back) ""))))))
+      ((eq? id (lit back)) (if (eq? (first act) (lit change)) (self g a p win m) ()))
+      ((eq? id (lit keys)) (if (eq? (first act) (lit change)) (self g a p win m) (then (%wn-keys g a p win (menu-make (%wn-keys-items))))))
+      ((eq? id (lit gamepad)) (if (eq? (first act) (lit change)) (self g a p win m) (then (%wn-gamepad g a p win (menu-make (%wn-gamepad-items))))))
+      ((eq? (first act) (lit change)) (step! id (rest (rest act))))
+      (#t (step! id 1)))))
+(def %wn-options-menu
+  (fn (_) (menu-make (List append (List map (fn (_ n) (pair n "")) options-names) (list (pair (lit keys) "") (pair (lit gamepad) "") (pair (lit back) ""))))))
+
+; Menu M over game G headed HEADING, LINES its items' text, left and
+; right changing its items' values: what %wn-menu answered.
+(def %wn-choose-values
+  (fn (_ a p g win m heading lines)
+    ((%wn-front a) show! win (List ref 2 (paint-menu! p g heading #f (lines) (menu-chosen m) (%wn-prompts a #t) (Vector ref 6 a))))
+    (%wn-menu g a p win m heading #f #t lines)))
+
+; A key as the settings show it: a letter as it is, a named key by its
+; name, space as space.
+(def %wn-key-names
+  (list (pair (lit up) "Up") (pair (lit down) "Down") (pair (lit left) "Left") (pair (lit right) "Right")
+        (pair (lit enter) "Enter") (pair (lit escape) "Esc") (pair (lit backspace) "Backspace")))
+(def %wn-key-name
+  (fn (_ k)
+    (match ((str? k) (if (str=? k " ") "Space" k))
+           (#t ((fn (_ hit) (if (null? hit) "?" (rest hit))) (List find (fn (_ e) (eq? (first e) k)) %wn-key-names))))))
+; LABEL put out to a column WIDE, then TEXT.
+(def %wn-column
+  (fn (_ label wide text)
+    (Str8 append label (if (int< (Str8 length label) wide) (Str8 sub 0 (int- wide (Str8 length label)) "                              ") " ") text)))
+
+; The keys' settings over game G until left: each command and the keys
+; that do it (game-commands); the one chosen taken waits for a key,
+; which then does it, Esc keeping it as it was; and the keys put back
+; as they were made.  Close when the window is closed, else nil.
+(def %wn-keys-items
+  (fn (_) (List append (List map (fn (_ c) (pair (first c) "")) game-commands) (list (pair (lit reset) "") (pair (lit back) "")))))
+(def %wn-keys
+  (fn (self g a p win m)
+    (def o (fn (_) (Vector ref 5 a)))
+    (def lines
+      (fn (_)
+        (List append
+          (List map (fn (_ c) (%wn-column (rest c) 28 (Str8 join " " (List map %wn-key-name (options-keys-for (o) (first c)))))) game-commands)
+          (list "Put every key back" "Back"))))
+    (def act (%wn-choose a p g win m "Keys" (lines)))
+    (def id (if (pair? act) (rest act) ()))
+    (match
+      ((eq? act (lit close)) act)
+      ((eq? act (lit back)) ())
+      ((eq? id (lit back)) ())
+      ((eq? id (lit reset))
+        (do (Vector set! 5 (options-unbind-all (o) (lit keys)) a) (%wn-apply! a p g win) (self g a p win m)))
+      (#t ((fn (_ key)
+             (match ((eq? key (lit close)) key)
+                    ((null? key) (self g a p win m))
+                    (#t (do (Vector set! 5 (options-key-bind (o) key id) a) (%wn-apply! a p g win) (self g a p win m)))))
+           (%wn-key-for a p g win m (lines) (rest (List find (fn (_ c) (str=? (first c) id)) game-commands))))))))
+
+; The key typed for the command LABEL over the keys' settings LINES, as
+; it is, bound or not: nil for Esc, a gamepad's button or Enter, which
+; the menus need; close when the window is closed.
+(def %wn-key-for
+  (fn (self a p g win m lines label)
+    ((%wn-front a) show! win
+      (List ref 2 (paint-menu! p g (Str8 append "Press a key: " label) #f lines (menu-chosen m) (list (pair (if (Vector ref 6 a) "B" "Esc") "Keep it")) (Vector ref 6 a))))
+    ((fn (wait)
+       (def in (%wn-read a win #f))
+       (def e (first in))
+       (def key (rest in))
+       (match ((%wn-closed? e) (lit close))
+              ((null? key) (do (Sys usleep %wn-idle-us) (wait)))
+              ((not (if (null? e) #f (eq? (first e) (lit key-down)))) ())
+              ((if (str? key) #t (if (eq? key (lit up)) #t (if (eq? key (lit down)) #t (if (eq? key (lit left)) #t (eq? key (lit right)))))) key)
+              (#t ()))))))
+
+; The gamepad's settings over game G until left: each button a player
+; binds (pad-bindable) and its command, left and right going through
+; nothing and every command (game-commands), enter too; and the buttons
+; put back as they were made.  Close when the window is closed, else nil.
+(def %wn-gamepad-items
+  (fn (_) (List append (List map (fn (_ b) (pair (first b) "")) pad-bindable) (list (pair (lit reset) "") (pair (lit back) "")))))
+(def %wn-choices (pair (pair () "Nothing") game-commands))
+(def %wn-command-label
+  (fn (_ key)
+    ((fn (_ hit) (if (null? hit) "Nothing" (rest hit)))
+     (List find (fn (_ c) (if (null? key) (null? (first c)) (if (null? (first c)) #f (str=? (first c) key)))) %wn-choices))))
+; The command BUTTON does under options O.
+(def %wn-button-command
+  (fn (_ o button)
+    ((fn (_ hit) (if (null? hit) (rest (List find (fn (_ d) (eq? (first d) button)) pad-defaults)) (rest hit)))
+     (List find (fn (_ b) (eq? (first b) button)) (options-buttons o)))))
+; The command DIR from KEY in %wn-choices, going round at the ends.
+(def %wn-next-command
+  (fn (_ key dir)
+    (def n (List length %wn-choices))
+    (def at ((fn (self l i) (match ((null? l) 0)
+                                   ((if (null? key) (null? (first (first l))) (if (null? (first (first l))) #f (str=? (first (first l)) key))) i)
+                                   (#t (self (rest l) (int+ i 1)))))
+             %wn-choices 0))
+    (first (List ref (% (int+ at (int+ n dir)) n) %wn-choices))))
+(def %wn-gamepad
+  (fn (self g a p win m)
+    (def o (fn (_) (Vector ref 5 a)))
+    (def lines
+      (fn (_)
+        (List append
+          (List map (fn (_ b) (%wn-column (rest b) 20 (%wn-command-label (%wn-button-command (o) (first b))))) pad-bindable)
+          (list "Put every button back" "Back"))))
+    (def act (%wn-choose-values a p g win m "Gamepad" lines))
+    (def change? (if (pair? act) (eq? (first act) (lit change)) #f))
+    (def id (if (pair? act) (if change? (first (rest act)) (rest act)) ()))
+    (def step!
+      (fn (_ dir)
+        (Vector set! 5 (options-button-bind (o) id (%wn-next-command (%wn-button-command (o) id) dir)) a)
+        (%wn-apply! a p g win)
+        (self g a p win m)))
+    (match
+      ((eq? act (lit close)) act)
+      ((eq? act (lit back)) ())
+      ((eq? id (lit back)) (if change? (self g a p win m) ()))
+      ((eq? id (lit reset))
+        (if change? (self g a p win m)
+          (do (Vector set! 5 (options-unbind-all (o) (lit buttons)) a) (%wn-apply! a p g win) (self g a p win m))))
+      (change? (step! (rest (rest act))))
+      (#t (step! 1)))))
 
 ; The pause over game G: back to it, the options, the keys, or the game
 ; saved and left.  Close when the window is closed, else nil.
@@ -275,12 +407,19 @@
   (list (pair (lit resume) "Back to the game") (pair (lit options) "Options")
         (pair (lit keys) "Help") (pair (lit leave) "Save and quit")))
 
+; The bindable buttons as the gamepad's help says them under options O,
+; (NAME . TEXT) each, those bound to nothing left out.
+(def %wn-pad-said
+  (fn (_ o)
+    (List map (fn (_ b) (pair (rest b) (Str8 downcase (%wn-command-label (%wn-button-command o (first b))))))
+      (List filter (fn (_ b) (not (null? (%wn-button-command o (first b))))) pad-bindable))))
+
 ; KEY given game G; ?, the help, shows the gamepad's buttons (pad-help)
 ; in place of the keys when the last key came from the gamepad.
 (def %wn-give!
   (fn (_ a g key)
     (if (if (Vector ref 6 a) (if (str? key) (str=? key "?") #f) #f)
-      (do (state-clear-messages! g) (game-ask! g (list (lit look) "The buttons:" () pad-help)))
+      (do (state-clear-messages! g) (game-ask! g (list (lit look) "The buttons:" () (pad-help (%wn-pad-said (Vector ref 5 a))))))
       (game-key! g key))))
 
 ; Game G played in window WIN with art A and painter P until it ends or
@@ -291,7 +430,7 @@
     (def pad (Vector ref 3 a))
     (def snd (Vector ref 4 a))
     (sound-pump! snd)
-    (def in (%wn-input a win))
+    (def in (%wn-read a win (if (null? (game-ask g)) (not (game-waiting? g)) #f)))
     (def ev (first in))
     ; A gamepad's A goes on past a message as enter does.
     (def key (if (if (Vector ref 6 a) (if (str? (rest in)) (if (str=? (rest in) ",") (game-waiting? g) #f) #f) #f)

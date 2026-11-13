@@ -1101,6 +1101,18 @@
         (pair "v" "Who is in view") (pair "L" "What has been said lately") (pair "m" "The map of the world")
         (pair "?" "Help: what each button does")))
 
+; Every command a key does, (KEY . LABEL) each, in the order the keys'
+; settings list them: the moves, then the commands the gamepad's
+; buttons do, its actions, and saving and quitting.
+(def game-commands
+  (List append
+    (list (pair "k" "Move north") (pair "j" "Move south") (pair "h" "Move west") (pair "l" "Move east")
+          (pair "y" "Move north-west") (pair "u" "Move north-east") (pair "b" "Move south-west") (pair "n" "Move south-east")
+          (pair "," "Pick up") (pair "i" "Your pack") (pair "o" "Explore")
+          (pair "<" "Up, or out of a door") (pair ">" "Down, or in a door"))
+    game-actions
+    (list (pair "S" "Save and leave") (pair "Q" "Quit"))))
+
 ; The answers the question G is asking takes, (KEY . LABEL) each, for a
 ; front end with no letters to type: the pack's items it can take, yes
 ; and no, or a choice's; nil where it takes a direction or goes on.
@@ -1115,4 +1127,4 @@
            ((eq? (first q) (lit choose)) (if (< 4 (List length q)) (List ref 4 q) ()))
            (#t ()))))
 
-(provide roguelike/game game-make game-key! game-waiting? game-explore! game-more! game-score game-score-lines game-score-text game-help game-glow game-actions game-answers)
+(provide roguelike/game game-make game-key! game-waiting? game-explore! game-more! game-score game-score-lines game-score-text game-help game-glow game-actions game-answers game-commands)

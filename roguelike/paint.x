@@ -1010,8 +1010,19 @@
     (Canvas fill! s 0 0 paint-width (int* %pt-scale (int+ %pt-top-h %pt-pitch)) %pt-hud-ground)
     (Canvas fill! s 0 %pt-stand-y paint-width (int- paint-height %pt-stand-y) %pt-hud-ground)
     (%pt-big! s font heading 72 (if title? 6 4) %pt-bright)
-    (def n (List length lines))
     (def row (int+ %pt-pitch 4))
+    (def top (if title? 170 130))
+    ; As many items as fit above the foot, the chosen one among them:
+    ; a long list is shown a window at a time, a mark at an end that
+    ; has more past it.
+    (def room (int/ (int- (int- paint-height (int* %pt-scale (int+ %pt-pitch 8))) top) (int* %pt-scale row)))
+    (def all (List length lines))
+    (def from
+      (if (int< room all)
+        ((fn (_ f) (if (int< f 0) 0 (if (int< (int- all room) f) (int- all room) f))) (int- chosen (int/ room 2)))
+        0))
+    (def shown (List take room (List drop from lines)))
+    (def n (List length shown))
     (def c (Canvas make %pt-strip-w (int* n row)))
     ; The items a column, its left edge where the widest is centred; the
     ; chosen one marked before it.
@@ -1019,11 +1030,13 @@
     (def x0 (int/ (int- %pt-strip-w widest) 2))
     ((fn (self l i)
        (unless (null? l)
-         (do (when (int= i chosen) (Canvas text! c (int- x0 (int* 2 %pt-advance)) (int+ 2 (int* i row)) ">" %pt-warn font))
-             (Canvas text! c x0 (int+ 2 (int* i row)) (first l) (if (int= i chosen) %pt-bright %pt-dim) font)
+         (do (when (int= (int+ i from) chosen) (Canvas text! c (int- x0 (int* 2 %pt-advance)) (int+ 2 (int* i row)) ">" %pt-warn font))
+             (Canvas text! c x0 (int+ 2 (int* i row)) (first l) (if (int= (int+ i from) chosen) %pt-bright %pt-dim) font)
              (self (rest l) (int+ i 1)))))
-     lines 0)
-    (Canvas nine! s 0 (if title? 170 130) paint-width (int* %pt-scale (int* n row)) c 0 0 0 0)
+     shown 0)
+    (when (int< 0 from) (Canvas text! c (int+ x0 (int+ widest %pt-advance)) 2 "^" %pt-dim font))
+    (when (int< (int+ from n) all) (Canvas text! c (int+ x0 (int+ widest %pt-advance)) (int+ 2 (int* (int- n 1) row)) "v" %pt-dim font))
+    (Canvas nine! s 0 top paint-width (int* %pt-scale (int* n row)) c 0 0 0 0)
     (def foot (Canvas make %pt-strip-w (int+ %pt-pitch 4)))
     (def width
       (List fold (fn (_ x pr) (int+ x (int+ (%pt-badge-w (first pr) pad?) (int+ %pt-advance (int+ (%pt-text-w (rest pr)) (int* 2 %pt-advance))))))

@@ -108,3 +108,50 @@ options kept between games, and the menu drawn over the dimmed level.
 ```
 ---
     (('look -1 0) ('look 0 1) 'left "H")
+
+## the bindings
+
+### a key bound does its command's key, and the command's own key no longer once it is bound elsewhere; bound to its own command it is unbound
+
+```roguelike
+(import roguelike/options options-default options-key options-keys-for options-key-bind options-keys options-unbind-all)
+(def o (options-key-bind (options-default) "f" "s"))
+(def o2 (options-key-bind o "s" "q"))
+(def o3 (options-key-bind o2 "g" "s"))
+(write (list (options-key o "f") (options-key o "s") (options-key o "x") (options-keys-for o "s")
+             (options-keys-for o2 "s") (options-keys-for o2 "q") (options-key o2 "s")
+             (options-keys-for o3 "s") (options-key o3 "f")
+             (options-keys-for (options-key-bind o "s" "s") "s") (options-keys (options-key-bind o "s" "s"))
+             (options-keys (options-key-bind (options-default) 'up "s")) (options-keys (options-unbind-all o2 'keys))))
+```
+---
+    ("s" "s" "x" ("f" "s") ("f") ("s" "q") "q" ("g") "f" ("s") () (('up . "s")) ())
+
+### keys and buttons kept and read back with the options
+
+```roguelike
+(import roguelike/options options-default options-set options-get options-read options-write! options-key-bind options-button-bind options-keys options-buttons)
+(def tmp (File temp "/tmp/x-roguelike-options-"))
+(File close (first tmp))
+(def path (rest tmp))
+(options-write! (options-button-bind (options-button-bind (options-key-bind (options-key-bind (options-set (options-default) 'zoom 3) "f" "s") 'up "k") 'left-trigger "s") 'west ()) path)
+(def back (options-read path))
+(File write-all path "(key \"g\" \"s\")\n(key 7 \"s\")\n(button north \"i\")\n(button 3 \"s\")\n")
+(def partial (options-read path))
+(File unlink path)
+(write (list (options-get back 'zoom) (options-keys back) (options-buttons back) (options-keys partial) (options-buttons partial)))
+```
+---
+    (3 (('up . "k") ("f" . "s")) (('west) ('left-trigger . "s")) (("g" . "s")) (('north . "i")))
+
+### every command the keys' settings list is a key of its own, once
+
+```roguelike
+(import roguelike/game game-commands)
+(def keys (List map first game-commands))
+(write (list (List all? str? keys)
+             (List all? (fn (_ k) (= 1 (List length (List filter (fn (_ j) (str=? j k)) keys)))) keys)
+             (List all? (fn (_ c) (str? (rest c))) game-commands)))
+```
+---
+    (#t #t #t)
