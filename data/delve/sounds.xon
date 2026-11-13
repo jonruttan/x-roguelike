@@ -277,8 +277,6 @@
 (cry "glister" "cry-whine")
 (cry "Old Man" "cry-roar")
 
-; Steps taken with a ring of stealth on: at 40 percent.
-(stealth-steps 40)
 
 ; --- fear ----------------------------------------------------------------------
 

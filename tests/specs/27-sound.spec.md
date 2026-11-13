@@ -69,6 +69,22 @@ device.
 ---
     (#t #t #t #t)
 
+### every said, condition and bonus sound names a sound of the set, and every bonus a ring's
+
+```roguelike
+(def spec-set (data-load "data/delve"))
+(def spec-sound? (fn (_ n) (List any? (fn (_ s) (str=? (first s) n)) (data-all spec-set 'sound))))
+(def spec-heard (fn (_ head) (List flat-map (fn (_ f) (List map (fn (_ p) (List ref 1 p)) (List filter (fn (_ p) (if (pair? p) (List includes? (first p) '(on off every struck strikes mends)) #f)) (rest f)))) (data-all spec-set head))))
+(def spec-bonuses (List flat-map (fn (_ r) ((fn (_ b) (if (null? b) () (list (symbol->str (first b))))) (data-prop r 'bonus ()))) (List filter (fn (_ i) (eq? (first i) 'ring)) (data-all spec-set 'item))))
+(write (list (List all? (fn (_ s) (spec-sound? (List ref 1 s))) (data-all spec-set 'said))
+             (List all? spec-sound? (spec-heard 'condition))
+             (List all? spec-sound? (spec-heard 'bonus))
+             (List all? (fn (_ b) (List any? (fn (_ n) (str=? n (first b))) spec-bonuses)) (data-all spec-set 'bonus))
+             (< 0 (List length (spec-heard 'bonus)))))
+```
+---
+    (#t #t #t #t #t)
+
 ### the Kettle world's songs make trackers, and its music, fights, beds, footsteps and random sounds are the world's
 
 ```roguelike

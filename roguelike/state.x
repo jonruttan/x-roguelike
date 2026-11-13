@@ -48,7 +48,9 @@
 ; meant), N the damage, WHAT nil for a blow in hand or what flew: shot,
 ; breath or bolt, 36 the set's forms kept by their head, (HEAD . ARGS-OF-
 ; EACH) each, as they are asked for, 37 the same of the forms the level
-; in hand is made by.  Neither is saved: each is found again.
+; in hand is made by.  Neither is saved: each is found again.  38 the
+; keys of this turn's messages told (state-tell!), newest first, for a
+; front end to hear; not saved.
 ; Every slot here is read through the object doors, not the class: a
 ; class send costs some two hundred objects, and a turn reads thousands.
 (def %st-ref (fn (_ v k) (obj-ref v (int+ k 1))))
@@ -470,7 +472,7 @@
 
 (def game-new
   (fn (_ set seed rows cols)
-    (def g (Vector make 38 ()))
+    (def g (Vector make 39 ()))
     (def rng (Random sw seed))
     (%st-put! g 0 rng)
     (%st-put! g 1 set)
@@ -506,9 +508,10 @@
   (fn (_ g text)
     (%st-put! g 8 (pair text (%st-get g 8)))
     (%st-put! g 15 (List take 100 (pair text (%st-get g 15))))))
-; A turn begins with no messages and no blows.
-(def state-clear-messages! (fn (_ g) (do (%st-put! g 8 ()) (%st-put! g 35 ()))))
+; A turn begins with no messages, no keys told and no blows.
+(def state-clear-messages! (fn (_ g) (do (%st-put! g 8 ()) (%st-put! g 35 ()) (%st-put! g 38 ()))))
 (def game-blows (fn (_ g) (%st-get g 35)))
+(def game-said (fn (_ g) (%st-get g 38)))
 ; A blow struck this turn, for a front end to show: from FR FC at TR TC,
 ; HOW hit, miss, kill or touch, N the damage, WHAT what flew, or nil.
 (def state-blow!
@@ -529,8 +532,12 @@
               (find (game-all g (lit message)))))
     (state-fill (if (null? hit) default (List ref 1 hit)) subs)))
 
-; Say the set's message KEY, or DEFAULT, filled with SUBS.
-(def state-tell! (fn (_ g key default subs) (state-say! g (state-text g key default subs))))
+; Say the set's message KEY, or DEFAULT, filled with SUBS, and keep KEY
+; among the turn's keys told.
+(def state-tell!
+  (fn (_ g key default subs)
+    (%st-put! g 38 (pair key (%st-get g 38)))
+    (state-say! g (state-text g key default subs))))
 
 ; --- dice and the compass ----------------------------------------------------
 
@@ -659,7 +666,7 @@
   creature-trait? creature-condition creature-condition! creature-tick! creature-conditions creature-whole creature-whole!
   item-make item-form item-class item-name item-prop item-prop1 item-count item-count! item-charges
   item-charges! item-enchant item-enchant! item-letter item-letter! item-r item-c item-at! item-class? item-class-in?
-  state-say! state-clear-messages! game-blows state-blow! state-clear-log! state-fill state-text state-tell!
+  state-say! state-clear-messages! game-blows game-said state-blow! state-clear-log! state-fill state-text state-tell!
   state-roll state-chance? state-dir state-dirs state-dist state-adjacent? state-in-sight? game-daylight? state-covers? state-sign
   state-creature-at state-creature-named state-items-at state-player-at? state-free?
   state-remove-creature! state-remove-floor! state-remove-pack!

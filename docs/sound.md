@@ -43,7 +43,7 @@ first time it is wanted, at each of three pitches and three places.
 
 | Event | When |
 |---|---|
-| `step` | the player moves; the sound is the terrain's, from `(footstep "TERRAIN" "SOUND")` (`"default"` for the rest), at `(stealth-steps PCT)` percent with a ring of stealth on |
+| `step` | the player moves; the sound is the terrain's, from `(footstep "TERRAIN" "SOUND")` (`"default"` for the rest), shaped by the conditions and bonuses (below) |
 | `miss`, `hit`, `kill` | the player's blow, placed by where the creature stands |
 | `struck`, `dodged` | a creature's blow on the player, landed or missed |
 | `hurt`, `low` | hit points lost; `low` when the loss takes them under `(low-hp PCT)` of the most |
@@ -53,7 +53,7 @@ first time it is wanted, at each of three pitches and three places.
 | `bought`, `sold` | gold paid at a counter; gold taken for something out of the pack |
 | `stairs`, `arrived` | a level down or up; the first level of a new band |
 | `hungry`, `weak` | hunger crossing the set's `(hunger ...)` marks |
-| `afflicted`, `relieved` | a condition taken on, one worn off |
+| `afflicted`, `relieved` | a condition taken on, one worn off, when its `(condition ...)` has no `on` or `off` |
 | `lamp-lit`, `lamp-low`, `lamp-out` | the set's `(lamp FULL LOW)` lit or filled, burning down past LOW, gone out |
 | `died`, `won` | the end |
 | `volume` | the sounds made louder or quieter in the window, at the new loudness |
@@ -67,6 +67,30 @@ nothing, and placed left or right by where the creature stands.
 In the window, M mutes the sound and brings it back, and [ and ] make
 the music and the sounds quieter and louder together, a tenth at a time;
 the options screen sets each alone. Both are kept with the options.
+
+## Messages
+
+`(said "KEY" "SOUND")` is heard when a turn tells the message KEY (the
+keys of `messages.xon`), each key once a turn. A key whose event has a
+cue (a blow, gold, the stairs, hunger, the lamp) is left to the cue, so
+it is not heard twice.
+
+## Conditions and bonuses
+
+`(condition "NAME" PROP ...)` shapes what is heard while the player is
+under the condition NAME (confused, slowed, hasted, held, blind,
+seeing), and `(bonus "NAME" PROP ...)` while they wear a ring whose
+`(bonus NAME N)` it is. A ring is heard whether its kind is known or
+not, so it can be told by ear.
+
+| Prop | Heard |
+|---|---|
+| `(on "SOUND")`, `(off "SOUND")` | as it begins, as it ends |
+| `(every "SOUND" EVERY-MS GAIN)` | now and again while it holds, as the place's random sounds are |
+| `(steps CENTS WANDER PCT)` | the player's steps CENTS sharper (flatter below nought), a side off up to WANDER percent of the time, at PCT percent; more than one at once add their CENTS, take the most WANDER and multiply their PCT |
+| `(struck "SOUND")` | with a blow that lands on the player |
+| `(strikes "SOUND")` | with a blow the player lands |
+| `(mends "SOUND")` | with hit points come back a little at a time |
 
 ## Fear
 
