@@ -1296,6 +1296,7 @@
                 %bl-wary)
     (%bl-sat! g)
     (def slips (%bl-slips? g s))
+    (unless (%bl-under? p (%bl-mark g s who (lit rest))) (Vector set! 34 #f s))
     (def struck? (< (player-hp p) (Vector ref 22 s)))
     (Vector set! 22 (player-hp p) s)
     (match
@@ -1322,9 +1323,11 @@
                   (if (if (%bl-losing? g foe) #t (%bl-under? p (%bl-at who (lit retreat)))) (%bl-away! g foe) #f) #f)
           (%bl-toward-creature! g s foe)))
       ; Low, with no mending to drink and a hostile in view: a step away
-      ; from it, not on to the next thing; out of its view, a rest.
-      ((match ((not (null? potion)) #f) ((null? shown) #f) ((not (%bl-under? p (%bl-at who (lit quaff)))) #f)
-              (#t (%bl-away! g shown)))
+      ; from it, not on to the next thing; out of its view, a rest.  Once
+      ; backed off, slot 34 of S, it keeps off until rested.
+      ((match ((not (null? potion)) #f) ((null? shown) #f)
+              ((not (if (Vector ref 34 s) #t (%bl-under? p (%bl-at who (lit quaff))))) #f)
+              (#t (do (Vector set! 34 #t s) (%bl-away! g shown))))
         ())
       ((if (null? food) #f (< (player-food p) hungry))
         (do (%bl-use! g "e" food) (Vector set! 3 (+ 1 (Vector ref 3 s)) s)))
@@ -1336,6 +1339,10 @@
       ((if (null? armour) #f (if (null? (player-armour p)) #t (< (%bl-armour-worth g (player-armour p)) (%bl-armour-worth g armour))))
         (if (null? (player-armour p)) (%bl-use! g "W" armour) (%bl-key! g "T")))
       ((if (null? foe) (%bl-shed! g s) #f) ())
+      ; Backed off with nowhere further to step, or woken from a rest:
+      ; it waits with a hostile in sight and rests again without one,
+      ; not on to the next thing.
+      ((Vector ref 34 s) (if (%bl-in-sight? g shown) (%bl-key! g "s") (%bl-rest! g)))
       (#t (%bl-onward! g s who shown)))))
 
 ; --- a world of screens ------------------------------------------------------
@@ -1509,7 +1516,7 @@
     (def shoots? (if (null? shown) #f (creature-trait? shown (lit ranged))))
     (def step-to
       (fn (_ tag cr most) (%bl-step-within g s tag (fn (_ r c) (if (= r (creature-r cr)) (= c (creature-c cr)) #f)) most)))
-    (def to-shown (if (match ((null? shown) #t) ((%bl-running? g) #t) ((eq? (creature-state shown) (lit fleeing)) #t)
+    (def to-shown (if (match ((null? shown) #t) ((%bl-running? g) #t) ((Vector ref 34 s) #t) ((eq? (creature-state shown) (lit fleeing)) #t)
                              ((List any? (fn (_ x) (same? x shown)) (Vector ref 20 s)) #t)
                              (#t (not (%bl-worth? g who shown))))
                     ()
@@ -1673,7 +1680,7 @@
     (def g (%bl-start set play))
     (unless (str=? path "") (File write-all path ""))
     (def kept (Vector of (str=? path "")))
-    (def s (Vector of #f "" 0 0 #f () () 0 () () 0 0 () 0 #f () () () -1 () () () 0 () () #f () 0 0 -1 () 0 0 #f))
+    (def s (Vector of #f "" 0 0 #f () () 0 () () 0 0 () 0 #f () () () -1 () () () 0 () () #f () 0 0 -1 () 0 0 #f #f))
     (def arrivals (Vector of (list (%bl-arrival g))))
     (def loop
       (fn (self turn stalled)
@@ -1741,7 +1748,7 @@
           (unless (null? cr)
             (do (def hp (creature-prop cr (lit hp) (list 1 1)))
                 (creature-hp! cr (state-roll (game-rng g) (first hp) (List ref 1 hp)))))
-          (def s (Vector of #f "" 0 0 #f () () 0 () () 0 0 () 0 #f () () () -1 () () () 0 () () #f () 0 0 -1 () 0 0 #f))
+          (def s (Vector of #f "" 0 0 #f () () 0 () () 0 0 () 0 #f () () () -1 () () () 0 () () #f () 0 0 -1 () 0 0 #f #f))
           (def depth (game-depth g))
           (def start (game-turn g))
           (def loop
