@@ -401,7 +401,8 @@
 ; was watched of each creature, 24 the blows of the last turn, 25
 ; whether a secret door has been found here since the level was last
 ; explored, 26 the wall cells searched beside, a vector by cell, 27 the
-; secret doors found.
+; secret doors found, 28 the seconds of lamp burnt here, 29 the lamp at
+; the last turn.
 
 ; Where the player stands, as text: the depth, or on a world of screens
 ; the screen and any interior.
@@ -414,7 +415,7 @@
 (def %bl-explored? (fn (_ g s) (if (%bl-here? g s) (Vector ref 0 s) #f)))
 (def %bl-explored! (fn (_ g s) (Vector set! 0 #t s) (Vector set! 1 (%bl-place g) s) (Vector set! 4 #f s) (Vector set! 25 #f s)))
 (def %bl-new-level! (fn (_ g s) (Vector set! 0 #f s) (Vector set! 1 (%bl-place g) s) (Vector set! 4 #f s) (Vector set! 9 () s) (Vector set! 12 () s)
-    (Vector set! 25 #f s) (Vector set! 26 () s)
+    (Vector set! 25 #f s) (Vector set! 26 () s) (Vector set! 28 0 s)
     (Vector set! 13 (game-turn g) s) (Vector set! 14 #f s) (Vector set! 15 () s) (Vector set! 17 () s) (Vector set! 19 () s) (Vector set! 20 () s) (Vector set! 21 () s) (Vector set! 23 () s) (Vector set! 0 () %bl-slowed) (Vector set! 0 0 %bl-bold)))
 
 ; With nowhere at all to go on a level: the first time, the cells beside
@@ -468,10 +469,11 @@
       (do (Vector set! 12 () s) (Vector set! 15 () s) (Vector set! 0 0 %bl-bold)))
     (Vector set! 17 (pair (player-r p) (player-c p)) s)))
 
-; Whether the level has light left to look about by: the turns spent
-; here, a second each, under the share of the oil in hand, lamp and
-; flasks, that this level and each below it to the goal would have
-; alike.  Always, in a set with no lamp.
+; Whether the level has light left to look about by: the lamp burnt
+; here, slot 28 of S, under the share of the oil in hand, lamp and
+; flasks, and of what the bands below still lay, that this level and
+; each below it to the goal would have alike.  A camp burns none.
+; Always, in a set with no lamp.
 (def %bl-light-left?
   (fn (_ g s)
     (def p (game-player g))
@@ -479,7 +481,7 @@
     (def oil (List fold (fn (_ n it) (if (eq? (item-class it) (lit oil)) (+ n (item-prop1 it (lit oil) 600)) n)) 0 (game-pack g)))
     (def levels (+ 1 (if (< (game-depth g) last) (- last (game-depth g)) 0)))
     (match ((null? (game-param g (lit lamp) ())) #t) ((< (player-lamp p) 0) #t)
-           (#t (< (* levels (- (game-turn g) (Vector ref 13 s))) (+ (player-lamp p) (+ oil (%bl-sure-oil g last))))))))
+           (#t (< (* levels (Vector ref 28 s)) (+ (player-lamp p) (+ oil (%bl-sure-oil g last))))))))
 ; The oil the bands owe the levels below this one down to LAST: a band
 ; lays each oil with (per-band N) N times over its levels, so a level of
 ; it holds its share.  The bot knows the set, as one who has played.
@@ -1214,6 +1216,11 @@
     ; A secret door found opens ground to be looked over.
     (when (%bl-told? g "You find a secret door.")
       (do (Vector set! 0 #f s) (Vector set! 25 #t s) (Vector set! 27 (+ 1 (Vector ref 27 s)) s)))
+    ; The lamp burnt here: what it has fallen by since the last turn, a
+    ; flask poured not counted.
+    (when (< (player-lamp p) (Vector ref 29 s))
+      (Vector set! 28 (+ (Vector ref 28 s) (- (Vector ref 29 s) (player-lamp p))) s))
+    (Vector set! 29 (player-lamp p) s)
     (%bl-thrown! g s)
     (%bl-turning! g s foe shown)
     (Vector set! 0 (game-turn g) %bl-now)
@@ -1590,7 +1597,7 @@
     (def g (%bl-start set play))
     (unless (str=? path "") (File write-all path ""))
     (def kept (Vector of (str=? path "")))
-    (def s (Vector of #f "" 0 0 #f () () 0 () () 0 0 () 0 #f () () () -1 () () () 0 () () #f () 0))
+    (def s (Vector of #f "" 0 0 #f () () 0 () () 0 0 () 0 #f () () () -1 () () () 0 () () #f () 0 0 -1))
     (def arrivals (Vector of (list (%bl-arrival g))))
     (def loop
       (fn (self turn stalled)
@@ -1657,7 +1664,7 @@
           (unless (null? cr)
             (do (def hp (creature-prop cr (lit hp) (list 1 1)))
                 (creature-hp! cr (state-roll (game-rng g) (first hp) (List ref 1 hp)))))
-          (def s (Vector of #f "" 0 0 #f () () 0 () () 0 0 () 0 #f () () () -1 () () () 0 () () #f () 0))
+          (def s (Vector of #f "" 0 0 #f () () 0 () () 0 0 () 0 #f () () () -1 () () () 0 () () #f () 0 0 -1))
           (def depth (game-depth g))
           (def start (game-turn g))
           (def loop
