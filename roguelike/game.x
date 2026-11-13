@@ -1088,7 +1088,7 @@
         (pair "w" "Wield a weapon") (pair "W" "Wear armour") (pair "T" "Take off armour")
         (pair "P" "Put on a ring") (pair "R" "Take off a ring") (pair "d" "Drop a thing")
         (pair "v" "Who is in view") (pair "L" "What has been said lately") (pair "m" "The map of the world")
-        (pair "?" "The keys")))
+        (pair "?" "Help: what each button does")))
 
 ; Every command a key does, (KEY . LABEL) each, in the order the keys'
 ; settings list them: the moves, then the commands the gamepad's

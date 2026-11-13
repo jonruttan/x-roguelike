@@ -49,6 +49,42 @@
 ; Between the view's moves while the right stick holds it.
 (def %pd-look 90)
 
+; S with spaces after it to WIDE.
+(def %pd-pad (fn (self s wide) (if (< (Str8 length s) wide) (self (Str8 append s " ") wide) s)))
+; A button's NAME and what it does, TEXT, as a help line's half.
+(def %pd-half
+  (fn (_ name text)
+    (Str8 append (%pd-pad name (if (< (Str8 length name) 7) 7 (+ (Str8 length name) 4))) text)))
+; HALVES two to a line while they fit in 78 columns.
+(def %pd-lines
+  (fn (self halves)
+    (match ((null? halves) ())
+           ((null? (rest halves)) halves)
+           (#t ((fn (_ both)
+                  (if (< (Str8 length both) 79)
+                    (pair both (self (rest (rest halves))))
+                    (pair (first halves) (self (rest halves)))))
+                (Str8 append (%pd-pad (first halves) 33) (first (rest halves))))))))
+
+; What each of the gamepad's buttons does, as the game's help shows
+; the keys: the lines of the help the window shows in place of the keys
+; when the gamepad was used last.  SAID is the bindable buttons' (NAME .
+; TEXT), each as the player has it bound, a button bound to nothing left
+; out.
+(def pad-help
+  (fn (_ said)
+    (List append
+      (list "Left stick, d-pad   move, in eight directions; held, keep moving"
+            "Right stick         move the view off you; any move brings it back"
+            "A      pick up; go on past a message or a list"
+            "B      stop asking")
+      (%pd-lines (List map (fn (_ s) (%pd-half (first s) (rest s))) said))
+      (list "Start  pause: options, help, save and quit"
+            "Back   actions: every other command, the last one taken chosen"
+            ""
+            "In a menu, up and down choose, A takes and B goes back.  A question"
+            "that wants a thing, such as what to quaff, is a menu of the answers."))))
+
 ; Each button's command, (BUTTON . KEY): A, B, Start and Back are the
 ; menus' and are always theirs; the rest are the player's to bind
 ; (pad-bindable), these their defaults, the triggers bound to nothing.
@@ -199,4 +235,4 @@
       (#t (do (Vector set! 10 (+ now %pd-look) s)
               (list (lit look) (first looking) (rest looking)))))))
 
-(provide roguelike/pad pad-make pad-key pad-event? pad-fullscreen? pad-fullscreen! pad-defaults pad-bindable pad-buttons!)
+(provide roguelike/pad pad-make pad-key pad-event? pad-fullscreen? pad-fullscreen! pad-help pad-defaults pad-bindable pad-buttons!)
