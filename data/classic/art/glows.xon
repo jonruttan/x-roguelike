@@ -1,0 +1,14 @@
+; glows.xon -- the light a ring casts worn, by its guise: (glow GUISE R
+; G B), a little light just round the player, pulsing (see
+; roguelike/frame.x).  A guise named nowhere glows a pale lilac.  By
+; guise, not by kind, so a ring not yet known shows only what it looks
+; like.
+
+(glow "jade" 70 150 255)
+(glow "onyx" 130 60 255)
+(glow "amber" 255 90 70)
+(glow "opal" 150 180 255)
+(glow "iron" 255 80 40)
+(glow "coral" 255 80 120)
+(glow "garnet" 240 10 60)
+(glow "pearl" 160 100 255)

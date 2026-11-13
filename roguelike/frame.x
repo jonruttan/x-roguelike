@@ -21,13 +21,13 @@
 (import x/type/vector)
 (import x/core/doors int+ int- int* int/ int% int< int= str-make str->ptr ptr-set! ptr-ref ptr->int int->ptr str-byte-ref char->int mem-copy mem-cmp)
 (import roguelike/data data-all data-glyph)
-(import roguelike/items items-glyph)
+(import roguelike/items items-glyph items-guise)
 (import roguelike/map map-terrain map-kinds map-rows map-cols map-tile map-seen? map-visible? map-in? map-opaque? map-chart
   tile-rock tile-roof tile-door tile-water tile-shallow map-shown map-covered? map-roofed? map-roof-pitch map-roof-at
   map-roof-off map-drawn-buffers)
 (import roguelike/state game-map game-player game-floor game-creatures game-traps
   player-r player-c player-conditions item-r item-c item-class creature-r creature-c creature-name creature-glyph
-  creature-state creature-condition game-set game-blows game-over)
+  creature-state creature-condition game-set game-blows game-over player-rings state-ring-bonus)
 (import roguelike/draw draw-hunger)
 (import roguelike/game game-glow)
 (import roguelike/creatures creatures-shown?)
@@ -103,7 +103,8 @@
 ; The art of ART-FORMS for band BAND (a name, or nil): a vector by
 ; terrain code of each kind's pictures, the kind it is a sort of
 ; standing in where it has none; then the art's tiles, for names that
-; are not terrain.
+; are not terrain; the band; and its glows, (glow GUISE R G B), the
+; light a ring of that guise casts worn.
 (def frame-art
   (fn (_ art-forms band)
     (def groups (%fr-group (data-all art-forms (lit tile))))
@@ -114,7 +115,7 @@
         ((fn (_ k) (match ((not (null? k)) k) ((null? (List ref 2 t)) ()) (#t (self (named (List ref 2 t))))))
          (%fr-kind groups (List ref 1 t) band))))
     (List for-each (fn (_ t) (Vector set! (first t) (own t) kinds)) map-terrain)
-    (list kinds groups band)))
+    (list kinds groups band (data-all art-forms (lit glow)))))
 (def frame-art-band (fn (_ a) (List ref 2 a)))
 
 ; The picture for a cell at SEED of a kind's pictures PICS, part PART,
@@ -558,6 +559,8 @@
 ; The lights of OPS, the tiles drawn, whose cells are in view on M
 ; under camera CAM: (light X Y R G B REACH FLICKER), X Y the cell's
 ; middle, REACH in cells, FLICKER the waver in percent (0 for none).
+; A light may end in TINT, how hard it takes the cells toward its
+; colour in percent, 100 when it has none.
 (def frame-lights
   (fn (self m cam ops)
     (if (null? ops) ()
@@ -649,7 +652,7 @@
     (def ly (List ref 2 l))
     (def rad (int/ (int* (int* (List ref 6 l) 16) k) 100))
     (def r2 (int* rad rad))
-    (def w0 (int/ (int* 56 k) 100))
+    (def w0 (int/ (int* (int/ (int* 56 k) 100) (if (int< 8 (List length l)) (List ref 8 l) 100)) 100))
     (def r (List ref 3 l))
     (def g (List ref 4 l))
     (def b (List ref 5 l))
@@ -747,7 +750,7 @@
       (List append (if (null? moving) () (List filter in? level))
         things (list (frame-view m cam))
         (frame-lights m cam ((fn (_ ops) (if (int< 0 (game-glow g)) (List reject %fr-player-op? ops) ops)) (List append level things)))
-        (if (null? at) () (list (List append (list (lit light) (int+ (first at) 8) (int+ (rest at) 8)) (%fr-carried g))))
+        (if (null? at) () (List map (fn (_ l) (List append (list (lit light) (int+ (first at) 8) (int+ (rest at) 8)) l)) (%fr-carried g a)))
         (frame-glints g cam) (frame-blows g cam) (list (frame-chart g)))))))
 
 ; The turn's blows whose target is in view under camera CAM, oldest
@@ -794,17 +797,36 @@
 ; The hero's lantern, as a light's (R G B REACH FLICKER): warm, and
 ; wavering a little.
 (def %fr-lantern (list 255 222 170 5 4))
-; The light the player carries: with the lamp out and a ring's light
-; (game-glow), a cold sea-green out as far as it reaches, steady, and
-; the player's own picture's light left out; else the lantern.
+; The lights the player carries, each (R G B REACH FLICKER): with the
+; lamp out and a ring's light (game-glow), a cold blue out as far
+; as it reaches, steady, and the player's own picture's light left out;
+; else the lantern, and a ring's light laid over it.  Then each ring
+; worn casts a little light of its own just round the player, in the
+; colour the art gives its guise (frame-art), so a ring not yet known
+; shows only what it looks like; it tints hard, an odd light the
+; lantern does not wash out.
 (def %fr-player-op?
   (fn (_ op)
     (match ((not (eq? (first op) (lit tile))) #f) ((null? (rest (rest (rest (rest op))))) #f)
            (#t (eq? (first (List ref 4 op)) (lit player))))))
+(def %fr-eerie (fn (_ reach) (list 120 170 255 reach 0)))
+(def %fr-ring-reach 2)
+(def %fr-ring-flicker 14)
+(def %fr-ring-tint 220)
+(def %fr-ring-light (list 190 150 255))
 (def %fr-carried
-  (fn (_ g)
-    (def reach (game-glow g))
-    (if (int< 0 reach) (list 110 235 190 reach 0) %fr-lantern)))
+  (fn (_ g a)
+    (def glow (game-glow g))
+    (def light (state-ring-bonus g (lit light)))
+    (def glows (if (int< 3 (List length a)) (List ref 3 a) ()))
+    (List append
+      (if (int< 0 glow) (list (%fr-eerie glow))
+        (pair %fr-lantern (if (int< 0 light) (list (%fr-eerie light)) ())))
+      (List map
+        (fn (_ ring)
+          ((fn (_ gl) (List append (if (null? gl) %fr-ring-light (rest gl)) (list %fr-ring-reach %fr-ring-flicker %fr-ring-tint)))
+           ((fn (_ guise) (List find (fn (_ f) (str=? (first f) guise)) glows)) (items-guise g ring))))
+        (player-rings (game-player g))))))
 
 ; A glint on each item in view, (glint X Y SEED GOLD?): a star that
 ; comes and goes on it, drawn over the light (paint.x).  SEED puts each

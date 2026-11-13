@@ -1,0 +1,11 @@
+; glows.xon -- the light a ring casts worn, by its guise: (glow GUISE R
+; G B), a little light just round the player, pulsing (see
+; roguelike/frame.x).  A guise named nowhere glows a pale lilac.  By
+; guise, not by kind, so a ring not yet known shows only what it looks
+; like.  The dale's rings are plain stuff, and their light is odd for
+; it.
+
+(glow "tin" 80 150 255)
+(glow "horn" 255 70 50)
+(glow "bone" 190 80 230)
+(glow "silver" 110 140 255)

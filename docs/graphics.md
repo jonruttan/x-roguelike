@@ -267,7 +267,9 @@ level has more of its floor under water, set in `game.xon` as
 
 A level is dark but for what gives light.  `(light R G B N)` on a tile
 makes it give light of that colour, reaching N cells; `(flicker P)`
-makes it waver by P percent, as a flame does.
+makes it waver by P percent, as a flame does.  A light the front-end
+makes may end in a tint, how hard it takes the cells toward its
+colour in percent.
 
 - The level is drawn, then darkened; each light lifts the dark round
   it, falling off to nothing at N cells, and tints it its colour.  A
@@ -280,6 +282,15 @@ makes it waver by P percent, as a flame does.
   here and there.  The Galleries' own lamps are long out (the band's
   word on arrival), so no torch burns in a bracket there.  Deeper, the
   light is the stone's water: "light from the rock".
+- What the player carries: the lantern while the lamp burns.  A ring
+  of light lays a cold blue over it, out as far as the ring
+  reaches, and with the lamp out is the only light.
+- A ring worn casts an odd light of its own, two cells round the
+  player, pulsing and tinting hard, so the lantern does not wash it
+  out.  Its colour is its guise's, `(glow GUISE R G B)` in
+  `art/glows.xon`, so a ring not yet known shows only what it looks
+  like; a guise with no glow is a pale lilac.  The art spec holds
+  every ring guise of a set to a glow.
 
 Text, so it is read with `x/codec/xon`, diffed, and drawn by hand; no
 image tools.  Turned into RGBA once when the set is loaded.

@@ -157,3 +157,24 @@ each the art's size, held TICKS a picture.
 ```
 ---
     (95 #t #t #t)
+
+## the glows
+
+### each set's glows give every ring guise of the set a colour, and name nothing else
+
+```roguelike
+(def glow-wrong
+  (fn (_ name)
+    (def glows (List filter (fn (_ f) (if (pair? f) (eq? (first f) 'glow) #f))
+                 (Xon parse (File read-all (Str8 append "data/" name "/art/glows.xon")))))
+    (def guises (rest (List find (fn (_ g) (eq? (first g) 'ring)) (data-all (spec-set-named name) 'guise))))
+    (def colour? (fn (_ c) (if (= 3 (List length c)) (List all? (fn (_ v) (if (number? v) (if (< -1 v) (< v 256) #f) #f)) c) #f)))
+    (List append
+      (List map (fn (_ g) (list g "has no glow"))
+        (List filter (fn (_ g) (not (List any? (fn (_ f) (str=? (List ref 1 f) g)) glows))) guises))
+      (List map (fn (_ f) (list (List ref 1 f) "is no guise or no colour"))
+        (List filter (fn (_ f) (not (if (List any? (fn (_ g) (str=? g (List ref 1 f))) guises) (colour? (List drop 2 f)) #f))) glows)))))
+(write (List map glow-wrong (list "classic" "delve" "kettle")))
+```
+---
+    (() () ())

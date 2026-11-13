@@ -307,6 +307,8 @@
     (def names (Assoc get (item-class it) (game-guises g)))
     (def same (List filter (fn (_ f) (eq? (first f) (item-class it))) (game-world-all g (lit item))))
     (if (null? names) "strange" (List ref (% (%it-index (item-name it) same 0) (List length names)) names))))
+; What IT looks like until it is known, its guise: "jade", "tin".
+(def items-guise (fn (_ g it) (%it-guise g it)))
 
 (def %it-vowel? (fn (_ s) (List any? (fn (_ v) (Str8 starts? v s)) (list "a" "e" "i" "o" "u"))))
 (def %it-an (fn (_ s) (Str8 append (if (%it-vowel? s) "an " "a ") s)))
@@ -663,5 +665,5 @@
 (provide roguelike/items
   items-new items-spawn! items-place-sure! items-place-caches! items-place-secrets! items-place-goal! items-goal-held? items-page-named items-place-pages!
   items-known? items-know! items-name items-worn
-  items-glyph items-pack-lines items-by-letter items-pickup! items-drop! items-quaff! items-read! items-target items-zap!
+  items-glyph items-guise items-pack-lines items-by-letter items-pickup! items-drop! items-quaff! items-read! items-target items-zap!
   items-eat! items-fill! items-wield! items-wear! items-take-off! items-put-on! items-remove! items-teleport! items-use-up!)

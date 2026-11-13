@@ -140,12 +140,14 @@
 ; The painted art OWN, then each tile of the painted art OUTER whose
 ; name OWN draws nothing of: a region's own ground in front, and the
 ; world's people and things it carries in drawn as the world draws
-; them.
+; them; and OUTER's glows behind OWN's, a ring worn the same wherever.
 (def %pt-beside
   (fn (_ own outer)
     (def names (List map (fn (_ f) (List ref 1 f)) (List filter %pt-tile? own)))
     (List append own
-      (List filter (fn (_ f) (if (%pt-tile? f) (not (List any? (fn (_ n) (%pt-same-name? n (List ref 1 f))) names)) #f))
+      (List filter (fn (_ f) (match ((%pt-tile? f) (not (List any? (fn (_ n) (%pt-same-name? n (List ref 1 f))) names)))
+                                    ((pair? f) (eq? (first f) (lit glow)))
+                                    (#t #f)))
         outer))))
 
 ; The art of each place of the set at DIR, as a function of the place:
