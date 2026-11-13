@@ -1321,6 +1321,11 @@
         (unless (if (if (< 0 (%bl-at who (lit retreat))) (%bl-free? g foe) #f)
                   (if (if (%bl-losing? g foe) #t (%bl-under? p (%bl-at who (lit retreat)))) (%bl-away! g foe) #f) #f)
           (%bl-toward-creature! g s foe)))
+      ; Low, with no mending to drink and a hostile in view: a step away
+      ; from it, not on to the next thing; out of its view, a rest.
+      ((match ((not (null? potion)) #f) ((null? shown) #f) ((not (%bl-under? p (%bl-at who (lit quaff)))) #f)
+              (#t (%bl-away! g shown)))
+        ())
       ((if (null? food) #f (< (player-food p) hungry))
         (do (%bl-use! g "e" food) (Vector set! 3 (+ 1 (Vector ref 3 s)) s)))
       ((match ((%bl-in-sight? g shown) #f) ((%bl-told? g "shoots") #f) ((%bl-told? g "You start up") #f) (#t (%bl-under? p (%bl-mark g s who (lit rest))))) (%bl-rest! g))
