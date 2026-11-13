@@ -311,7 +311,15 @@
 (def %it-vowel? (fn (_ s) (List any? (fn (_ v) (Str8 starts? v s)) (list "a" "e" "i" "o" "u"))))
 (def %it-an (fn (_ s) (Str8 append (if (%it-vowel? s) "an " "a ") s)))
 (def %it-signed (fn (_ n) (if (< n 0) (Str8 str n) (Str8 append "+" (Str8 str n)))))
-(def %it-plural (fn (_ it s) (if (< 1 (item-count it)) (Str8 append (Str8 str (item-count it)) " " s "s") (%it-an s))))
+; More than one of IT named S: its (plural NAME), or S with "es" after
+; s, x, z, ch and sh, "s" after the rest.
+(def %it-plural-of
+  (fn (_ it s)
+    (def own (item-prop1 it (lit plural) ""))
+    (match ((not (str=? own "")) own)
+           ((List any? (fn (_ e) (Str8 ends? e s)) (list "s" "x" "z" "ch" "sh")) (Str8 append s "es"))
+           (#t (Str8 append s "s")))))
+(def %it-plural (fn (_ it s) (if (< 1 (item-count it)) (Str8 append (Str8 str (item-count it)) " " (%it-plural-of it s)) (%it-an s))))
 ; " (str N)" for a thing that asks strength, N less its enchantment.
 (def %it-need
   (fn (_ it)
