@@ -675,7 +675,9 @@
         (if (%bl-search-spot? g s pocket? (player-r p) (player-c p)) (do (%bl-search-here! g s) #t)
           ((fn (_ d) (if (null? d) #f (do (%bl-key! g (%bl-key-for (first d) (rest d))) #t)))
            (%bl-step-within g s tag (fn (_ r c) (%bl-search-spot? g s pocket? r c)) most)))))
-    (match ((< most 1) #f) ((items-goal-held? g) #f) ((if (str=? (%bl-env "BALANCE_DARK_SEARCH" "") "") (not (%bl-light-left? g s)) #f) #f)
+    (match ((< most 1) #f) ((items-goal-held? g) #f)
+           ((if (str=? (%bl-env "BALANCE_DARK_SEARCH" "") "") (not (%bl-light-left? g s)) #f)
+             (do (when %bl-tracing (Vector set! 0 (pair (Str8 append "{no light: " (Str8 str (Vector ref 28 s)) " burnt}") (Vector ref 0 %bl-pressed)) %bl-pressed)) #f))
            ((go (lit pocket) #t) #t)
            (#t (go (lit wall) #f)))))
 
