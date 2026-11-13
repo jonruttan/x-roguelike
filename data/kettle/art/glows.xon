@@ -5,7 +5,7 @@
 ; like.  The dale's rings are plain stuff, and their light is odd for
 ; it.
 
-(glow "tin" 90 200 255)
-(glow "horn" 255 140 20)
-(glow "bone" 130 160 255)
-(glow "silver" 160 120 255)
+(glow "tin" 80 150 255)
+(glow "horn" 255 70 50)
+(glow "bone" 190 80 230)
+(glow "silver" 110 140 255)
