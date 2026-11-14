@@ -606,7 +606,7 @@
              (< (%bl-held g (fn (_ x) (if (eq? (item-class x) (lit scroll)) (str=? (item-name x) "blink") #f))) 1))
            (#t #f))))
 ; What the bot would sooner sell than carry: a weapon or armour neither
-; in use nor the best of its kind, a wand found empty, a ring not worn
+; in use nor the best of its kind, a wand found or shown empty, a ring not worn
 ; with another of its name held.
 (def %bl-spare
   (fn (_ g)
@@ -616,7 +616,8 @@
         (def class (item-class it))
         (def worth (if (eq? class (lit weapon)) %bl-weapon-worth %bl-armour-worth))
         (match ((not (str=? (items-worn g it) "")) #f)
-               ((eq? class (lit wand)) (List any? (fn (_ x) (same? x it)) (Vector ref 0 %bl-empty)))
+               ((eq? class (lit wand))
+                 (if (List any? (fn (_ x) (same? x it)) (Vector ref 0 %bl-empty)) #t (if (items-known? g it) (= (item-charges it) 0) #f)))
                ((eq? class (lit ring))
                  (List any? (fn (_ x) (if (same? x it) #f (if (eq? (item-class x) (lit ring)) (str=? (item-name x) (item-name it)) #f))) pack))
                ((not (if (eq? class (lit weapon)) #t (eq? class (lit armour)))) #f)
@@ -1293,6 +1294,7 @@
                    (%bl-in-pack g (fn (_ it) (match ((not (eq? (item-class it) (lit wand))) #f) ((items-known? g it) #f)
                                                     (#t (not (List any? (fn (_ x) (same? x it)) (Vector ref 0 %bl-empty)))))))))
     (def wand (if (null? tried) untried tried))
+    (when (if (null? cr) #f (null? wand)) (%bl-why! (if (null? way) "zap: no aim" "zap: no wand")))
     (if (null? wand) #f
       (do (%bl-use! g "z" wand)
           (%bl-key! g (%bl-key-for (first way) (rest way)))
@@ -1431,10 +1433,11 @@
     (def from (%bl-unseen-blow g s))
     (def again (%bl-unseen-again g))
     (match ((not (null? from))
-             (do (Vector set! 0 (list (game-turn g) (List ref 1 from) (List ref 2 from)) %bl-unseen-near)
+             (do (%bl-why! "unseen")
+                 (Vector set! 0 (list (game-turn g) (List ref 1 from) (List ref 2 from)) %bl-unseen-near)
                  (%bl-key! g (%bl-key-for (- (List ref 1 from) (player-r p)) (- (List ref 2 from) (player-c p)))) #t))
            ((not (null? again))
-             (do (%bl-key! g (%bl-key-for (- (List ref 1 again) (player-r p)) (- (List ref 2 again) (player-c p)))) #t))
+             (do (%bl-why! "unseen again") (%bl-key! g (%bl-key-for (- (List ref 1 again) (player-r p)) (- (List ref 2 again) (player-c p)))) #t))
            (#t #f))))
 ; The blows this turn from cells beside the player with nothing in view
 ; on them; the first of them, or nil; and how many cells they came from.
@@ -2058,6 +2061,7 @@
               (self (game-turn g) (if (= turn (game-turn g)) (+ stalled 1) 0))))))
     (loop 0 0)
     (when trace? (%bl-line "pack: " (Str8 join ", " (List map item-name (game-pack g)))))
+    (when trace? (%bl-line "gold: " (Str8 str (player-gold (game-player g)))))
     (when trace? (%bl-chart g))
     (list seed (if (null? (game-over g)) (lit capped) (game-over g)) (game-epitaph g) (game-deepest g) (game-turn g)
           (Vector ref 2 s) (Vector ref 3 s) (List reverse (Vector ref 0 arrivals))
