@@ -340,8 +340,14 @@
 ; make millions of objects, and a turn tries several: the heap is swept
 ; before each, so a turn's peak is one search's, not their sum.
 (def %bl-step-within
-  (fn (_ g s tag goal? most)
+  (fn (_ g s tag goal-at? most)
     (def p (game-player g))
+    ; A walk onto one of the people is a talk, not a step: their cell is
+    ; a goal only for the walks to someone.
+    (def goal? (if (match ((eq? tag (lit giver)) #t) ((eq? tag (lit creature)) #t) (#t #f)) goal-at?
+                 (fn (_ r c) (if (goal-at? r c)
+                               ((fn (_ cr) (if (null? cr) #t (not (creature-trait? cr (lit talks))))) (%bl-seen-at g r c))
+                               #f))))
     (def cols (map-cols (game-map g)))
     (def standing (%bl-standing g))
     (def kept (%bl-kept g s tag goal? most))
@@ -1171,9 +1177,9 @@
 
 ; With the fight beside the player likely lost, a scroll read to get out
 ; of it: stillness, panic, or a blink away.  A blow from something
-; unseen, with no sight of it, counts as lost once WHO is under its
-; retreat: its cost cannot be weighed, and above that mark it is struck
-; back at.  Panic scares only what is in view, and one scared with more
+; unseen, with no sight of it, counts as lost with a foe in view beside
+; as well, or once WHO is under its retreat: its cost cannot be weighed,
+; and alone above that mark it is struck back at.  Panic scares only what is in view, and one scared with more
 ; than half its hit points turns again at once (creatures.x), so it is
 ; read only with every hostile beside looking badly hurt.  What
 ; stillness holds is remembered for as long as its (effect hold N)
@@ -1182,6 +1188,7 @@
   (fn (_ g s who)
     (def p (game-player g))
     (def unseen? (match ((null? (%bl-unseen-blow g s)) #f) ((< 0 (player-condition p (lit seeing))) #f)
+                        ((not (null? (%bl-beside g %bl-hostile?))) #t)
                         (#t (%bl-under? p (%bl-at who (lit retreat))))))
     (def scares? (not (List any? (fn (_ cr) (match ((not (%bl-hostile? cr)) #f)
                                                    ((not (state-adjacent? (creature-r cr) (creature-c cr) (player-r p) (player-c p))) #f)
