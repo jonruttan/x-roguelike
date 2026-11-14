@@ -125,3 +125,49 @@ row: the --More-- is answered before the next step down.
 ```
 ---
     ('open ("the foreman's lamp" "giver the lamp") ("lampman"))
+
+## the tallyman
+
+### he stands near the arrival on level 4, the first of a band after the first, and on no level before
+
+```roguelike
+(def g (spec-game-on (spec-set-named "delve") 4 ()))
+(player-hp! (game-player g) 1000)
+(def down! (fn (_) (def m (game-map g)) (player-at! (game-player g) (first (map-down m)) (rest (map-down m))) (game-key! g ">") (spec-settle! g)))
+(def seen (Vector of #f))
+(def look! (fn (_) (when (List any? (fn (_ cr) (str=? (creature-name cr) "tallyman")) (game-creatures g)) (Vector set! 0 #t seen))))
+(look!)
+(down!)
+(look!)
+(down!)
+(look!)
+(game-creatures! g ())
+(down!)
+(def p (game-player g))
+(def man (List find (fn (_ cr) (str=? (creature-name cr) "tallyman")) (game-creatures g)))
+(def d (state-dist (creature-r man) (creature-c man) (player-r p) (player-c p)))
+(write (list (Vector ref 0 seen) (game-depth g) (creature-trait? man 'talks) (< 1 d) (< d 8)))
+```
+---
+    (#f 4 #t #t #t)
+
+### walked into, he puts up his counter: the band's stock at the set's prices, selling, and the purse
+
+```roguelike
+(game-creatures! g (list man))
+(player-gold! p 200)
+(game-key! g (spec-beside! g man))
+(def asked (game-ask g))
+(write (list (first asked) (List ref 1 asked) (rest (rest (List ref 3 asked)))))
+```
+---
+    ('choose "The tallyman: what will you have?" ("a) mending, 30 gold" "b) oil flask, 20 gold" "c) miner's tin, 15 gold" "d) blink, 40 gold" "e) miner's blade, 120 gold" "f) scale coat, 150 gold" "s) sell something" "" "You have 200 gold."))
+
+### a letter buys: the scale coat for 150 gold, into the pack
+
+```roguelike
+(game-key! g "f")
+(write (list (player-gold p) (List any? (fn (_ it) (str=? (item-name it) "scale coat")) (game-pack g)) (first (game-ask g))))
+```
+---
+    (50 #t 'choose)

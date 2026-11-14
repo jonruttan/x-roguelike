@@ -110,6 +110,13 @@
 (creatures 8 12)
 (items 4 7)
 (gold 30 8 30)
+
+; What a thing is worth in gold at the tallyman's counter, by its class;
+; an item's own (price N) is in front of this (shops.x).  A player who
+; takes most of the gold has some 370 by level 4, 1900 by level 7 and
+; 2500 by level 10 (one run of tools/balance.x), enough at each counter
+; for a mending potion and a piece of the band's gear.
+(worth (potion 30) (scroll 30) (wand 100) (ring 120) (weapon 50) (armour 60) (food 15) (oil 20))
 (exp 20)
 (regen 12 0)
 

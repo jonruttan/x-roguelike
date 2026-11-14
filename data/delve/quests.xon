@@ -39,3 +39,27 @@
   (done "That will do.  Go on down, then; I will have it drawing by the time"
         "you come back up, for all the good it will do either of us.  Take one:")
   (rewards (weapon "foreman's pick") (ring "silence")))
+
+; The tallyman, (keeper NAME (level N) . PROPS), keeps a shop a band
+; ahead of the player: on the first level of each band after the first,
+; near where the player comes onto it.  (sells (CLASS NAME) ...) is his
+; stock, (buys CLASS ...) what he takes, at the set's (worth ...) or an
+; item's own (price N) (shops.x); each LINE is said over the counter.
+(keeper "tallyman" (level 4)
+  (sells (potion "mending") (oil "oil flask") (food "miner's tin") (scroll "blink")
+         (weapon "miner's blade") (armour "scale coat"))
+  (buys potion scroll wand ring weapon armour food oil)
+  "Tickets or coin.  I take both down here, and nobody up top honours either."
+  "I came down with the crew, and I kept the tally.  Somebody has to.")
+(keeper "tallyman" (level 7)
+  (sells (potion "mending") (oil "oil flask") (food "miner's tin") (scroll "blink")
+         (weapon "sledge") (armour "plated harness"))
+  (buys potion scroll wand ring weapon armour food oil)
+  "Still walking?  Good.  The water took the last one who owed me."
+  "The stone down here is older than the mine.  It does not care for trade.")
+(keeper "tallyman" (level 10)
+  (sells (potion "mending") (oil "oil flask") (food "miner's tin") (scroll "blink")
+         (potion "deep mending") (wand "sparks"))
+  (buys potion scroll wand ring weapon armour food oil)
+  "This is as far as I go.  The light below is not lamplight."
+  "Whatever you carry back up, I will buy.  Whatever you carry down, you will need.")
