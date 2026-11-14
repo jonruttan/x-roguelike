@@ -377,6 +377,16 @@
     (def p (game-player g))
     (List find (fn (_ cr) (if (pred cr) (state-adjacent? (creature-r cr) (creature-c cr) (player-r p) (player-c p)) #f))
       (%bl-seen g))))
+; The hostile beside the player to strike, or nil: one that summons
+; first, as what it calls keeps coming while it stands; then the one
+; that looks most hurt, the soonest down.
+(def %bl-foe
+  (fn (_ g)
+    (def p (game-player g))
+    (def beside (List filter (fn (_ cr) (if (%bl-hostile? cr) (state-adjacent? (creature-r cr) (creature-c cr) (player-r p) (player-c p)) #f))
+                  (%bl-seen g)))
+    (def rank (fn (_ cr) (+ (if (creature-trait? cr (lit summon)) 0 10) (%bl-wounds cr))))
+    (List fold (fn (_ best cr) (if (null? best) cr (if (< (rank cr) (rank best)) cr best))) () beside)))
 ; The nearest hostile in view that does not keep its place, or nil.
 (def %bl-shown-hostile
   (fn (_ g)
@@ -1312,6 +1322,20 @@
            ((%bl-toward-creature! g s cr) ())
            (#t (%bl-key! g "s")))))
 
+; Out of a lost fight down the stairs: on them, down; within twelve
+; steps, a step to them.  Not with the goal in hand, which goes up, nor
+; down a shaft found barred, slot 14 of S, which a try down marks as
+; %bl-descend! does.  #f with no such way.
+(def %bl-down-and-out!
+  (fn (_ g s)
+    (match ((items-goal-held? g) #f) ((Vector ref 14 s) #f)
+           ((%bl-at-stairs? g tile-down)
+             (do (%bl-key! g ">")
+                 (when (List any? (fn (_ m) (Str8 includes? "shaft" m)) (game-messages g)) (Vector set! 14 #t s))
+                 #t))
+           (#t ((fn (_ d) (if (null? d) #f (do (%bl-key! g (%bl-key-for (first d) (rest d))) #t)))
+                 (%bl-step-within g s (lit stairs) (%bl-stairs-goal g tile-down) 12))))))
+
 ; To the stairs and down them, or up with the goal: rested to READY first
 ; with nothing hostile in view.  A shaft found barred is kept in slot 14
 ; of S, and its guardian gone after until it is dead: out of view, to
@@ -1362,7 +1386,7 @@
   (fn (_ g s who)
     (def p (game-player g))
     (def q (game-ask g))
-    (def foe (%bl-beside g %bl-hostile?))
+    (def foe (%bl-foe g))
     (def potion (%bl-in-pack g (fn (_ it) (if (eq? (item-class it) (lit potion)) (Str8 includes? "mending" (item-name it)) #f))))
     (def food (%bl-in-pack g (%bl-of-class (lit food))))
     (def oil (%bl-in-pack g (%bl-of-class (lit oil))))
@@ -1430,11 +1454,18 @@
                   (if (if (%bl-losing? g foe) #t (%bl-under? p (%bl-at who (lit retreat))))
                     (if (%bl-away! g foe) (do (Vector set! 34 #t s) #t) #f) #f) #f)
           (%bl-toward-creature! g s foe)))
-      ; Low, with no mending to drink and a hostile in view: a step away
-      ; from it, not on to the next thing; out of its view, a rest.  Once
-      ; backed off, slot 34 of S, it keeps off until rested.
+      ; Low, with no mending to drink and a hostile in view: down the
+      ; stairs when they are near and not found barred, as nothing follows
+      ; a player off a level; else a step away from it, not on to the
+      ; next thing, unless it is fast and strikes for every step, or its
+      ; fight is likely won, as a step away is only a blow put off; out
+      ; of its view, a rest.  Once backed off, slot 34 of S, it keeps off
+      ; until rested.
       ((match ((not (null? potion)) #f) ((null? shown) #f)
               ((not (if (Vector ref 34 s) #t (%bl-under? p (%bl-at who (lit quaff))))) #f)
+              ((%bl-down-and-out! g s) #t)
+              ((creature-trait? shown (lit fast)) #f)
+              ((not (%bl-losing? g shown)) #f)
               (#t (do (Vector set! 34 #t s) (%bl-away! g shown))))
         ())
       ; One that shoots, in whose line the player stands, whose fight is
@@ -1625,7 +1656,10 @@
 
 ; With nothing pressing: what lies here, an item within reach (within
 ; GREED with a hostile in view, unless already on the way to it, so a
-; hostile coming into view and out again does not turn the bot about), a foe in view within CHASE whose fight
+; hostile coming into view and out again does not turn the bot about;
+; none with one awake two cells off or closer, or one awake not worth
+; fighting in view, as a step to it walks into their blows), a foe in
+; view within CHASE whose fight
 ; is worth it to COURAGE, the errand on a world of screens, the giver, the level
 ; until CURIOSITY of it is seen, the stairs.  A foe it cannot reach is
 ; passed by, and none is gone after under the READY mark: a fight is
@@ -1636,7 +1670,11 @@
     (def giver (%bl-beside g (fn (_ cr) (creature-trait? cr (lit talks)))))
     (def here (%bl-wanted-at g s (player-r p) (player-c p)))
     (def wanted? (fn (_ r c) (not (null? (%bl-wanted-at g s r c)))))
-    (def reach (match ((null? shown) 9999)
+    (def close? (List any? (fn (_ cr) (match ((not (%bl-hostile? cr)) #f) ((creature-trait? cr (lit stationary)) #f)
+                                             ((not (eq? (creature-state cr) (lit awake))) #f)
+                                             (#t (< (state-dist (creature-r cr) (creature-c cr) (player-r p) (player-c p)) 3))))
+                  (%bl-seen g)))
+    (def reach (match ((null? shown) (if close? 0 9999)) (close? 0)
                       ((if (eq? (creature-state shown) (lit awake)) (not (%bl-worth? g who shown)) #f) 0)
                       ((not (null? (%bl-kept g s (lit item) wanted? 9999))) 9999) (#t (%bl-at who (lit greed)))))
     (def to-item (if (if (< 0 reach) (%bl-any-wanted? g s) #f)
