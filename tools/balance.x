@@ -1418,7 +1418,8 @@
 ; where it was last seen, (DEPTH R C) in %bl-hunted.
 (def %bl-hunted (Vector of ()))
 ; With no way to the stairs yet, toward what is unseen; with nowhere at
-; all to go, toward any hostile in view, and only then rests a turn.
+; all to go, toward any hostile in view that does not shoot, held for
+; instead while short of READY, and only then rests a turn.
 (def %bl-descend!
   (fn (_ g s who shown)
     (def p (game-player g))
@@ -1445,6 +1446,8 @@
               (Vector set! 14 #t s))))
       ((%bl-walk! g s (lit stairs) (%bl-stairs-goal g t)) ())
       ((%bl-to-frontier! g s) ())
+      ((match ((null? shown) #f) ((creature-trait? shown (lit ranged)) #f) (#t (%bl-under? p (%bl-mark g s who (lit ready)))))
+        (do (%bl-why! "hold") (%bl-key! g "s")))
       ((if (null? shown) #f (%bl-toward-creature! g s shown)) ())
       ((match ((null? shown) #f) ((not (creature-trait? shown (lit ranged))) #f) (#t (%bl-out-of-line! g shown))) ())
       ((%bl-clear-the-way! g s) ())
