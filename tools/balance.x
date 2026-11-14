@@ -199,7 +199,10 @@
   (fn (_ dr dc) (first (List find (fn (_ d) (if (= (first (rest d)) dr) (= (rest (rest d)) dc) #f)) %bl-dirs))))
 
 ; The sleepers in view whose fight the bot would not start, set each
-; turn: they are left to sleep, and gone round as a sitter is.
+; turn: they are left to sleep, and gone round as a sitter is.  One that
+; mends itself is never started, the band's guardian aside: its fight
+; is to be answered, not traded, and costs the player most of what
+; they have.
 (def %bl-wary (Vector of ()))
 ; Whether CR is a hostile in view that keeps its place, or a sleeper
 ; best left, to be gone
@@ -1480,6 +1483,7 @@
     (%bl-watch! g s (< (player-hp p) (Vector ref 22 s)))
     (Vector set! 0 (List filter (fn (_ cr) (match ((not (%bl-hostile? cr)) #f) ((%bl-stirring? s cr) #f)
                                                   ((same? cr (%bl-guardian g)) #f)
+                                                  ((creature-trait? cr (lit regen)) #t)
                                                   (#t (not (%bl-worth? g who cr)))))
                      (%bl-seen g))
                 %bl-wary)
@@ -1770,6 +1774,7 @@
     (def wounded? (%bl-under? p (%bl-mark g s who (lit ready))))
     (def to-shown (if (match ((null? shown) #t) ((%bl-running? g) #t) ((Vector ref 34 s) #t) (wounded? #t) ((eq? (creature-state shown) (lit fleeing)) #t)
                              ((List any? (fn (_ x) (same? x shown)) (Vector ref 20 s)) #t)
+                             ((List any? (fn (_ x) (same? x shown)) (Vector ref 0 %bl-wary)) #t)
                              (#t (not (%bl-worth? g who shown))))
                     ()
                     (step-to (lit foe) shown (if shoots? 9999 (%bl-at who (lit chase))))))
