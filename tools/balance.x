@@ -1018,7 +1018,8 @@
 ; With slow and other hostiles beside the player, on the slow ones'
 ; turn: a step to a cell beside none of the slow, so they spend it
 ; following and the rest are fought alone.  #f with no such step, or
-; when every one beside is slow (outpaced) or none is.
+; when every one beside is slow (outpaced) or none is, or when the rest
+; strike as hard as the slow: the step gives each of the rest a blow.
 (def %bl-shed-slow!
   (fn (_ g)
     (def p (game-player g))
@@ -1029,6 +1030,9 @@
            ((< 0 (player-condition p (lit held))) #f)
            ((not (List any? %bl-slow? beside)) #f)
            ((List all? %bl-slow? beside) #f)
+           ((not (< (List fold (fn (_ sum cr) (if (%bl-slow? cr) sum (+ sum (%bl-hurt g cr)))) 0 beside)
+                    (List fold (fn (_ sum cr) (if (%bl-slow? cr) (+ sum (%bl-hurt g cr)) sum)) 0 beside)))
+             #f)
            (#t (%bl-step-clear-of! g (fn (_ cr) (if (%bl-hostile? cr) (%bl-slow? cr) #f)))))))
 ; A step to a cell beside none that COUNTS? allows, the one with the
 ; most room past it, or #f with none.
