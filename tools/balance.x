@@ -693,7 +693,9 @@
 ; With the goal not yet held, a search for a secret door: here, at a
 ; place to search from, or a step toward the nearest within SEARCH
 ; steps, a pocket's before any other; none on a level a survey has
-; shown, which opens them all.  With no light left for the
+; shown, which opens them all, nor once the way down has been seen:
+; a door hidden then hides nothing the game needs, and the turns spent
+; tapping walls are lamp oil.  With no light left for the
 ; level the lamp is put out first and the walls searched in the dark,
 ; a search beside needing none; it is lit again when there is light to
 ; spare or nothing left to search.  #f with nothing to do.
@@ -709,7 +711,9 @@
         (if (%bl-search-spot? g s pocket? (player-r p) (player-c p)) (lit here)
           (%bl-step-within g s tag (fn (_ r c) (%bl-search-spot? g s pocket? r c)) most))))
     (def lit? (if (str=? (%bl-env "BALANCE_DARK_SEARCH" "") "") (%bl-light-left? g s) #t))
+    (def down (map-down m))
     (def a (match ((< most 1) ()) ((items-goal-held? g) ()) ((Vector ref 33 s) ())
+                  ((if (null? down) #f (map-seen? m (first down) (rest down))) ())
                   (#t ((fn (_ a) (if (null? a) (aim (lit wall) #f) a)) (aim (lit pocket) #t)))))
     (def out? (player-doused? p))
     (when (if %bl-tracing (not lit?) #f)
