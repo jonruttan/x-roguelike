@@ -90,6 +90,9 @@
   (fn (_ g key)
     (when %bl-tracing (Vector set! 0 (pair key (Vector ref 0 %bl-pressed)) %bl-pressed))
     (game-key! g key)))
+; Why the next key is pressed, kept for the trace as {WORD}.
+(def %bl-why!
+  (fn (_ word) (when %bl-tracing (Vector set! 0 (pair (Str8 append "{" word "}") (Vector ref 0 %bl-pressed)) %bl-pressed))))
 
 ; --- what the bot may know ---------------------------------------------------
 
@@ -806,7 +809,7 @@
                  ((< (first best) (far r c)) (pair (far r c) (first d)))
                  (#t best)))
         (pair (far (player-r p) (player-c p)) ()) %bl-dirs))
-    (if (null? (rest best)) #f (do (%bl-key! g (rest best)) #t))))
+    (if (null? (rest best)) #f (do (%bl-why! "away") (%bl-key! g (rest best)) #t))))
 
 ; The percentage of the level's open ground the player has seen.
 (def %bl-seen-pct
@@ -963,7 +966,7 @@
                  ((not (null? (traps-found-at g r c))) #f)
                  (#t (not (%bl-in-line? cr r c)))))
         %bl-dirs))
-    (match ((%bl-held? g) #f) ((null? hit) #f) (#t (do (%bl-key! g (first hit)) #t)))))
+    (match ((%bl-held? g) #f) ((null? hit) #f) (#t (do (%bl-why! "out of line") (%bl-key! g (first hit)) #t)))))
 
 ; Whether the player can stand on R C: walkable, with no creature and no
 ; found trap on it.
@@ -1029,7 +1032,7 @@
                  ((List any? (fn (_ cr) (if (counts? cr) (state-adjacent? (creature-r cr) (creature-c cr) r c) #f)) (%bl-seen g)) best)
                  (#t ((fn (_ room) (if (< (first best) room) (pair room (first d)) best)) (%bl-room g r c 24)))))
         (pair 0 ()) %bl-dirs))
-    (match ((%bl-held? g) #f) ((null? (rest best)) #f) (#t (do (%bl-key! g (rest best)) #t)))))
+    (match ((%bl-held? g) #f) ((null? (rest best)) #f) (#t (do (%bl-why! "clear") (%bl-key! g (rest best)) #t)))))
 ; Whether FOE stands where it stood when the player last stepped clear
 ; of it, slot 16 of S, (CREATURE R . C): it does not follow, and
 ; stepping clear of it again gains nothing.
@@ -1066,7 +1069,7 @@
                  (#t best)))
         (pair (%bl-open g (player-r p) (player-c p)) ()) %bl-dirs))
     (match ((< crowd 2) #f) ((< 0 (player-condition p (lit held))) #f) ((null? (rest best)) #f)
-           (#t (do (%bl-key! g (rest best)) #t)))))
+           (#t (do (%bl-why! "passage") (%bl-key! g (rest best)) #t)))))
 
 ; The slow FOE beside the player, outpaced: struck on the turn it cannot
 ; answer; on the turn it can, one not yet after the player waited on,
