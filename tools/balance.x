@@ -1148,15 +1148,17 @@
 ; what cannot be had another way: a band's guardian; one that keeps its
 ; place, when it holds the player or closes the way; any beside a
 ; confused player, whose swings go astray where a wand's aim does not;
-; and any other only when the fight beside the player is likely lost.
+; and any other only when the fight beside the player is likely lost,
+; by the odds or by blows from the unseen, which the odds do not weigh.
 (def %bl-dear?
-  (fn (_ g who cr)
+  (fn (_ g s who cr)
     (def p (game-player g))
     (def guardian (%bl-guardian g))
     (match ((if (null? guardian) #f (same? guardian cr)) #t)
            ((if (< 0 (player-condition p (lit confused))) (state-adjacent? (creature-r cr) (creature-c cr) (player-r p) (player-c p)) #f) #t)
            ((creature-trait? cr (lit stationary))
              (if (< 0 (player-condition p (lit held))) #t (< 0 (Vector ref 0 %bl-bold))))
+           ((%bl-unseen-lost? g s who) #t)
            (#t (not (< (%bl-peril g) (player-hp p)))))))
 ; A wand zapped at CR when it is dear and in line: of those the bot has
 ; tried, a bolt, a drain, a banishing, and on one neither slow nor
@@ -1165,8 +1167,8 @@
 ; and is not zapped again.  What it slowed is remembered for as long as
 ; the wand's (effect slow N) gives.  #f with none zapped.
 (def %bl-zap!
-  (fn (_ g who cr)
-    (def way (if (null? cr) () (if (%bl-dear? g who cr) (%bl-aim g cr) ())))
+  (fn (_ g s who cr)
+    (def way (if (null? cr) () (if (%bl-dear? g s who cr) (%bl-aim g cr) ())))
     (def slows? (match ((null? cr) #f) ((%bl-slow? cr) #f) (#t (not (creature-trait? cr (lit fast))))))
     (def tried (if (null? way) ()
                  (%bl-first-effect g (lit wand)
@@ -1195,13 +1197,17 @@
 ; read only with every hostile beside looking badly hurt.  What
 ; stillness holds is remembered for as long as its (effect hold N)
 ; gives.  #f with none read.
+(def %bl-unseen-lost?
+  (fn (_ g s who)
+    (def p (game-player g))
+    (match ((null? (%bl-unseen-blow g s)) #f) ((< 0 (player-condition p (lit seeing))) #f)
+           ((not (null? (%bl-beside g %bl-hostile?))) #t)
+           ((< 1 (%bl-unseen-cells g s)) #t)
+           (#t (%bl-under? p (%bl-at who (lit retreat)))))))
 (def %bl-flee!
   (fn (_ g s who)
     (def p (game-player g))
-    (def unseen? (match ((null? (%bl-unseen-blow g s)) #f) ((< 0 (player-condition p (lit seeing))) #f)
-                        ((not (null? (%bl-beside g %bl-hostile?))) #t)
-                        ((< 1 (%bl-unseen-cells g s)) #t)
-                        (#t (%bl-under? p (%bl-at who (lit retreat))))))
+    (def unseen? (%bl-unseen-lost? g s who))
     (def scares? (not (List any? (fn (_ cr) (match ((not (%bl-hostile? cr)) #f)
                                                    ((not (state-adjacent? (creature-r cr) (creature-c cr) (player-r p) (player-c p))) #f)
                                                    (#t (< 3 (%bl-wounds cr)))))
@@ -1449,9 +1455,9 @@
       ((%bl-ready! g s foe) ())
       ((%bl-flee! g s who) ())
       ((if (null? foe) (%bl-strike-unseen! g s) #f) ())
-      ((%bl-zap! g who (match ((not (null? foe))
+      ((%bl-zap! g s who (match ((not (null? foe))
                                 ((fn (_ cr) (if (null? cr) foe cr))
-                                  (List find (fn (_ cr) (if (%bl-hostile? cr) (if (state-adjacent? (creature-r cr) (creature-c cr) (player-r p) (player-c p)) (%bl-dear? g who cr) #f) #f))
+                                  (List find (fn (_ cr) (if (%bl-hostile? cr) (if (state-adjacent? (creature-r cr) (creature-c cr) (player-r p) (player-c p)) (%bl-dear? g s who cr) #f) #f))
                                     (%bl-seen g))))
                               ((null? shown) (List find (fn (_ cr) (%bl-sitter? g cr)) (%bl-seen g)))
                               ((not (%bl-stirring? s shown)) ()) (#t shown))) ())
