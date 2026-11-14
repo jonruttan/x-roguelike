@@ -7,7 +7,7 @@ them, what each asks, and what it pays.  On the delve set.
 
 ## meeting
 
-### the lampman stands on level 2, and a knocker there carries the lamp
+### the lampman stands on level 2 where he cuts no way, and a knocker there carries the lamp
 
 ```roguelike
 (def g (spec-game-on (spec-set-named "delve") 4 ()))
@@ -17,10 +17,13 @@ them, what each asks, and what it pays.  On the delve set.
 (down!)
 (def keeper (List find (fn (_ cr) (str=? (creature-name cr) "lampman")) (game-creatures g)))
 (def carrier (List find (fn (_ cr) (not (null? (creature-carried cr)))) (game-creatures g)))
-(write (list none (not (null? keeper)) (creature-trait? keeper 'talks) (creature-name carrier) (item-name (creature-carried carrier)) (game-placed g)))
+(def m (game-map g))
+(def round (List flat-map (fn (_ dr) (List map (fn (_ dc) (pair (+ (creature-r keeper) dr) (+ (creature-c keeper) dc))) '(-1 0 1))) '(-1 0 1)))
+(def open (List all? (fn (_ at) (if (map-walkable? m (first at) (rest at)) (not (= (map-tile m (first at) (rest at)) tile-door)) #f)) round))
+(write (list none (not (null? keeper)) (creature-trait? keeper 'talks) open (creature-name carrier) (item-name (creature-carried carrier)) (game-placed g)))
 ```
 ---
-    (#f #t #t "knocker" "the foreman's lamp" ("the foreman's lamp" "giver the lamp"))
+    (#f #t #t #t "knocker" "the foreman's lamp" ("the foreman's lamp" "giver the lamp"))
 
 ### walking into the lampman opens the quest and shows what it asks, for a turn; again, it presses
 

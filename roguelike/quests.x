@@ -83,10 +83,14 @@
     (game-creatures! g (pair cr (game-creatures g)))
     cr))
 
+; Q's giver on a free cell that cuts no way (%qs-open?), or, with none
+; found, on any free cell.
 (def %qs-place-giver!
   (fn (_ g q)
     (def kind (%qs-kind g (%qs-giver q)))
-    (def at (%qs-spot g))
+    (def m (game-map g))
+    (def open (dungeon-spot (game-rng g) m (fn (_ r c) (if (state-free? g r c) (if (null? (state-items-at g r c)) (%qs-open? m (pair r c)) #f) #f)) 100))
+    (def at (if (null? open) (%qs-spot g) open))
     (unless (if (null? kind) #t (null? at))
       (do (%qs-creature! g kind (first at) (rest at))
           (game-placed! g (Str8 append "giver " (%qs-name q)))))))

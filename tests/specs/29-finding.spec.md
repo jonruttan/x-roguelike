@@ -149,7 +149,7 @@ says which way the one looked for stands.
 (write (list person (said (List ref 1 (data-prop end 'wants ())))))
 ```
 ---
-    (("You make out the town surveyor to the north-west.") ("You make out a pair of hobnailed boots to the east."))
+    (("You make out the town surveyor to the east.") ("You make out a pair of hobnailed boots to the east."))
 
 
 ## saving
