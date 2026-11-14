@@ -1180,7 +1180,9 @@
            (#t (not (< (%bl-peril g) (player-hp p)))))))
 ; A wand zapped at CR when it is dear and in line: of those the bot has
 ; tried, a bolt, a drain, a banishing, and on one neither slow nor
-; fast, lethargy, after which it is outpaced; with none of those, one
+; fast, lethargy, after which it is outpaced; never a banishing on the
+; band's guardian, which bars the shaft from wherever it is sent, out
+; of sight and lost; with none of those, one
 ; not yet tried, to learn what it does.  One that sputters is empty,
 ; and is not zapped again.  What it slowed is remembered for as long as
 ; the wand's (effect slow N) gives.  #f with none zapped.
@@ -1188,9 +1190,11 @@
   (fn (_ g s who cr)
     (def way (if (null? cr) () (if (%bl-dear? g s who cr) (%bl-aim g cr) ())))
     (def slows? (match ((null? cr) #f) ((%bl-slow? cr) #f) (#t (not (creature-trait? cr (lit fast))))))
+    (def guardian? ((fn (_ gd) (if (null? gd) #f (same? gd cr))) (%bl-guardian g)))
     (def tried (if (null? way) ()
                  (%bl-first-effect g (lit wand)
-                   (if slows? (list (lit bolt) (lit drain) (lit slow) (lit teleport-other)) (list (lit bolt) (lit drain) (lit teleport-other))))))
+                   (List append (if slows? (list (lit bolt) (lit drain) (lit slow)) (list (lit bolt) (lit drain)))
+                                (if guardian? () (list (lit teleport-other)))))))
     (def untried (if (null? way) ()
                    (%bl-in-pack g (fn (_ it) (match ((not (eq? (item-class it) (lit wand))) #f) ((items-known? g it) #f)
                                                     (#t (not (List any? (fn (_ x) (same? x it)) (Vector ref 0 %bl-empty)))))))))
