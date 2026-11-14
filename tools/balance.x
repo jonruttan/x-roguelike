@@ -1188,7 +1188,8 @@
 ; With the fight beside the player likely lost, a scroll read to get out
 ; of it: stillness, panic, or a blink away.  A blow from something
 ; unseen, with no sight of it, counts as lost with a foe in view beside
-; as well, or once WHO is under its retreat: its cost cannot be weighed,
+; as well, with blows unseen from two cells or more, or once WHO is
+; under its retreat: its cost cannot be weighed,
 ; and alone above that mark it is struck back at.  Panic scares only what is in view, and one scared with more
 ; than half its hit points turns again at once (creatures.x), so it is
 ; read only with every hostile beside looking badly hurt.  What
@@ -1199,6 +1200,7 @@
     (def p (game-player g))
     (def unseen? (match ((null? (%bl-unseen-blow g s)) #f) ((< 0 (player-condition p (lit seeing))) #f)
                         ((not (null? (%bl-beside g %bl-hostile?))) #t)
+                        ((< 1 (%bl-unseen-cells g s)) #t)
                         (#t (%bl-under? p (%bl-at who (lit retreat))))))
     (def scares? (not (List any? (fn (_ cr) (match ((not (%bl-hostile? cr)) #f)
                                                    ((not (state-adjacent? (creature-r cr) (creature-c cr) (player-r p) (player-c p))) #f)
@@ -1292,12 +1294,20 @@
     (def from (%bl-unseen-blow g s))
     (if (null? from) #f
       (do (%bl-key! g (%bl-key-for (- (List ref 1 from) (player-r p)) (- (List ref 2 from) (player-c p)))) #t))))
-; The blow this turn from a cell beside the player with nothing in view
-; on it, or nil.
+; The blows this turn from cells beside the player with nothing in view
+; on them; the first of them, or nil; and how many cells they came from.
 (def %bl-unseen-blow
+  (fn (_ g s) ((fn (_ bs) (if (null? bs) () (first bs))) (%bl-unseen-blows g s))))
+(def %bl-unseen-cells
+  (fn (_ g s)
+    (List length
+      (List fold (fn (_ cells b) (if (List any? (fn (_ x) (if (= (first x) (List ref 1 b)) (= (rest x) (List ref 2 b)) #f)) cells) cells
+                                   (pair (pair (List ref 1 b) (List ref 2 b)) cells)))
+        () (%bl-unseen-blows g s)))))
+(def %bl-unseen-blows
   (fn (_ g s)
     (def p (game-player g))
-    (List find
+    (List filter
         (fn (_ b)
           (match ((not (= (List ref 3 b) (player-r p))) #f) ((not (= (List ref 4 b) (player-c p))) #f)
                  ((not (state-adjacent? (List ref 1 b) (List ref 2 b) (player-r p) (player-c p))) #f)
@@ -1478,7 +1488,10 @@
         ())
       ((if (null? food) #f (< (player-food p) hungry))
         (do (%bl-use! g "e" food) (Vector set! 3 (+ 1 (Vector ref 3 s)) s)))
-      ((match ((%bl-in-sight? g shown) #f) ((%bl-told? g "shoots") #f) ((%bl-told? g "You start up") #f) (#t (%bl-under? p (%bl-mark g s who (lit rest))))) (%bl-rest! g))
+      ((match ((%bl-in-sight? g shown) #f) ((%bl-told? g "shoots") #f) ((%bl-told? g "You start up") #f)
+              ((not (null? (%bl-unseen-blow g s))) #f)
+              (#t (%bl-under? p (%bl-mark g s who (lit rest)))))
+        (%bl-rest! g))
       ((%bl-pour? g oil lamp)
         (do (%bl-use! g "f" oil) (Vector set! 10 (+ 1 (Vector ref 10 s)) s)))
       ((if (null? weapon) #f (if (same? weapon (player-weapon p)) #f (< 0 (%bl-weapon-worth g weapon))))
