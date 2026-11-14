@@ -1473,7 +1473,8 @@
       ; Low, with no mending to drink and a hostile in view: down the
       ; stairs when they are near and not found barred, as nothing follows
       ; a player off a level; else a step away from it, not on to the
-      ; next thing, unless it is fast and strikes for every step, or its
+      ; next thing, unless it is fast or shoots and strikes for every
+      ; step, or its
       ; fight is likely won, as a step away is only a blow put off; out
       ; of its view, a rest.  Once backed off, slot 34 of S, it keeps off
       ; until rested.
@@ -1481,6 +1482,7 @@
               ((not (if (Vector ref 34 s) #t (%bl-under? p (%bl-at who (lit quaff))))) #f)
               ((%bl-down-and-out! g s) #t)
               ((creature-trait? shown (lit fast)) #f)
+              ((creature-trait? shown (lit ranged)) #f)
               ((not (%bl-losing? g shown)) #f)
               (#t (do (Vector set! 34 #t s) (%bl-away! g shown))))
         ())
