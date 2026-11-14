@@ -451,6 +451,9 @@ It needs x-lang at the release `lang.xon` declares.
   set's pictures.
 - [Sound](docs/sound.md): the music and effects, synthesised from a set's
   data.
+- [The Delve](docs/delve.md): the world the `delve` and `kettle` sets
+  share. **Spoilers:** it says what the game asks a player to work out.
+  Its sections are folded shut.
 
 ## Licence
 
