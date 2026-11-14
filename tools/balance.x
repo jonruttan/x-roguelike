@@ -1197,8 +1197,9 @@
            ((if (creature-trait? cr (lit regen)) (not (< (* 2 (%bl-cost g cr)) (player-hp p))) #f) #t)
            (#t (not (< (%bl-peril g) (player-hp p)))))))
 ; A wand zapped at CR when it is dear and in line: of those the bot has
-; tried, a bolt, a drain, a banishing, and on one neither slow nor
-; fast, lethargy, after which it is outpaced; never a banishing on the
+; tried, a bolt, a drain, a banishing, and on one not slow already,
+; lethargy, after which it is outpaced, or, fast, held to a turn a
+; turn (creatures.x); never a banishing on the
 ; band's guardian, which bars the shaft from wherever it is sent, out
 ; of sight and lost; with none of those, one
 ; not yet tried, to learn what it does.  One that sputters is empty,
@@ -1207,7 +1208,7 @@
 (def %bl-zap!
   (fn (_ g s who cr)
     (def way (if (null? cr) () (if (%bl-dear? g s who cr) (%bl-aim g cr) ())))
-    (def slows? (match ((null? cr) #f) ((%bl-slow? cr) #f) (#t (not (creature-trait? cr (lit fast))))))
+    (def slows? (match ((null? cr) #f) ((%bl-slowed? cr) #f) (#t (not (%bl-slow? cr)))))
     (def guardian? ((fn (_ gd) (if (null? gd) #f (same? gd cr))) (%bl-guardian g)))
     (def tried (if (null? way) ()
                  (%bl-first-effect g (lit wand)
