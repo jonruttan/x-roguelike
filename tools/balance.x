@@ -1365,19 +1365,19 @@
            ((%bl-toward-creature! g s cr) ())
            (#t (%bl-key! g "s")))))
 
-; Out of a lost fight down the stairs: on them, down; within twelve
+; Out of a lost fight down the stairs: on them, down; within MOST
 ; steps, a step to them.  Not with the goal in hand, which goes up, nor
 ; down a shaft found barred, slot 14 of S, which a try down marks as
 ; %bl-descend! does.  #f with no such way.
 (def %bl-down-and-out!
-  (fn (_ g s)
+  (fn (_ g s most)
     (match ((items-goal-held? g) #f) ((Vector ref 14 s) #f)
            ((%bl-at-stairs? g tile-down)
              (do (%bl-key! g ">")
                  (when (List any? (fn (_ m) (Str8 includes? "shaft" m)) (game-messages g)) (Vector set! 14 #t s))
                  #t))
            (#t ((fn (_ d) (if (null? d) #f (do (%bl-key! g (%bl-key-for (first d) (rest d))) #t)))
-                 (%bl-step-within g s (lit stairs) (%bl-stairs-goal g tile-down) 12))))))
+                 (%bl-step-within g s (lit stairs) (%bl-stairs-goal g tile-down) most))))))
 
 ; To the stairs and down them, or up with the goal: rested to READY first
 ; with nothing hostile in view.  A shaft found barred is kept in slot 14
@@ -1495,9 +1495,10 @@
       ((if (null? foe) #f (%bl-shed-slow! g)) ())
       ((if (null? foe) #f (%bl-to-passage! g)) ())
       ((if (null? foe) #f (%bl-outpace? g)) (%bl-outpace! g s who foe))
-      ; A fight likely lost with the stairs near: down them, whatever
-      ; the hit points, as nothing follows a player off a level.
-      ((if (null? foe) #f (if (%bl-losing? g foe) (%bl-down-and-out! g s) #f)) ())
+      ; A fight likely lost with the stairs a step off: down them,
+      ; whatever the hit points, as nothing follows a player off a
+      ; level.  Further, each step from a foe beside is a blow given.
+      ((if (null? foe) #f (if (%bl-losing? g foe) (%bl-down-and-out! g s 1) #f)) ())
       ((not (null? foe))
         (unless (if (if (< 0 (%bl-at who (lit retreat))) (%bl-free? g foe) #f)
                   (if (if (%bl-losing? g foe) #t (%bl-under? p (%bl-at who (lit retreat))))
@@ -1514,7 +1515,7 @@
       ((match ((not (null? potion)) #f) ((null? shown) #f)
               ((not (if (Vector ref 34 s) #t (%bl-under? p (%bl-at who (lit quaff))))) #f)
               ((if (null? (%bl-shooter g)) #f (%bl-out-of-line! g (%bl-shooter g))) #t)
-              ((%bl-down-and-out! g s) #t)
+              ((%bl-down-and-out! g s 12) #t)
               ((not (%bl-free? g shown)) #f)
               ((not (%bl-losing? g shown)) #f)
               (#t (do (Vector set! 34 #t s) (%bl-away! g shown))))
