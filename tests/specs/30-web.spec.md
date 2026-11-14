@@ -62,14 +62,14 @@ made with, and both answer the same messages.
 (player-conditions! (game-player spec-g) ())
 (sound-turn! spec-s spec-g)
 (write (list spec-calm (List ref 1 spec-held) (List ref 2 spec-held)
-             (List includes? '(phase 1 6 2600 55 70) (first spec-held))
+             (List includes? '(phase 15 60 3000 45 60) (first spec-held))
              spec-sway
              (equal? spec-calm (spec-heard))))
 (sound-close spec-s)
 (Web close spec-win)
 ```
 ---
-    (((('echo 430 42 26) ('echo 610 30 14) ('reverb 90 55 18) ('limit 92 150)) 0 100 100) -340 70 #t (15 5600) #t)
+    (((('echo 430 42 26) ('echo 610 30 14) ('reverb 90 55 18) ('limit 92 150)) 0 100 100) -340 70 #t (15 1700) #t)
 
 ### wounds thin the music but not the heart, and hunger growls the more the emptier
 
