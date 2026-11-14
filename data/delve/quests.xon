@@ -43,25 +43,26 @@
 ; The salvager, (keeper NAME (level N) . PROPS), keeps a shop a band
 ; ahead of the player: on the first level of each band after the first,
 ; near where the player comes onto it.  The others strip the Galleries
-; and stop at the breach; he went on below it.  (sells (CLASS NAME) ...)
-; is his stock, (buys CLASS ...) what he takes, at the set's (worth ...)
-; or an item's own (price N) (shops.x); each LINE is said over the
-; counter.
+; and stop at the breach; he went on below it.  (sells (CLASS NAME N)
+; ...) is his stock, N of each and no more, as what he pulled out of the
+; works is all there is; (buys CLASS ...) what he takes, at the set's
+; (worth ...) or an item's own (price N) (shops.x); each LINE is said
+; over the counter.
 (keeper "salvager" (level 4)
-  (sells (potion "mending") (oil "oil flask") (food "miner's tin") (scroll "blink")
-         (weapon "miner's blade") (armour "scale coat"))
+  (sells (potion "mending" 2) (oil "oil flask" 2) (food "miner's tin" 1) (scroll "blink" 1)
+         (weapon "miner's blade" 1) (armour "scale coat" 1))
   (buys potion scroll wand ring weapon armour food oil)
   "The others stop at the breach.  The pickings are better below it."
   "Lamps, oil, a blade now and then: the company left it all to the water.")
 (keeper "salvager" (level 7)
-  (sells (potion "mending") (oil "oil flask") (food "miner's tin") (scroll "blink")
-         (weapon "sledge") (armour "plated harness"))
+  (sells (potion "mending" 2) (oil "oil flask" 2) (food "miner's tin" 1) (scroll "blink" 1)
+         (weapon "sledge" 1) (armour "plated harness" 1))
   (buys potion scroll wand ring weapon armour food oil)
   "The Flood gave up less than I hoped.  What it gave up is on the board."
   "What you carry, I take over the Nick.  Gold is gold, wherever found.")
 (keeper "salvager" (level 10)
-  (sells (potion "mending") (oil "oil flask") (food "miner's tin") (scroll "blink")
-         (potion "deep mending") (wand "sparks"))
+  (sells (potion "mending" 2) (oil "oil flask" 2) (food "miner's tin" 1) (scroll "blink" 1)
+         (potion "deep mending" 1) (wand "sparks" 1))
   (buys potion scroll wand ring weapon armour food oil)
   "This is as deep as I go.  Nothing below here was ever the company's."
   "What you bring back up, I buy.  What you take down, you will need.")

@@ -8,7 +8,9 @@
 ;
 ; A building keeps a shop when it has (sells (CLASS NAME) ...), the
 ; goods on its counter, each an item of the world, or (buys CLASS ...),
-; the classes its keeper takes.  A thing is worth its item's (price N),
+; the classes its keeper takes.  One of the goods given as (CLASS NAME
+; N) is kept N deep: once N are sold at this counter, on this level,
+; it is gone from it for the game.  A thing is worth its item's (price N),
 ; or else its class's N in the world's (worth (CLASS N) ...), in gold;
 ; a thing with neither is worth nothing and is not bought.  The shop's
 ; (rate SELL BUY), 100 and 50 unless given, is the percent of a thing's
@@ -26,7 +28,7 @@
 (import x/core/doors int/)
 (import roguelike/data data-one)
 (import roguelike/state
-  game-player game-pack game-floor game-floor! game-ask! game-world-all
+  game-player game-pack game-floor game-floor! game-ask! game-world-all game-placed? game-placed! game-level-key
   player-r player-c player-gold player-gold!
   item-make item-form item-count item-charges item-at! item-class-in?
   state-tell!)
@@ -52,6 +54,18 @@
     (def by-class (List find (fn (_ w) (eq? (first w) (first form))) (List flat-map (fn (_ w) w) (game-world-all g (lit worth)))))
     (match ((not (null? own)) (List ref 1 own)) ((null? by-class) 0) (#t (List ref 1 by-class)))))
 
+; The mark the Kth sale of the goods REF, (CLASS NAME N), by the keeper
+; NAME on this level leaves among what the game placed; how many such
+; sales there have been.
+(def %sh-mark
+  (fn (_ g name ref k)
+    (Str8 append "sold " name " " (game-level-key g) " " (Str8 str (first ref)) " " (List ref 1 ref) " " (Str8 str k))))
+(def %sh-sold
+  (fn (self g name ref k) (if (game-placed? g (%sh-mark g name ref k)) (self g name ref (+ k 1)) k)))
+; Whether REF is still on the counter: no count, or fewer sold.
+(def %sh-left?
+  (fn (_ g name ref) (if (< (List length ref) 3) #t (< (%sh-sold g name ref 0) (List ref 2 ref)))))
+
 ; PERCENT of N to the nearest, one at least, nothing of nothing.
 (def %sh-part (fn (_ n percent) (if (< n 1) 0 ((fn (_ v) (if (< v 1) 1 v)) (int/ (+ (* n percent) 50) 100)))))
 
@@ -62,17 +76,25 @@
     (def p (game-player g))
     (def rate (data-one props (lit rate) (list 100 50)))
     (def buys (data-one props (lit buys) ()))
-    (def goods (List take (List length %sh-letters) (List reject null? (List map (fn (_ r) (%sh-form g r)) (data-one props (lit sells) ())))))
+    ; What is on the counter, (REF . FORM) each.
+    (def goods
+      (List take (List length %sh-letters)
+        (List reject null?
+          (List map (fn (_ r) (if (%sh-left? g name r) ((fn (_ f) (if (null? f) () (pair r f))) (%sh-form g r)) ()))
+            (data-one props (lit sells) ())))))
     (def asked (fn (_ f) (%sh-part (%sh-worth g f) (first rate))))
     (def paid (fn (_ f) (%sh-part (%sh-worth g f) (List ref 1 rate))))
     (def reopen (fn (_) (shops-open! g name props "")))
     (def buy
-      (fn (_ f)
+      (fn (_ good)
+        (def ref (first good))
+        (def f (rest good))
         (def n (asked f))
         (def subs (list (pair "name" (List ref 1 f)) (pair "n" (Str8 str n)) (pair "keeper" name)))
         (if (< (player-gold p) n)
           (do (state-tell! g (lit cannot-afford) "You cannot afford the {name}: {n} gold." subs) #f)
           (do (player-gold! p (- (player-gold p) n))
+              (unless (< (List length ref) 3) (game-placed! g (%sh-mark g name ref (%sh-sold g name ref 0))))
               (state-tell! g (lit bought) "You pay the {keeper} {n} gold." subs)
               ((fn (_ it) (item-at! it (player-r p) (player-c p)) (game-floor! g (pair it (game-floor g)))) (items-new g f))
               (items-pickup! g)
@@ -104,7 +126,7 @@
           (#t #f))))
     (def wares
       (List map (fn (_ i)
-                  (def f (List ref i goods))
+                  (def f (rest (List ref i goods)))
                   (pair (List ref i %sh-letters) (Str8 append (List ref 1 f) ", " (Str8 str (asked f)) " gold")))
         (List range 0 (List length goods))))
     (def counter (List map (fn (_ w) (Str8 append (first w) ") " (rest w))) wares))
