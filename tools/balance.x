@@ -1296,12 +1296,32 @@
 ; with nothing in view on it is struck at there.  #f with no such blow
 ; this turn.  The blows are kept from the turn they fell in, slot 24 of
 ; S, as answering the game's --More-- clears them.
+;
+; One struck at is still there on a turn it does not strike, unless it
+; was slain: for two turns after its last blow, a cell still beside the
+; player with nothing in view on it is struck at again, not camped
+; beside.  The last blow, (TURN R C), is kept in %bl-unseen-near.
+(def %bl-unseen-near (Vector of ()))
+(def %bl-unseen-again
+  (fn (_ g)
+    (def p (game-player g))
+    (def near (Vector ref 0 %bl-unseen-near))
+    (match ((null? near) ()) ((< (game-turn g) (List ref 0 near)) ()) ((< 2 (- (game-turn g) (List ref 0 near))) ())
+           ((%bl-told? g "slain") ())
+           ((not (state-adjacent? (List ref 1 near) (List ref 2 near) (player-r p) (player-c p))) ())
+           ((not (null? (%bl-seen-at g (List ref 1 near) (List ref 2 near)))) ())
+           (#t (List (List ref 0 near) (List ref 1 near) (List ref 2 near))))))
 (def %bl-strike-unseen!
   (fn (_ g s)
     (def p (game-player g))
     (def from (%bl-unseen-blow g s))
-    (if (null? from) #f
-      (do (%bl-key! g (%bl-key-for (- (List ref 1 from) (player-r p)) (- (List ref 2 from) (player-c p)))) #t))))
+    (def again (%bl-unseen-again g))
+    (match ((not (null? from))
+             (do (Vector set! 0 (List (game-turn g) (List ref 1 from) (List ref 2 from)) %bl-unseen-near)
+                 (%bl-key! g (%bl-key-for (- (List ref 1 from) (player-r p)) (- (List ref 2 from) (player-c p)))) #t))
+           ((not (null? again))
+             (do (%bl-key! g (%bl-key-for (- (List ref 1 again) (player-r p)) (- (List ref 2 again) (player-c p)))) #t))
+           (#t #f))))
 ; The blows this turn from cells beside the player with nothing in view
 ; on them; the first of them, or nil; and how many cells they came from.
 (def %bl-unseen-blow
