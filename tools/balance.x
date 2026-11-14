@@ -1500,16 +1500,17 @@
                   (if (if (%bl-losing? g foe) #t (%bl-under? p (%bl-at who (lit retreat))))
                     (if (%bl-away! g foe) (do (Vector set! 34 #t s) #t) #f) #f) #f)
           (%bl-toward-creature! g s foe)))
-      ; Low, with no mending to drink and a hostile in view: down the
-      ; stairs when they are near and not found barred, as nothing follows
-      ; a player off a level; else a step away from it, not on to the
-      ; next thing, unless it is fast or shoots and strikes for every
-      ; step, or its
-      ; fight is likely won, as a step away is only a blow put off; out
-      ; of its view, a rest.  Once backed off, slot 34 of S, it keeps off
-      ; until rested.
+      ; Low, with no mending to drink and a hostile in view: first out
+      ; of the line of one that shoots, as each step in it is a shot;
+      ; then down the stairs when they are near and not found barred, as
+      ; nothing follows a player off a level; else a step away from it,
+      ; not on to the next thing, unless it is fast or shoots and strikes
+      ; for every step, or its fight is likely won, as a step away is
+      ; only a blow put off; out of its view, a rest.  Once backed off,
+      ; slot 34 of S, it keeps off until rested.
       ((match ((not (null? potion)) #f) ((null? shown) #f)
               ((not (if (Vector ref 34 s) #t (%bl-under? p (%bl-at who (lit quaff))))) #f)
+              ((if (null? (%bl-shooter g)) #f (%bl-out-of-line! g (%bl-shooter g))) #t)
               ((%bl-down-and-out! g s) #t)
               ((not (%bl-free? g shown)) #f)
               ((not (%bl-losing? g shown)) #f)
