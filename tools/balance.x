@@ -389,7 +389,10 @@
     (def p (game-player g))
     (if (state-adjacent? (creature-r cr) (creature-c cr) (player-r p) (player-c p))
       (do (%bl-key! g (%bl-key-for (- (creature-r cr) (player-r p)) (- (creature-c cr) (player-c p)))) #t)
-      (%bl-walk! g s (lit creature) (fn (_ r c) (if (= r (creature-r cr)) (= c (creature-c cr)) #f))))))
+      (do (when %bl-tracing
+            (Vector set! 0 (pair (Str8 append "{to " (creature-name cr) " " (Str8 str (creature-state cr)) " " (Str8 str (creature-r cr)) "," (Str8 str (creature-c cr)) "}")
+                                 (Vector ref 0 %bl-pressed)) %bl-pressed))
+          (%bl-walk! g s (lit creature) (fn (_ r c) (if (= r (creature-r cr)) (= c (creature-c cr)) #f)))))))
 
 (def %bl-in-pack (fn (_ g pred) (List find pred (game-pack g))))
 (def %bl-of-class (fn (_ wanted) (fn (_ it) (eq? (item-class it) wanted))))
@@ -1059,12 +1062,24 @@
            ((%bl-away! g foe) (Vector set! 16 stood s))
            (#t (%bl-toward-creature! g s foe)))))
 ; Whether to wait for CR to come: slow, awake, and two cells off, so its
-; next step brings it beside the player on a turn it cannot strike.
+; next step brings it beside the player on a turn it cannot strike.  A
+; slow one steps every other turn, so one still in the cell it held
+; when the wait began three turns on is not coming, and is not waited
+; for there again.  The wait, (CR R C TURN), is kept in %bl-awaited.
+(def %bl-awaited (Vector of ()))
 (def %bl-await?
   (fn (_ g s cr)
     (def p (game-player g))
-    (match ((null? cr) #f) ((not (%bl-slow? cr)) #f) ((not (%bl-stirring? s cr)) #f)
-           (#t (= 2 (state-dist (creature-r cr) (creature-c cr) (player-r p) (player-c p)))))))
+    (def w (Vector ref 0 %bl-awaited))
+    (def same-wait? (match ((null? w) #f) ((not (same? (first w) cr)) #f)
+                           (#t (if (= (List ref 1 w) (creature-r cr)) (= (List ref 2 w) (creature-c cr)) #f))))
+    (def wait? (match ((null? cr) #f) ((not (%bl-slow? cr)) #f) ((not (eq? (creature-state cr) (lit awake))) #f)
+                      ((not (= 2 (state-dist (creature-r cr) (creature-c cr) (player-r p) (player-c p)))) #f)
+                      (same-wait? (< (game-turn g) (+ 3 (List ref 3 w))))
+                      (#t #t)))
+    (when (if wait? (not same-wait?) #f)
+      (Vector set! 0 (list cr (creature-r cr) (creature-c cr) (game-turn g)) %bl-awaited))
+    wait?))
 
 ; --- what the pack answers with ----------------------------------------------
 
@@ -1158,17 +1173,24 @@
 ; of it: stillness, panic, or a blink away.  A blow from something
 ; unseen, with no sight of it, counts as lost once WHO is under its
 ; retreat: its cost cannot be weighed, and above that mark it is struck
-; back at.  Panic scares only what is in view, so against the unseen
-; it is not read.  What stillness holds is remembered for as long as
-; its (effect hold N) gives.  #f with none read.
+; back at.  Panic scares only what is in view, and one scared with more
+; than half its hit points turns again at once (creatures.x), so it is
+; read only with every hostile beside looking badly hurt.  What
+; stillness holds is remembered for as long as its (effect hold N)
+; gives.  #f with none read.
 (def %bl-flee!
   (fn (_ g s who)
     (def p (game-player g))
     (def unseen? (match ((null? (%bl-unseen-blow g s)) #f) ((< 0 (player-condition p (lit seeing))) #f)
                         (#t (%bl-under? p (%bl-at who (lit retreat))))))
+    (def scares? (not (List any? (fn (_ cr) (match ((not (%bl-hostile? cr)) #f)
+                                                   ((not (state-adjacent? (creature-r cr) (creature-c cr) (player-r p) (player-c p))) #f)
+                                                   (#t (< 3 (%bl-wounds cr)))))
+                        (%bl-seen g))))
     (def scroll (match (unseen? (%bl-first-effect g (lit scroll) (list (lit hold) (lit teleport))))
                        ((< (%bl-peril g) (player-hp p)) ())
-                       (#t (%bl-first-effect g (lit scroll) (list (lit hold) (lit fear) (lit teleport))))))
+                       (scares? (%bl-first-effect g (lit scroll) (list (lit hold) (lit fear) (lit teleport))))
+                       (#t (%bl-first-effect g (lit scroll) (list (lit hold) (lit teleport))))))
     (def e (if (null? scroll) () (item-prop scroll (lit effect) ())))
     (if (null? scroll) #f
       (do (%bl-use! g "r" scroll)
@@ -1285,7 +1307,9 @@
 
 ; To the stairs and down them, or up with the goal: rested to READY first
 ; with nothing hostile in view.  A shaft found barred is kept in slot 14
-; of S, and its guardian gone after until it is dead.
+; of S, and its guardian gone after until it is dead: out of view, to
+; where it was last seen, (DEPTH R C) in %bl-hunted.
+(def %bl-hunted (Vector of ()))
 ; With no way to the stairs yet, toward what is unseen; with nowhere at
 ; all to go, toward any hostile in view, and only then rests a turn.
 (def %bl-descend!
@@ -1294,9 +1318,18 @@
     (def up? (items-goal-held? g))
     (def t (if up? tile-up tile-down))
     (def guardian (if (Vector ref 14 s) (%bl-guardian g) ()))
+    (unless (null? guardian)
+      (Vector set! 0 (list (game-depth g) (creature-r guardian) (creature-c guardian)) %bl-hunted))
+    (def last ((fn (_ h) (match ((not (null? guardian)) ()) ((not (Vector ref 14 s)) ()) ((null? h) ())
+                                ((not (= (first h) (game-depth g))) ())
+                                ((if (= (List ref 1 h) (player-r p)) (= (List ref 2 h) (player-c p)) #f)
+                                  (do (Vector set! 0 () %bl-hunted) ()))
+                                (#t h)))
+               (Vector ref 0 %bl-hunted)))
     (match
       ((match ((%bl-in-sight? g shown) #f) ((%bl-told? g "shoots") #f) ((%bl-told? g "You start up") #f) (#t (%bl-under? p (%bl-mark g s who (lit ready))))) (%bl-rest! g))
       ((not (null? guardian)) (%bl-hunt! g s guardian))
+      ((if (null? last) #f (%bl-walk! g s (lit guardian) (fn (_ r c) (if (= r (List ref 1 last)) (= c (List ref 2 last)) #f)))) ())
       ((if (Vector ref 14 s) (%bl-to-frontier! g s) #f) ())
       ((Vector ref 14 s) (do (Vector set! 14 #f s) (%bl-unstick! g s)))
       ((%bl-at-stairs? g t)
@@ -1536,18 +1569,25 @@
   (fn (_ g s q)
     (if (eq? (first (%bl-wants q)) (lit explore)) (%bl-explored? g s)
       (List all? (fn (_ name) (not (null? (%bl-in-pack g (fn (_ it) (%bl-named? it name)))))) (rest (%bl-wants q))))))
-; A step toward one of the people: one in view to be spoken to, or this
-; level's giver, spoken to before, with what they asked for in hand.
-; #f with none to go to.
+; A step toward one of the people: one in view to be spoken to, or out
+; of view, to where one to be spoken to was last seen, slot 23 of S; or
+; this level's giver, spoken to before, with what they asked for in
+; hand.  #f with none to go to.
 (def %bl-to-giver!
   (fn (_ g s)
     (def q (%bl-errand-here g))
     (def seen (List find (fn (_ cr) (if (creature-trait? cr (lit talks)) (creatures-shown? g cr) #f)) (%bl-seen g)))
+    (def met (if (null? seen)
+               (List find (fn (_ e) (if (creature-trait? (first e) (lit talks)) (%bl-talk? g s (first e)) #f)) (Vector ref 23 s))
+               ()))
     (def owed (match ((null? q) ()) ((not (%bl-asked? g q)) ()) ((not (%bl-met-want? g s q)) ())
                      (#t (state-creature-named g (List ref 2 q)))))
     (def stood (if (null? owed) () (%bl-watched s owed)))
     (def at (if (null? stood) () (rest (rest stood))))
     (match ((not (null? seen)) (if (%bl-talk? g s seen) (%bl-toward-creature! g s seen) #f))
+           ((if (null? met) #f
+              (%bl-walk! g s (lit giver) (fn (_ r c) (if (= r (List ref 2 met)) (= c (rest (rest (rest met)))) #f))))
+             #t)
            ((null? at) #f) ((not (%bl-talk? g s owed)) #f)
            (#t (%bl-walk! g s (lit giver) (fn (_ r c) (if (= r (first at)) (= c (rest at)) #f)))))))
 
@@ -1589,7 +1629,9 @@
     (def giver (%bl-beside g (fn (_ cr) (creature-trait? cr (lit talks)))))
     (def here (%bl-wanted-at g s (player-r p) (player-c p)))
     (def wanted? (fn (_ r c) (not (null? (%bl-wanted-at g s r c)))))
-    (def reach (match ((null? shown) 9999) ((not (null? (%bl-kept g s (lit item) wanted? 9999))) 9999) (#t (%bl-at who (lit greed)))))
+    (def reach (match ((null? shown) 9999)
+                      ((if (eq? (creature-state shown) (lit awake)) (not (%bl-worth? g who shown)) #f) 0)
+                      ((not (null? (%bl-kept g s (lit item) wanted? 9999))) 9999) (#t (%bl-at who (lit greed)))))
     (def to-item (if (if (< 0 reach) (%bl-any-wanted? g s) #f)
                    (%bl-step-within g s (lit item) wanted? reach) ()))
     (def shoots? (if (null? shown) #f (creature-trait? shown (lit ranged))))
@@ -1610,7 +1652,10 @@
     (match
       ((not (null? here)) (%bl-pick-up! g s))
       ((not (null? to-item)) (%bl-key! g (%bl-key-for (first to-item) (rest to-item))))
-      ((%bl-await? g s shown) (%bl-key! g "s"))
+      ((%bl-await? g s shown)
+        (do (when %bl-tracing
+              (Vector set! 0 (pair (Str8 append "{await " (creature-name shown) " " (Str8 str (creature-state shown)) "}") (Vector ref 0 %bl-pressed)) %bl-pressed))
+            (%bl-key! g "s")))
       ((not (null? to-foe)) (%bl-key! g (%bl-key-for (first to-foe) (rest to-foe))))
       ((not (null? errand)) (%bl-errand! g s errand shown))
       ((if (null? giver) #f (%bl-talk? g s giver))
