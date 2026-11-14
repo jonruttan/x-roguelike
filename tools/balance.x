@@ -1740,7 +1740,9 @@
 ; GREED with a hostile in view, unless already on the way to it, so a
 ; hostile coming into view and out again does not turn the bot about;
 ; none with one awake two cells off or closer, or one awake not worth
-; fighting in view, as a step to it walks into their blows), a foe in
+; fighting in view, as a step to it walks into their blows, nor under
+; the QUAFF mark, when a step aside for a thing is a step into what
+; lies about it), a foe in
 ; view within CHASE whose fight
 ; is worth it to COURAGE, the errand on a world of screens, the giver, the level
 ; until CURIOSITY of it is seen, the stairs.  A foe it cannot reach is
@@ -1756,7 +1758,8 @@
                                              ((not (eq? (creature-state cr) (lit awake))) #f)
                                              (#t (< (state-dist (creature-r cr) (creature-c cr) (player-r p) (player-c p)) 3))))
                   (%bl-seen g)))
-    (def reach (match ((null? shown) (if close? 0 9999)) (close? 0)
+    (def reach (match ((%bl-under? p (%bl-at who (lit quaff))) 0)
+                      ((null? shown) (if close? 0 9999)) (close? 0)
                       ((if (eq? (creature-state shown) (lit awake)) (not (%bl-worth? g who shown)) #f) 0)
                       ((not (null? (%bl-kept g s (lit item) wanted? 9999))) 9999) (#t (%bl-at who (lit greed)))))
     (def to-item (if (if (< 0 reach) (%bl-any-wanted? g s) #f)
