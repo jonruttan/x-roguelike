@@ -1463,6 +1463,9 @@
                                     (%bl-seen g))))
                               ((null? shown) (List find (fn (_ cr) (%bl-sitter? g cr)) (%bl-seen g)))
                               ((not (%bl-stirring? s shown)) ()) (#t shown))) ())
+      ; Held with nothing beside to strike: a step goes nowhere, so the
+      ; turn is waited out.
+      ((if (null? foe) (%bl-held? g) #f) (%bl-key! g "s"))
       ((if (null? foe) #f slips) (%bl-onward! g s who shown))
       ((if (null? foe) #f (%bl-shed-slow! g)) ())
       ((if (null? foe) #f (%bl-to-passage! g)) ())
