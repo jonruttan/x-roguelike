@@ -247,7 +247,7 @@
 ; --- the conditions -------------------------------------------------------------
 
 (condition "confused" (on "woozy") (every "woozy" 3500 26) (steps 0 70 100)
-  (pitch -40) (effect (phase 1 6 2600 55 70)) (sway 15 5600))
+  (pitch -40) (effect (phase 15 60 3000 45 60)) (sway 15 1700))
 (condition "slowed" (on "slow-down") (every "slow-tick" 1800 24) (steps -500 0 110)
   (pace 70) (pitch -300))
 (condition "hasted" (on "quicken") (every "fast-tick" 1100 18) (steps 400 0 80)

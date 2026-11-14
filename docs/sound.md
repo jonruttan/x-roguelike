@@ -180,9 +180,9 @@ with.
 
 A condition or a bonus can change the music and the air while it holds
 (see Conditions and bonuses): slowed plays them slower and lower,
-hasted faster and higher, confused swirls them and sways their tempo, held strains them, the
-seeing shimmer, and the blind and the stealthy hear them as through a
-wall.
+hasted faster and higher, confused makes them woozy, a wavering echo
+and a tempo that will not hold, held strains them, the seeing shimmer,
+and the blind and the stealthy hear them as through a wall.
 
 Every form here is looked for in the set stood in first, then in the set
 the game began on and each of its regions. A region's own songs, beds and
