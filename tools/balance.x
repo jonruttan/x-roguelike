@@ -1163,8 +1163,9 @@
 ; what cannot be had another way: a band's guardian; any beside a
 ; confused player, whose swings go astray where a wand's aim does not;
 ; and any other, one that keeps its place among them, only when the
-; fight beside the player is likely lost,
-; by the odds or by blows from the unseen, which the odds do not weigh.
+; fight beside the player is costly, half what the player has or more
+; by the odds, as a fight the odds call won by a little is lost by a
+; few misses; or by blows from the unseen, which the odds do not weigh.
 (def %bl-dear?
   (fn (_ g s who cr)
     (def p (game-player g))
@@ -1172,7 +1173,7 @@
     (match ((if (null? guardian) #f (same? guardian cr)) #t)
            ((if (< 0 (player-condition p (lit confused))) (state-adjacent? (creature-r cr) (creature-c cr) (player-r p) (player-c p)) #f) #t)
            ((%bl-unseen-lost? g s who) #t)
-           (#t (not (< (%bl-peril g) (player-hp p)))))))
+           (#t (not (< (* 2 (%bl-peril g)) (player-hp p)))))))
 ; A wand zapped at CR when it is dear and in line: of those the bot has
 ; tried, a bolt, a drain, a banishing, and on one neither slow nor
 ; fast, lethargy, after which it is outpaced; with none of those, one
