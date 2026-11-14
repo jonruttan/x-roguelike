@@ -1495,6 +1495,9 @@
       ((if (null? foe) #f (%bl-shed-slow! g)) ())
       ((if (null? foe) #f (%bl-to-passage! g)) ())
       ((if (null? foe) #f (%bl-outpace? g)) (%bl-outpace! g s who foe))
+      ; A fight likely lost with the stairs near: down them, whatever
+      ; the hit points, as nothing follows a player off a level.
+      ((if (null? foe) #f (if (%bl-losing? g foe) (%bl-down-and-out! g s) #f)) ())
       ((not (null? foe))
         (unless (if (if (< 0 (%bl-at who (lit retreat))) (%bl-free? g foe) #f)
                   (if (if (%bl-losing? g foe) #t (%bl-under? p (%bl-at who (lit retreat))))
@@ -1520,6 +1523,7 @@
       ; not worth it: a step out of its line, not on under its fire.
       ((match ((null? shown) #f) ((not (null? foe)) #f)
               ((not (if (creature-trait? shown (lit ranged)) #t (creature-trait? shown (lit breath)))) #f)
+              ((not (eq? (creature-state shown) (lit awake))) #f)
               ((not (%bl-in-line? shown (player-r p) (player-c p))) #f)
               ((%bl-worth? g who shown) #f)
               (#t (%bl-away! g shown)))
