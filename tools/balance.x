@@ -1258,12 +1258,15 @@
 ; the player has or more, as its fight cannot be broken off and taken
 ; up again, and one the odds call won by a little is lost by a few
 ; misses; else that of all beside together, all the player has; or by
-; blows from the unseen, which the odds do not weigh.
+; blows from the unseen, which the odds do not weigh.  Under the QUAFF
+; mark with no mending left, any fight is: a charge kept then is kept
+; for nothing.
 (def %bl-dear?
   (fn (_ g s who cr)
     (def p (game-player g))
     (def guardian (%bl-guardian g))
     (match ((if (null? guardian) #f (same? guardian cr)) #t)
+           ((if (%bl-under? p (%bl-at who (lit quaff))) (null? (%bl-in-pack g %bl-mending?)) #f) #t)
            ((if (< 0 (player-condition p (lit confused))) (state-adjacent? (creature-r cr) (creature-c cr) (player-r p) (player-c p)) #f) #t)
            ((%bl-unseen-lost? g s who) #t)
            ((if (creature-trait? cr (lit regen)) (not (< (* 2 (%bl-cost g cr)) (player-hp p))) #f) #t)
