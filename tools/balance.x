@@ -1602,12 +1602,14 @@
       ((%bl-ready! g s foe) ())
       ((%bl-flee! g s who) ())
       ((if (null? foe) (%bl-strike-unseen! g s) #f) ())
-      ((%bl-zap! g s who (match ((not (null? foe))
-                                ((fn (_ cr) (if (null? cr) foe cr))
-                                  (List find (fn (_ cr) (if (%bl-hostile? cr) (if (state-adjacent? (creature-r cr) (creature-c cr) (player-r p) (player-c p)) (%bl-dear? g s who cr) #f) #f))
-                                    (%bl-seen g))))
-                              ((null? shown) (List find (fn (_ cr) (%bl-sitter? g cr)) (%bl-seen g)))
-                              ((not (%bl-stirring? s shown)) ()) (#t shown))) ())
+      ((%bl-zap! g s who ((fn (_ dear-beside)
+                           (match ((not (null? foe)) (if (null? dear-beside) foe dear-beside))
+                                  ; One kept wary of, beside, is no foe to walk to but still a fight.
+                                  ((not (null? dear-beside)) dear-beside)
+                                  ((null? shown) (List find (fn (_ cr) (%bl-sitter? g cr)) (%bl-seen g)))
+                                  ((not (%bl-stirring? s shown)) ()) (#t shown)))
+                          (List find (fn (_ cr) (if (%bl-hostile? cr) (if (state-adjacent? (creature-r cr) (creature-c cr) (player-r p) (player-c p)) (%bl-dear? g s who cr) #f) #f))
+                            (%bl-seen g)))) ())
       ; Held with nothing beside to strike: a step goes nowhere, so the
       ; turn is waited out.
       ((if (null? foe) (%bl-held? g) #f) (%bl-key! g "s"))
