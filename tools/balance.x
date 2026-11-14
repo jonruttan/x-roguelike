@@ -1523,7 +1523,11 @@
       ((match ((%bl-in-sight? g shown) #f) ((%bl-told? g "shoots") #f) ((%bl-told? g "You start up") #f)
               ((not (null? (%bl-unseen-blow g s))) #f)
               (#t (%bl-under? p (%bl-mark g s who (lit rest)))))
-        (%bl-rest! g))
+        ; One that never moves, in sight, breaks a camp before it starts:
+        ; a step out of its sight first.
+        ((fn (_ sitter) (unless (if (null? sitter) #f (%bl-away! g sitter)) (%bl-rest! g)))
+          (List find (fn (_ cr) (if (%bl-hostile? cr) (if (creature-trait? cr (lit stationary)) (%bl-in-sight? g cr) #f) #f))
+            (%bl-seen g))))
       ((%bl-pour? g oil lamp)
         (do (%bl-use! g "f" oil) (Vector set! 10 (+ 1 (Vector ref 10 s)) s)))
       ((if (null? weapon) #f (if (same? weapon (player-weapon p)) #f (< 0 (%bl-weapon-worth g weapon))))
