@@ -1524,12 +1524,15 @@
               (#t (do (Vector set! 34 #t s) (%bl-away! g shown))))
         ())
       ; One that shoots, in whose line the player stands, whose fight is
-      ; not worth it: a step out of its line, not on under its fire.
+      ; not worth it: toward the stairs when they are near, as it cannot
+      ; follow off the level and a step away still leaves it a shot;
+      ; else a step out of its line, not on under its fire.
       ((match ((null? shown) #f) ((not (null? foe)) #f)
               ((not (if (creature-trait? shown (lit ranged)) #t (creature-trait? shown (lit breath)))) #f)
               ((not (eq? (creature-state shown) (lit awake))) #f)
               ((not (%bl-in-line? shown (player-r p) (player-c p))) #f)
               ((%bl-worth? g who shown) #f)
+              ((%bl-down-and-out! g s 12) #t)
               (#t (%bl-away! g shown)))
         ())
       ((if (null? food) #f (< (player-food p) hungry))
