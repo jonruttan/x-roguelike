@@ -1054,8 +1054,10 @@
     (List length (List filter (fn (_ d) (map-walkable? m (+ r (first (rest d))) (+ c (rest (rest d))))) %bl-dirs))))
 ; With two or more hostile beside the player, a step to the cell beside
 ; them that fewest can come at, when it is narrower than where they
-; stand: a pack is met in a passage, one at a time.  Not when held.  #f
-; with no such step.
+; stand: a pack is met in a passage, one at a time.  Only when fewer
+; can come at that cell than are beside now, as the step itself gives
+; each of them a blow; not when held, nor confused, when the step goes
+; astray.  #f with no such step.
 (def %bl-to-passage!
   (fn (_ g)
     (def p (game-player g))
@@ -1073,6 +1075,8 @@
                  (#t best)))
         (pair (%bl-open g (player-r p) (player-c p)) ()) %bl-dirs))
     (match ((< crowd 2) #f) ((< 0 (player-condition p (lit held))) #f) ((null? (rest best)) #f)
+           ((< 0 (player-condition p (lit confused))) #f)
+           ((not (< (first best) crowd)) #f)
            (#t (do (%bl-why! "passage") (%bl-key! g (rest best)) #t)))))
 
 ; The slow FOE beside the player, outpaced: struck on the turn it cannot
