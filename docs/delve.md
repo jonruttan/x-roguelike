@@ -1006,7 +1006,7 @@ breach:
 
 | Adversary | Why now |
 |---|---|
-| salvagers | men stripping the drowned pit's upper galleries of rails, chains and tools, to sell over the Nick |
+| salvagers | men stripping the drowned pit's upper galleries of rails, chains and tools, to sell over the Nick; one went on past the breach after the better pickings, and keeps a counter a band ahead of the player (quests.xon) |
 | distrainers | the Guild's bailiffs, taking goods in Kettle against debts at its shop |
 | the League's agents | the buyers' men, come over the Nick to take the holdwater from whoever brings it up; they wait at the pithead and follow a level or two down |
 | Rot-hunters | White Church zealots from the Plain, come to cut the rag-trees, drive out the Listeners and put out the Candle |

@@ -129,7 +129,7 @@ row: the --More-- is answered before the next step down.
 ---
     ('open ("the foreman's lamp" "giver the lamp") ("lampman"))
 
-## the tallyman
+## the salvager
 
 ### he stands near the arrival on level 4, the first of a band after the first, and on no level before, in the open where he cuts no way
 
@@ -138,7 +138,7 @@ row: the --More-- is answered before the next step down.
 (player-hp! (game-player g) 1000)
 (def down! (fn (_) (def m (game-map g)) (player-at! (game-player g) (first (map-down m)) (rest (map-down m))) (game-key! g ">") (spec-settle! g)))
 (def seen (Vector of #f))
-(def look! (fn (_) (when (List any? (fn (_ cr) (str=? (creature-name cr) "tallyman")) (game-creatures g)) (Vector set! 0 #t seen))))
+(def look! (fn (_) (when (List any? (fn (_ cr) (str=? (creature-name cr) "salvager")) (game-creatures g)) (Vector set! 0 #t seen))))
 (look!)
 (down!)
 (look!)
@@ -147,7 +147,7 @@ row: the --More-- is answered before the next step down.
 (game-creatures! g ())
 (down!)
 (def p (game-player g))
-(def man (List find (fn (_ cr) (str=? (creature-name cr) "tallyman")) (game-creatures g)))
+(def man (List find (fn (_ cr) (str=? (creature-name cr) "salvager")) (game-creatures g)))
 (def d (state-dist (creature-r man) (creature-c man) (player-r p) (player-c p)))
 (def m (game-map g))
 (def round (List flat-map (fn (_ dr) (List map (fn (_ dc) (pair (+ (creature-r man) dr) (+ (creature-c man) dc))) '(-1 0 1))) '(-1 0 1)))
@@ -169,7 +169,7 @@ row: the --More-- is answered before the next step down.
 (write (list (first asked) (List ref 1 asked) (rest (rest (List ref 3 asked)))))
 ```
 ---
-    ('choose "The tallyman: what will you have?" ("a) mending, 30 gold" "b) oil flask, 20 gold" "c) miner's tin, 15 gold" "d) blink, 40 gold" "e) miner's blade, 120 gold" "f) scale coat, 150 gold" "s) sell something" "" "You have 200 gold."))
+    ('choose "The salvager: what will you have?" ("a) mending, 30 gold" "b) oil flask, 20 gold" "c) miner's tin, 15 gold" "d) blink, 40 gold" "e) miner's blade, 120 gold" "f) scale coat, 150 gold" "s) sell something" "" "You have 200 gold."))
 
 ### a letter buys: the scale coat for 150 gold, into the pack
 

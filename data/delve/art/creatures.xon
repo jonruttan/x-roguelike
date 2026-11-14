@@ -935,25 +935,25 @@
   "..kIkIkcckcck..."
   "...k.kkkk.kkk...")))
 
-; The tallyman, who kept the company store's tally and came down with
-; the crew: a flat cap, a waistcoat, his ledger held open.
-(tile "tallyman" (rows
+; The salvager, the one who went on past the breach after the better
+; pickings: a flat cap, a waistcoat, a sack on his back, an iron bar.
+(tile "salvager" (rows
   "................"
   "......kkkk......"
   ".....kttttk....."
   "....kkkkkkkk...."
   "......kPpPk....."
-  "......kJpJk....."
-  ".......kPk......"
-  ".....kbbVbbk...."
-  "....kbbVVVbbk..."
-  "...kbbkVcVkbbk.."
-  "...kbkkVVVkkbk.."
-  "...kpkBBBBBkpk.."
-  "...kkkBcBcBkkk.."
-  "....kbbbVbbbk..."
-  "....kbbk.kbbk..."
-  "....kik...kik...")
+  "......kJpJk..kk."
+  "..k....kPk..kUUk"
+  ".kIk.kbbVbbkkUUk"
+  ".kIkkbbVVVbbkUUk"
+  ".kIkbbkVcVkbkUUk"
+  ".kIkbkkVVVkkbkk."
+  ".kpkbkbbVbbkbk.."
+  ".kIkkkbbVbbkpk.."
+  ".kIk.kbbVbbkk..."
+  ".kIk.kbbk.kbbk.."
+  ".kkk.kik...kik..")
   (frames 6 (rows
   "................"
   "................"
@@ -961,16 +961,16 @@
   ".....kttttk....."
   "....kkkkkkkk...."
   "......kPpPk....."
-  "......kJpJk....."
-  ".......kPk......"
-  ".....kbbVbbk...."
-  "....kbbVVVbbk..."
-  "...kbbkVcVkbbk.."
-  "...kbkkVVVkkbk.."
-  "...kpkBBBBBkpk.."
-  "...kkkBcBcBkkk.."
-  "....kbbbVbbbk..."
-  "....kik...kik...")))
+  "......kJpJk..kk."
+  "..k....kPk..kUUk"
+  ".kIk.kbbVbbkkUUk"
+  ".kIkkbbVVVbbkUUk"
+  ".kIkbbkVcVkbkUUk"
+  ".kIkbkkVVVkkbkk."
+  ".kpkbkbbVbbkbk.."
+  ".kIkkkbbVbbkpk.."
+  ".kIk.kbbVbbkk..."
+  ".kkk.kik...kik..")))
 
 ; --- the Heart ----------------------------------------------------------------
 
