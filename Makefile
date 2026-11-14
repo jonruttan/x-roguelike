@@ -36,8 +36,12 @@ test: ## Run the spec suite (every failure is loud)
 	X="$(X)" sh tests/spec-runner.sh
 
 .PHONY: check
-check: ## Run the suite against tests/contract/known-failures.txt -- what CI gates on
+check: check-doc-folds ## Run the suite against tests/contract/known-failures.txt -- what CI gates on
 	X="$(X)" sh tests/spec-gate.sh
+
+.PHONY: check-doc-folds
+check-doc-folds: ## Assert every section of docs/delve.md is folded shut
+	sh tests/doc-folds.sh
 
 .PHONY: help
 help: ## Show targets

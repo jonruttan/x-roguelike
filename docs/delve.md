@@ -10,7 +10,14 @@ where they differ, the text is wrong, and the change is listed under
 x-roguelike: no names, people, places or text from any other game or
 book.
 
+**Spoilers.**  This file says what happened in the world and why, which
+is what the game asks a player to work out.  Each section below is
+folded shut; open one only if you mean to read it.
+
 ## What compels
+
+<details>
+<summary>Spoilers. Open to read.</summary>
 
 Narrative is the backbone.  People explore a world to find out what
 happened in it and to take a hand in what happens next; everything a
@@ -125,7 +132,12 @@ charter into that stone because it was the one thing everyone shared;
 (3) a pump-head the Guild keeps and the town draws from, and the one
 place the charter is judged, so it is where the ledger must be laid.
 
+</details>
+
 ## The world beyond the dale
+
+<details>
+<summary>Spoilers. Open to read.</summary>
 
 Mobility is poor and power does not reach far.  Nobody can hold the
 hills with soldiers; what reaches into a dale is money, paper and
@@ -196,7 +208,12 @@ had its well-keepers once; their stones, rag-trees and marks are
 everywhere in the hills.  Whether every dale has a stone of its own is
 the long mystery under every set.
 
+</details>
+
 ## The ground
+
+<details>
+<summary>Spoilers. Open to read.</summary>
 
 The rock is ordinary, and so are the weather and the life on it.  The
 stone is the one thing in the dale physics does not explain.
@@ -407,7 +424,12 @@ The air lies in layers, as the rock does.  From below:
   from the coal measures' own ironstone, black shale spoil heaps,
   pumps and rails, and soot over all of it.
 
+</details>
+
 ## The history
+
+<details>
+<summary>Spoilers. Open to read.</summary>
 
 Spans are rough; nobody in the dale keeps a calendar older than the
 charter.
@@ -538,7 +560,12 @@ charter.
     way down the old stair, to take the stone from the side the town
     has no law on.  They have until the first snow closes the pass.
 
+</details>
+
 ## Now
+
+<details>
+<summary>Spoilers. Open to read.</summary>
 
 When the game begins it is late summer, some three weeks after the
 pumps stopped.
@@ -560,7 +587,12 @@ pumps stopped.
 - **The rim**: the Guild's men in the old vaults, digging down, and the
   shepherds' bothies empty.
 
+</details>
+
 ## The narrative
+
+<details>
+<summary>Spoilers. Open to read.</summary>
 
 The player is a miner of Kettle, kin to one of the crew, out of work
 since the pumps stopped.
@@ -618,7 +650,12 @@ world's question, what we owe to what keeps us alive: a place that
 holds what everyone needs is taken in every age, and every taking
 leaves it worse.
 
+</details>
+
 ## The people
+
+<details>
+<summary>Spoilers. Open to read.</summary>
 
 - **Ada**, the bailiff's widow.  Knows where the ledger is; the key
   went astray.
@@ -643,7 +680,12 @@ leaves it worse.
   chandler, the knife-grinder, the woodcutter, the cobbler and the
   tanner.
 
+</details>
+
 ## Faith
+
+<details>
+<summary>Spoilers. Open to read.</summary>
 
 Two established churches, and the old ways under both.  Each people
 reveres what keeps it alive, and each church has made adversaries of
@@ -844,7 +886,12 @@ people reads it its own way.  None is settled.
 | the knocker | the Rot | a tale | the knocker |
 | the undertow | the Rot | the water that will not go home | the undertow |
 
+</details>
+
 ## What lives where
+
+<details>
+<summary>Spoilers. Open to read.</summary>
 
 **Before, and since.**  Every creature was there before, and the
 world has changed it.  Nothing comes from nowhere.  A creature has a
@@ -975,7 +1022,12 @@ lowest Galleries, now and then:
 | the old bear | the bones of a bear that denned in the stone's cave before anyone came, quickened by its water |
 | pool-born | blind white salamanders of the stone's pool, kin to the olm, older and larger than the crayfish, come up the stair with the water |
 
+</details>
+
 ## What lies about
+
+<details>
+<summary>Spoilers. Open to read.</summary>
 
 - **Potions** are water.  Above, flasks of well-head water and the
   herb-wife's simples: weak, but the folk swear by them.  Below, the
@@ -1002,7 +1054,12 @@ lowest Galleries, now and then:
   are the miners', set for the ferrets; the alarm is a well-keeper bell
   strung across the stair, which wakes the keepers.
 
+</details>
+
 ## The dale of Kettle
+
+<details>
+<summary>Spoilers. Open to read.</summary>
 
 Kettle is a market town of some two thousand people, and the only town
 in the dale.  It lives on three things: the farms on the drained floor,
@@ -1398,7 +1455,12 @@ interiors on chosen town doors; colour by building or door, not only
 by band; and errand givers placed where their trade is, not by their
 place in the chain.
 
+</details>
+
 ## To bring the text into line
+
+<details>
+<summary>Spoilers. Open to read.</summary>
 
 Working back from the history to the game.  **(r)** is a rename.
 
@@ -1472,7 +1534,12 @@ Working back from the history to the game.  **(r)** is a rename.
 `06-delve`, `09-quests` and `10-elements` name things that are renamed,
 and change with them.
 
+</details>
+
 ## Ideas
+
+<details>
+<summary>Spoilers. Open to read.</summary>
 
 Proposals, not decided.
 
@@ -1511,7 +1578,12 @@ Proposals, not decided.
   gather.  The well-keepers' keepers are the same impulse, a thousand
   years older: miners carving the rock they live in.
 
+</details>
+
 ## The voice
+
+<details>
+<summary>Spoilers. Open to read.</summary>
 
 - People talk about their work, their debts and the weather; nobody
   makes a speech.  Lines are short and concrete: a key, a flask, a sack
@@ -1520,3 +1592,6 @@ Proposals, not decided.
   unsaid.  The history above is the truth; no one in the world knows
   all of it.
 - Canadian spelling: colour, centre, grey, travelled.
+
+</details>
+
