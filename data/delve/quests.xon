@@ -39,3 +39,29 @@
   (done "That will do.  Go on down, then; I will have it drawing by the time"
         "you come back up, for all the good it will do either of us.  Take one:")
   (rewards (weapon "foreman's pick") (ring "silence")))
+
+; The salvager, (keeper NAME (level N) . PROPS), keeps a shop a band
+; ahead of the player: on the first level of each band after the first,
+; near where the player comes onto it.  The others strip the Galleries
+; and stop at the breach; he went on below it.  (sells (CLASS NAME) ...)
+; is his stock, (buys CLASS ...) what he takes, at the set's (worth ...)
+; or an item's own (price N) (shops.x); each LINE is said over the
+; counter.
+(keeper "salvager" (level 4)
+  (sells (potion "mending") (oil "oil flask") (food "miner's tin") (scroll "blink")
+         (weapon "miner's blade") (armour "scale coat"))
+  (buys potion scroll wand ring weapon armour food oil)
+  "The others stop at the breach.  The pickings are better below it."
+  "Lamps, oil, a blade now and then: the company left it all to the water.")
+(keeper "salvager" (level 7)
+  (sells (potion "mending") (oil "oil flask") (food "miner's tin") (scroll "blink")
+         (weapon "sledge") (armour "plated harness"))
+  (buys potion scroll wand ring weapon armour food oil)
+  "The Flood gave up less than I hoped.  What it gave up is on the board."
+  "What you carry, I take over the Nick.  Gold is gold, wherever found.")
+(keeper "salvager" (level 10)
+  (sells (potion "mending") (oil "oil flask") (food "miner's tin") (scroll "blink")
+         (potion "deep mending") (wand "sparks"))
+  (buys potion scroll wand ring weapon armour food oil)
+  "This is as deep as I go.  Nothing below here was ever the company's."
+  "What you bring back up, I buy.  What you take down, you will need.")

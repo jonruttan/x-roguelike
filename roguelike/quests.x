@@ -35,7 +35,7 @@
   game-place
   player-r player-c creature-make creature-name creature-carried creature-carried! creature-r creature-c
   item-make item-name item-class? item-at! item-letter! item-r item-c
-  state-tell! state-text state-roll state-free? state-items-at state-remove-pack! state-creature-named)
+  state-tell! state-text state-roll state-free? state-items-at state-remove-pack! state-creature-named state-dist)
 (import roguelike/items items-new items-pickup! items-name)
 (import roguelike/shops shops-kept? shops-open!)
 
@@ -83,10 +83,14 @@
     (game-creatures! g (pair cr (game-creatures g)))
     cr))
 
+; Q's giver on a free cell that cuts no way (%qs-open?), or, with none
+; found, on any free cell.
 (def %qs-place-giver!
   (fn (_ g q)
     (def kind (%qs-kind g (%qs-giver q)))
-    (def at (%qs-spot g))
+    (def m (game-map g))
+    (def open (dungeon-spot (game-rng g) m (fn (_ r c) (if (state-free? g r c) (if (null? (state-items-at g r c)) (%qs-open? m (pair r c)) #f) #f)) 100))
+    (def at (if (null? open) (%qs-spot g) open))
     (unless (if (null? kind) #t (null? at))
       (do (%qs-creature! g kind (first at) (rest at))
           (game-placed! g (Str8 append "giver " (%qs-name q)))))))
@@ -297,7 +301,8 @@
              (List fold (fn (_ best at) (if (< (%qs-far doors at) (%qs-far doors best)) at best)) (first spots) (rest spots)))))
        (List fold (fn (_ best at) (if (< (%qs-far doors best) (%qs-far doors at)) at best)) (first free) (rest free))))))
 ; Each keeper on the level just made, inside their building: a shop's
-; behind its counter, any other in the middle of the floor.
+; behind its counter, any other in the middle of the floor; then the
+; level's traders, near the player.
 (def quests-keepers!
   (fn (_ g)
     (List for-each
@@ -312,7 +317,45 @@
                    (unless (null? (rest behind))
                      (map-set! (game-map g) (first (rest behind)) (rest (rest behind)) tile-counter)))))
            (if (null? (%qs-shop g (List ref 1 bk))) () (%qs-behind g place)))))
-      (%qs-keepers g))))
+      (%qs-keepers g))
+    (List for-each
+      (fn (_ k) ((fn (_ kind at) (unless (if (null? kind) #t (null? at)) (%qs-creature! g kind (first at) (rest at)))) (%qs-kind g (first k)) (%qs-near g)))
+      (%qs-traders g))))
+
+; --- the traders below -------------------------------------------------------
+
+; A set's own (keeper NAME (level N) . PROPS), in no building, stands on
+; level N near where the player comes onto it, each time the level is
+; made; walked into with nothing to ask, it says one of the LINEs among
+; PROPS, over the counter when PROPS sell or buy (shops.x).
+
+; The traders of the level in hand, (NAME . PROPS) each.
+(def %qs-traders
+  (fn (_ g)
+    (List filter (fn (_ k) (= (data-get (rest k) (lit level) 0) (game-depth g))) (data-all (game-forms g) (lit keeper)))))
+(def %qs-trader (fn (_ g name) (List find (fn (_ k) (str=? (first k) name)) (%qs-traders g))))
+; Whether one standing at AT cuts no way: each of the eight cells round
+; it walkable and none a door, so a way through it goes round it.
+(def %qs-eight
+  (list (pair -1 -1) (pair -1 0) (pair -1 1) (pair 0 -1) (pair 0 1) (pair 1 -1) (pair 1 0) (pair 1 1)))
+(def %qs-open?
+  (fn (_ m at)
+    (List all? (fn (_ d) ((fn (_ r c) (if (map-walkable? m r c) (not (= (map-tile m r c) tile-door)) #f))
+                          (+ (first at) (first d)) (+ (rest at) (rest d))))
+      %qs-eight)))
+; The free cell with nothing on it nearest the player, two cells off at
+; the least, that cuts no way, or nil.
+(def %qs-near
+  (fn (_ g)
+    (def m (game-map g))
+    (def p (game-player g))
+    (def d (fn (_ at) (state-dist (first at) (rest at) (player-r p) (player-c p))))
+    (List fold
+      (fn (_ best at)
+        (if (if (< (d at) 2) #f (if (state-free? g (first at) (rest at)) (if (null? (state-items-at g (first at) (rest at))) (%qs-open? m at) #f) #f))
+          (if (null? best) at (if (< (d at) (d best)) at best))
+          best))
+      () (%qs-cells (list "" 1 1 (- (map-rows m) 2) (- (map-cols m) 2))))))
 
 ; --- the people of the streets -----------------------------------------------
 
@@ -349,16 +392,21 @@
 (def %qs-lines
   (fn (_ g name)
     (def bk (List find (fn (_ bk) (str=? (List ref 1 bk) name)) (%qs-keepers g)))
-    (if (null? bk)
-      ((fn (_ f) (if (null? f) () (rest f))) (List find (fn (_ f) (str=? (first f) name)) (%qs-folk g)))
-      (rest (rest bk)))))
-; The forms of the building the keeper NAME keeps a shop in, among the
-; forms in force, or nil.
+    (def tk (%qs-trader g name))
+    (match ((not (null? bk)) (rest (rest bk)))
+           ((not (null? tk)) (List filter str? (rest tk)))
+           (#t ((fn (_ f) (if (null? f) () (rest f))) (List find (fn (_ f) (str=? (first f) name)) (%qs-folk g)))))))
+; The forms of the building the keeper NAME keeps a shop in, or the
+; PROPS of the trader NAME, among the forms in force, or nil.
 (def %qs-shop
   (fn (_ g name)
     (def b (List find (fn (_ b) (List any? (fn (_ k) (str=? (first k) name)) (data-all (rest b) (lit keeper))))
              (data-all (game-forms g) (lit building))))
-    (match ((null? b) ()) ((shops-kept? (rest b)) (rest b)) (#t ()))))
+    (def tk (%qs-trader g name))
+    (match ((not (null? b)) (if (shops-kept? (rest b)) (rest b) ()))
+           ((null? tk) ())
+           ((shops-kept? (rest tk)) (rest tk))
+           (#t ()))))
 
 ; --- finding them ------------------------------------------------------------
 

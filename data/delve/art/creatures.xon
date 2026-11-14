@@ -935,6 +935,43 @@
   "..kIkIkcckcck..."
   "...k.kkkk.kkk...")))
 
+; The salvager, the one who went on past the breach after the better
+; pickings: a flat cap, a waistcoat, a sack on his back, an iron bar.
+(tile "salvager" (rows
+  "................"
+  "......kkkk......"
+  ".....kttttk....."
+  "....kkkkkkkk...."
+  "......kPpPk....."
+  "......kJpJk..kk."
+  "..k....kPk..kUUk"
+  ".kIk.kbbVbbkkUUk"
+  ".kIkkbbVVVbbkUUk"
+  ".kIkbbkVcVkbkUUk"
+  ".kIkbkkVVVkkbkk."
+  ".kpkbkbbVbbkbk.."
+  ".kIkkkbbVbbkpk.."
+  ".kIk.kbbVbbkk..."
+  ".kIk.kbbk.kbbk.."
+  ".kkk.kik...kik..")
+  (frames 6 (rows
+  "................"
+  "................"
+  "......kkkk......"
+  ".....kttttk....."
+  "....kkkkkkkk...."
+  "......kPpPk....."
+  "......kJpJk..kk."
+  "..k....kPk..kUUk"
+  ".kIk.kbbVbbkkUUk"
+  ".kIkkbbVVVbbkUUk"
+  ".kIkbbkVcVkbkUUk"
+  ".kIkbkkVVVkkbkk."
+  ".kpkbkbbVbbkbk.."
+  ".kIkkkbbVbbkpk.."
+  ".kIk.kbbVbbkk..."
+  ".kkk.kik...kik..")))
+
 ; --- the Heart ----------------------------------------------------------------
 
 ; A glister: one of the old people's men, cut from the stone's own glassy
