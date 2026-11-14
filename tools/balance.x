@@ -139,6 +139,17 @@
 ; awake or is fleeing.
 (def %bl-stirring?
   (fn (_ s cr) (match ((eq? (creature-state cr) (lit awake)) #t) ((eq? (creature-state cr) (lit fleeing)) #t) (#t #f))))
+; Whether searching in the dark should stop for a hostile: FOE beside,
+; or one shown, awake and free to come.  One asleep, not yet noticing,
+; fleeing or keeping its place is no threat to a search, so the lamp is
+; not lit for it, nor kept lit.
+(def %bl-roused?
+  (fn (_ g s foe)
+    (if (null? foe)
+      (not (null? (List find (fn (_ cr) (match ((not (%bl-hostile? cr)) #f) ((creature-trait? cr (lit stationary)) #f)
+                                                 ((not (creatures-shown? g cr)) #f) (#t (eq? (creature-state cr) (lit awake)))))
+                    (%bl-seen g))))
+      #t)))
 ; How much of its kind's usual hit points CR has left, in eighths, by
 ; the look's word for it: whole, hurt, badly hurt or nearly dead.
 (def %bl-wounds
@@ -160,13 +171,14 @@
 (def %bl-slowed? (fn (_ cr) (< 0 (creature-condition cr (lit slowed)))))
 ; A rest: under a lamp, a camp, the lamp put out and no oil burned, run
 ; a turn at a time as a front end runs it, till it breaks; with no lamp
-; or none lit, a turn's wait.
+; or none lit, or a camp broken before a turn passed, a turn's wait.
 (def %bl-rest!
   (fn (_ g)
     (def run (fn (self n) (when (if (game-exploring? g) (< n 2000) #f) (do (game-explore! g) (Heap collect) (self (+ n 1))))))
-    (if (< 0 (player-lamp (game-player g)))
-      (do (%bl-key! g "c") (run 0))
-      (%bl-key! g "s"))))
+    (def turn (game-turn g))
+    (when (< 0 (player-lamp (game-player g)))
+      (do (%bl-key! g "c") (run 0)))
+    (when (= turn (game-turn g)) (%bl-key! g "s"))))
 ; Whether IT is a wand the bot has tried and that has a charge left: a
 ; wand that is known shows its charges.
 (def %bl-wand-known?
@@ -686,7 +698,7 @@
     (match ((null? a) (if (if out? (< 0 (player-lamp p)) #f) (do (%bl-key! g "x") #t) #f))
            ((if out? lit? #f) (do (%bl-key! g "x") #t))
            ((if lit? #f (if out? #f (< 0 (player-lamp p))))
-             (if (null? (%bl-shown-hostile g)) (do (%bl-key! g "x") #t) #f))
+             (if (%bl-roused? g s ()) #f (do (%bl-key! g "x") #t)))
            ((eq? a (lit here)) (do (%bl-search-here! g s) #t))
            (#t (do (%bl-key! g (%bl-key-for (first a) (rest a))) #t)))))
 
@@ -737,13 +749,18 @@
 
 ; A step out of CR's reach, one beside no other hostile first, then the
 ; furthest, then one out of the line of every hostile in view that
-; shoots or breathes; or #f when none gains.  Backing off beside
-; another is struck by it, and down a shooter's line is shot all the
-; way.
+; shoots or breathes; or #f when none gains, or when held, as a step
+; then goes nowhere and the turn is lost.  Backing off beside another
+; is struck by it, and down a shooter's line is shot all the way.
 (def %bl-away!
   (fn (_ g cr)
     (def p (game-player g))
     (def m (game-map g))
+    (if (%bl-held? g) #f (%bl-away-from! g cr p m))))
+; Whether the player is held, so that a step goes nowhere.
+(def %bl-held? (fn (_ g) (< 0 (player-condition (game-player g) (lit held)))))
+(def %bl-away-from!
+  (fn (_ g cr p m)
     (def shooters (List filter (fn (_ x) (if (%bl-hostile? x) (if (creature-trait? x (lit ranged)) #t (creature-trait? x (lit breath))) #f))
                                (%bl-seen g)))
     (def others (List filter (fn (_ x) (if (same? x cr) #f (%bl-hostile? x))) (%bl-seen g)))
@@ -921,7 +938,7 @@
                  ((not (null? (traps-found-at g r c))) #f)
                  (#t (not (%bl-in-line? cr r c)))))
         %bl-dirs))
-    (if (null? hit) #f (do (%bl-key! g (first hit)) #t))))
+    (match ((%bl-held? g) #f) ((null? hit) #f) (#t (do (%bl-key! g (first hit)) #t)))))
 
 ; Whether the player can stand on R C: walkable, with no creature and no
 ; found trap on it.
@@ -987,7 +1004,7 @@
                  ((List any? (fn (_ cr) (if (counts? cr) (state-adjacent? (creature-r cr) (creature-c cr) r c) #f)) (%bl-seen g)) best)
                  (#t ((fn (_ room) (if (< (first best) room) (pair room (first d)) best)) (%bl-room g r c 24)))))
         (pair 0 ()) %bl-dirs))
-    (if (null? (rest best)) #f (do (%bl-key! g (rest best)) #t))))
+    (match ((%bl-held? g) #f) ((null? (rest best)) #f) (#t (do (%bl-key! g (rest best)) #t)))))
 ; Whether FOE stands where it stood when the player last stepped clear
 ; of it, slot 16 of S, (CREATURE R . C): it does not follow, and
 ; stepping clear of it again gains nothing.
@@ -1098,13 +1115,15 @@
            (#t ()))))
 ; Whether CR is one to turn a wand on.  Charges are few, and kept for
 ; what cannot be had another way: a band's guardian; one that keeps its
-; place, when it holds the player or closes the way; and any other
-; only when the fight beside the player is likely lost.
+; place, when it holds the player or closes the way; any beside a
+; confused player, whose swings go astray where a wand's aim does not;
+; and any other only when the fight beside the player is likely lost.
 (def %bl-dear?
   (fn (_ g who cr)
     (def p (game-player g))
     (def guardian (%bl-guardian g))
     (match ((if (null? guardian) #f (same? guardian cr)) #t)
+           ((if (< 0 (player-condition p (lit confused))) (state-adjacent? (creature-r cr) (creature-c cr) (player-r p) (player-c p)) #f) #t)
            ((creature-trait? cr (lit stationary))
              (if (< 0 (player-condition p (lit held))) #t (< 0 (Vector ref 0 %bl-bold))))
            (#t (not (< (%bl-peril g) (player-hp p)))))))
@@ -1137,15 +1156,19 @@
 
 ; With the fight beside the player likely lost, a scroll read to get out
 ; of it: stillness, panic, or a blink away.  A blow from something
-; unseen, with no sight of it, counts as lost: its cost cannot be
-; weighed.  What stillness holds is
-; remembered for as long as its (effect hold N) gives.  #f with none
-; read.
+; unseen, with no sight of it, counts as lost once WHO is under its
+; retreat: its cost cannot be weighed, and above that mark it is struck
+; back at.  Panic scares only what is in view, so against the unseen
+; it is not read.  What stillness holds is remembered for as long as
+; its (effect hold N) gives.  #f with none read.
 (def %bl-flee!
-  (fn (_ g)
-    (def unseen? (if (%bl-told? g "Something unseen hits") (= 0 (player-condition (game-player g) (lit seeing))) #f))
-    (def scroll (if (if unseen? #f (< (%bl-peril g) (player-hp (game-player g)))) ()
-                  (%bl-first-effect g (lit scroll) (list (lit hold) (lit fear) (lit teleport)))))
+  (fn (_ g s who)
+    (def p (game-player g))
+    (def unseen? (match ((null? (%bl-unseen-blow g s)) #f) ((< 0 (player-condition p (lit seeing))) #f)
+                        (#t (%bl-under? p (%bl-at who (lit retreat))))))
+    (def scroll (match (unseen? (%bl-first-effect g (lit scroll) (list (lit hold) (lit teleport))))
+                       ((< (%bl-peril g) (player-hp p)) ())
+                       (#t (%bl-first-effect g (lit scroll) (list (lit hold) (lit fear) (lit teleport))))))
     (def e (if (null? scroll) () (item-prop scroll (lit effect) ())))
     (if (null? scroll) #f
       (do (%bl-use! g "r" scroll)
@@ -1227,15 +1250,20 @@
 (def %bl-strike-unseen!
   (fn (_ g s)
     (def p (game-player g))
-    (def from
-      (List find
+    (def from (%bl-unseen-blow g s))
+    (if (null? from) #f
+      (do (%bl-key! g (%bl-key-for (- (List ref 1 from) (player-r p)) (- (List ref 2 from) (player-c p)))) #t))))
+; The blow this turn from a cell beside the player with nothing in view
+; on it, or nil.
+(def %bl-unseen-blow
+  (fn (_ g s)
+    (def p (game-player g))
+    (List find
         (fn (_ b)
           (match ((not (= (List ref 3 b) (player-r p))) #f) ((not (= (List ref 4 b) (player-c p))) #f)
                  ((not (state-adjacent? (List ref 1 b) (List ref 2 b) (player-r p) (player-c p))) #f)
                  (#t (null? (%bl-seen-at g (List ref 1 b) (List ref 2 b))))))
-        ((fn (_ kept) (if (null? kept) () (if (= (first kept) (game-turn g)) (rest kept) ()))) (Vector ref 24 s))))
-    (if (null? from) #f
-      (do (%bl-key! g (%bl-key-for (- (List ref 1 from) (player-r p)) (- (List ref 2 from) (player-c p)))) #t))))
+        ((fn (_ kept) (if (null? kept) () (if (= (first kept) (game-turn g)) (rest kept) ()))) (Vector ref 24 s)))))
 
 ; --- the turn ----------------------------------------------------------------
 
@@ -1336,18 +1364,21 @@
     (Vector set! 22 (player-hp p) s)
     (match
       ((not (null? q)) (%bl-answer! g q))
-      ; Searching in the dark, a foe shown or a blow from the unseen
+      ; Searching in the dark, a foe roused or a blow from the unseen
       ; lights the lamp again.
-      ((if (player-doused? p) (if (< 0 (player-lamp p)) (if struck? #t (not (null? (if (null? foe) shown foe)))) #f) #f)
+      ((if (player-doused? p) (if (< 0 (player-lamp p)) (if struck? #t (%bl-roused? g s foe)) #f) #f)
         (%bl-key! g "x"))
       ((if (null? potion) #f (%bl-under? p (%bl-at who (lit quaff))))
         (do (%bl-use! g "q" potion) (Vector set! 2 (+ 1 (Vector ref 2 s)) s)))
       ((%bl-drink-now? g foe potion)
         (do (%bl-use! g "q" potion) (Vector set! 2 (+ 1 (Vector ref 2 s)) s)))
       ((%bl-ready! g s foe) ())
+      ((%bl-flee! g s who) ())
       ((if (null? foe) (%bl-strike-unseen! g s) #f) ())
-      ((if (null? foe) #f (%bl-flee! g)) ())
-      ((%bl-zap! g who (match ((not (null? foe)) foe)
+      ((%bl-zap! g who (match ((not (null? foe))
+                                ((fn (_ cr) (if (null? cr) foe cr))
+                                  (List find (fn (_ cr) (if (%bl-hostile? cr) (if (state-adjacent? (creature-r cr) (creature-c cr) (player-r p) (player-c p)) (%bl-dear? g who cr) #f) #f))
+                                    (%bl-seen g))))
                               ((null? shown) (List find (fn (_ cr) (%bl-sitter? g cr)) (%bl-seen g)))
                               ((not (%bl-stirring? s shown)) ()) (#t shown))) ())
       ((if (null? foe) #f slips) (%bl-onward! g s who shown))
