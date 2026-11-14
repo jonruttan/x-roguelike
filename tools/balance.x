@@ -883,12 +883,14 @@
   (fn (_ g foe potion)
     (match ((null? foe) #f) ((null? potion) #f) ((%bl-losing? g foe) (%bl-mends? g potion)) (#t #f))))
 ; Whether a step away from CR gains a turn: not when the player is slowed
-; or held, nor from one that is fast, as it then strikes for each step.
+; or held, nor from one that is fast or shoots, as it then strikes for
+; each step.
 (def %bl-free?
   (fn (_ g cr)
     (def p (game-player g))
     (match ((< 0 (player-condition p (lit slowed))) #f)
            ((< 0 (player-condition p (lit held))) #f)
+           ((creature-trait? cr (lit ranged)) #f)
            (#t (not (creature-trait? cr (lit fast)))))))
 
 ; --- the slow, outpaced ------------------------------------------------------
@@ -1481,8 +1483,7 @@
       ((match ((not (null? potion)) #f) ((null? shown) #f)
               ((not (if (Vector ref 34 s) #t (%bl-under? p (%bl-at who (lit quaff))))) #f)
               ((%bl-down-and-out! g s) #t)
-              ((creature-trait? shown (lit fast)) #f)
-              ((creature-trait? shown (lit ranged)) #f)
+              ((not (%bl-free? g shown)) #f)
               ((not (%bl-losing? g shown)) #f)
               (#t (do (Vector set! 34 #t s) (%bl-away! g shown))))
         ())
