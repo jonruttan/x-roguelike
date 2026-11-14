@@ -1147,10 +1147,10 @@
            ((same? cr (items-target g (player-r p) (player-c p) (first way) (rest way) 8)) way)
            (#t ()))))
 ; Whether CR is one to turn a wand on.  Charges are few, and kept for
-; what cannot be had another way: a band's guardian; one that keeps its
-; place, when it holds the player or closes the way; any beside a
+; what cannot be had another way: a band's guardian; any beside a
 ; confused player, whose swings go astray where a wand's aim does not;
-; and any other only when the fight beside the player is likely lost,
+; and any other, one that keeps its place among them, only when the
+; fight beside the player is likely lost,
 ; by the odds or by blows from the unseen, which the odds do not weigh.
 (def %bl-dear?
   (fn (_ g s who cr)
@@ -1158,8 +1158,6 @@
     (def guardian (%bl-guardian g))
     (match ((if (null? guardian) #f (same? guardian cr)) #t)
            ((if (< 0 (player-condition p (lit confused))) (state-adjacent? (creature-r cr) (creature-c cr) (player-r p) (player-c p)) #f) #t)
-           ((creature-trait? cr (lit stationary))
-             (if (< 0 (player-condition p (lit held))) #t (< 0 (Vector ref 0 %bl-bold))))
            ((%bl-unseen-lost? g s who) #t)
            (#t (not (< (%bl-peril g) (player-hp p)))))))
 ; A wand zapped at CR when it is dear and in line: of those the bot has
