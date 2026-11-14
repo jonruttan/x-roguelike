@@ -595,7 +595,9 @@
   (fn (_ g form)
     (def it (item-make form 1 0))
     (def better? (fn (_ class worth) ((fn (_ best) (if (null? best) #t (< (worth g best) (worth g it)))) (%bl-best g class worth))))
-    (match ((eq? (first form) (lit weapon)) (better? (lit weapon) %bl-weapon-worth))
+    (def kin? (fn (_ x) (if (eq? (item-class x) (first form)) (str=? (item-name x) (List ref 1 form)) #f)))
+    (match ((if (< (List length (game-pack g)) 26) #f (not (List any? kin? (game-pack g)))) #f)
+           ((eq? (first form) (lit weapon)) (better? (lit weapon) %bl-weapon-worth))
            ((eq? (first form) (lit armour)) (better? (lit armour) %bl-armour-worth))
            ((%bl-mending? it) (< (%bl-held g %bl-mending?) 3))
            ((eq? (first form) (lit oil)) (< (%bl-held g (%bl-of-class (lit oil))) 2))
@@ -603,18 +605,23 @@
            ((if (eq? (first form) (lit scroll)) (str=? (List ref 1 form) "blink") #f)
              (< (%bl-held g (fn (_ x) (if (eq? (item-class x) (lit scroll)) (str=? (item-name x) "blink") #f))) 1))
            (#t #f))))
-; A weapon or armour in the pack, neither in use nor the best of its
-; kind: what the bot would sooner sell than carry.
+; What the bot would sooner sell than carry: a weapon or armour neither
+; in use nor the best of its kind, a wand found empty, a ring not worn
+; with another of its name held.
 (def %bl-spare
   (fn (_ g)
+    (def pack (game-pack g))
     (List find
       (fn (_ it)
         (def class (item-class it))
         (def worth (if (eq? class (lit weapon)) %bl-weapon-worth %bl-armour-worth))
-        (match ((not (if (eq? class (lit weapon)) #t (eq? class (lit armour)))) #f)
-               ((not (str=? (items-worn g it) "")) #f)
+        (match ((not (str=? (items-worn g it) "")) #f)
+               ((eq? class (lit wand)) (List any? (fn (_ x) (same? x it)) (Vector ref 0 %bl-empty)))
+               ((eq? class (lit ring))
+                 (List any? (fn (_ x) (if (same? x it) #f (if (eq? (item-class x) (lit ring)) (str=? (item-name x) (item-name it)) #f))) pack))
+               ((not (if (eq? class (lit weapon)) #t (eq? class (lit armour)))) #f)
                (#t (not (same? it (%bl-best g class worth))))))
-      (game-pack g))))
+      pack)))
 ; The key at the counter of Q: s with a spare thing to sell and the
 ; keeper buying; else the letter of the first thing wanted that the
 ; purse holds, gear before the rest; else away.
