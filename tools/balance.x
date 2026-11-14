@@ -67,7 +67,8 @@
   creature-r creature-c creature-state creature-glyph creature-trait? creature-condition creature-hp creature-prop creature-prop1 state-defence state-adjacent? state-in-sight? state-dist state-shortfall state-creature-at state-items-at
   game-quest-state game-screens? game-screen game-screen-key game-hub game-chain game-inside state-creature-named
   game-top-set game-home game-place game-below?
-  game-rng game-rng! creature-hp! creature-name state-roll game-traps item-charges player-rings game-blows creature-whole game-exploring?)
+  game-rng game-rng! creature-hp! creature-name state-roll game-traps item-charges player-rings game-blows creature-whole game-exploring?
+  game-world-all item-make item-count player-gold)
 (import roguelike/save save-write! save-read)
 (import roguelike/creatures creatures-shown? creatures-door-diagonal?)
 (import roguelike/items items-goal-held? items-worn items-target items-known?)
@@ -567,9 +568,73 @@
     (match ((not (null? (player-weapon p))) (item-letter (player-weapon p)))
            ((not (null? (player-armour p))) (item-letter (player-armour p)))
            (#t (lit escape)))))
+; --- at a counter ------------------------------------------------------------
+
+; The goods on the counter the ask Q puts up, (LETTER FORM PRICE) each,
+; read off its answers, "NAME, N gold", as the player reads them; a
+; name the world has no item of is left out.
+(def %bl-goods
+  (fn (_ g q)
+    (def forms (game-world-all g (lit item)))
+    (List reject null?
+      (List map
+        (fn (_ a)
+          (def text (rest a))
+          (def at (Str8 index-of ", " text))
+          (def form (if (null? at) () (List find (fn (_ f) (str=? (List ref 1 f) (Str8 sub 0 at text))) forms)))
+          (if (null? form) ()
+            (list (first a) form (%bl-int (Str8 sub (+ at 2) (- (Str8 length text) (+ at 7)) text)))))
+        (List ref 4 q)))))
+; How many things in the pack pass TEST, a stack counting each.
+(def %bl-held (fn (_ g test) (List fold (fn (_ n it) (if (test it) (+ n (item-count it)) n)) 0 (game-pack g))))
+(def %bl-mending? (fn (_ it) (if (eq? (item-class it) (lit potion)) (Str8 includes? "mending" (item-name it)) #f)))
+; Whether the bot wants the thing of FORM: a weapon or armour better
+; than the best of its kind held; mending to three, oil and food to
+; two, a blink to one; nothing else.
+(def %bl-wants?
+  (fn (_ g form)
+    (def it (item-make form 1 0))
+    (def better? (fn (_ class worth) ((fn (_ best) (if (null? best) #t (< (worth g best) (worth g it)))) (%bl-best g class worth))))
+    (match ((eq? (first form) (lit weapon)) (better? (lit weapon) %bl-weapon-worth))
+           ((eq? (first form) (lit armour)) (better? (lit armour) %bl-armour-worth))
+           ((%bl-mending? it) (< (%bl-held g %bl-mending?) 3))
+           ((eq? (first form) (lit oil)) (< (%bl-held g (%bl-of-class (lit oil))) 2))
+           ((eq? (first form) (lit food)) (< (%bl-held g (%bl-of-class (lit food))) 2))
+           ((if (eq? (first form) (lit scroll)) (str=? (List ref 1 form) "blink") #f)
+             (< (%bl-held g (fn (_ x) (if (eq? (item-class x) (lit scroll)) (str=? (item-name x) "blink") #f))) 1))
+           (#t #f))))
+; A weapon or armour in the pack, neither in use nor the best of its
+; kind: what the bot would sooner sell than carry.
+(def %bl-spare
+  (fn (_ g)
+    (List find
+      (fn (_ it)
+        (def class (item-class it))
+        (def worth (if (eq? class (lit weapon)) %bl-weapon-worth %bl-armour-worth))
+        (match ((not (if (eq? class (lit weapon)) #t (eq? class (lit armour)))) #f)
+               ((not (str=? (items-worn g it) "")) #f)
+               (#t (not (same? it (%bl-best g class worth))))))
+      (game-pack g))))
+; The key at the counter of Q: s with a spare thing to sell and the
+; keeper buying; else the letter of the first thing wanted that the
+; purse holds, gear before the rest; else away.
+(def %bl-shop-key
+  (fn (_ g q)
+    (def gold (player-gold (game-player g)))
+    (def buys? (List any? (fn (_ a) (str=? (first a) "s")) (List ref 4 q)))
+    (def gear? (fn (_ x) (if (eq? (first (List ref 1 x)) (lit weapon)) #t (eq? (first (List ref 1 x)) (lit armour)))))
+    (def fit (List filter (fn (_ x) (if (< gold (List ref 2 x)) #f (%bl-wants? g (List ref 1 x)))) (%bl-goods g q)))
+    (def pick (List append (List filter gear? fit) (List reject gear? fit)))
+    (match ((if buys? (not (null? (%bl-spare g))) #f) "s")
+           ((null? pick) (lit escape))
+           (#t (first (first pick))))))
+(def %bl-sell-key (fn (_ g) ((fn (_ it) (if (null? it) (lit escape) (item-letter it))) (%bl-spare g))))
+
 (def %bl-answer!
   (fn (_ g q)
-    (%bl-key! g (match ((eq? (first q) (lit choose)) "a") ((eq? (first q) (lit yn)) "n")
+    (%bl-key! g (match ((if (eq? (first q) (lit choose)) (Str8 includes? "what will you have?" (List ref 1 q)) #f) (%bl-shop-key g q))
+                        ((eq? (first q) (lit choose)) "a") ((eq? (first q) (lit yn)) "n")
+                        ((if (eq? (first q) (lit item)) (str=? (List ref 1 q) "Sell what?") #f) (%bl-sell-key g))
                         ((if (eq? (first q) (lit item)) (str=? (List ref 1 q) "Upgrade what?") #f) (%bl-upgraded g))
                         ((eq? (first q) (lit more)) (lit enter)) ((eq? (first q) (lit look)) (lit enter)) (#t (lit escape))))))
 
@@ -1494,6 +1559,11 @@
     (Vector set! 29 (player-lamp p) s)
     (%bl-thrown! g s)
     (%bl-turning! g s foe shown)
+    ; A pit on the way to the quarry costs the hit points the bot would
+    ; rest back before going on, and the way goes through it again: the
+    ; quarry is given up for the level.
+    (when (if (null? (Vector ref 19 s)) #f (%bl-told? g "You fall into a pit."))
+      (do (Vector set! 20 (pair (Vector ref 19 s) (Vector ref 20 s)) s) (Vector set! 19 () s)))
     (Vector set! 0 (game-turn g) %bl-now)
     (unless (null? (game-blows g)) (Vector set! 24 (pair (game-turn g) (game-blows g)) s))
     (%bl-shot-note! g)
