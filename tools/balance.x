@@ -90,6 +90,13 @@
   (fn (_ g key)
     (when %bl-tracing (Vector set! 0 (pair key (Vector ref 0 %bl-pressed)) %bl-pressed))
     (game-key! g key)))
+; The turn the player was last shot at, in %bl-shot: one that shoots
+; from out of view is still about for a few turns after, and a camp
+; made then is only shot awake.
+(def %bl-shot (Vector of -99))
+(def %bl-shot-note! (fn (_ g) (when (%bl-told? g "shoots") (Vector set! 0 (game-turn g) %bl-shot))))
+(def %bl-shot-lately?
+  (fn (_ g) ((fn (_ d) (if (< d 0) #f (< d 4))) (- (game-turn g) (Vector ref 0 %bl-shot)))))
 ; Why the next key is pressed, kept for the trace as {WORD}.
 (def %bl-why!
   (fn (_ word) (when %bl-tracing (Vector set! 0 (pair (Str8 append "{" word "}") (Vector ref 0 %bl-pressed)) %bl-pressed))))
@@ -1110,7 +1117,7 @@
     (def w (Vector ref 0 %bl-awaited))
     (def same-wait? (match ((null? w) #f) ((not (same? (first w) cr)) #f)
                            (#t (if (= (List ref 1 w) (creature-r cr)) (= (List ref 2 w) (creature-c cr)) #f))))
-    (def shot? (if (%bl-told? g "shoots") #t
+    (def shot? (if (%bl-shot-lately? g) #t
                  (List any? (fn (_ x) (if (%bl-hostile? x) (if (creature-trait? x (lit ranged)) (%bl-in-sight? g x) #f) #f)) (%bl-seen g))))
     (def wait? (match ((null? cr) #f) (shot? #f) ((not (%bl-slow? cr)) #f) ((not (eq? (creature-state cr) (lit awake))) #f)
                       ((not (= 2 (state-dist (creature-r cr) (creature-c cr) (player-r p) (player-c p)))) #f)
@@ -1423,7 +1430,7 @@
                                 (#t h)))
                (Vector ref 0 %bl-hunted)))
     (match
-      ((match ((%bl-in-sight? g shown) #f) ((%bl-told? g "shoots") #f) ((%bl-told? g "You start up") #f) (#t (%bl-under? p (%bl-mark g s who (lit ready))))) (%bl-rest! g))
+      ((match ((%bl-in-sight? g shown) #f) ((%bl-shot-lately? g) #f) ((%bl-told? g "You start up") #f) (#t (%bl-under? p (%bl-mark g s who (lit ready))))) (%bl-rest! g))
       ((not (null? guardian)) (%bl-hunt! g s guardian))
       ((if (null? last) #f (%bl-walk! g s (lit guardian) (fn (_ r c) (if (= r (List ref 1 last)) (= c (List ref 2 last)) #f)))) ())
       ((if (Vector ref 14 s) (%bl-to-frontier! g s) #f) ())
@@ -1480,6 +1487,7 @@
     (%bl-turning! g s foe shown)
     (Vector set! 0 (game-turn g) %bl-now)
     (unless (null? (game-blows g)) (Vector set! 24 (pair (game-turn g) (game-blows g)) s))
+    (%bl-shot-note! g)
     (%bl-watch! g s (< (player-hp p) (Vector ref 22 s)))
     (Vector set! 0 (List filter (fn (_ cr) (match ((not (%bl-hostile? cr)) #f) ((%bl-stirring? s cr) #f)
                                                   ((same? cr (%bl-guardian g)) #f)
@@ -1557,7 +1565,7 @@
         ())
       ((if (null? food) #f (< (player-food p) hungry))
         (do (%bl-use! g "e" food) (Vector set! 3 (+ 1 (Vector ref 3 s)) s)))
-      ((match ((%bl-in-sight? g shown) #f) ((%bl-told? g "shoots") #f) ((%bl-told? g "You start up") #f)
+      ((match ((%bl-in-sight? g shown) #f) ((%bl-shot-lately? g) #f) ((%bl-told? g "You start up") #f)
               ((not (null? (%bl-unseen-blow g s))) #f)
               (#t (%bl-under? p (%bl-mark g s who (lit rest)))))
         ; One that never moves, in sight, breaks a camp before it starts:
