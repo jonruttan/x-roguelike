@@ -1088,6 +1088,7 @@
 ; slow one steps every other turn, so one still in the cell it held
 ; when the wait began three turns on is not coming, and is not waited
 ; for there again.  The wait, (CR R C TURN), is kept in %bl-awaited.
+; None with one that shoots in sight: every turn waited is a shot.
 (def %bl-awaited (Vector of ()))
 (def %bl-await?
   (fn (_ g s cr)
@@ -1095,7 +1096,9 @@
     (def w (Vector ref 0 %bl-awaited))
     (def same-wait? (match ((null? w) #f) ((not (same? (first w) cr)) #f)
                            (#t (if (= (List ref 1 w) (creature-r cr)) (= (List ref 2 w) (creature-c cr)) #f))))
-    (def wait? (match ((null? cr) #f) ((not (%bl-slow? cr)) #f) ((not (eq? (creature-state cr) (lit awake))) #f)
+    (def shot? (if (%bl-told? g "shoots") #t
+                 (List any? (fn (_ x) (if (%bl-hostile? x) (if (creature-trait? x (lit ranged)) (%bl-in-sight? g x) #f) #f)) (%bl-seen g))))
+    (def wait? (match ((null? cr) #f) (shot? #f) ((not (%bl-slow? cr)) #f) ((not (eq? (creature-state cr) (lit awake))) #f)
                       ((not (= 2 (state-dist (creature-r cr) (creature-c cr) (player-r p) (player-c p)))) #f)
                       (same-wait? (< (game-turn g) (+ 3 (List ref 3 w))))
                       (#t #t)))
