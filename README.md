@@ -15,8 +15,9 @@ than a descent.
     x -l roguelike -- [-s NAME] scores
     x -l roguelike -- -V | -h
 
-With no `-s` the set is `classic`.  `-w` plays in a window and needs
-SDL3, with `-z` its zoom; `-W` plays in a browser tab.
+With no `-s` the set is `classic`.  `-w` plays in a window, SDL3's or,
+with no SDL3, the Linux console's screen, with `-z` its zoom; `-W`
+plays in a browser tab.
 
 The goal lies on the deepest level.  Held, it opens the stairs up, and
 every level climbed is made again, roused and hostile; the surface is

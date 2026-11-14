@@ -31,6 +31,7 @@
 (import x/sys/opts)
 (import x/sys/sdl)
 (import x/sys/web)
+(import x/sys/linux)
 (import roguelike/data data-load data-get data-choices data-chosen data-choice-text data-choose)
 (import roguelike/state game-set
   game-over game-epitaph game-depth game-deepest game-messages game-ask game-player player-gold game-exploring? game-exploring!)
@@ -51,7 +52,7 @@
           (Opts arg "-c" "--choose" "GROUP=NAME" "A way to play the set, of those it offers; -h lists them; again for another group")
           (Opts arg "-S" "--seed" "N" "The seed; the same seed is the same dungeon")
           (Opts arg "-d" "--data" "DIR" "Where the sets are, in place of the bundle's data/")
-          (Opts flag "-w" "--window" "Play in a window, drawn with the set's pictures (needs SDL3)")
+          (Opts flag "-w" "--window" "Play in a window, drawn with the set's pictures: SDL3's, or with none the Linux console's screen")
           (Opts flag "-W" "--web" "Play as in a window, in a browser tab: the page's address is printed")
           (Opts arg "-L" "--listen" "ADDRESS" "With --web, the address to listen on: 0.0.0.0 to be reached from outside a container (127.0.0.1)")
           (Opts arg "-z" "--zoom" "N" "In a window, the level shown N times its size, 1 to 4 (2); + and - change it while playing")
@@ -196,12 +197,12 @@
 ; The ports --web tries in turn, then any the system gives.
 (def %cl-web-ports (list 8080 8081 8082 8083 8084 8085 8086 8087 8088 8089 0))
 
-; A game in a window, SDL's or with --web a browser tab's: each place's
-; art from its set's art/ directory (paint-arts), the font from the
-; bundle's.
+; A game in a window: SDL's, the Linux console's where there is no SDL3,
+; or with --web a browser tab's.  Each place's art from its set's art/
+; directory (paint-arts), the font from the bundle's.
 (def %cl-window
   (fn (_ opts)
-    (def front (if (Opts on? opts "-W") Web Sdl))
+    (def front (match ((Opts on? opts "-W") Web) ((Sdl available?) Sdl) ((Linux available?) Linux) (#t Sdl)))
     (when (eq? front Web) (Web listen! (Opts value opts "-L" "127.0.0.1") %cl-web-ports))
     (def dir (Str8 append (%cl-data-dir opts) "/" (Opts value opts "-s" "classic")))
     (def set (data-load dir))
