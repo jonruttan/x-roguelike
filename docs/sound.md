@@ -95,6 +95,7 @@ not, so it can be told by ear.
 | `(mends "SOUND")` | with hit points come back a little at a time |
 | `(pitch CENTS)` | the music and the air CENTS higher (lower below nought); more than one add |
 | `(pace PCT)` | the music and the air at PCT percent of their tempo; more than one multiply |
+| `(sway PCT PERIOD-MS)` | the music's tempo swung PCT percent faster and slower than its pace and back, once in PERIOD-MS; the widest is heard |
 | `(muffle PCT)` | the music and the air through a low-pass closed to PCT percent; the most closed is heard |
 | `(effect SPEC)` | an effect over the music and the air, as a room's (Music, below) |
 
@@ -179,7 +180,7 @@ with.
 
 A condition or a bonus can change the music and the air while it holds
 (see Conditions and bonuses): slowed plays them slower and lower,
-hasted faster and higher, confused swirls them, held strains them, the
+hasted faster and higher, confused swirls them and sways their tempo, held strains them, the
 seeing shimmer, and the blind and the stealthy hear them as through a
 wall.
 
