@@ -128,7 +128,7 @@ row: the --More-- is answered before the next step down.
 
 ## the tallyman
 
-### he stands near the arrival on level 4, the first of a band after the first, and on no level before
+### he stands near the arrival on level 4, the first of a band after the first, and on no level before, in the open where he cuts no way
 
 ```roguelike
 (def g (spec-game-on (spec-set-named "delve") 4 ()))
@@ -146,10 +146,15 @@ row: the --More-- is answered before the next step down.
 (def p (game-player g))
 (def man (List find (fn (_ cr) (str=? (creature-name cr) "tallyman")) (game-creatures g)))
 (def d (state-dist (creature-r man) (creature-c man) (player-r p) (player-c p)))
-(write (list (Vector ref 0 seen) (game-depth g) (creature-trait? man 'talks) (< 1 d) (< d 8)))
+(def m (game-map g))
+(def round (List flat-map (fn (_ dr) (List map (fn (_ dc) (pair (+ (creature-r man) dr) (+ (creature-c man) dc))) '(-1 0 1))) '(-1 0 1)))
+(def open (List all? (fn (_ at) (if (if (= (first at) (creature-r man)) (= (rest at) (creature-c man)) #f) #t
+                                  (if (map-walkable? m (first at) (rest at)) (not (= (map-tile m (first at) (rest at)) tile-door)) #f)))
+            round))
+(write (list (Vector ref 0 seen) (game-depth g) (creature-trait? man 'talks) (< 1 d) (< d 8) open))
 ```
 ---
-    (#f 4 #t #t #t)
+    (#f 4 #t #t #t #t)
 
 ### walked into, he puts up his counter: the band's stock at the set's prices, selling, and the purse
 

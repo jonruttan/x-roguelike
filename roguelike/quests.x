@@ -330,8 +330,17 @@
   (fn (_ g)
     (List filter (fn (_ k) (= (data-get (rest k) (lit level) 0) (game-depth g))) (data-all (game-forms g) (lit keeper)))))
 (def %qs-trader (fn (_ g name) (List find (fn (_ k) (str=? (first k) name)) (%qs-traders g))))
+; Whether one standing at AT cuts no way: each of the eight cells round
+; it walkable and none a door, so a way through it goes round it.
+(def %qs-eight
+  (list (pair -1 -1) (pair -1 0) (pair -1 1) (pair 0 -1) (pair 0 1) (pair 1 -1) (pair 1 0) (pair 1 1)))
+(def %qs-open?
+  (fn (_ m at)
+    (List all? (fn (_ d) ((fn (_ r c) (if (map-walkable? m r c) (not (= (map-tile m r c) tile-door)) #f))
+                          (+ (first at) (first d)) (+ (rest at) (rest d))))
+      %qs-eight)))
 ; The free cell with nothing on it nearest the player, two cells off at
-; the least, or nil.
+; the least, that cuts no way, or nil.
 (def %qs-near
   (fn (_ g)
     (def m (game-map g))
@@ -339,7 +348,7 @@
     (def d (fn (_ at) (state-dist (first at) (rest at) (player-r p) (player-c p))))
     (List fold
       (fn (_ best at)
-        (if (if (< (d at) 2) #f (if (state-free? g (first at) (rest at)) (null? (state-items-at g (first at) (rest at))) #f))
+        (if (if (< (d at) 2) #f (if (state-free? g (first at) (rest at)) (if (null? (state-items-at g (first at) (rest at))) (%qs-open? m at) #f) #f))
           (if (null? best) at (if (< (d at) (d best)) at best))
           best))
       () (%qs-cells (list "" 1 1 (- (map-rows m) 2) (- (map-cols m) 2))))))
