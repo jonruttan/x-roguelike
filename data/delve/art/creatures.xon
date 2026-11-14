@@ -935,6 +935,43 @@
   "..kIkIkcckcck..."
   "...k.kkkk.kkk...")))
 
+; The tallyman, who kept the company store's tally and came down with
+; the crew: a flat cap, a waistcoat, his ledger held open.
+(tile "tallyman" (rows
+  "................"
+  "......kkkk......"
+  ".....kttttk....."
+  "....kkkkkkkk...."
+  "......kPpPk....."
+  "......kJpJk....."
+  ".......kPk......"
+  ".....kbbVbbk...."
+  "....kbbVVVbbk..."
+  "...kbbkVcVkbbk.."
+  "...kbkkVVVkkbk.."
+  "...kpkBBBBBkpk.."
+  "...kkkBcBcBkkk.."
+  "....kbbbVbbbk..."
+  "....kbbk.kbbk..."
+  "....kik...kik...")
+  (frames 6 (rows
+  "................"
+  "................"
+  "......kkkk......"
+  ".....kttttk....."
+  "....kkkkkkkk...."
+  "......kPpPk....."
+  "......kJpJk....."
+  ".......kPk......"
+  ".....kbbVbbk...."
+  "....kbbVVVbbk..."
+  "...kbbkVcVkbbk.."
+  "...kbkkVVVkkbk.."
+  "...kpkBBBBBkpk.."
+  "...kkkBcBcBkkk.."
+  "....kbbbVbbbk..."
+  "....kik...kik...")))
+
 ; --- the Heart ----------------------------------------------------------------
 
 ; A glister: one of the old people's men, cut from the stone's own glassy

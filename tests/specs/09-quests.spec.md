@@ -7,7 +7,7 @@ them, what each asks, and what it pays.  On the delve set.
 
 ## meeting
 
-### the lampman stands on level 2, and a knocker there carries the lamp
+### the lampman stands on level 2 where he cuts no way, and a knocker there carries the lamp
 
 ```roguelike
 (def g (spec-game-on (spec-set-named "delve") 4 ()))
@@ -17,10 +17,13 @@ them, what each asks, and what it pays.  On the delve set.
 (down!)
 (def keeper (List find (fn (_ cr) (str=? (creature-name cr) "lampman")) (game-creatures g)))
 (def carrier (List find (fn (_ cr) (not (null? (creature-carried cr)))) (game-creatures g)))
-(write (list none (not (null? keeper)) (creature-trait? keeper 'talks) (creature-name carrier) (item-name (creature-carried carrier)) (game-placed g)))
+(def m (game-map g))
+(def round (List flat-map (fn (_ dr) (List map (fn (_ dc) (pair (+ (creature-r keeper) dr) (+ (creature-c keeper) dc))) '(-1 0 1))) '(-1 0 1)))
+(def open (List all? (fn (_ at) (if (map-walkable? m (first at) (rest at)) (not (= (map-tile m (first at) (rest at)) tile-door)) #f)) round))
+(write (list none (not (null? keeper)) (creature-trait? keeper 'talks) open (creature-name carrier) (item-name (creature-carried carrier)) (game-placed g)))
 ```
 ---
-    (#f #t #t "knocker" "the foreman's lamp" ("the foreman's lamp" "giver the lamp"))
+    (#f #t #t #t "knocker" "the foreman's lamp" ("the foreman's lamp" "giver the lamp"))
 
 ### walking into the lampman opens the quest and shows what it asks, for a turn; again, it presses
 
@@ -125,3 +128,54 @@ row: the --More-- is answered before the next step down.
 ```
 ---
     ('open ("the foreman's lamp" "giver the lamp") ("lampman"))
+
+## the tallyman
+
+### he stands near the arrival on level 4, the first of a band after the first, and on no level before, in the open where he cuts no way
+
+```roguelike
+(def g (spec-game-on (spec-set-named "delve") 4 ()))
+(player-hp! (game-player g) 1000)
+(def down! (fn (_) (def m (game-map g)) (player-at! (game-player g) (first (map-down m)) (rest (map-down m))) (game-key! g ">") (spec-settle! g)))
+(def seen (Vector of #f))
+(def look! (fn (_) (when (List any? (fn (_ cr) (str=? (creature-name cr) "tallyman")) (game-creatures g)) (Vector set! 0 #t seen))))
+(look!)
+(down!)
+(look!)
+(down!)
+(look!)
+(game-creatures! g ())
+(down!)
+(def p (game-player g))
+(def man (List find (fn (_ cr) (str=? (creature-name cr) "tallyman")) (game-creatures g)))
+(def d (state-dist (creature-r man) (creature-c man) (player-r p) (player-c p)))
+(def m (game-map g))
+(def round (List flat-map (fn (_ dr) (List map (fn (_ dc) (pair (+ (creature-r man) dr) (+ (creature-c man) dc))) '(-1 0 1))) '(-1 0 1)))
+(def open (List all? (fn (_ at) (if (if (= (first at) (creature-r man)) (= (rest at) (creature-c man)) #f) #t
+                                  (if (map-walkable? m (first at) (rest at)) (not (= (map-tile m (first at) (rest at)) tile-door)) #f)))
+            round))
+(write (list (Vector ref 0 seen) (game-depth g) (creature-trait? man 'talks) (< 1 d) (< d 8) open))
+```
+---
+    (#f 4 #t #t #t #t)
+
+### walked into, he puts up his counter: the band's stock at the set's prices, selling, and the purse
+
+```roguelike
+(game-creatures! g (list man))
+(player-gold! p 200)
+(game-key! g (spec-beside! g man))
+(def asked (game-ask g))
+(write (list (first asked) (List ref 1 asked) (rest (rest (List ref 3 asked)))))
+```
+---
+    ('choose "The tallyman: what will you have?" ("a) mending, 30 gold" "b) oil flask, 20 gold" "c) miner's tin, 15 gold" "d) blink, 40 gold" "e) miner's blade, 120 gold" "f) scale coat, 150 gold" "s) sell something" "" "You have 200 gold."))
+
+### a letter buys: the scale coat for 150 gold, into the pack
+
+```roguelike
+(game-key! g "f")
+(write (list (player-gold p) (List any? (fn (_ it) (str=? (item-name it) "scale coat")) (game-pack g)) (first (game-ask g))))
+```
+---
+    (50 #t 'choose)

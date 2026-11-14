@@ -17,7 +17,7 @@
 ; well: bare hands last until it is found, not all the way down.
 
 (item potion "mending" (rarity 30) (effect heal 10 20))
-(item potion "deep mending" (rarity 10) (depth 4 12) (effect heal 25 45))
+(item potion "deep mending" (rarity 10) (depth 4 12) (effect heal 25 45) (price 80))
 (item potion "vigour" (rarity 0) (per-band 1) (effect strength 1))
 (item potion "quickness" (rarity 10) (depth 2 12) (effect haste 12))
 (item potion "clear sight" (rarity 10) (depth 2 12) (effect seeing 60))
@@ -25,12 +25,12 @@
 (item potion "miasma" (rarity 10) (depth 2 12) (effect poison 1 2))
 
 (item scroll "survey" (rarity 18) (effect mapping))
-(item scroll "blink" (rarity 14) (depth 2 12) (effect teleport))
+(item scroll "blink" (rarity 14) (depth 2 12) (effect teleport) (price 40))
 (item scroll "upgrade" (rarity 0) (per-band 1) (effect upgrade))
 (item scroll "panic" (rarity 8) (depth 3 12) (effect fear))
 (item scroll "stillness" (rarity 8) (depth 3 12) (effect hold 6))
 
-(item wand "sparks" (rarity 14) (depth 3 12) (charges 3 7) (effect bolt 5 14))
+(item wand "sparks" (rarity 14) (depth 3 12) (charges 3 7) (effect bolt 5 14) (price 200))
 (item wand "lethargy" (rarity 10) (depth 4 12) (charges 3 7) (effect slow 10))
 (item wand "banishing" (rarity 10) (depth 5 12) (charges 2 5) (effect teleport-other))
 (item wand "leeching" (rarity 8) (depth 6 12) (charges 2 6) (effect drain 4 10))
@@ -45,13 +45,13 @@
 
 (item weapon "lantern pole" (rarity 10) (depth 1 6) (damage 1 4) (strength 10))
 (item weapon "pick" (rarity 14) (per-band 1) (damage 1 6) (strength 12))
-(item weapon "miner's blade" (rarity 12) (depth 2 12) (damage 2 7) (strength 14))
-(item weapon "sledge" (rarity 8) (depth 5 12) (damage 3 10) (strength 17))
+(item weapon "miner's blade" (rarity 12) (depth 2 12) (damage 2 7) (strength 14) (price 120))
+(item weapon "sledge" (rarity 8) (depth 5 12) (damage 3 10) (strength 17) (price 350))
 
 (item armour "oilskin" (rarity 12) (depth 1 6) (armour 1) (strength 10))
 (item armour "boiled leather" (rarity 12) (armour 2) (strength 12))
-(item armour "scale coat" (rarity 8) (depth 4 12) (armour 4) (strength 15))
-(item armour "plated harness" (rarity 4) (depth 7 12) (armour 6) (strength 18))
+(item armour "scale coat" (rarity 8) (depth 4 12) (armour 4) (strength 15) (price 150))
+(item armour "plated harness" (rarity 4) (depth 7 12) (armour 6) (strength 18) (price 450))
 
 (item food "miner's tin" (rarity 20) (nutrition 21600))
 (item food "dried fish" (rarity 12) (nutrition 14400))
