@@ -1529,7 +1529,7 @@
       ; slot 34 of S, it keeps off until rested.
       ((match ((not (null? potion)) #f) ((null? shown) #f)
               ((not (if (Vector ref 34 s) #t (%bl-under? p (%bl-at who (lit quaff))))) #f)
-              ((if (null? (%bl-shooter g)) #f (%bl-out-of-line! g (%bl-shooter g))) #t)
+              ((if (null? (%bl-shooter g)) #f (%bl-out-of-line! g (%bl-shooter g))) (do (Vector set! 34 #t s) #t))
               ((%bl-down-and-out! g s 12) #t)
               ((not (%bl-free? g shown)) #f)
               ((not (%bl-losing? g shown)) #f)
