@@ -382,11 +382,14 @@
       (%bl-seen g))))
 ; The hostile beside the player to strike, or nil: one that summons
 ; first, as what it calls keeps coming while it stands; then the one
-; that looks most hurt, the soonest down.
+; that looks most hurt, the soonest down.  A sleeper best left, one in
+; %bl-wary, is no foe: it is passed, not woken.
 (def %bl-foe
   (fn (_ g)
     (def p (game-player g))
-    (def beside (List filter (fn (_ cr) (if (%bl-hostile? cr) (state-adjacent? (creature-r cr) (creature-c cr) (player-r p) (player-c p)) #f))
+    (def beside (List filter (fn (_ cr) (match ((not (%bl-hostile? cr)) #f)
+                                               ((List any? (fn (_ x) (same? x cr)) (Vector ref 0 %bl-wary)) #f)
+                                               (#t (state-adjacent? (creature-r cr) (creature-c cr) (player-r p) (player-c p)))))
                   (%bl-seen g)))
     (def rank (fn (_ cr) (+ (if (creature-trait? cr (lit summon)) 0 10) (%bl-wounds cr))))
     (List fold (fn (_ best cr) (if (null? best) cr (if (< (rank cr) (rank best)) cr best))) () beside)))
