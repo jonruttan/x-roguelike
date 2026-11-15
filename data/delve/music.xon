@@ -7,7 +7,11 @@
 ; tension layer is its own, as it is heard most after a fight: the
 ; Galleries a pulse, a tick and a strained note; the Flood a surge, drips
 ; and an undertow; the Old Works a knell, a chisel and a grinding
-; tritone; the Heart a doubled throb, a shimmer and a choir.
+; tritone; the Heart a doubled throb, a shimmer and a choir.  Each bed's
+; air moves as well, and has a dread of its own under tension: the
+; Galleries a grinding semitone and a whine, the Flood a pulse beneath
+; the water, the Old Works the band's tritone under its turning engine,
+; the Heart a throb and a climb that never arrives.
 
 (music "default" "galleries")
 (music "The Galleries" "galleries")
@@ -53,16 +57,35 @@
     (strain "D3/v14,16 . . . . . . . D#3/v14,16 . . . . . . ."))
   (order ga ga gb gc))
 
+; The Galleries' air is a draught in the shafts, each side breathing out
+; of step with the other, and now and then a shaft whistling.  Under
+; tension a semitone grinds below it, opening as it holds, and a thin
+; whine sits over it.
 (song "galleries-air" (bpm 60) (rows 1)
   (instrument air (wave noise) (hz 1) (env (0 0) (3000 34) (8000 30)) (release 4000) (gain 32)
-    (voice (cut 2) (pan -60)) (voice (cut 3) (pan 60) (detune 30)))
+    (voice (cut 2) (pan -60) (filter (0 60) (3000 100) (6000 45) (8000 60)))
+    (voice (cut 3) (pan 60) (detune 30) (filter (0 100) (2500 50) (5500 100) (8000 90))))
   (instrument hum (wave sine) (env (0 0) (3000 18)) (release 3000) (gain 20))
+  (instrument shaft (wave pulse) (cut 25) (pan 35) (env (0 0) (2500 14) (5000 12) (7500 0)) (release 1500) (gain 20)
+    (width (0 15) (4000 45) (7500 20)) (bend (0 0) (3000 40) (7500 -20)))
   (instrument dread (layer tension) (wave noise) (hz 1) (cut 1) (env (0 0) (2000 60)) (release 3000) (gain 44))
+  (instrument grind (layer tension) (wave saw) (cut 4) (env (0 0) (3000 30)) (release 3000) (gain 26)
+    (filter (0 30) (8000 100)) (voice (pan -30)) (voice (pan 30) (detune 100)))
+  (instrument whine (layer tension) (wave sine) (note "D#7") (env (0 0) (4000 4) (8000 2)) (release 2000) (gain 6))
   (pattern a
     (air   "C4 . . . . . . .")
     (hum   "A1 . . . . . . .")
-    (dread "C4 . . . . . . ."))
-  (order a))
+    (dread "C4 . . . . . . .")
+    (grind "A1 . . . . . . .")
+    (whine "C4 . . . . . . ."))
+  (pattern b
+    (air   "C4 . . . . . . .")
+    (hum   "A1 . . . . . . .")
+    (shaft "E5 . . . . . . .")
+    (dread "C4 . . . . . . .")
+    (grind "A1 . . . . . . .")
+    (whine "C4 . . . . . . ."))
+  (order a b a a))
 
 ; --- The Flood: standing water, D dorian, running one way ---------------------
 
@@ -98,14 +121,59 @@
     (undertow "F3/s-40 . . . . . .  .  E3/s-40 . . . . . .  ."))
   (order fa fb fa fc))
 
+; The Flood's water laps at either side, out of step, over a slow swell,
+; and drips fall into it on either side, never on the beat.  Under
+; tension something moves beneath it, a pulse that narrows and widens,
+; and a drip close by falls faster, a semitone apart.
 (song "flood-water" (bpm 60) (rows 1)
   (instrument water (wave noise) (hz 1) (env (0 0) (2500 30) (7000 26)) (release 3500) (gain 30)
-    (voice (cut 8) (pan -50)) (voice (cut 6) (pan 50) (detune 40)) (voice (cut 40) (gain 25)))
+    (voice (cut 8) (pan -50) (filter (0 70) (1300 100) (2600 60) (4000 95) (5300 65) (6600 100) (8000 70)))
+    (voice (cut 6) (pan 50) (detune 40) (filter (0 100) (1800 60) (3400 100) (5000 55) (6800 95) (8000 100)))
+    (voice (cut 40) (gain 25)))
+  (instrument swell (wave triangle) (cut 20) (env (0 0) (4000 22) (8000 0)) (release 2000) (gain 22)
+    (bend (0 0) (4000 -30) (8000 0)))
   (instrument dread (layer tension) (wave noise) (hz 1) (cut 1) (env (0 0) (2000 60)) (release 3000) (gain 42))
+  (instrument beneath (layer tension) (wave pulse) (cut 5) (env (0 0) (2500 30) (8000 22)) (release 3000) (gain 26)
+    (width (0 8) (4000 50) (8000 8)) (filter (0 40) (4000 100) (8000 40)))
+  (instrument drip (wave sine) (env (0 0) (1 40) (12 30) (55 0)) (release 20) (gain 26) (bend (0 -1500) (20 -200) (55 200))
+    (voice (pan -55)) (voice (pan -55) (wave noise) (hz 1) (cut 85) (env (0 0) (1 30) (4 0)) (gain 45)))
+  (instrument drop (wave sine) (env (0 0) (1 36) (14 26) (60 0)) (release 20) (gain 24) (bend (0 -1400) (22 -150) (60 250))
+    (voice (pan 50)) (voice (pan 50) (wave noise) (hz 1) (cut 85) (env (0 0) (1 28) (4 0)) (gain 45)))
+  (instrument near (layer tension) (wave sine) (env (0 0) (1 42) (10 30) (45 0)) (release 20) (gain 28) (bend (0 -1600) (18 -200) (45 150))
+    (voice) (voice (wave noise) (hz 1) (cut 90) (env (0 0) (1 32) (3 0)) (gain 45)))
   (pattern a
-    (water "C4 . . . . . . .")
-    (dread "C4 . . . . . . ."))
-  (order a))
+    (water   "C4 . . . . . . .")
+    (swell   "D2 . . . . . . .")
+    (drip    ".  .     A5 . . .  . E6/d3")
+    (drop    ".  D6/d2 .  . . G5 . .")
+    (dread   "C4 . . . . . . .")
+    (beneath "D2 . . . . . . .")
+    (near    "F6/d2 . E6/d4 F6 . E6/d3 . F6/d1"))
+  (pattern b
+    (water   "C4 . . . . . . .")
+    (swell   "D2 . . . . . . .")
+    (drip    "E6 . . .     C6/d4 . . .")
+    (drop    ".  . . A6/d1 .     . . D6/d5")
+    (dread   "C4 . . . . . . .")
+    (beneath "D2 . . . . . . .")
+    (near    "E6/d1 F6/d4 . E6 . F6/d2 E6/d5 ."))
+  (pattern c
+    (water   "C4 . . . . . . .")
+    (swell   "D2 . . . . . . .")
+    (drip    ". . .     . . . A5 .")
+    (drop    ". . G6/d3 . . . .  .")
+    (dread   "C4 . . . . . . .")
+    (beneath "D2 . . . . . . .")
+    (near    "F6 . E6/d3 . F6/d1 . E6/d4 F6/d2"))
+  (pattern d
+    (water   "C4 . . . . . . .")
+    (swell   "D2 . . . . . . .")
+    (drip    "D6/d2 . . E6 . .     . .")
+    (drop    ".     . . .  . B5/d4 . A6")
+    (dread   "C4 . . . . . . .")
+    (beneath "D2 . . . . . . .")
+    (near    "E6/d3 . F6/d1 E6/d5 . F6 . E6/d2"))
+  (order a b c d))
 
 ; --- The Old Works: dressed stone, older than the mine; E, open fifths --------
 
@@ -139,15 +207,24 @@
     (grind  "Ab2/t30,8 . . . . . . . .  .  .  .  .  .  .  ."))
   (order wa wa wb wa))
 
+; The Old Works' air carries old iron: a gritty drone that turns over
+; slowly, as if something down here still runs.  Under tension the band's
+; tritone grinds below it, opening as it holds.
 (song "works-air" (bpm 60) (rows 1)
   (instrument air (wave noise) (hz 1) (env (0 0) (3000 30) (8000 26)) (release 4000) (gain 28)
     (voice (cut 2) (pan -50)) (voice (cut 2) (pan 50) (detune 25)))
   (instrument hum (wave hollow) (cut 4) (env (0 0) (3000 20)) (release 3000) (gain 22))
+  (instrument engine (wave metal) (cut 3) (env (0 0) (3000 24) (8000 20)) (release 3000) (gain 26)
+    (filter (0 60) (4000 100) (8000 60)))
   (instrument dread (layer tension) (wave noise) (hz 1) (cut 1) (env (0 0) (2000 60)) (release 3000) (gain 44))
+  (instrument tritone (layer tension) (wave saw) (cut 4) (env (0 0) (3000 28)) (release 3000) (gain 24)
+    (filter (0 30) (8000 100)) (voice (pan -30)) (voice (pan 30) (detune 600)))
   (pattern a
-    (air   "C4 . . . . . . .")
-    (hum   "E1 . . . . . . .")
-    (dread "C4 . . . . . . ."))
+    (air     "C4 . . . . . . .")
+    (hum     "E1 . . . . . . .")
+    (engine  "E1/t45,4 . . . . . . .")
+    (dread   "C4 . . . . . . .")
+    (tritone "E1 . . . . . . ."))
   (order a))
 
 ; --- The Heart: the stone that moves, the quiet water; C, deep and slow ------
@@ -180,16 +257,41 @@
     (choir  "D4 .  .  .  .  .  .  .  .  .  .  .  .  .  .  ."))
   (order ha ha hb))
 
+; The Heart's air breathes: the stone's slow pad swells and falls, a
+; little either side of its note, and now and then a drop falls into the
+; still water and rings.  Under tension a pulse throbs below, and a low
+; saw climbs a semitone each time round and never arrives.
 (song "heart-air" (bpm 60) (rows 1)
   (instrument air (wave noise) (hz 1) (env (0 0) (3500 30) (9000 26)) (release 4500) (gain 28)
     (voice (cut 1) (pan -50)) (voice (cut 2) (pan 50) (detune 35)))
   (instrument hum (wave sine) (env (0 0) (3500 22)) (release 3500) (gain 24))
+  (instrument breath (wave triangle) (cut 12) (env (0 0) (4000 20) (8000 0)) (release 2000) (gain 20)
+    (voice (detune -8) (pan -45)) (voice (detune 8) (pan 45)))
   (instrument dread (layer tension) (wave noise) (hz 1) (cut 1) (env (0 0) (2000 60)) (release 3000) (gain 44))
+  (instrument throb (layer tension) (wave pulse) (cut 4) (env (0 0) (2000 26)) (release 3000) (gain 22)
+    (width (0 50) (1000 12) (2000 50) (3000 12) (4000 50) (5000 12) (6000 50) (7000 12) (8000 50)))
+  (instrument climb (layer tension) (wave saw) (cut 5) (env (0 0) (2000 18) (7000 18) (8000 0)) (release 500) (gain 18)
+    (bend (0 0) (8000 100)))
+  (instrument drop (wave sine) (env (0 0) (1 38) (14 26) (80 0)) (release 30) (gain 26) (bend (0 -1400) (22 -150) (75 200))
+    (voice (pan -30))
+    (voice (pan -30) (wave noise) (hz 1) (cut 85) (env (0 0) (1 28) (4 0)) (gain 40)))
   (pattern a
-    (air   "C4 . . . . . . .")
-    (hum   "C1 . . . . . . .")
-    (dread "C4 . . . . . . ."))
-  (order a))
+    (air    "C4 . . . . . . .")
+    (hum    "C1 . . . . . . .")
+    (breath "G2 . . . . . . .")
+    (drop   ". . . . G5/d2 . . .")
+    (dread  "C4 . . . . . . .")
+    (throb  "C1 . . . . . . .")
+    (climb  "C2 . . . . . . ."))
+  (pattern b
+    (air    "C4 . . . . . . .")
+    (hum    "C1 . . . . . . .")
+    (breath "G2 . . . . . . .")
+    (drop   ". C6/d4 . . . . . Eb5/d1")
+    (dread  "C4 . . . . . . .")
+    (throb  "C1 . . . . . . .")
+    (climb  "C2 . . . . . . ."))
+  (order a b))
 
 ; --- Fights --------------------------------------------------------------------
 ;
