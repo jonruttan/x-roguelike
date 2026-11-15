@@ -252,8 +252,9 @@
 ; (LABEL PERCENT LEVEL), food under the set's (hunger ...) then the lamp
 ; under its (lamp ...), none where the set has neither.  LABEL is the
 ; store's name, or what is wrong with it; PERCENT what is left of the
-; most it holds, a part of one counted whole and 0 for none; LEVEL 0
-; for well, 1 a warning, 2 danger.
+; most it holds, a part of one counted whole and 0 for none; LEVEL how
+; much is left, 0 for well, 1 a warning, 2 danger.  A lamp put out is
+; at the level of its oil.
 (def %dr-percent
   (fn (_ n full)
     (match ((< n 1) 0) ((< full n) 100) (#t (int/ (+ (* 100 n) (- full 1)) full)))))
@@ -273,7 +274,7 @@
     (if (null? spec) ()
       (list (list (if (str=? word "") "Lamp" word)
                   (if (< n 0) 100 (%dr-percent n (List ref 0 spec)))
-                  (match ((str=? word "") 0) ((str=? word "Dark") 2) (#t 1)))))))
+                  (match ((= n 0) 2) ((if (< 0 n) (not (< (List ref 1 spec) n)) #f) 1) (#t 0)))))))
 (def draw-gauges (fn (_ g) (List append (%dr-food-gauge g) (%dr-lamp-gauge g))))
 ; A gauge as the standing row writes it: "Food:48%", "Lamp low:20%",
 ; and the label alone with nothing left, "Dark".
