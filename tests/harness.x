@@ -215,6 +215,49 @@
     (flood (list start))
     (= 0 (%spec-count m (fn (_ r c) (if (map-walkable? m r c) (not (Vector ref (at r c) seen)) #f))))))
 
+; How many walkable cells of M can be walked to from FROM, a step to any
+; of the eight cells round but no slant step onto or off a door, as the
+; player walks; cells for which SHUT? holds are walls.
+(def %spec-eight
+  (list (pair -1 -1) (pair -1 0) (pair -1 1) (pair 0 -1) (pair 0 1) (pair 1 -1) (pair 1 0) (pair 1 1)))
+(def %spec-reached
+  (fn (_ m from shut?)
+    (def rows (map-rows m))
+    (def cols (map-cols m))
+    (def seen (Vector make (* rows cols) #f))
+    (def at (fn (_ r c) (+ (* r cols) c)))
+    (def door? (fn (_ r c) (= (map-tile m r c) tile-door)))
+    (def step?
+      (fn (_ r c rr cc)
+        (match ((< rr 0) #f) ((< cc 0) #f) ((not (< rr rows)) #f) ((not (< cc cols)) #f)
+               ((Vector ref (at rr cc) seen) #f)
+               ((not (map-walkable? m rr cc)) #f)
+               ((shut? rr cc) #f)
+               ((if (= r rr) #f (if (= c cc) #f (if (door? r c) #t (door? rr cc)))) #f)
+               (#t (do (Vector set! (at rr cc) #t seen) #t)))))
+    (def flood
+      (fn (self stack n)
+        (if (null? stack) n
+          (do (def r (first (first stack)))
+              (def c (rest (first stack)))
+              (def next (List filter (fn (_ p) (step? r c (first p) (rest p)))
+                          (List map (fn (_ d) (pair (+ r (first d)) (+ c (rest d)))) %spec-eight)))
+              (self (List append next (rest stack)) (+ n (List length next)))))))
+    (Vector set! (at (first from) (rest from)) #t seen)
+    (flood (list from) 1)))
+
+; Whether CR, one who never moves, cuts no way on M: none of the cells
+; round it a door, and with its cell walled up, every other cell walked
+; to from the player's still walked to.
+(def spec-cuts-no-way?
+  (fn (_ m cr from)
+    (def r (creature-r cr))
+    (def c (creature-c cr))
+    (def doors (List any? (fn (_ d) (= (map-tile m (+ r (first d)) (+ c (rest d))) tile-door)) %spec-eight))
+    (def open (%spec-reached m from (fn (_ rr cc) #f)))
+    (def shut (%spec-reached m from (fn (_ rr cc) (if (= rr r) (= cc c) #f))))
+    (if doors #f (= shut (- open 1)))))
+
 ; --- invariants --------------------------------------------------------------
 
 ; What is wrong with G, drawn on S, as a list of complaints: nobody on

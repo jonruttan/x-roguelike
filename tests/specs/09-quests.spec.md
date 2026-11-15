@@ -18,8 +18,7 @@ them, what each asks, and what it pays.  On the delve set.
 (def keeper (List find (fn (_ cr) (str=? (creature-name cr) "lampman")) (game-creatures g)))
 (def carrier (List find (fn (_ cr) (not (null? (creature-carried cr)))) (game-creatures g)))
 (def m (game-map g))
-(def round (List flat-map (fn (_ dr) (List map (fn (_ dc) (pair (+ (creature-r keeper) dr) (+ (creature-c keeper) dc))) '(-1 0 1))) '(-1 0 1)))
-(def open (List all? (fn (_ at) (if (map-walkable? m (first at) (rest at)) (not (= (map-tile m (first at) (rest at)) tile-door)) #f)) round))
+(def open (spec-cuts-no-way? m keeper (pair (player-r (game-player g)) (player-c (game-player g)))))
 (write (list none (not (null? keeper)) (creature-trait? keeper 'talks) open (creature-name carrier) (item-name (creature-carried carrier)) (game-placed g)))
 ```
 ---
@@ -150,10 +149,7 @@ row: the --More-- is answered before the next step down.
 (def man (List find (fn (_ cr) (str=? (creature-name cr) "salvager")) (game-creatures g)))
 (def d (state-dist (creature-r man) (creature-c man) (player-r p) (player-c p)))
 (def m (game-map g))
-(def round (List flat-map (fn (_ dr) (List map (fn (_ dc) (pair (+ (creature-r man) dr) (+ (creature-c man) dc))) '(-1 0 1))) '(-1 0 1)))
-(def open (List all? (fn (_ at) (if (if (= (first at) (creature-r man)) (= (rest at) (creature-c man)) #f) #t
-                                  (if (map-walkable? m (first at) (rest at)) (not (= (map-tile m (first at) (rest at)) tile-door)) #f)))
-            round))
+(def open (spec-cuts-no-way? m man (pair (player-r p) (player-c p))))
 (write (list (Vector ref 0 seen) (game-depth g) (creature-trait? man 'talks) (< 1 d) (< d 8) open))
 ```
 ---
@@ -195,3 +191,23 @@ row: the --More-- is answered before the next step down.
 ```
 ---
     (("mending, 30 gold" "oil flask, 20 gold" "miner's tin, 15 gold" "blink, 40 gold" "miner's blade, 120 gold" "Sell something") ("oil flask, 20 gold" "miner's tin, 15 gold" "blink, 40 gold" "miner's blade, 120 gold" "Sell something") ("oil flask, 20 gold" "miner's tin, 15 gold" "blink, 40 gold" "miner's blade, 120 gold" "Sell something"))
+
+### on every level he keeps, in five games, he stands as near the arrival as he can without cutting a way: a cell or two off, or, with the stairs at the end of a passage one cell wide, where it opens out
+
+```roguelike
+(def stops (fn (_ seed)
+  (def h (spec-game-on (spec-set-named "delve") seed ()))
+  (player-hp! (game-player h) 100000)
+  (def met (Vector of ()))
+  (def look! (fn (_)
+    (def q (game-player h))
+    (def him (List find (fn (_ cr) (str=? (creature-name cr) "salvager")) (game-creatures h)))
+    (unless (null? him)
+      (Vector set! 0 (pair (list (game-depth h) (state-dist (creature-r him) (creature-c him) (player-r q) (player-c q)) (spec-cuts-no-way? (game-map h) him (pair (player-r q) (player-c q)))) (Vector ref 0 met)) met))))
+  (def down! (fn (_) (def mm (game-map h)) (game-creatures! h ()) (player-at! (game-player h) (first (map-down mm)) (rest (map-down mm))) (game-key! h ">") (spec-settle! h)))
+  (List for-each (fn (_ i) (down!) (look!)) (List range 0 9))
+  (List reverse (Vector ref 0 met))))
+(write (List map stops '(1 2 3 4 5)))
+```
+---
+    (((4 2 #t) (7 5 #t) (10 2 #t)) ((4 2 #t) (7 2 #t) (10 24 #t)) ((4 2 #t) (7 2 #t) (10 25 #t)) ((4 2 #t) (7 2 #t) (10 24 #t)) ((4 2 #t) (7 2 #t) (10 16 #t)))
