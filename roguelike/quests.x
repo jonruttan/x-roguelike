@@ -334,17 +334,23 @@
   (fn (_ g)
     (List filter (fn (_ k) (= (data-get (rest k) (lit level) 0) (game-depth g))) (data-all (game-forms g) (lit keeper)))))
 (def %qs-trader (fn (_ g name) (List find (fn (_ k) (str=? (first k) name)) (%qs-traders g))))
-; Whether one standing at AT cuts no way: each of the eight cells round
-; it walkable and none a door, so a way through it goes round it.
+; Whether one standing at AT cuts no way: none of the eight cells round
+; it a door, and those walkable one unbroken run round it, so a way
+; through it goes round it.  Each cell of the ring, taken in turn, is
+; beside the next, so a run is a way.  A passage one cell wide breaks
+; the ring in two; the side of a room does not.
 (def %qs-eight
-  (list (pair -1 -1) (pair -1 0) (pair -1 1) (pair 0 -1) (pair 0 1) (pair 1 -1) (pair 1 0) (pair 1 1)))
+  (list (pair -1 0) (pair -1 1) (pair 0 1) (pair 1 1) (pair 1 0) (pair 1 -1) (pair 0 -1) (pair -1 -1)))
 (def %qs-open?
   (fn (_ m at)
-    (List all? (fn (_ d) ((fn (_ r c) (if (map-walkable? m r c) (not (= (map-tile m r c) tile-door)) #f))
-                          (+ (first at) (first d)) (+ (rest at) (rest d))))
-      %qs-eight)))
+    (def ring (List map (fn (_ d) (pair (+ (first at) (first d)) (+ (rest at) (rest d)))) %qs-eight))
+    (def walk (List map (fn (_ x) (map-walkable? m (first x) (rest x))) ring))
+    ; How many runs begin round the ring: a walkable cell after one that is not.
+    (def starts (List length (List filter (fn (_ i) (if (List ref i walk) (not (List ref (if (= i 0) 7 (- i 1)) walk)) #f)) (List range 0 8))))
+    (if (List any? (fn (_ x) (= (map-tile m (first x) (rest x)) tile-door)) ring) #f
+      (if (List any? (fn (_ w) w) walk) (< starts 2) #f))))
 ; The free cell with nothing on it nearest the player, two cells off at
-; the least, that cuts no way, or nil.
+; the least, that cuts no way (%qs-open?), or nil.
 (def %qs-near
   (fn (_ g)
     (def m (game-map g))

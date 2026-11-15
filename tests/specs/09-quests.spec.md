@@ -18,8 +18,7 @@ them, what each asks, and what it pays.  On the delve set.
 (def keeper (List find (fn (_ cr) (str=? (creature-name cr) "lampman")) (game-creatures g)))
 (def carrier (List find (fn (_ cr) (not (null? (creature-carried cr)))) (game-creatures g)))
 (def m (game-map g))
-(def round (List flat-map (fn (_ dr) (List map (fn (_ dc) (pair (+ (creature-r keeper) dr) (+ (creature-c keeper) dc))) '(-1 0 1))) '(-1 0 1)))
-(def open (List all? (fn (_ at) (if (map-walkable? m (first at) (rest at)) (not (= (map-tile m (first at) (rest at)) tile-door)) #f)) round))
+(def open (spec-cuts-no-way? m keeper (pair (player-r (game-player g)) (player-c (game-player g)))))
 (write (list none (not (null? keeper)) (creature-trait? keeper 'talks) open (creature-name carrier) (item-name (creature-carried carrier)) (game-placed g)))
 ```
 ---
@@ -150,10 +149,7 @@ row: the --More-- is answered before the next step down.
 (def man (List find (fn (_ cr) (str=? (creature-name cr) "salvager")) (game-creatures g)))
 (def d (state-dist (creature-r man) (creature-c man) (player-r p) (player-c p)))
 (def m (game-map g))
-(def round (List flat-map (fn (_ dr) (List map (fn (_ dc) (pair (+ (creature-r man) dr) (+ (creature-c man) dc))) '(-1 0 1))) '(-1 0 1)))
-(def open (List all? (fn (_ at) (if (if (= (first at) (creature-r man)) (= (rest at) (creature-c man)) #f) #t
-                                  (if (map-walkable? m (first at) (rest at)) (not (= (map-tile m (first at) (rest at)) tile-door)) #f)))
-            round))
+(def open (spec-cuts-no-way? m man (pair (player-r p) (player-c p))))
 (write (list (Vector ref 0 seen) (game-depth g) (creature-trait? man 'talks) (< 1 d) (< d 8) open))
 ```
 ---
