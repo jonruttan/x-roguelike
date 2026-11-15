@@ -179,3 +179,19 @@ row: the --More-- is answered before the next step down.
 ```
 ---
     (50 #t 'choose)
+
+### his stock is what he has: the coat sold is gone from the counter, two mending empty it of mending, and walked into again, they are still gone
+
+```roguelike
+(def wares (fn (_) (List map rest (List ref 4 (game-ask g)))))
+(def after-coat (wares))
+(player-gold! p 200)
+(game-key! g "a")
+(game-key! g "a")
+(def after-mending (wares))
+(game-key! g "z")
+(game-key! g (spec-beside! g man))
+(write (list after-coat after-mending (wares)))
+```
+---
+    (("mending, 30 gold" "oil flask, 20 gold" "miner's tin, 15 gold" "blink, 40 gold" "miner's blade, 120 gold" "Sell something") ("oil flask, 20 gold" "miner's tin, 15 gold" "blink, 40 gold" "miner's blade, 120 gold" "Sell something") ("oil flask, 20 gold" "miner's tin, 15 gold" "blink, 40 gold" "miner's blade, 120 gold" "Sell something"))
