@@ -176,6 +176,8 @@
 (def %bl-still (Vector of 0))
 ; The wands found empty: one that sputtered.
 (def %bl-empty (Vector of ()))
+; The turn a mending was last drunk, as it stood once drunk.
+(def %bl-drank (Vector of -1))
 
 ; The turn as the bot's turn began.
 (def %bl-now (Vector of 0))
@@ -972,6 +974,15 @@
     (def p (game-player g))
     (def e (item-prop potion (lit effect) (list (lit heal) 1 1)))
     (not (< (- (player-hpmax p) (player-hp p)) (List ref 1 e)))))
+; Whether the blows beside outpace a mending: one was drunk last turn,
+; with a hostile beside still, and the player is still under WHO's quaff
+; mark.  What the potion bought, the blows took back.
+(def %bl-outpaced?
+  (fn (_ g who)
+    (def p (game-player g))
+    (match ((not (= (Vector ref 0 %bl-drank) (game-turn g))) #f)
+           ((null? (%bl-beside g %bl-hostile?)) #f)
+           (#t (%bl-under? p (%bl-at who (lit quaff)))))))
 ; Whether to drink POTION with FOE beside: the fight lost without it, and
 ; the potion's least mending all of use.
 (def %bl-drink-now?
@@ -1172,11 +1183,14 @@
 ; one that follows stepped clear of, and one that stays struck, two
 ; blows to its one.  With nowhere clear of every hostile to step, a step
 ; out of its reach all the same, so its turn goes on following; with
-; none, it is struck.
+; none, it is struck.  A fight likely lost is not stayed for: being slow,
+; it is walked away from, and kept off until rested (slot 34 of S).
 (def %bl-outpace!
   (fn (_ g s who foe)
     (def stood (pair foe (pair (creature-r foe) (creature-c foe))))
-    (match ((not (%bl-slow-next? g)) (%bl-toward-creature! g s foe))
+    (match ((if (%bl-losing? g foe) (if (%bl-clear-step! g) #t (%bl-away! g foe)) #f)
+             (do (Vector set! 16 stood s) (Vector set! 34 #t s)))
+           ((not (%bl-slow-next? g)) (%bl-toward-creature! g s foe))
            ((not (%bl-stirring? s foe)) (%bl-key! g "s"))
            ((%bl-stays? s foe) (%bl-toward-creature! g s foe))
            ((%bl-clear-step! g) (Vector set! 16 stood s))
@@ -1548,6 +1562,11 @@
     (def q (game-ask g))
     (def foe (%bl-foe g))
     (def potion (%bl-in-pack g (fn (_ it) (if (eq? (item-class it) (lit potion)) (Str8 includes? "mending" (item-name it)) #f))))
+    ; A potion the blows beside outpace is left for a way out, when one
+    ; is held: stillness or a blink, read by the flight below.
+    (def stalled
+      (if (null? potion) #f
+        (if (%bl-outpaced? g who) (not (null? (%bl-first-effect g (lit scroll) (list (lit hold) (lit teleport))))) #f)))
     (def food (%bl-in-pack g (%bl-of-class (lit food))))
     (def oil (%bl-in-pack g (%bl-of-class (lit oil))))
     (def lamp (game-param g (lit lamp) ()))
@@ -1599,10 +1618,10 @@
       ; lights the lamp again.
       ((if (player-doused? p) (if (< 0 (player-lamp p)) (if struck? #t (%bl-roused? g s foe)) #f) #f)
         (%bl-key! g "x"))
-      ((if (null? potion) #f (%bl-under? p (%bl-at who (lit quaff))))
-        (do (%bl-use! g "q" potion) (Vector set! 2 (+ 1 (Vector ref 2 s)) s)))
-      ((%bl-drink-now? g foe potion)
-        (do (%bl-use! g "q" potion) (Vector set! 2 (+ 1 (Vector ref 2 s)) s)))
+      ((if (null? potion) #f (if stalled #f (%bl-under? p (%bl-at who (lit quaff)))))
+        (do (%bl-use! g "q" potion) (Vector set! 2 (+ 1 (Vector ref 2 s)) s) (Vector set! 0 (game-turn g) %bl-drank)))
+      ((if stalled #f (%bl-drink-now? g foe potion))
+        (do (%bl-use! g "q" potion) (Vector set! 2 (+ 1 (Vector ref 2 s)) s) (Vector set! 0 (game-turn g) %bl-drank)))
       ((%bl-ready! g s foe) ())
       ((%bl-flee! g s who) ())
       ((if (null? foe) (%bl-strike-unseen! g s) #f) ())
