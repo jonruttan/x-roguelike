@@ -1668,14 +1668,17 @@
       ; One that shoots, in whose line the player stands, whose fight is
       ; not worth it: toward the stairs when they are near, as it cannot
       ; follow off the level and a step away still leaves it a shot;
-      ; else a step out of its line, not on under its fire.
+      ; else a step out of its line, not on under its fire; with no
+      ; step out of it, as down a passage, at it, as each step back is a
+      ; shot taken for none given.
       ((match ((null? shown) #f) ((not (null? foe)) #f)
               ((not (if (creature-trait? shown (lit ranged)) #t (creature-trait? shown (lit breath)))) #f)
               ((not (eq? (creature-state shown) (lit awake))) #f)
               ((not (%bl-in-line? shown (player-r p) (player-c p))) #f)
               ((%bl-worth? g who shown) #f)
               ((%bl-down-and-out! g s 12) #t)
-              (#t (%bl-away! g shown)))
+              ((%bl-out-of-line! g shown) #t)
+              (#t (%bl-toward-creature! g s shown)))
         ())
       ((if (null? food) #f (< (player-food p) hungry))
         (do (%bl-use! g "e" food) (Vector set! 3 (+ 1 (Vector ref 3 s)) s)))
@@ -1694,10 +1697,15 @@
       ((if (null? armour) #f (if (null? (player-armour p)) #t (< (%bl-armour-worth g (player-armour p)) (%bl-armour-worth g armour))))
         (if (null? (player-armour p)) (%bl-use! g "W" armour) (%bl-key! g "T")))
       ((if (null? foe) (%bl-shed! g s) #f) ())
-      ; Backed off with nowhere further to step, or woken from a rest:
-      ; it waits with a hostile in sight and rests again without one,
-      ; not on to the next thing.
-      ((Vector ref 34 s) (if (%bl-in-sight? g shown) (%bl-key! g "s") (%bl-rest! g)))
+      ; Backed off, or woken from a rest: with a hostile in sight, a step
+      ; further from it, as one that keeps its distance keeps the rest
+      ; off for good, and a wait only with no step gaining; shot lately
+      ; by one out of sight, on, as a camp there is only shot awake;
+      ; else a rest, not on to the next thing.
+      ((Vector ref 34 s)
+        (match ((%bl-in-sight? g shown) (unless (%bl-away! g shown) (%bl-key! g "s")))
+               ((%bl-shot-lately? g) (%bl-onward! g s who shown))
+               (#t (%bl-rest! g))))
       (#t (%bl-onward! g s who shown)))))
 
 ; --- a world of screens ------------------------------------------------------
