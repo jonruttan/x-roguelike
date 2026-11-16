@@ -28,7 +28,7 @@
 (import x/core/doors int/)
 (import roguelike/data data-one)
 (import roguelike/state
-  game-player game-pack game-floor game-floor! game-ask! game-world-all game-placed? game-placed! game-level-key
+  game-player game-pack game-floor game-floor! game-ask! game-world-all game-placed? game-placed! game-level-key game-depth
   player-r player-c player-gold player-gold!
   item-make item-form item-count item-charges item-at! item-class-in?
   state-tell!)
@@ -56,10 +56,12 @@
 
 ; The mark the Kth sale of the goods REF, (CLASS NAME N), by the keeper
 ; NAME on this level leaves among what the game placed; how many such
-; sales there have been.
+; sales there have been.  The level is its depth and its key: in a
+; descent every level has the one key, and in a world of screens the
+; key names the screen.
 (def %sh-mark
   (fn (_ g name ref k)
-    (Str8 append "sold " name " " (game-level-key g) " " (Str8 str (first ref)) " " (List ref 1 ref) " " (Str8 str k))))
+    (Str8 append "sold " name " " (Str8 str (game-depth g)) " " (game-level-key g) " " (Str8 str (first ref)) " " (List ref 1 ref) " " (Str8 str k))))
 (def %sh-sold
   (fn (self g name ref k) (if (game-placed? g (%sh-mark g name ref k)) (self g name ref (+ k 1)) k)))
 ; Whether REF is still on the counter: no count, or fewer sold.
