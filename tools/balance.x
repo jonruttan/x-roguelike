@@ -1697,13 +1697,12 @@
       ((if (null? armour) #f (if (null? (player-armour p)) #t (< (%bl-armour-worth g (player-armour p)) (%bl-armour-worth g armour))))
         (if (null? (player-armour p)) (%bl-use! g "W" armour) (%bl-key! g "T")))
       ((if (null? foe) (%bl-shed! g s) #f) ())
-      ; Backed off, or woken from a rest: with a hostile in sight, a step
-      ; further from it, as one that keeps its distance keeps the rest
-      ; off for good, and a wait only with no step gaining; shot lately
-      ; by one out of sight, on, as a camp there is only shot awake;
-      ; else a rest, not on to the next thing.
+      ; Backed off with nowhere further to step, or woken from a rest:
+      ; with a hostile in sight, a wait; shot lately by one out of sight,
+      ; on, as a camp there is only shot awake; else a rest, not on to
+      ; the next thing.
       ((Vector ref 34 s)
-        (match ((%bl-in-sight? g shown) (unless (%bl-away! g shown) (%bl-key! g "s")))
+        (match ((%bl-in-sight? g shown) (%bl-key! g "s"))
                ((%bl-shot-lately? g) (%bl-onward! g s who shown))
                (#t (%bl-rest! g))))
       (#t (%bl-onward! g s who shown)))))
