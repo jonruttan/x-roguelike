@@ -191,3 +191,23 @@ row: the --More-- is answered before the next step down.
 ```
 ---
     (("mending, 30 gold" "oil flask, 20 gold" "miner's tin, 15 gold" "blink, 40 gold" "miner's blade, 120 gold" "Sell something") ("oil flask, 20 gold" "miner's tin, 15 gold" "blink, 40 gold" "miner's blade, 120 gold" "Sell something") ("oil flask, 20 gold" "miner's tin, 15 gold" "blink, 40 gold" "miner's blade, 120 gold" "Sell something"))
+
+### his stock on level 7 is his own, untouched by what he sold on level 4
+
+```roguelike
+(game-key! g "z")
+(def down7! (fn (_) (def mm (game-map g)) (game-creatures! g ()) (player-at! p (first (map-down mm)) (rest (map-down mm))) (game-key! g ">") (spec-settle! g)))
+(down7!)
+(down7!)
+(down7!)
+(def man7 (List find (fn (_ cr) (str=? (creature-name cr) "salvager")) (game-creatures g)))
+; A step into him from whichever side of him is walkable.
+(def side (List find (fn (_ d) (map-walkable? (game-map g) (+ (creature-r man7) (first (rest d))) (+ (creature-c man7) (rest (rest d)))))
+            (list (pair "j" (pair -1 0)) (pair "k" (pair 1 0)) (pair "l" (pair 0 -1)) (pair "h" (pair 0 1)))))
+(player-at! p (+ (creature-r man7) (first (rest side))) (+ (creature-c man7) (rest (rest side))))
+(player-gold! p 200)
+(game-key! g (first side))
+(write (list (game-depth g) (wares)))
+```
+---
+    (7 ("mending, 30 gold" "oil flask, 20 gold" "miner's tin, 15 gold" "blink, 40 gold" "sledge, 350 gold" "plated harness, 450 gold" "Sell something"))
