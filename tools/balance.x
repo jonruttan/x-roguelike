@@ -589,8 +589,9 @@
 (def %bl-held (fn (_ g test) (List fold (fn (_ n it) (if (test it) (+ n (item-count it)) n)) 0 (game-pack g))))
 (def %bl-mending? (fn (_ it) (if (eq? (item-class it) (lit potion)) (Str8 includes? "mending" (item-name it)) #f)))
 ; Whether the bot wants the thing of FORM: a weapon or armour better
-; than the best of its kind held; mending to three, oil and food to
-; two, a blink to one; nothing else.
+; than the best of its kind held; every mending on the counter, the
+; stock being all there is; oil and food to two, a blink to one;
+; nothing else.
 (def %bl-wants?
   (fn (_ g form)
     (def it (item-make form 1 0))
@@ -599,7 +600,7 @@
     (match ((if (< (List length (game-pack g)) 26) #f (not (List any? kin? (game-pack g)))) #f)
            ((eq? (first form) (lit weapon)) (better? (lit weapon) %bl-weapon-worth))
            ((eq? (first form) (lit armour)) (better? (lit armour) %bl-armour-worth))
-           ((%bl-mending? it) (< (%bl-held g %bl-mending?) 3))
+           ((%bl-mending? it) #t)
            ((eq? (first form) (lit oil)) (< (%bl-held g (%bl-of-class (lit oil))) 2))
            ((eq? (first form) (lit food)) (< (%bl-held g (%bl-of-class (lit food))) 2))
            ((if (eq? (first form) (lit scroll)) (str=? (List ref 1 form) "blink") #f)
