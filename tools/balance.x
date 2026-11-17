@@ -223,13 +223,13 @@
     (match ((creature-trait? cr (lit talks)) #f) ((not (creatures-shown? g cr)) #f)
            ((List any? (fn (_ x) (same? x cr)) (Vector ref 0 %bl-wary)) #t)
            (#t (creature-trait? cr (lit stationary))))))
-; With the goal held, a hostile in view awake is gone round as well:
-; the bot is running for the stairs, and a walk past one is a blow
-; taken for nothing.  Seed 1, climbing level 11, stepped away from a
-; rust golem and its walk took it back past it, twice, to its death.
+; Running with the goal, a hostile in view awake is gone round as well:
+; a walk past one is a blow taken for nothing.  Not before the goal is
+; found, when going round them shut seed 1 out of the unseen and its
+; last walk led into the Old Man.
 (def %bl-dodged?
   (fn (_ g cr)
-    (match ((not (items-goal-held? g)) #f) ((not (%bl-hostile? cr)) #f)
+    (match ((not (items-goal-held? g)) #f) ((not (%bl-running? g)) #f) ((not (%bl-hostile? cr)) #f)
            ((not (eq? (creature-state cr) (lit awake))) #f)
            (#t (creatures-shown? g cr)))))
 (def %bl-shunned?
@@ -1228,7 +1228,9 @@
 ; when the wait began three turns on is not coming, and is not waited
 ; for there again.  The wait, (CR R C TURN), is kept in %bl-awaited.
 ; None with one that shoots or calls in sight: every turn waited is a
-; shot, or one more come.
+; shot, or one more come.  None running: a foe waited for is a fight
+; sought, and seed 1, climbing with the goal, waited on a rust golem
+; and stepped on by turns for 46 turns.
 (def %bl-awaited (Vector of ()))
 (def %bl-await?
   (fn (_ g s cr)
@@ -1238,7 +1240,7 @@
                            (#t (if (= (List ref 1 w) (creature-r cr)) (= (List ref 2 w) (creature-c cr)) #f))))
     (def shot? (if (%bl-shot-lately? g) #t
                  (List any? (fn (_ x) (if (%bl-hostile? x) (if (if (creature-trait? x (lit ranged)) #t (creature-trait? x (lit summon))) (%bl-in-sight? g x) #f) #f)) (%bl-seen g))))
-    (def wait? (match ((null? cr) #f) (shot? #f) ((not (%bl-slow? cr)) #f) ((not (eq? (creature-state cr) (lit awake))) #f)
+    (def wait? (match ((null? cr) #f) (shot? #f) ((%bl-running? g) #f) ((not (%bl-slow? cr)) #f) ((not (eq? (creature-state cr) (lit awake))) #f)
                       ((not (= 2 (state-dist (creature-r cr) (creature-c cr) (player-r p) (player-c p)))) #f)
                       (same-wait? (< (game-turn g) (+ 3 (List ref 3 w))))
                       (#t #t)))
@@ -1368,7 +1370,7 @@
            ((< 1 (%bl-unseen-cells g s)) #t)
            (#t (%bl-under? p (%bl-at who (lit retreat)))))))
 (def %bl-flee!
-  (fn (_ g s who)
+  (fn (_ g s who slips)
     (def p (game-player g))
     (def unseen? (%bl-unseen-lost? g s who))
     (def scares? (not (List any? (fn (_ cr) (match ((not (%bl-hostile? cr)) #f)
@@ -1377,7 +1379,7 @@
                         (%bl-seen g))))
     (def scroll (match (unseen? (%bl-first-effect g (lit scroll) (list (lit hold) (lit teleport))))
                        ((< (%bl-peril g) (player-hp p)) ())
-                       ((%bl-slips? g s) ())
+                       (slips ())
                        (scares? (%bl-first-effect g (lit scroll) (list (lit hold) (lit fear) (lit teleport))))
                        (#t (%bl-first-effect g (lit scroll) (list (lit hold) (lit teleport))))))
     (def e (if (null? scroll) () (item-prop scroll (lit effect) ())))
@@ -1470,11 +1472,13 @@
            (#t (do (Vector set! 8 (pair junk (Vector ref 8 s)) s) (%bl-use! g "d" junk) #t)))))
 
 ; Whether the bot is past fighting for its own sake: on the goal's
-; level, where the goal is all there is to have, or carrying it up.
+; level, where the goal is all there is to have.  Carrying it up, each
+; level is new and as full as on the way down, and is fought through as
+; then: slipping past, seed 1 led rust golems about level 11 until they
+; cornered it.
 (def %bl-running?
   (fn (_ g)
-    (if (items-goal-held? g) #t
-      (= (game-depth g) (List ref 2 (data-one (game-top-set g) (lit goal) (list "" "" 0)))))))
+    (= (game-depth g) (List ref 2 (data-one (game-top-set g) (lit goal) (list "" "" 0))))))
 ; Whether, running, the bot goes on its way with a hostile beside it: a
 ; step away is a turn the creature spends following.  Not held or
 ; slowed, nothing fast beside it, and not struck since its last turn,
@@ -1699,7 +1703,7 @@
       ((if stalled #f (%bl-drink-now? g foe potion))
         (do (%bl-use! g "q" potion) (Vector set! 2 (+ 1 (Vector ref 2 s)) s) (Vector set! 0 (game-turn g) %bl-drank)))
       ((%bl-ready! g s foe) ())
-      ((%bl-flee! g s who) ())
+      ((%bl-flee! g s who slips) ())
       ((if (null? foe) (%bl-strike-unseen! g s) #f) ())
       ((%bl-zap! g s who ((fn (_ dear-beside)
                            (match ((not (null? foe)) (if (null? dear-beside) foe dear-beside))
