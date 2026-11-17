@@ -1919,8 +1919,8 @@
 ; hostile coming into view and out again does not turn the bot about;
 ; none with one awake two cells off or closer, or one awake not worth
 ; fighting in view, as a step to it walks into their blows, nor under
-; the QUAFF mark, when a step aside for a thing is a step into what
-; lies about it), a foe in
+; the READY mark, when a step aside for a thing is a step into what
+; lies about it, hurt: it is picked up rested), a foe in
 ; view within CHASE whose fight
 ; is worth it to COURAGE, the errand on a world of screens, the giver, the level
 ; until CURIOSITY of it is seen, the stairs.  A foe it cannot reach is
@@ -1936,7 +1936,8 @@
                                              ((not (eq? (creature-state cr) (lit awake))) #f)
                                              (#t (< (state-dist (creature-r cr) (creature-c cr) (player-r p) (player-c p)) 3))))
                   (%bl-seen g)))
-    (def reach (match ((%bl-under? p (%bl-at who (lit quaff))) 0)
+    (def wounded? (%bl-under? p (%bl-mark g s who (lit ready))))
+    (def reach (match (wounded? 0)
                       ((null? shown) (if close? 0 9999)) (close? 0)
                       ((if (eq? (creature-state shown) (lit awake)) (not (%bl-worth? g who shown)) #f) 0)
                       ((not (null? (%bl-kept g s (lit item) wanted? 9999))) 9999) (#t (%bl-at who (lit greed)))))
@@ -1945,7 +1946,6 @@
     (def shoots? (if (null? shown) #f (creature-trait? shown (lit ranged))))
     (def step-to
       (fn (_ tag cr most) (%bl-step-within g s tag (fn (_ r c) (if (= r (creature-r cr)) (= c (creature-c cr)) #f)) most)))
-    (def wounded? (%bl-under? p (%bl-mark g s who (lit ready))))
     (def to-shown (if (match ((null? shown) #t) ((%bl-running? g) #t) ((Vector ref 34 s) #t) (wounded? #t) ((eq? (creature-state shown) (lit fleeing)) #t)
                              ((List any? (fn (_ x) (same? x shown)) (Vector ref 20 s)) #t)
                              ((List any? (fn (_ x) (same? x shown)) (Vector ref 0 %bl-wary)) #t)
