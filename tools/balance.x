@@ -74,7 +74,7 @@
 (import roguelike/items items-goal-held? items-worn items-target items-known?)
 (import roguelike/traps traps-found-at trap-r trap-c trap-found?)
 (import roguelike/game game-make game-key! game-explore!)
-(import roguelike/combat combat-player-dice combat-player-level combat-chill combat-dazzle)
+(import roguelike/combat combat-player-dice combat-player-level combat-chill combat-dazzle combat-str-bonus)
 (import roguelike/odds odds-hit odds-swings odds-regen odds-hurt odds-aim)
 
 (def %bl-say (fn (_ text) (Sys fd-write 1 text)))
@@ -435,10 +435,15 @@
 
 ; A weapon's worth: the middle of its dice plus its enchantment; armour's:
 ; its value and enchantment less what it asks beyond the player's strength.
+; What a weapon is worth: its blow, twice the mean, by its chance to
+; land against a foe as good as the player, 70 in 100 (combat.x) less 5
+; for each point of strength it asks beyond theirs; in fourteenths.  A
+; heavy weapon a point or two short can still outhit a light one.
 (def %bl-weapon-worth
   (fn (_ g it)
     (def d (item-prop it (lit damage) (list 1 2)))
-    (if (< 0 (state-shortfall g it)) 0 (+ (first d) (List ref 1 d) (* 2 (item-enchant it))))))
+    ((fn (_ odds) (if (< odds 1) 0 (* odds (+ (first d) (List ref 1 d) (* 2 (item-enchant it))))))
+      (- 14 (state-shortfall g it)))))
 (def %bl-armour-worth
   (fn (_ g it) (- (+ (item-prop1 it (lit armour) 0) (item-enchant it)) (state-shortfall g it))))
 (def %bl-best
@@ -959,9 +964,15 @@
                (#t (+ sum (shot x)))))
       0 (%bl-seen g))))
 ; Whether the fight with CR is likely lost: it costs all the player has,
-; with what else in view reaches the player while it lasts.
+; with what else in view reaches the player while it lasts; or, with it
+; not ended in a swing, its next blow at its hardest ends the player.
 (def %bl-losing?
-  (fn (_ g cr) (not (< (* (%bl-turns g cr) (+ (%bl-hurt g cr) (%bl-volley g cr))) (player-hp (game-player g))))))
+  (fn (_ g cr)
+    (def hp (player-hp (game-player g)))
+    (def turns (%bl-turns g cr))
+    (match ((not (< (* turns (+ (%bl-hurt g cr) (%bl-volley g cr))) hp)) #t)
+           ((not (< 1 turns)) #f)
+           (#t (not (< (+ (List ref 1 (creature-prop cr (lit attack) (list 1 2))) (%bl-volley g cr)) hp))))))
 ; Whether WHO would start the fight with CR: it costs no more than
 ; COURAGE % of what the player has.
 (def %bl-worth?
@@ -1201,7 +1212,8 @@
 ; slow one steps every other turn, so one still in the cell it held
 ; when the wait began three turns on is not coming, and is not waited
 ; for there again.  The wait, (CR R C TURN), is kept in %bl-awaited.
-; None with one that shoots in sight: every turn waited is a shot.
+; None with one that shoots or calls in sight: every turn waited is a
+; shot, or one more come.
 (def %bl-awaited (Vector of ()))
 (def %bl-await?
   (fn (_ g s cr)
@@ -1210,7 +1222,7 @@
     (def same-wait? (match ((null? w) #f) ((not (same? (first w) cr)) #f)
                            (#t (if (= (List ref 1 w) (creature-r cr)) (= (List ref 2 w) (creature-c cr)) #f))))
     (def shot? (if (%bl-shot-lately? g) #t
-                 (List any? (fn (_ x) (if (%bl-hostile? x) (if (creature-trait? x (lit ranged)) (%bl-in-sight? g x) #f) #f)) (%bl-seen g))))
+                 (List any? (fn (_ x) (if (%bl-hostile? x) (if (if (creature-trait? x (lit ranged)) #t (creature-trait? x (lit summon))) (%bl-in-sight? g x) #f) #f)) (%bl-seen g))))
     (def wait? (match ((null? cr) #f) (shot? #f) ((not (%bl-slow? cr)) #f) ((not (eq? (creature-state cr) (lit awake))) #f)
                       ((not (= 2 (state-dist (creature-r cr) (creature-c cr) (player-r p) (player-c p)))) #f)
                       (same-wait? (< (game-turn g) (+ 3 (List ref 3 w))))
@@ -1355,19 +1367,52 @@
           (when (eq? (first e) (lit hold)) (Vector set! 0 (+ (game-turn g) (List ref 1 e)) %bl-still))
           #t))))
 
-; What is used as soon as it is held: a ring on a free hand, vigour
-; drunk, an upgrade read, a survey read on a level not yet explored.
-; And in a fight: clear sight with something unseen beside the player,
-; quickness when the fight would cost half of what they have.  #f with
-; nothing used.
+; What a ring adds in a fight: strength that lifts the damage bonus
+; (combat.x) adds to every blow landed, 2; protection takes 5 in 100 off
+; every blow aimed, 1; the rest, 0.  Regeneration is a point every third
+; second against every fourth from level 9 on, and is no more than the
+; rest.  One not known is 1: no ring here is cursed, and one put on is
+; known, so it is tried in place of one worth nothing.
+(def %bl-ring-worth
+  (fn (_ g it)
+    (def str (player-str (game-player g)))
+    (def b (item-prop it (lit bonus) ()))
+    (match ((not (items-known? g it)) 1)
+           ((null? b) 0)
+           ((eq? (first b) (lit strength))
+             (if (< (combat-str-bonus str) (combat-str-bonus (+ str (List ref 1 b)))) 2 0))
+           ((eq? (first b) (lit protection)) 1)
+           (#t 0))))
+; Of the rings ON or not, the one worth most, or the one worth least.
+(def %bl-ring-pick
+  (fn (_ g on most?)
+    (List fold
+      (fn (_ best it)
+        (match ((not (eq? (item-class it) (lit ring))) best)
+               ((not (eq? on (not (str=? (items-worn g it) "")))) best)
+               ((null? best) it)
+               (most? (if (< (%bl-ring-worth g best) (%bl-ring-worth g it)) it best))
+               (#t (if (< (%bl-ring-worth g it) (%bl-ring-worth g best)) it best))))
+      () (game-pack g))))
+
+; What is used as soon as it is held: a ring on a free hand, a worn ring
+; taken off for a better one with no foe in view, vigour drunk, an
+; upgrade read, a survey read on a level not yet explored.  And in a
+; fight: clear sight with something unseen beside the player, quickness
+; when the fight would cost half of what they have.  #f with nothing
+; used.
 (def %bl-ready!
   (fn (_ g s foe)
     (def p (game-player g))
-    (def ring (%bl-in-pack g (fn (_ it) (if (eq? (item-class it) (lit ring)) (str=? (items-worn g it) "") #f))))
+    (def ring (%bl-ring-pick g #f #t))
+    (def least (%bl-ring-pick g #t #f))
     (def unseen? (%bl-told? g "Something unseen"))
     (def use
       (match
         ((if (null? ring) #f (< (List length (player-rings p)) 2)) (pair "P" ring))
+        ((match ((null? ring) #f) ((null? least) #f) ((not (null? foe)) #f) ((not (null? (%bl-shown-hostile g))) #f)
+                (#t (< (%bl-ring-worth g least) (%bl-ring-worth g ring))))
+          (pair "R" least))
         ((not (null? (%bl-with-effect g (lit potion) (lit strength)))) (pair "q" (%bl-with-effect g (lit potion) (lit strength))))
         ((not (null? (%bl-with-effect g (lit scroll) (lit upgrade)))) (pair "r" (%bl-with-effect g (lit scroll) (lit upgrade))))
         ((if (null? foe) (not (%bl-explored? g s)) #f)
@@ -1511,8 +1556,8 @@
 ; of S, and its guardian gone after until it is dead: out of view, to
 ; where it was last seen, (DEPTH R C) in %bl-hunted.
 (def %bl-hunted (Vector of ()))
-; Short of READY with a hostile in view that does not shoot, held for
-; where it is.  With no way to the stairs yet, toward what is unseen;
+; Short of READY with a hostile in view that does not shoot, and nothing
+; else shooting, held for where it is.  With no way to the stairs yet, toward what is unseen;
 ; with nowhere at all to go, toward any hostile in view, and only then
 ; rests a turn.
 (def %bl-descend!
@@ -1532,7 +1577,7 @@
     (match
       ((match ((%bl-in-sight? g shown) #f) ((%bl-shot-lately? g) #f) ((%bl-told? g "You start up") #f) (#t (%bl-under? p (%bl-mark g s who (lit ready))))) (%bl-rest! g))
       ((not (null? guardian)) (%bl-hunt! g s guardian))
-      ((match ((null? shown) #f) ((creature-trait? shown (lit ranged)) #f) (#t (%bl-under? p (%bl-mark g s who (lit ready)))))
+      ((match ((null? shown) #f) ((creature-trait? shown (lit ranged)) #f) ((%bl-shot-lately? g) #f) (#t (%bl-under? p (%bl-mark g s who (lit ready)))))
         (do (%bl-why! "hold") (%bl-key! g "s")))
       ((if (null? last) #f (%bl-walk! g s (lit guardian) (fn (_ r c) (if (= r (List ref 1 last)) (= c (List ref 2 last)) #f)))) ())
       ((if (Vector ref 14 s) (%bl-to-frontier! g s) #f) ())
