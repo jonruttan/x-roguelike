@@ -925,9 +925,13 @@
 ; The hit points a fight with CR is likely to cost the player: the swings
 ; to take what CR has left, by the game's odds (odds.x), its regeneration
 ; counted and, dazzling, its spoiling the player's aim, times what it
-; does a turn at its speed and, cold, slowing the player.
+; does a turn at its speed and, cold, slowing the player.  Its speed is
+; the game's (creatures.x): slow or slowed, fast, or both and so neither.
 (def %bl-speed
-  (fn (_ cr) (match ((creature-trait? cr (lit fast)) (lit fast)) ((creature-trait? cr (lit slow)) (lit slow)) (#t ()))))
+  (fn (_ cr)
+    (def slow? (if (creature-trait? cr (lit slow)) #t (%bl-slowed? cr)))
+    (def fast? (creature-trait? cr (lit fast)))
+    (match ((if slow? fast? #f) ()) (slow? (lit slow)) (fast? (lit fast)) (#t ()))))
 (def %bl-turns
   (fn (_ g cr)
     (def span (creature-prop cr (lit hp) (list 1 6)))
