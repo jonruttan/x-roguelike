@@ -214,6 +214,7 @@
 ; is to be answered, not traded, and costs the player most of what
 ; they have.
 (def %bl-wary (Vector of ()))
+(def %bl-wary? (fn (_ cr) (List any? (fn (_ x) (same? x cr)) (Vector ref 0 %bl-wary))))
 ; Whether CR is a hostile in view that keeps its place, or a sleeper
 ; best left, to be gone
 ; round: a walk shuns the cells beside it.
@@ -423,7 +424,8 @@
   (fn (_ g s cr)
     (def p (game-player g))
     (if (state-adjacent? (creature-r cr) (creature-c cr) (player-r p) (player-c p))
-      (do (%bl-key! g (%bl-key-for (- (creature-r cr) (player-r p)) (- (creature-c cr) (player-c p)))) #t)
+      (do (%bl-why! (Str8 append "strike " (creature-name cr) " " (Str8 str (creature-state cr))))
+          (%bl-key! g (%bl-key-for (- (creature-r cr) (player-r p)) (- (creature-c cr) (player-c p)))) #t)
       (do (when %bl-tracing
             (Vector set! 0 (pair (Str8 append "{to " (creature-name cr) " " (Str8 str (creature-state cr)) " " (Str8 str (creature-r cr)) "," (Str8 str (creature-c cr)) "}")
                                  (Vector ref 0 %bl-pressed)) %bl-pressed))
@@ -1562,8 +1564,9 @@
 (def %bl-hunted (Vector of ()))
 ; Short of READY with a hostile in view that does not shoot, and nothing
 ; else shooting, held for where it is.  With no way to the stairs yet, toward what is unseen;
-; with nowhere at all to go, toward any hostile in view, and only then
-; rests a turn.
+; with nowhere at all to go, toward any hostile in view, or away from
+; one kept wary of, as a sleeping glister struck at a third of the hit
+; points wakes to finish the player; and only then rests a turn.
 (def %bl-descend!
   (fn (_ g s who shown)
     (def p (game-player g))
@@ -1592,7 +1595,8 @@
               (Vector set! 14 #t s))))
       ((%bl-walk! g s (lit stairs) (%bl-stairs-goal g t)) ())
       ((%bl-to-frontier! g s) ())
-      ((if (null? shown) #f (%bl-toward-creature! g s shown)) ())
+      ((if (null? shown) #f (if (%bl-wary? shown) (%bl-away! g shown) #f)) ())
+      ((if (null? shown) #f (if (%bl-wary? shown) #f (%bl-toward-creature! g s shown))) ())
       ((match ((null? shown) #f) ((not (creature-trait? shown (lit ranged))) #f) (#t (%bl-out-of-line! g shown))) ())
       ((%bl-clear-the-way! g s) ())
       (#t (%bl-unstick! g s)))))
@@ -1609,6 +1613,15 @@
   (fn (_ g s who)
     (def p (game-player g))
     (def q (game-ask g))
+    ; The sleepers kept wary of, from this turn's view, before the foe is
+    ; picked from what is beside: one come into view by a blink is not
+    ; struck awake for being missing from the last turn's.
+    (Vector set! 0 (List filter (fn (_ cr) (match ((not (%bl-hostile? cr)) #f) ((%bl-stirring? s cr) #f)
+                                                  ((same? cr (%bl-guardian g)) #f)
+                                                  ((creature-trait? cr (lit regen)) #t)
+                                                  (#t (not (%bl-worth? g who cr)))))
+                     (%bl-seen g))
+                %bl-wary)
     (def foe (%bl-foe g))
     (def potion (%bl-in-pack g (fn (_ it) (if (eq? (item-class it) (lit potion)) (Str8 includes? "mending" (item-name it)) #f))))
     ; A potion the blows beside outpace is left for a way out, when one
@@ -1650,12 +1663,6 @@
     (unless (null? (game-blows g)) (Vector set! 24 (pair (game-turn g) (game-blows g)) s))
     (%bl-shot-note! g)
     (%bl-watch! g s (< (player-hp p) (Vector ref 22 s)))
-    (Vector set! 0 (List filter (fn (_ cr) (match ((not (%bl-hostile? cr)) #f) ((%bl-stirring? s cr) #f)
-                                                  ((same? cr (%bl-guardian g)) #f)
-                                                  ((creature-trait? cr (lit regen)) #t)
-                                                  (#t (not (%bl-worth? g who cr)))))
-                     (%bl-seen g))
-                %bl-wary)
     (%bl-sat! g)
     (def slips (%bl-slips? g s))
     (unless (%bl-under? p (%bl-mark g s who (lit rest))) (Vector set! 34 #f s))
