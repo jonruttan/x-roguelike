@@ -980,14 +980,18 @@
       0 (%bl-seen g))))
 ; Whether the fight with CR is likely lost: it costs all the player has,
 ; with what else in view reaches the player while it lasts; or, with it
-; not ended in a swing, its next blow at its hardest ends the player.
+; not ended in a swing, its next blow at its hardest ends the player,
+; two blows from one that is fast: seed 1, at 21 hit points, met a
+; cave bat's two blows of up to 7 a turn and drank too late.
 (def %bl-losing?
   (fn (_ g cr)
     (def hp (player-hp (game-player g)))
     (def turns (%bl-turns g cr))
     (match ((not (< (* turns (+ (%bl-hurt g cr) (%bl-volley g cr))) hp)) #t)
            ((not (< 1 turns)) #f)
-           (#t (not (< (+ (List ref 1 (creature-prop cr (lit attack) (list 1 2))) (%bl-volley g cr)) hp))))))
+           (#t (not (< (+ (* (if (eq? (%bl-speed cr) (lit fast)) 2 1) (List ref 1 (creature-prop cr (lit attack) (list 1 2))))
+                          (%bl-volley g cr))
+                       hp))))))
 ; Whether WHO would start the fight with CR: it costs no more than
 ; COURAGE % of what the player has.
 (def %bl-worth?
@@ -1575,8 +1579,14 @@
              (do (%bl-key! g ">")
                  (when (List any? (fn (_ m) (Str8 includes? "shaft" m)) (game-messages g)) (Vector set! 14 #t s))
                  #t))
-           (#t ((fn (_ d) (if (null? d) #f (do (%bl-key! g (%bl-key-for (first d) (rest d))) #t)))
-                 (%bl-step-within g s (lit stairs) (%bl-stairs-goal g tile-down) most))))))
+           ; The way out goes boldly, beside what is gone round on other
+           ; walks: seed 4, an undertow at its heels, backed off from
+           ; stairs three steps away, as they lay beside a sleeper.
+           (#t (do (def was (Vector ref 0 %bl-bold))
+                   (Vector set! 0 (if (< was 1) 1 was) %bl-bold)
+                   (def d (%bl-step-within g s (lit stairs) (%bl-stairs-goal g tile-down) most))
+                   (Vector set! 0 was %bl-bold)
+                   (if (null? d) #f (do (%bl-key! g (%bl-key-for (first d) (rest d))) #t)))))))
 
 ; To the stairs and down them, or up with the goal: rested to READY first
 ; with nothing hostile in view.  A shaft found barred is kept in slot 14
@@ -1619,7 +1629,14 @@
               (Vector set! 14 #t s))))
       ((%bl-walk! g s (lit stairs) (%bl-stairs-goal g t)) ())
       ((%bl-to-frontier! g s) ())
-      ((if (null? shown) #f (if (%bl-wary? shown) (%bl-away! g shown) #f)) ())
+      ; A sleeper kept wary of is stepped from only when beside it: from
+      ; further off, a step away always gains, and seed 4, its stairs past
+      ; a sleeping undertow, backed off twenty steps into a leech, never
+      ; coming to go round it boldly.
+      ((match ((null? shown) #f) ((not (%bl-wary? shown)) #f)
+              ((not (state-adjacent? (creature-r shown) (creature-c shown) (player-r p) (player-c p))) #f)
+              (#t (%bl-away! g shown)))
+        ())
       ((if (null? shown) #f (if (%bl-wary? shown) #f (%bl-toward-creature! g s shown))) ())
       ((match ((null? shown) #f) ((not (creature-trait? shown (lit ranged))) #f) (#t (%bl-out-of-line! g shown))) ())
       ((%bl-clear-the-way! g s) ())
@@ -1722,12 +1739,14 @@
       ((if (null? foe) #f (%bl-outpace? g)) (%bl-outpace! g s who foe))
       ; A fight likely lost with the stairs a step off: down them,
       ; whatever the hit points, as nothing follows a player off a
-      ; level.  Further, each step from a foe beside is a blow given.
+      ; level.  Further, each step from a foe beside is a blow given; but
+      ; one backing off anyway backs off toward stairs near, a step that
+      ; costs no more and ends the chase.
       ((if (null? foe) #f (if (%bl-losing? g foe) (%bl-down-and-out! g s 1) #f)) ())
       ((not (null? foe))
         (unless (if (if (< 0 (%bl-at who (lit retreat))) (%bl-free? g foe) #f)
                   (if (if (%bl-losing? g foe) #t (%bl-under? p (%bl-at who (lit retreat))))
-                    (if (%bl-away! g foe) (do (Vector set! 34 #t s) #t) #f) #f) #f)
+                    (if (if (%bl-down-and-out! g s 12) #t (%bl-away! g foe)) (do (Vector set! 34 #t s) #t) #f) #f) #f)
           (%bl-toward-creature! g s foe)))
       ; Low, with no mending to drink and a hostile in view: first out
       ; of the line of one that shoots, as each step in it is a shot;
@@ -1736,9 +1755,13 @@
       ; not on to the next thing, unless it is fast or shoots and strikes
       ; for every step, or its fight is likely won, as a step away is
       ; only a blow put off; out of its view, a rest.  Once backed off,
-      ; slot 34 of S, it keeps off until rested.
+      ; slot 34 of S, it keeps off until rested.  With the goal held, no
+      ; step out of the line: the way up is the way out, and seed 3, a
+      ; glister at its back on level 12, stepped out and back onto its
+      ; way by turns, a turn in three lost to it.
       ((match ((not (null? potion)) #f) ((null? shown) #f)
               ((not (if (Vector ref 34 s) #t (%bl-under? p (%bl-at who (lit quaff))))) #f)
+              ((items-goal-held? g) #f)
               ((if (null? (%bl-shooter g)) #f (%bl-out-of-line! g (%bl-shooter g))) (do (Vector set! 34 #t s) #t))
               ((%bl-down-and-out! g s 12) #t)
               ((not (%bl-free? g shown)) #f)
@@ -1757,6 +1780,7 @@
               ((not (%bl-in-line? shown (player-r p) (player-c p))) #f)
               ((%bl-worth? g who shown) #f)
               ((%bl-down-and-out! g s 12) #t)
+              ((items-goal-held? g) #f)
               ((%bl-out-of-line! g shown) #t)
               (#t (%bl-toward-creature! g s shown)))
         ())
@@ -1770,6 +1794,21 @@
         ((fn (_ sitter) (unless (if (null? sitter) #f (%bl-away! g sitter)) (%bl-rest! g)))
           (List find (fn (_ cr) (if (%bl-hostile? cr) (if (creature-trait? cr (lit stationary)) (%bl-in-sight? g cr) #f) #f))
             (%bl-seen g))))
+      ; One in sight, not on the player, keeps a camp from starting
+      ; while it is seen: when its fight is not worth it, a step away
+      ; from it, to rest out of its sight, or with none gained a turn's
+      ; wait, a turn's mending, not on to the next thing.  Seed 3 went on
+      ; exploring level 12 at a third of its hit points with a glister
+      ; in view, and walked into it.  One worth its fight is let be: at
+      ; the rest mark alone, seed 3 walked from every gas mote on level
+      ; 2.  With the goal held the way out is up, not away.
+      ((match ((null? shown) #f) ((items-goal-held? g) #f)
+              ((not (%bl-in-sight? g shown)) #f) ((%bl-shot-lately? g) #f)
+              ((not (null? (%bl-beside g %bl-hostile?))) #f)
+              ((not (%bl-under? p (%bl-mark g s who (lit rest)))) #f)
+              ((%bl-worth? g who shown) #f)
+              (#t (do (%bl-why! "out of sight") (unless (%bl-away! g shown) (%bl-key! g "s")) #t)))
+        ())
       ((%bl-pour? g oil lamp)
         (do (%bl-use! g "f" oil) (Vector set! 10 (+ 1 (Vector ref 10 s)) s)))
       ((if (null? weapon) #f (if (same? weapon (player-weapon p)) #f (< 0 (%bl-weapon-worth g weapon))))
@@ -1982,7 +2021,13 @@
     (def shoots? (if (null? shown) #f (creature-trait? shown (lit ranged))))
     (def step-to
       (fn (_ tag cr most) (%bl-step-within g s tag (fn (_ r c) (if (= r (creature-r cr)) (= c (creature-c cr)) #f)) most)))
-    (def to-shown (if (match ((null? shown) #t) ((%bl-running? g) #t) ((Vector ref 34 s) #t) (wounded? #t) ((eq? (creature-state shown) (lit fleeing)) #t)
+    ; Running, no foe is gone to but a shooter awake whose fight is
+    ; worth it: it follows and shoots all the way, and seed 3, with the
+    ; goal on level 12, left a glister it had slowed with a wand and was
+    ; shot down in the passage to the stairs.
+    (def to-shown (if (match ((null? shown) #t)
+                             ((%bl-running? g) (if shoots? (if (eq? (creature-state shown) (lit awake)) (not (%bl-worth? g who shown)) #t) #t))
+                             ((Vector ref 34 s) #t) (wounded? #t) ((eq? (creature-state shown) (lit fleeing)) #t)
                              ((List any? (fn (_ x) (same? x shown)) (Vector ref 20 s)) #t)
                              ((List any? (fn (_ x) (same? x shown)) (Vector ref 0 %bl-wary)) #t)
                              (#t (not (%bl-worth? g who shown))))
