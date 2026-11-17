@@ -1,5 +1,7 @@
 # x-roguelike
 
+<p align="center"><img src="docs/bitwise-banner.svg" alt="x-roguelike, with Bitwise the owl" width="100%"></p>
+
 A roguelike written in [x-lang](https://github.com/jonruttan/x-lang),
 loaded as a lang, and an original game, not a port of Rogue: a dungeon of
 rooms and passages made anew each game, creatures that wake and hunt,
