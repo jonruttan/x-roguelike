@@ -223,9 +223,18 @@
     (match ((creature-trait? cr (lit talks)) #f) ((not (creatures-shown? g cr)) #f)
            ((List any? (fn (_ x) (same? x cr)) (Vector ref 0 %bl-wary)) #t)
            (#t (creature-trait? cr (lit stationary))))))
+; With the goal held, a hostile in view awake is gone round as well:
+; the bot is running for the stairs, and a walk past one is a blow
+; taken for nothing.  Seed 1, climbing level 11, stepped away from a
+; rust golem and its walk took it back past it, twice, to its death.
+(def %bl-dodged?
+  (fn (_ g cr)
+    (match ((not (items-goal-held? g)) #f) ((not (%bl-hostile? cr)) #f)
+           ((not (eq? (creature-state cr) (lit awake))) #f)
+           (#t (creatures-shown? g cr)))))
 (def %bl-shunned?
   (fn (_ g r c)
-    (List any? (fn (_ cr) (if (%bl-sitter? g cr) (state-adjacent? (creature-r cr) (creature-c cr) r c) #f)) (%bl-seen g))))
+    (List any? (fn (_ cr) (if (if (%bl-sitter? g cr) #t (%bl-dodged? g cr)) (state-adjacent? (creature-r cr) (creature-c cr) r c) #f)) (%bl-seen g))))
 
 ; Whether the bot, with nowhere left to go on a level, has given up
 ; going round what sits there.
@@ -257,7 +266,7 @@
             (when (map-in? m r c) (Vector set! (+ (* r cols) c) (lit shun) v)))
           %bl-dirs)))
     (when (< (Vector ref 0 %bl-bold) 1)
-      (do (List for-each (fn (_ cr) (when (%bl-sitter? g cr) (shun! (pair (creature-r cr) (creature-c cr))))) (%bl-seen g))
+      (do (List for-each (fn (_ cr) (when (if (%bl-sitter? g cr) #t (%bl-dodged? g cr)) (shun! (pair (creature-r cr) (creature-c cr))))) (%bl-seen g))
           (List for-each (fn (_ at) (shun! at) (Vector set! (+ (* (first at) cols) (rest at)) #t v)) (Vector ref 0 %bl-sat))))
     (List for-each (fn (_ cr) (Vector set! (+ (* (creature-r cr) cols) (creature-c cr)) #t v)) (%bl-seen g))
     (List for-each (fn (_ t) (when (if (< 1 (Vector ref 0 %bl-bold)) #f (trap-found? t)) (Vector set! (+ (* (trap-r t) cols) (trap-c t)) #t v))) (game-traps g))
@@ -1339,7 +1348,9 @@
           #t))))
 
 ; With the fight beside the player likely lost, a scroll read to get out
-; of it: stillness, panic, or a blink away.  A blow from something
+; of it: stillness, panic, or a blink away; none while the bot slips by
+; unstruck, as walking off costs nothing then and the scroll is kept for
+; when it is struck.  A blow landed by something
 ; unseen, with no sight of it, counts as lost with a foe in view beside
 ; as well, with blows unseen from two cells or more, or once WHO is
 ; under its retreat: its cost cannot be weighed,
@@ -1351,7 +1362,8 @@
 (def %bl-unseen-lost?
   (fn (_ g s who)
     (def p (game-player g))
-    (match ((null? (%bl-unseen-blow g s)) #f) ((< 0 (player-condition p (lit seeing))) #f)
+    (match ((not (List any? (fn (_ b) (not (eq? (List ref 5 b) (lit miss)))) (%bl-unseen-blows g s))) #f)
+           ((< 0 (player-condition p (lit seeing))) #f)
            ((not (null? (%bl-beside g %bl-hostile?))) #t)
            ((< 1 (%bl-unseen-cells g s)) #t)
            (#t (%bl-under? p (%bl-at who (lit retreat)))))))
@@ -1365,11 +1377,16 @@
                         (%bl-seen g))))
     (def scroll (match (unseen? (%bl-first-effect g (lit scroll) (list (lit hold) (lit teleport))))
                        ((< (%bl-peril g) (player-hp p)) ())
+                       ((%bl-slips? g s) ())
                        (scares? (%bl-first-effect g (lit scroll) (list (lit hold) (lit fear) (lit teleport))))
                        (#t (%bl-first-effect g (lit scroll) (list (lit hold) (lit teleport))))))
     (def e (if (null? scroll) () (item-prop scroll (lit effect) ())))
     (if (null? scroll) #f
-      (do (%bl-use! g "r" scroll)
+      (do (%bl-why! (Str8 append "flee " (if unseen? "unseen " "") "peril " (Str8 str (%bl-peril g)) " of "
+                              (Str8 join "," (List map (fn (_ cr) (creature-name cr))
+                                               (List filter (fn (_ cr) (if (%bl-hostile? cr) (state-adjacent? (creature-r cr) (creature-c cr) (player-r p) (player-c p)) #f))
+                                                 (%bl-seen g))))))
+          (%bl-use! g "r" scroll)
           (when (eq? (first e) (lit hold)) (Vector set! 0 (+ (game-turn g) (List ref 1 e)) %bl-still))
           #t))))
 
@@ -1562,8 +1579,9 @@
 ; of S, and its guardian gone after until it is dead: out of view, to
 ; where it was last seen, (DEPTH R C) in %bl-hunted.
 (def %bl-hunted (Vector of ()))
-; Short of READY with a hostile in view that does not shoot, and nothing
-; else shooting, held for where it is.  With no way to the stairs yet, toward what is unseen;
+; Short of READY with a hostile in view that does not shoot, nothing
+; else shooting and none beside, held for where it is: slipping past
+; with the goal, the bot stood beside a rust golem and was struck down.  With no way to the stairs yet, toward what is unseen;
 ; with nowhere at all to go, toward any hostile in view, or away from
 ; one kept wary of, as a sleeping glister struck at a third of the hit
 ; points wakes to finish the player; and only then rests a turn.
@@ -1584,7 +1602,9 @@
     (match
       ((match ((%bl-in-sight? g shown) #f) ((%bl-shot-lately? g) #f) ((%bl-told? g "You start up") #f) (#t (%bl-under? p (%bl-mark g s who (lit ready))))) (%bl-rest! g))
       ((not (null? guardian)) (%bl-hunt! g s guardian))
-      ((match ((null? shown) #f) ((creature-trait? shown (lit ranged)) #f) ((%bl-shot-lately? g) #f) (#t (%bl-under? p (%bl-mark g s who (lit ready)))))
+      ((match ((null? shown) #f) ((creature-trait? shown (lit ranged)) #f) ((%bl-shot-lately? g) #f)
+              ((not (null? (%bl-beside g %bl-hostile?))) #f)
+              (#t (%bl-under? p (%bl-mark g s who (lit ready)))))
         (do (%bl-why! "hold") (%bl-key! g "s")))
       ((if (null? last) #f (%bl-walk! g s (lit guardian) (fn (_ r c) (if (= r (List ref 1 last)) (= c (List ref 2 last)) #f)))) ())
       ((if (Vector ref 14 s) (%bl-to-frontier! g s) #f) ())
@@ -1934,7 +1954,8 @@
 ; lies about it, hurt: it is picked up rested), a foe in
 ; view within CHASE whose fight
 ; is worth it to COURAGE, the errand on a world of screens, the giver, the level
-; until CURIOSITY of it is seen, the stairs.  A foe it cannot reach is
+; until CURIOSITY of it is seen, the stairs; with the goal held, neither
+; the unseen nor the walls are looked over, only the way up.  A foe it cannot reach is
 ; passed by, and none is gone after under the READY mark: a fight is
 ; picked rested.
 (def %bl-onward!
@@ -1966,7 +1987,7 @@
     (unless (null? to-shown) (Vector set! 19 shown s))
     (def to-foe (match ((not (null? to-shown)) to-shown) (wounded? ()) (#t (%bl-to-quarry g s who step-to))))
     (def errand (if (game-screens? g) (%bl-errand g) ()))
-    (def curious? (match ((%bl-explored? g s) #f) ((%bl-surveying? g) #t) ((Vector ref 25 s) #t) ((not (%bl-light-left? g s)) #f)
+    (def curious? (match ((items-goal-held? g) #f) ((%bl-explored? g s) #f) ((%bl-surveying? g) #t) ((Vector ref 25 s) #t) ((not (%bl-light-left? g s)) #f)
                          ((< 99 (%bl-at who (lit curiosity))) #t)
                          (#t (< (%bl-seen-pct g) (%bl-at who (lit curiosity))))))
     (match
@@ -1983,7 +2004,7 @@
       ((%bl-to-giver! g s) ())
       ((if curious? (%bl-to-frontier! g s) #f) ())
       (curious? (do (%bl-explored! g s) (unless (%bl-to-wall! g s who) (%bl-descend! g s who shown))))
-      ((%bl-to-wall! g s who) ())
+      ((if (items-goal-held? g) #f (%bl-to-wall! g s who)) ())
       (#t (%bl-descend! g s who shown)))))
 
 ; --- a game ------------------------------------------------------------------
