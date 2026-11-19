@@ -49,19 +49,19 @@
 ; (worth ...) or an item's own (price N) (shops.x); each LINE is said
 ; over the counter.
 (keeper "salvager" (level 4)
-  (sells (potion "mending" 2) (oil "oil flask" 2) (food "miner's tin" 1) (scroll "blink" 1)
+  (sells (potion "mending" 4) (oil "oil flask" 2) (food "miner's tin" 1) (scroll "blink" 1)
          (weapon "miner's blade" 1) (armour "scale coat" 1))
   (buys potion scroll wand ring weapon armour food oil)
   "The others stop at the breach.  The pickings are better below it."
   "Lamps, oil, a blade now and then: the company left it all to the water.")
 (keeper "salvager" (level 7)
-  (sells (potion "mending" 2) (oil "oil flask" 2) (food "miner's tin" 1) (scroll "blink" 1)
+  (sells (potion "mending" 4) (oil "oil flask" 2) (food "miner's tin" 1) (scroll "blink" 1)
          (weapon "sledge" 1) (armour "plated harness" 1))
   (buys potion scroll wand ring weapon armour food oil)
   "The Flood gave up less than I hoped.  What it gave up is on the board."
   "What you carry, I take over the Nick.  Gold is gold, wherever found.")
 (keeper "salvager" (level 10)
-  (sells (potion "mending" 2) (oil "oil flask" 2) (food "miner's tin" 1) (scroll "blink" 1)
+  (sells (potion "mending" 4) (oil "oil flask" 2) (food "miner's tin" 1) (scroll "blink" 1)
          (potion "deep mending" 1) (wand "sparks" 1))
   (buys potion scroll wand ring weapon armour food oil)
   "This is as deep as I go.  Nothing below here was ever the company's."
