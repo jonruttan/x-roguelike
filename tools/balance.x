@@ -111,8 +111,21 @@
 ; on which level.  It does not know where a creature out of view is, how
 ; hurt one is, whether one sleeps, or what an untried wand does.
 
-; The creatures in view, and the one of them at R C, or nil.
-(def %bl-seen (fn (_ g) (List filter (fn (_ cr) (creatures-shown? g cr)) (game-creatures g))))
+; The creatures in view, and the one of them at R C, or nil.  Who is in
+; view is kept for the turn, (GAME TURN SEEN) in %bl-seen-kept: it is
+; asked of every cell a search weighs, and worked out afresh each time
+; it came to millions of objects a turn.  Nothing moves until a key
+; spends time, which moves the turn on.
+(def %bl-seen-kept (Vector of () -1 ()))
+(def %bl-seen
+  (fn (_ g)
+    (if (if (same? (Vector ref 0 %bl-seen-kept) g) (= (Vector ref 1 %bl-seen-kept) (game-turn g)) #f)
+      (Vector ref 2 %bl-seen-kept)
+      (do (def seen (List filter (fn (_ cr) (creatures-shown? g cr)) (game-creatures g)))
+          (Vector set! 0 g %bl-seen-kept)
+          (Vector set! 1 (game-turn g) %bl-seen-kept)
+          (Vector set! 2 seen %bl-seen-kept)
+          seen))))
 (def %bl-seen-at
   (fn (_ g r c) (List find (fn (_ cr) (if (= (creature-r cr) r) (= (creature-c cr) c) #f)) (%bl-seen g))))
 ; Whether CR is a creature in sight, not one only sensed: what breaks a
@@ -369,11 +382,19 @@
   (fn (_ g s tag goal-at? most)
     (def p (game-player g))
     ; A walk onto one of the people is a talk, not a step: their cell is
-    ; a goal only for the walks to someone.
+    ; a goal only for the walks to someone.  Where one was last seen,
+    ; slot 23 of S, counts out of view as well: seed 7 walked for a
+    ; wall to search from at 12,4, where one of the people stood out of
+    ; view, saw them a step on, turned back, and went to and fro 1,200
+    ; times.
+    (def person-at? (fn (_ r c) (List any? (fn (_ e) (match ((not (creature-trait? (first e) (lit talks))) #f)
+                                                            ((not (= (first (rest (rest e))) r)) #f)
+                                                            (#t (= (rest (rest (rest e))) c))))
+                                  (Vector ref 23 s))))
     (def goal? (if (match ((eq? tag (lit giver)) #t) ((eq? tag (lit creature)) #t) (#t #f)) goal-at?
-                 (fn (_ r c) (if (goal-at? r c)
-                               ((fn (_ cr) (if (null? cr) #t (not (creature-trait? cr (lit talks))))) (%bl-seen-at g r c))
-                               #f))))
+                 (fn (_ r c) (match ((not (goal-at? r c)) #f)
+                                    ((person-at? r c) #f)
+                                    (#t ((fn (_ cr) (if (null? cr) #t (not (creature-trait? cr (lit talks))))) (%bl-seen-at g r c)))))))
     (def cols (map-cols (game-map g)))
     (def standing (%bl-standing g))
     (def kept (%bl-kept g s tag goal? most))
@@ -657,6 +678,23 @@
            (#t (first (first pick))))))
 (def %bl-sell-key (fn (_ g) ((fn (_ it) (if (null? it) (lit escape) (item-letter it))) (%bl-spare g))))
 
+; The levels a counter was met on, deepest first, slot 35 of S: what the
+; player saw of where the keepers are.
+(def %bl-counter-met!
+  (fn (_ g s q)
+    (def met (Vector ref 35 s))
+    (when (match ((not (eq? (first q) (lit choose))) #f)
+                 ((not (Str8 includes? "what will you have?" (List ref 1 q))) #f)
+                 ((null? met) #t)
+                 (#t (not (= (first met) (game-depth g)))))
+      (Vector set! 35 (pair (game-depth g) met) s))))
+; Whether the next level down is where the next counter lies, read off
+; the two last met: they stand a band apart, so the next a band on.
+(def %bl-counter-below?
+  (fn (_ g s)
+    (def met (Vector ref 35 s))
+    (match ((null? met) #f) ((null? (rest met)) #f)
+           (#t (= (+ 1 (game-depth g)) (+ (first met) (- (first met) (first (rest met)))))))))
 (def %bl-answer!
   (fn (_ g q)
     (%bl-key! g (match ((if (eq? (first q) (lit choose)) (Str8 includes? "what will you have?" (List ref 1 q)) #f) (%bl-shop-key g q))
@@ -713,7 +751,10 @@
     (Vector set! (+ (* (player-r p) cols) (player-c p)) #t spent)
     (def person? (fn (_ r c) ((fn (_ cr) (if (null? cr) #f (creature-trait? cr (lit talks)))) (%bl-seen-at g r c))))
     (%bl-walk! g s (lit frontier)
-      (fn (_ r c) (match ((Vector ref (+ (* r cols) c) spent) #f) ((person? r c) #f) (#t (map-frontier? m r c)))))))
+      ; The frontier test first: who is in view is worked out afresh on
+      ; each ask, and asked of every cell a search reached, one with
+      ; none to find came to 12 million objects in a turn.
+      (fn (_ r c) (match ((Vector ref (+ (* r cols) c) spent) #f) ((not (map-frontier? m r c)) #f) (#t (not (person? r c))))))))
 
 ; --- walls that could hide a room --------------------------------------------
 
@@ -978,6 +1019,13 @@
                ((null? (%bl-aim g x)) sum)
                (#t (+ sum (shot x)))))
       0 (%bl-seen g))))
+; Whether CR's next blow at its hardest, with what else in view reaches
+; the player, ends HP: two blows from one that is fast.
+(def %bl-blow-ends?
+  (fn (_ g cr hp)
+    (not (< (+ (* (if (eq? (%bl-speed cr) (lit fast)) 2 1) (List ref 1 (creature-prop cr (lit attack) (list 1 2))))
+               (%bl-volley g cr))
+            hp))))
 ; Whether the fight with CR is likely lost: it costs all the player has,
 ; with what else in view reaches the player while it lasts; or, with it
 ; not ended in a swing, its next blow at its hardest ends the player,
@@ -989,9 +1037,7 @@
     (def turns (%bl-turns g cr))
     (match ((not (< (* turns (+ (%bl-hurt g cr) (%bl-volley g cr))) hp)) #t)
            ((not (< 1 turns)) #f)
-           (#t (not (< (+ (* (if (eq? (%bl-speed cr) (lit fast)) 2 1) (List ref 1 (creature-prop cr (lit attack) (list 1 2))))
-                          (%bl-volley g cr))
-                       hp))))))
+           (#t (%bl-blow-ends? g cr hp)))))
 ; Whether WHO would start the fight with CR: it costs no more than
 ; COURAGE % of what the player has.
 (def %bl-worth?
@@ -1014,10 +1060,19 @@
            ((null? (%bl-beside g %bl-hostile?)) #f)
            (#t (%bl-under? p (%bl-at who (lit quaff)))))))
 ; Whether to drink POTION with FOE beside: the fight lost without it, and
-; the potion's least mending all of use.
+; the potion's least mending all of use; and either the next blow at its
+; hardest ends the player, or the potion's least mending wins the fight.
+; A fight lost however much is drunk is a fight to get out of: seed 3
+; drank four mendings at 33 to 44 of 53 against a glister and died.
 (def %bl-drink-now?
   (fn (_ g foe potion)
-    (match ((null? foe) #f) ((null? potion) #f) ((%bl-losing? g foe) (%bl-mends? g potion)) (#t #f))))
+    (def hp (player-hp (game-player g)))
+    (match ((null? foe) #f) ((null? potion) #f)
+           ((not (%bl-losing? g foe)) #f)
+           ((not (%bl-mends? g potion)) #f)
+           ((%bl-blow-ends? g foe hp) #t)
+           (#t (< (* (%bl-turns g foe) (+ (%bl-hurt g foe) (%bl-volley g foe)))
+                  (+ hp (List ref 1 (item-prop potion (lit effect) (list (lit heal) 1 1)))))))))
 ; Whether a step away from CR gains a turn: not when the player is slowed
 ; or held, nor from one that is fast or shoots, as it then strikes for
 ; each step.
@@ -1364,7 +1419,12 @@
 ; than half its hit points turns again at once (creatures.x), so it is
 ; read only with every hostile beside looking badly hurt.  What
 ; stillness holds is remembered for as long as its (effect hold N)
-; gives.  #f with none read.
+; gives.  A fight beside judged lost is read for whatever the peril
+; sums to: seed 1, at 12 hit points with a mending kept back for the
+; scroll, found the peril under its hit points, read nothing and died
+; to a cave bat.  In a fight lost, with no stillness or blink held,
+; panic is read whatever the wounds: a turn it buys is more than none,
+; and seed 3 died to a glister with one in the pack.  #f with none read.
 (def %bl-unseen-lost?
   (fn (_ g s who)
     (def p (game-player g))
@@ -1381,10 +1441,12 @@
                                                    ((not (state-adjacent? (creature-r cr) (creature-c cr) (player-r p) (player-c p))) #f)
                                                    (#t (< 3 (%bl-wounds cr)))))
                         (%bl-seen g))))
+    (def lost? (not (null? (%bl-beside g (fn (_ cr) (if (%bl-hostile? cr) (%bl-losing? g cr) #f))))))
     (def scroll (match (unseen? (%bl-first-effect g (lit scroll) (list (lit hold) (lit teleport))))
-                       ((< (%bl-peril g) (player-hp p)) ())
+                       ((if lost? #f (< (%bl-peril g) (player-hp p))) ())
                        (slips ())
                        (scares? (%bl-first-effect g (lit scroll) (list (lit hold) (lit fear) (lit teleport))))
+                       (lost? (%bl-first-effect g (lit scroll) (list (lit hold) (lit teleport) (lit fear))))
                        (#t (%bl-first-effect g (lit scroll) (list (lit hold) (lit teleport))))))
     (def e (if (null? scroll) () (item-prop scroll (lit effect) ())))
     (if (null? scroll) #f
@@ -1571,10 +1633,13 @@
 ; Out of a lost fight down the stairs: on them, down; within MOST
 ; steps, a step to them.  Not with the goal in hand, which goes up, nor
 ; down a shaft found barred, slot 14 of S, which a try down marks as
-; %bl-descend! does.  #f with no such way.
+; %bl-descend! does.  Not while held off the stairs, as a step then goes
+; nowhere: seed 7, held fast by the undertow, stepped for the stairs 13
+; turns and struck it none.  #f with no such way.
 (def %bl-down-and-out!
   (fn (_ g s most)
     (match ((items-goal-held? g) #f) ((Vector ref 14 s) #f)
+           ((if (%bl-held? g) (not (%bl-at-stairs? g tile-down)) #f) #f)
            ((%bl-at-stairs? g tile-down)
              (do (%bl-key! g ">")
                  (when (List any? (fn (_ m) (Str8 includes? "shaft" m)) (game-messages g)) (Vector set! 14 #t s))
@@ -1710,7 +1775,7 @@
     (def struck? (< (player-hp p) (Vector ref 22 s)))
     (Vector set! 22 (player-hp p) s)
     (match
-      ((not (null? q)) (%bl-answer! g q))
+      ((not (null? q)) (do (%bl-counter-met! g s q) (%bl-answer! g q)))
       ; Searching in the dark, a foe roused or a blow from the unseen
       ; lights the lamp again.
       ((if (player-doused? p) (if (< 0 (player-lamp p)) (if struck? #t (%bl-roused? g s foe)) #f) #f)
@@ -1801,8 +1866,11 @@
       ; exploring level 12 at a third of its hit points with a glister
       ; in view, and walked into it.  One worth its fight is let be: at
       ; the rest mark alone, seed 3 walked from every gas mote on level
-      ; 2.  With the goal held the way out is up, not away.
-      ((match ((null? shown) #f) ((items-goal-held? g) #f)
+      ; 2.  With the goal held the way out is up, not away.  A slow one is
+      ; let be: outpaced, its blows are answered two for one, and seed 5
+      ; walked off from a rust golem it would have fought so, to meet it
+      ; blow for blow.
+      ((match ((null? shown) #f) ((items-goal-held? g) #f) ((%bl-slow? shown) #f)
               ((not (%bl-in-sight? g shown)) #f) ((%bl-shot-lately? g) #f)
               ((not (null? (%bl-beside g %bl-hostile?))) #f)
               ((not (%bl-under? p (%bl-mark g s who (lit rest)))) #f)
@@ -2036,7 +2104,11 @@
     (unless (null? to-shown) (Vector set! 19 shown s))
     (def to-foe (match ((not (null? to-shown)) to-shown) (wounded? ()) (#t (%bl-to-quarry g s who step-to))))
     (def errand (if (game-screens? g) (%bl-errand g) ()))
-    (def curious? (match ((items-goal-held? g) #f) ((%bl-explored? g s) #f) ((%bl-surveying? g) #t) ((Vector ref 25 s) #t) ((not (%bl-light-left? g s)) #f)
+    ; With no mending held and the next counter a level down, the level
+    ; is left unlooked-over: seeds 3 to 5 searched level 9 dry, met
+    ; glisters with none to drink, and died a level above the salvager.
+    (def restock? (if (%bl-counter-below? g s) (null? (%bl-in-pack g %bl-mending?)) #f))
+    (def curious? (match ((items-goal-held? g) #f) ((%bl-explored? g s) #f) (restock? #f) ((%bl-surveying? g) #t) ((Vector ref 25 s) #t) ((not (%bl-light-left? g s)) #f)
                          ((< 99 (%bl-at who (lit curiosity))) #t)
                          (#t (< (%bl-seen-pct g) (%bl-at who (lit curiosity))))))
     (match
@@ -2053,7 +2125,7 @@
       ((%bl-to-giver! g s) ())
       ((if curious? (%bl-to-frontier! g s) #f) ())
       (curious? (do (%bl-explored! g s) (unless (%bl-to-wall! g s who) (%bl-descend! g s who shown))))
-      ((if (items-goal-held? g) #f (%bl-to-wall! g s who)) ())
+      ((if (if (items-goal-held? g) #t restock?) #f (%bl-to-wall! g s who)) ())
       (#t (%bl-descend! g s who shown)))))
 
 ; --- a game ------------------------------------------------------------------
@@ -2195,7 +2267,7 @@
     (def g (%bl-start set play))
     (unless (str=? path "") (File write-all path ""))
     (def kept (Vector of (str=? path "")))
-    (def s (Vector of #f "" 0 0 #f () () 0 () () 0 0 () 0 #f () () () -1 () () () 0 () () #f () 0 0 -1 () 0 0 #f #f))
+    (def s (Vector of #f "" 0 0 #f () () 0 () () 0 0 () 0 #f () () () -1 () () () 0 () () #f () 0 0 -1 () 0 0 #f #f ()))
     (def arrivals (Vector of (list (%bl-arrival g))))
     (def loop
       (fn (self turn stalled)
@@ -2264,7 +2336,7 @@
           (unless (null? cr)
             (do (def hp (creature-prop cr (lit hp) (list 1 1)))
                 (creature-hp! cr (state-roll (game-rng g) (first hp) (List ref 1 hp)))))
-          (def s (Vector of #f "" 0 0 #f () () 0 () () 0 0 () 0 #f () () () -1 () () () 0 () () #f () 0 0 -1 () 0 0 #f #f))
+          (def s (Vector of #f "" 0 0 #f () () 0 () () 0 0 () 0 #f () () () -1 () () () 0 () () #f () 0 0 -1 () 0 0 #f #f ()))
           (def depth (game-depth g))
           (def start (game-turn g))
           (def loop
