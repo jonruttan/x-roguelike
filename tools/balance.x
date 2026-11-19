@@ -1721,8 +1721,13 @@
     (def q (game-ask g))
     ; The sleepers kept wary of, from this turn's view, before the foe is
     ; picked from what is beside: one come into view by a blink is not
-    ; struck awake for being missing from the last turn's.
+    ; struck awake for being missing from the last turn's.  One watched
+    ; stirring, seen to move or beside when the player was struck, is no
+    ; sleeper, whatever the look says: one wandering strikes as well, and
+    ; seed 8, struck to 9 by the Old Man and a glister wandering, walked
+    ; on past them and died.
     (Vector set! 0 (List filter (fn (_ cr) (match ((not (%bl-hostile? cr)) #f) ((%bl-stirring? s cr) #f)
+                                                  ((if (null? (%bl-watched s cr)) #f (List ref 1 (%bl-watched s cr))) #f)
                                                   ((same? cr (%bl-guardian g)) #f)
                                                   ((creature-trait? cr (lit regen)) #t)
                                                   (#t (not (%bl-worth? g who cr)))))
