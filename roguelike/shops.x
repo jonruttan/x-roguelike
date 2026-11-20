@@ -10,7 +10,8 @@
 ; goods on its counter, each an item of the world, or (buys CLASS ...),
 ; the classes its keeper takes.  One of the goods given as (CLASS NAME
 ; N) is kept N deep: once N are sold at this counter, on this level,
-; it is gone from it for the game.  A thing is worth its item's (price N),
+; it is gone from it until the set's goal is held, when the counter is
+; stocked N deep again for the way back.  A thing is worth its item's (price N),
 ; or else its class's N in the world's (worth (CLASS N) ...), in gold;
 ; a thing with neither is worth nothing and is not bought.  The shop's
 ; (rate SELL BUY), 100 and 50 unless given, is the percent of a thing's
@@ -32,7 +33,7 @@
   player-r player-c player-gold player-gold!
   item-make item-form item-count item-charges item-at! item-class-in?
   state-tell!)
-(import roguelike/items items-new items-name items-pickup! items-worn items-use-up!)
+(import roguelike/items items-new items-name items-pickup! items-worn items-use-up! items-goal-held?)
 
 (def %sh-letters (list "a" "b" "c" "d" "e" "f" "g" "h"))
 
@@ -58,10 +59,12 @@
 ; NAME on this level leaves among what the game placed; how many such
 ; sales there have been.  The level is its depth and its key: in a
 ; descent every level has the one key, and in a world of screens the
-; key names the screen.
+; key names the screen.  A sale with the goal held is marked apart, so
+; the way back has its own stock.
 (def %sh-mark
   (fn (_ g name ref k)
-    (Str8 append "sold " name " " (Str8 str (game-depth g)) " " (game-level-key g) " " (Str8 str (first ref)) " " (List ref 1 ref) " " (Str8 str k))))
+    (Str8 append "sold " name " " (Str8 str (game-depth g)) " " (game-level-key g) (if (items-goal-held? g) " back " " ")
+      (Str8 str (first ref)) " " (List ref 1 ref) " " (Str8 str k))))
 (def %sh-sold
   (fn (self g name ref k) (if (game-placed? g (%sh-mark g name ref k)) (self g name ref (+ k 1)) k)))
 ; Whether REF is still on the counter: no count, or fewer sold.

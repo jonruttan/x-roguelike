@@ -1,0 +1,55 @@
+; sounds.xon -- the classic set heard: the vault's room, its air and the
+; cries of what lives in it.  The waves, footsteps, blows, cues, heart
+; and hunger are the Delve's, borrowed by (sounds-from "delve") and
+; found after this set's own (docs/sound.md).
+
+(sounds-from "delve")
+
+; --- the vault's room ----------------------------------------------------------
+
+; Cut stone under water: longer and wetter echoes than the mine's.
+(music-gain 72)
+(music-echo 520 46 30)
+(music-echo 790 34 18)
+
+; --- cries ---------------------------------------------------------------------
+
+(sound "cry-flutter" (vary 160) (gain 22)
+  (voice (wave noise) (hz 1) (cut 30) (env (0 0) (8 30) (30 6) (50 26) (80 4) (110 22) (160 0)))
+  (voice (wave glass) (note "B6") (env (0 0) (4 6) (120 0))))
+
+(sound "cry-caw" (vary 120) (gain 30)
+  (voice (wave reed) (note "A5") (slide "E5") (cut 45) (env (0 0) (10 40) (140 20) (220 0)))
+  (voice (wave noise) (hz 1) (cut 25) (gain 40) (env (0 0) (10 30) (200 0))))
+
+(sound "cry-growl" (vary 90) (gain 40)
+  (voice (wave saw) (note "A1") (slide "G1") (cut 8) (env (0 0) (60 40) (500 30) (800 0)))
+  (voice (wave noise) (hz 1) (cut 6) (gain 50) (env (0 0) (60 30) (700 0))))
+
+(sound "cry-hiss" (vary 60) (gain 38) (echo 380 40 35)
+  (voice (wave noise) (hz 1) (cut 55) (env (0 0) (120 45) (900 30) (1500 0)))
+  (voice (wave saw) (note "D2") (slide "A1") (cut 10) (env (0 0) (200 35) (1400 0))))
+
+(cry-falloff 7)
+(cry "default" "cry-stir")
+(cry "cave rat" "cry-squeal")
+(cry "glow moth" "cry-flutter")
+(cry "pale grub" "cry-wet")
+(cry "scuttler" "cry-chitter")
+(cry "mire leech" "cry-wet")
+(cry "ash hound" "cry-growl")
+(cry "magpie" "cry-caw")
+(cry "hollow man" "cry-moan")
+(cry "stone sentinel" "cry-grind")
+(cry "cold wisp" "cry-whine")
+(cry "brute" "cry-growl")
+(cry "marsh hulk" "cry-croak")
+(cry "tunnel worm" "cry-grind")
+(cry "grave shade" "cry-moan")
+(cry "night stalker" "cry-mutter")
+(cry "ember drake" "cry-hiss")
+(cry "vault warden" "cry-roar")
+
+; --- the vault's air -----------------------------------------------------------
+
+(ambience "default" (bed "vault-air") (random "drip" 5000 50) (random "trickle" 11000 40) (random "settle" 18000 40))

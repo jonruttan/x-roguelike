@@ -81,13 +81,16 @@
 
 ; --- the set's data ------------------------------------------------------------
 
-; The forms G's sounds are found in: the set stood in, then the set the
-; game began on and each of its regions, so a place's own sounds and
-; songs come first and every other is the world's.
-(def %sd-forms
-  (fn (_ g)
-    (def top (game-top-set g))
-    (List append (game-set g) top (List flat-map rest (data-all top (lit region))))))
+; The forms of the world TOP is heard in: TOP, each of its regions, then
+; each set it borrows sounds from by (sounds-from NAME).
+(def %sd-heard
+  (fn (_ top)
+    (List append top (List flat-map rest (data-all top (lit region))) (List flat-map rest (data-all top (lit sounds-of))))))
+
+; The forms G's sounds are found in: the set stood in, then the world of
+; the set the game began on, so a place's own sounds and songs come
+; first and every other is the world's.
+(def %sd-forms (fn (_ g) (List append (game-set g) (%sd-heard (game-top-set g)))))
 
 ; The forms kept on S made again from G once the set stood in changes.
 (def %sd-world!
@@ -722,7 +725,7 @@
       (if (null? (data-all set (lit sound))) ()
         (do (unless (Mixer jit!) (Err raise (lit state) "no compiled mixer" ()))
             (List for-each (fn (_ w) (Mixer wave! (first w) (rest w)))
-              (List append (data-all top (lit wave)) (List flat-map (fn (_ r) (data-all (rest r) (lit wave))) (data-all top (lit region)))))
+              (data-all (%sd-heard top) (lit wave)))
             (def m (Mixer make %sd-rate %sd-block))
             (Mixer gain! m (data-get set (lit music-gain) 80))
             (List for-each (fn (_ e) (Mixer echo! m (List ref 0 e) (List ref 1 e) (List ref 2 e))) (data-all top (lit music-echo)))
