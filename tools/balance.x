@@ -930,7 +930,9 @@
            (#t full))))
 
 ; A step out of CR's reach, one beside no other hostile first, then the
-; furthest, then one out of the line of every hostile in view that
+; furthest from the nearest hostile in view, as seed 1, backing off a pit
+; ferret, stepped toward the fireman three cells off; then one out of
+; the line of every hostile in view that
 ; shoots or breathes; or #f when none gains, or when held, as a step
 ; then goes nowhere and the turn is lost.  Backing off beside another
 ; is struck by it, and down a shooter's line is shot all the way.
@@ -952,7 +954,8 @@
            (match ((< d 2) (* 2 d))
                   (#t (+ (if (List any? (fn (_ x) (state-adjacent? (creature-r x) (creature-c x) r c)) others) 0 100)
                          (* 2 d) (if (List any? (fn (_ x) (%bl-in-line? x r c)) shooters) 0 1)))))
-         (state-dist r c (creature-r cr) (creature-c cr)))))
+         (List fold (fn (_ d x) ((fn (_ e) (if (< e d) e d)) (state-dist r c (creature-r x) (creature-c x))))
+           (state-dist r c (creature-r cr) (creature-c cr)) others))))
     (def best
       (List fold
         (fn (_ best d)
@@ -1676,12 +1679,15 @@
 ; Out of a lost fight down the stairs: on them, down; within MOST
 ; steps, a step to them.  Not with the goal in hand, which goes up, nor
 ; down a shaft found barred, slot 14 of S, which a try down marks as
-; %bl-descend! does.  Not while held off the stairs, as a step then goes
+; %bl-descend! does, nor one whose guardian is in view, which bars it:
+; seed 1, at 13 of 38 and backing off pit ferrets, walked for level 3's
+; stairs into the fireman.  Not while held off the stairs, as a step then goes
 ; nowhere: seed 7, held fast by the undertow, stepped for the stairs 13
 ; turns and struck it none.  #f with no such way.
 (def %bl-down-and-out!
   (fn (_ g s most)
     (match ((items-goal-held? g) #f) ((Vector ref 14 s) #f)
+           ((not (null? (%bl-guardian g))) #f)
            ((if (%bl-held? g) (not (%bl-at-stairs? g tile-down)) #f) #f)
            ((%bl-at-stairs? g tile-down)
              (do (%bl-key! g ">")
@@ -1868,11 +1874,14 @@
       ; whatever the hit points, as nothing follows a player off a
       ; level.  Further, each step from a foe beside is a blow given; but
       ; one backing off anyway backs off toward stairs near, a step that
-      ; costs no more and ends the chase.
+      ; costs no more and ends the chase.  Under the RETREAT mark, only a
+      ; fight not worth it is backed off: one that is follows, and the
+      ; steps lead it on, not away; seed 1, at 12 of 38, backed off a pit
+      ; ferret across level 3 into the fireman.
       ((if (null? foe) #f (if (%bl-losing? g foe) (%bl-down-and-out! g s 1) #f)) ())
       ((not (null? foe))
         (unless (if (if (< 0 (%bl-at who (lit retreat))) (%bl-free? g foe) #f)
-                  (if (if (%bl-losing? g foe) #t (%bl-under? p (%bl-at who (lit retreat))))
+                  (if (match ((%bl-losing? g foe) #t) ((not (%bl-under? p (%bl-at who (lit retreat)))) #f) (#t (not (%bl-worth? g who foe))))
                     (if (if (%bl-down-and-out! g s 12) #t (%bl-away! g foe)) (do (Vector set! 34 #t s) #t) #f) #f) #f)
           (%bl-toward-creature! g s foe)))
       ; Low, with no mending to drink and a hostile in view: first out
@@ -2142,7 +2151,12 @@
                                              (#t (< (state-dist (creature-r cr) (creature-c cr) (player-r p) (player-c p)) 3))))
                   (%bl-seen g)))
     (def wounded? (%bl-under? p (%bl-mark g s who (lit ready))))
+    ; With the goal held, an item is gone to only as far as GREED, as
+    ; every turn on the level is the guardian's: seed 8, the Lodestar
+    ; won and its pack full, walked level 12 after items for three
+    ; hundred turns and met the Old Man on the way up.
     (def reach (match (wounded? 0)
+                      ((items-goal-held? g) (if close? 0 (%bl-at who (lit greed))))
                       ((null? shown) (if close? 0 9999)) (close? 0)
                       ((if (eq? (creature-state shown) (lit awake)) (not (%bl-worth? g who shown)) #f) 0)
                       ((not (null? (%bl-kept g s (lit item) wanted? 9999))) 9999) (#t (%bl-at who (lit greed)))))
