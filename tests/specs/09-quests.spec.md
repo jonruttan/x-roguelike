@@ -194,6 +194,30 @@ row: the --More-- is answered before the next step down.
 ---
     (("mending, 30 gold" "oil flask, 20 gold" "miner's tin, 15 gold" "blink, 40 gold" "miner's blade, 120 gold" "Sell something") ("oil flask, 20 gold" "miner's tin, 15 gold" "blink, 40 gold" "miner's blade, 120 gold" "Sell something") ("oil flask, 20 gold" "miner's tin, 15 gold" "blink, 40 gold" "miner's blade, 120 gold" "Sell something"))
 
+### with the Lodestar held he is stocked again for the way back: the coat and four mending once more, and sold, gone again
+
+```roguelike
+(def kept (game-pack g))
+(game-key! g "z")
+(def stone (item-make (list 'goal "the Lodestar") 1 0))
+(item-letter! stone "z")
+(game-pack! g (pair stone kept))
+(game-key! g (spec-beside! g man))
+(def back (wares))
+(player-gold! p 500)
+(game-key! g "f")
+(game-key! g "a")
+(game-key! g "a")
+(game-key! g "a")
+(game-key! g "a")
+(def bought (wares))
+(game-key! g "z")
+(game-pack! g kept)
+(write (list back bought))
+```
+---
+    (("mending, 30 gold" "oil flask, 20 gold" "miner's tin, 15 gold" "blink, 40 gold" "miner's blade, 120 gold" "scale coat, 150 gold" "Sell something") ("oil flask, 20 gold" "miner's tin, 15 gold" "blink, 40 gold" "miner's blade, 120 gold" "Sell something"))
+
 ### his stock on level 7 is his own, untouched by what he sold on level 4
 
 ```roguelike
