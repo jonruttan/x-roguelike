@@ -426,8 +426,10 @@
       (%bl-seen g))))
 ; The hostile beside the player to strike, or nil: one that summons
 ; first, as what it calls keeps coming while it stands; then the one
-; that looks most hurt, the soonest down.  A sleeper best left, one in
-; %bl-wary, is no foe: it is passed, not woken.
+; whose felling takes the most hurt a turn off the player for each turn
+; it takes: seed 6, on level 11 with the Lodestar, struck at a rust
+; golem, most hurt, while a glister beside did the harm.  A sleeper best
+; left, one in %bl-wary, is no foe: it is passed, not woken.
 (def %bl-foe
   (fn (_ g)
     (def p (game-player g))
@@ -435,8 +437,12 @@
                                                ((List any? (fn (_ x) (same? x cr)) (Vector ref 0 %bl-wary)) #f)
                                                (#t (state-adjacent? (creature-r cr) (creature-c cr) (player-r p) (player-c p)))))
                   (%bl-seen g)))
-    (def rank (fn (_ cr) (+ (if (creature-trait? cr (lit summon)) 0 10) (%bl-wounds cr))))
-    (List fold (fn (_ best cr) (if (null? best) cr (if (< (rank cr) (rank best)) cr best))) () beside)))
+    (def summons? (fn (_ cr) (creature-trait? cr (lit summon))))
+    (def better?
+      (fn (_ a b)
+        (match ((summons? a) (not (summons? b))) ((summons? b) #f)
+               (#t (< (* (%bl-turns g a) (%bl-hurt g b)) (* (%bl-turns g b) (%bl-hurt g a)))))))
+    (List fold (fn (_ best cr) (if (null? best) cr (if (better? cr best) cr best))) () beside)))
 ; The nearest hostile in view that does not keep its place, or nil.
 (def %bl-shown-hostile
   (fn (_ g)
@@ -843,14 +849,17 @@
 ; place to search from, or a step toward the nearest within SEARCH
 ; steps, a pocket's before any other; none on a level a survey has
 ; shown, which opens them all, nor once the way down has been seen
-; and not found barred: a door hidden then hides nothing the game
-; needs, and the turns spent tapping walls are lamp oil.  A guardian
+; and not found barred, unless BOXED, with no way on at all: a door
+; hidden then hides nothing the game needs, and the turns spent tapping
+; walls are lamp oil.  Seed 6 saw it, blinked into a pocket of level 6
+; and waited there.  A guardian
 ; never seen that bars the shaft may be behind one.  With no light left for the
 ; level the lamp is put out first and the walls searched in the dark,
 ; a search beside needing none; it is lit again when there is light to
 ; spare or nothing left to search.  #f with nothing to do.
-(def %bl-to-wall!
-  (fn (_ g s who)
+(def %bl-to-wall! (fn (_ g s who) (%bl-to-any-wall! g s who #f)))
+(def %bl-to-any-wall!
+  (fn (_ g s who boxed?)
     (def m (game-map g))
     (def p (game-player g))
     (def most (%bl-at who (lit search)))
@@ -863,7 +872,7 @@
     (def lit? (if (str=? (%bl-env "BALANCE_DARK_SEARCH" "") "") (%bl-light-left? g s) #t))
     (def down (map-down m))
     (def a (match ((< most 1) ()) ((items-goal-held? g) ()) ((Vector ref 33 s) ())
-                  ((match ((Vector ref 14 s) #f) ((null? down) #f) (#t (map-seen? m (first down) (rest down)))) ())
+                  ((match (boxed? #f) ((Vector ref 14 s) #f) ((null? down) #f) (#t (map-seen? m (first down) (rest down)))) ())
                   (#t ((fn (_ a) (if (null? a) (aim (lit wall) #f) a)) (aim (lit pocket) #t)))))
     (def out? (player-doused? p))
     (when (if %bl-tracing (not lit?) #f)
@@ -1019,24 +1028,47 @@
                ((null? (%bl-aim g x)) sum)
                (#t (+ sum (shot x)))))
       0 (%bl-seen g))))
-; Whether CR's next blow at its hardest, with what else in view reaches
-; the player, ends HP: two blows from one that is fast.
+; The hardest X can do the player in a turn: beside, its blow, two from
+; one that is fast, or its shot if harder; away, with the player in its
+; line, its shot; else nothing.
+(def %bl-hardest
+  (fn (_ g x)
+    (def p (game-player g))
+    (def ranged? (if (creature-trait? x (lit ranged)) #t (creature-trait? x (lit breath))))
+    (def shot (if (not ranged?) 0
+                (List ref 1 (if (creature-trait? x (lit breath)) (creature-prop x (lit bolt) (list 2 8)) (creature-prop x (lit ranged) (list 1 4))))))
+    (def blow (* (if (eq? (%bl-speed x) (lit fast)) 2 1) (List ref 1 (creature-prop x (lit attack) (list 1 2)))))
+    (match ((< 0 (creature-condition x (lit held))) 0)
+           ((state-adjacent? (creature-r x) (creature-c x) (player-r p) (player-c p)) (if (< blow shot) shot blow))
+           ((not ranged?) 0)
+           ((not (%bl-in-line? x (player-r p) (player-c p))) 0)
+           ((null? (%bl-aim g x)) 0)
+           (#t shot))))
+; The hardest of every hostile in view but CR, together.
+(def %bl-rest-hardest
+  (fn (_ g cr)
+    (List fold (fn (_ sum x) (match ((same? x cr) sum) ((not (%bl-hostile? x)) sum) (#t (+ sum (%bl-hardest g x)))))
+      0 (%bl-seen g))))
+; Whether the next turn at its hardest ends HP: CR's blow, two from one
+; that is fast, and the hardest of every other hostile in view.
 (def %bl-blow-ends?
   (fn (_ g cr hp)
     (not (< (+ (* (if (eq? (%bl-speed cr) (lit fast)) 2 1) (List ref 1 (creature-prop cr (lit attack) (list 1 2))))
-               (%bl-volley g cr))
+               (%bl-rest-hardest g cr))
             hp))))
 ; Whether the fight with CR is likely lost: it costs all the player has,
 ; with what else in view reaches the player while it lasts; or, with it
 ; not ended in a swing, its next blow at its hardest ends the player,
 ; two blows from one that is fast: seed 1, at 21 hit points, met a
-; cave bat's two blows of up to 7 a turn and drank too late.
+; cave bat's two blows of up to 7 a turn and drank too late; ended in a
+; swing, the hardest of the rest ends the player: seed 6, among cave
+; bats and the Old Man, fought on at 9 with a mending kept.
 (def %bl-losing?
   (fn (_ g cr)
     (def hp (player-hp (game-player g)))
     (def turns (%bl-turns g cr))
     (match ((not (< (* turns (+ (%bl-hurt g cr) (%bl-volley g cr))) hp)) #t)
-           ((not (< 1 turns)) #f)
+           ((not (< 1 turns)) (not (< (%bl-rest-hardest g cr) hp)))
            (#t (%bl-blow-ends? g cr hp)))))
 ; Whether WHO would start the fight with CR: it costs no more than
 ; COURAGE % of what the player has.
@@ -1074,14 +1106,17 @@
            (#t (< (* (%bl-turns g foe) (+ (%bl-hurt g foe) (%bl-volley g foe)))
                   (+ hp (List ref 1 (item-prop potion (lit effect) (list (lit heal) 1 1)))))))))
 ; Whether a step away from CR gains a turn: not when the player is slowed
-; or held, nor from one that is fast or shoots, as it then strikes for
-; each step.
+; or held, nor from one that is fast or shoots, or with one such beside,
+; as it then strikes for each step: seed 6, backing off the Old Man on
+; level 12 with his cave bats beside, took their blows a step at a time.
 (def %bl-free?
   (fn (_ g cr)
     (def p (game-player g))
     (match ((< 0 (player-condition p (lit slowed))) #f)
            ((< 0 (player-condition p (lit held))) #f)
            ((creature-trait? cr (lit ranged)) #f)
+           ((not (null? (%bl-beside g (fn (_ x) (if (%bl-hostile? x) (if (creature-trait? x (lit fast)) #t (creature-trait? x (lit ranged))) #f)))))
+            #f)
            (#t (not (creature-trait? cr (lit fast)))))))
 
 ; --- the slow, outpaced ------------------------------------------------------
@@ -1380,7 +1415,11 @@
 ; lethargy, after which it is outpaced, or, fast, held to a turn a
 ; turn (creatures.x); never a banishing on the
 ; band's guardian, which bars the shaft from wherever it is sent, out
-; of sight and lost; with none of those, one
+; of sight and lost, unless the goal is held and the way out is up:
+; seed 6, the Lodestar won, met the Old Man between it and the stairs
+; up with a banishing in the pack, spent on L12 already, two charges on
+; glow-midges; so else only on one whose fight is likely lost; with none
+; of those, one
 ; not yet tried, to learn what it does.  One that sputters is empty,
 ; and is not zapped again.  What it slowed is remembered for as long as
 ; the wand's (effect slow N) gives.  #f with none zapped.
@@ -1388,11 +1427,14 @@
   (fn (_ g s who cr)
     (def way (if (null? cr) () (if (%bl-dear? g s who cr) (%bl-aim g cr) ())))
     (def slows? (match ((null? cr) #f) ((%bl-slowed? cr) #f) (#t (not (%bl-slow? cr)))))
-    (def guardian? ((fn (_ gd) (if (null? gd) #f (same? gd cr))) (%bl-guardian g)))
+    (def guardian? (if (items-goal-held? g) #f ((fn (_ gd) (if (null? gd) #f (same? gd cr))) (%bl-guardian g))))
+    (def banish? (match ((null? cr) #f) (guardian? #f)
+                        ((if (items-goal-held? g) (same? cr (%bl-guardian g)) #f) #t)
+                        (#t (%bl-losing? g cr))))
     (def tried (if (null? way) ()
                  (%bl-first-effect g (lit wand)
                    (List append (if slows? (list (lit bolt) (lit drain) (lit slow)) (list (lit bolt) (lit drain)))
-                                (if guardian? () (list (lit teleport-other)))))))
+                                (if banish? (list (lit teleport-other)) ())))))
     (def untried (if (null? way) ()
                    (%bl-in-pack g (fn (_ it) (match ((not (eq? (item-class it) (lit wand))) #f) ((items-known? g it) #f)
                                                     (#t (not (List any? (fn (_ x) (same? x it)) (Vector ref 0 %bl-empty)))))))))
@@ -1412,9 +1454,10 @@
 ; of it: stillness, panic, or a blink away; none while the bot slips by
 ; unstruck, as walking off costs nothing then and the scroll is kept for
 ; when it is struck.  A blow landed by something
-; unseen, with no sight of it, counts as lost with a foe in view beside
-; as well, with blows unseen from two cells or more, or once WHO is
-; under its retreat: its cost cannot be weighed,
+; unseen, with no sight of it, counts as lost with blows unseen from two
+; cells or more, or once WHO is under its retreat, a foe beside or not:
+; its cost cannot be weighed; seed 6 blinked away at 53 of 55 from one
+; unseen blow and a silt crayfish, into worse,
 ; and alone above that mark it is struck back at.  Panic scares only what is in view, and one scared with more
 ; than half its hit points turns again at once (creatures.x), so it is
 ; read only with every hostile beside looking badly hurt.  What
@@ -1430,7 +1473,7 @@
     (def p (game-player g))
     (match ((not (List any? (fn (_ b) (not (eq? (List ref 5 b) (lit miss)))) (%bl-unseen-blows g s))) #f)
            ((< 0 (player-condition p (lit seeing))) #f)
-           ((not (null? (%bl-beside g %bl-hostile?))) #t)
+           ((not (null? (%bl-beside g %bl-hostile?))) (%bl-under? p (%bl-at who (lit retreat))))
            ((< 1 (%bl-unseen-cells g s)) #t)
            (#t (%bl-under? p (%bl-at who (lit retreat)))))))
 (def %bl-flee!
@@ -1687,6 +1730,11 @@
         (do (%bl-why! "hold") (%bl-key! g "s")))
       ((if (null? last) #f (%bl-walk! g s (lit guardian) (fn (_ r c) (if (= r (List ref 1 last)) (= c (List ref 2 last)) #f)))) ())
       ((if (Vector ref 14 s) (%bl-to-frontier! g s) #f) ())
+      ; The shaft barred by a guardian out of sight: the walls it may be
+      ; behind are searched, whatever else kept the bot off them: seed 5,
+      ; with no mending and the salvager below, stood on level 3's stairs
+      ; for good.
+      ((if (Vector ref 14 s) (%bl-to-any-wall! g s who #t) #f) ())
       ((Vector ref 14 s) (do (Vector set! 14 #f s) (%bl-unstick! g s)))
       ((%bl-at-stairs? g t)
         (do (%bl-key! g (if up? "<" ">"))
@@ -1705,6 +1753,10 @@
       ((if (null? shown) #f (if (%bl-wary? shown) #f (%bl-toward-creature! g s shown))) ())
       ((match ((null? shown) #f) ((not (creature-trait? shown (lit ranged))) #f) (#t (%bl-out-of-line! g shown))) ())
       ((%bl-clear-the-way! g s) ())
+      ; With no way on, the walls are searched, whatever else kept the
+      ; bot off them: seed 6, blinked into a pocket of level 6 with no
+      ; mending and the salvager below, waited there for good.
+      ((%bl-to-any-wall! g s who #t) ())
       (#t (%bl-unstick! g s)))))
 
 ; Whether to pour the flask OIL into the lamp under the set's (lamp FULL
@@ -1719,6 +1771,11 @@
   (fn (_ g s who)
     (def p (game-player g))
     (def q (game-ask g))
+    ; Where the guardian was last seen, kept whatever the bot was about:
+    ; seed 5 saw the fireman on an errand for items, found the shaft
+    ; barred, and stood on the stairs with nowhere to look.
+    ((fn (_ gd) (unless (null? gd) (Vector set! 0 (list (game-depth g) (creature-r gd) (creature-c gd)) %bl-hunted)))
+     (%bl-guardian g))
     ; The sleepers kept wary of, from this turn's view, before the foe is
     ; picked from what is beside: one come into view by a blink is not
     ; struck awake for being missing from the last turn's.  One watched
