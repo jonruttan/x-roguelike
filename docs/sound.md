@@ -191,6 +191,12 @@ and the town (`data/kettle`, `data/town`) have their own music and air,
 the town its counter's coins, and the blows, cues and cries of the
 Delve's set.
 
+`(sounds-from "SET")` borrows the set SET beside it for its sounds alone,
+looked for after the set's own world: SET's forms are heard, but SET is
+no place of the world. The Sunken Vault (`data/classic`) has its own
+song, fight song, air, echoes and cries, and borrows the Delve's waves,
+footsteps, blows, cues, heart and hunger.
+
 `(fight "PLACE" "SONG")` is the place's fight song: a blow struck either
 way brings it in, and it plays until `(fight-turns N)` turns pass without
 one, or until a turn ends with no creature awake and in sight.

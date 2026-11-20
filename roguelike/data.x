@@ -109,7 +109,15 @@
 (def data-load
   (fn (_ dir)
     (def forms (%dt-load dir))
-    (List append forms (%dt-regions dir forms (list (data-get forms (lit set) ""))))))
+    (List append forms (%dt-regions dir forms (list (data-get forms (lit set) ""))) (%dt-heard dir forms))))
+
+; For each (sounds-from NAME) among FORMS, the set NAME beside DIR as one
+; (sounds-of NAME . FORMS): the sounds a set borrows, never a place in
+; its world (see roguelike/sound.x).
+(def %dt-heard
+  (fn (_ dir forms)
+    (List map (fn (_ args) (pair (lit sounds-of) (pair (first args) (%dt-load (Str8 append dir "/../" (first args))))))
+      (data-all forms (lit sounds-from)))))
 
 ; The forms of the region NAME of SET, or nil.
 (def data-region

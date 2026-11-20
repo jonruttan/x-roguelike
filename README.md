@@ -361,7 +361,9 @@ its pithead going down into the Delve.  `(start NAME)` begins the game
 through the door NAME on the hub: a game of `kettle` begins on
 Kettle's square, and the goal brought home there is the win.  A
 message a region does not say is said in the first set's words, and
-the score is always the first set's.
+the score is always the first set's.  `(sounds-from NAME)` borrows the
+set NAME for its sounds alone, never as a place: `classic` is heard
+with the Delve's blows and cues under its own songs and cries.
 
 A world of screens may name its screens: `(screen NAME (X Y) .
 PROPS)` is screen X Y, its PROPS in front of its band's there, its
