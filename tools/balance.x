@@ -996,6 +996,13 @@
     (def slow? (if (creature-trait? cr (lit slow)) #t (%bl-slowed? cr)))
     (def fast? (creature-trait? cr (lit fast)))
     (match ((if slow? fast? #f) ()) (slow? (lit slow)) (fast? (lit fast)) (#t ()))))
+; How many turns CR takes to the player's one, at its most: two when it
+; is fast, and twice that with the player slowed.  Slowed by a chill on
+; level 7, seed 5 weighed a cave bat's turn as one and struck at 26 hit
+; points; the bats' doubled turns took it to nothing in two.
+(def %bl-goes
+  (fn (_ g cr)
+    (* (if (eq? (%bl-speed cr) (lit fast)) 2 1) (if (< 0 (player-condition (game-player g) (lit slowed))) 2 1))))
 (def %bl-turns
   (fn (_ g cr)
     (def span (creature-prop cr (lit hp) (list 1 6)))
@@ -1040,13 +1047,13 @@
     (def ranged? (if (creature-trait? x (lit ranged)) #t (creature-trait? x (lit breath))))
     (def shot (if (not ranged?) 0
                 (List ref 1 (if (creature-trait? x (lit breath)) (creature-prop x (lit bolt) (list 2 8)) (creature-prop x (lit ranged) (list 1 4))))))
-    (def blow (* (if (eq? (%bl-speed x) (lit fast)) 2 1) (List ref 1 (creature-prop x (lit attack) (list 1 2)))))
+    (def blow (* (%bl-goes g x) (List ref 1 (creature-prop x (lit attack) (list 1 2)))))
     (match ((< 0 (creature-condition x (lit held))) 0)
-           ((state-adjacent? (creature-r x) (creature-c x) (player-r p) (player-c p)) (if (< blow shot) shot blow))
+           ((state-adjacent? (creature-r x) (creature-c x) (player-r p) (player-c p)) (if (< blow (* (%bl-goes g x) shot)) (* (%bl-goes g x) shot) blow))
            ((not ranged?) 0)
            ((not (%bl-in-line? x (player-r p) (player-c p))) 0)
            ((null? (%bl-aim g x)) 0)
-           (#t shot))))
+           (#t (* (%bl-goes g x) shot)))))
 ; The hardest of every hostile in view but CR, together.
 (def %bl-rest-hardest
   (fn (_ g cr)
@@ -1056,7 +1063,7 @@
 ; that is fast, and the hardest of every other hostile in view.
 (def %bl-blow-ends?
   (fn (_ g cr hp)
-    (not (< (+ (* (if (eq? (%bl-speed cr) (lit fast)) 2 1) (List ref 1 (creature-prop cr (lit attack) (list 1 2))))
+    (not (< (+ (* (%bl-goes g cr) (List ref 1 (creature-prop cr (lit attack) (list 1 2))))
                (%bl-rest-hardest g cr))
             hp))))
 ; Whether the fight with CR is likely lost: it costs all the player has,
@@ -1563,8 +1570,10 @@
 
 ; With the pack within two of full, a thing of no use dropped and left
 ; for good: a weapon or armour that is neither the best held nor in
-; use, or a potion that poisons.  A full pack takes up nothing more,
-; the goal with the rest.  #f with nothing dropped.
+; use, a potion that poisons, or a page, which only tells.  A full pack
+; takes up nothing more, the goal with the rest: seed 5 left a mending
+; on the salvager's floor for a pack of pages, and died on the climb
+; with none.  #f with nothing dropped.
 (def %bl-shed!
   (fn (_ g s)
     (def weapon (%bl-best g (lit weapon) %bl-weapon-worth))
@@ -1579,6 +1588,7 @@
           (match ((eq? (item-class it) (lit weapon)) (spare? it weapon))
                  ((eq? (item-class it) (lit armour)) (spare? it armour))
                  ((eq? (item-class it) (lit potion)) (if (null? e) #f (eq? (first e) (lit poison))))
+                 ((eq? (item-class it) (lit page)) #t)
                  (#t #f)))))
     (match ((< (List length (game-pack g)) 24) #f) ((null? junk) #f)
            (#t (do (Vector set! 8 (pair junk (Vector ref 8 s)) s) (%bl-use! g "d" junk) #t)))))
