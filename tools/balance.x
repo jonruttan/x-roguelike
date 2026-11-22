@@ -282,11 +282,15 @@
     (Vector set! 0 (List append here kept) %bl-sat)))
 
 ; The cells a walk does not cross, a vector by cell: #t where a creature
-; stands and where a trap has been found, which a walk may still end
-; on, and `shun` beside a sitter, which it may not: one in view, or one
-; remembered where it was seen (%bl-sat).
+; stands, where one of the people was last seen with the cell out of
+; sight (slot 23 of S), and where a trap has been found, which a walk
+; may still end on, and `shun` beside a sitter, which it may not: one
+; in view, or one remembered where it was seen (%bl-sat).  Seed 8, its
+; lamp out on level 5, saw a surveyor in a passage only from beside it:
+; a step back, the way through looked clear, and it went to and fro
+; between the two cells for 9,000 turns.
 (def %bl-barred
-  (fn (_ g cols n)
+  (fn (_ g s cols n)
     (def v (Vector make n #f))
     (def m (game-map g))
     (def shun!
@@ -301,6 +305,9 @@
       (do (List for-each (fn (_ cr) (when (if (%bl-sitter? g cr) #t (%bl-dodged? g cr)) (shun! (pair (creature-r cr) (creature-c cr))))) (%bl-seen g))
           (List for-each (fn (_ at) (shun! at) (Vector set! (+ (* (first at) cols) (rest at)) #t v)) (Vector ref 0 %bl-sat))))
     (List for-each (fn (_ cr) (Vector set! (+ (* (creature-r cr) cols) (creature-c cr)) #t v)) (%bl-seen g))
+    (List for-each (fn (_ e) (when (if (creature-trait? (first e) (lit talks)) (not (state-in-sight? g (first (rest (rest e))) (rest (rest (rest e))))) #f)
+                               (Vector set! (+ (* (first (rest (rest e))) cols) (rest (rest (rest e)))) #t v)))
+      (Vector ref 23 s))
     (List for-each (fn (_ t) (when (if (< 1 (Vector ref 0 %bl-bold)) #f (trap-found? t)) (Vector set! (+ (* (trap-r t) cols) (trap-c t)) #t v))) (game-traps g))
     v))
 
@@ -311,13 +318,13 @@
 ; was reached from, -1 for one that cannot be stood on, so a cell is
 ; weighed once however many it is beside.
 (def %bl-search
-  (fn (_ g goal? most)
+  (fn (_ g s goal? most)
     (def m (game-map g))
     (def p (game-player g))
     (def cols (map-cols m))
     (def n (* (map-rows m) cols))
     (def from (Vector make n ()))
-    (def barred (%bl-barred g cols n))
+    (def barred (%bl-barred g s cols n))
     (def start (+ (* (player-r p) cols) (player-c p)))
     (def spread
       (fn (self ds r c i t back)
@@ -418,7 +425,7 @@
     (def standing (%bl-standing g))
     (def kept (%bl-kept g s tag goal? most))
     (def none? (if (null? kept) (%bl-no-way? s tag most standing) #f))
-    (def path (match (none? ()) ((null? kept) (do (Heap collect) (%bl-search g goal? most))) (#t kept)))
+    (def path (match (none? ()) ((null? kept) (do (Heap collect) (%bl-search g s goal? most))) (#t kept)))
     (when %bl-tracing
       (Vector set! 0 (pair (Str8 append "{" (symbol->str tag) (match ((not (null? kept)) " kept") ((null? path) " none") (#t " found")) "}")
                            (Vector ref 0 %bl-pressed))
@@ -1597,12 +1604,24 @@
                (#t (if (< (%bl-ring-worth g it) (%bl-ring-worth g best)) it best))))
       () (game-pack g))))
 
+; Whether a survey is read on a level not yet explored: with the goal
+; held, on every level of the climb, each made afresh and roused, where
+; the stairs up are the way out and a walk to find them is a walk past
+; what is awake; before it, only on the goal's own level, where the goal
+; is to be found.  Read on the way down, they are gone by the
+; climb: seed 3 read five, held the Lodestar on level 12, and died on
+; level 8 on the way up.
+(def %bl-survey-now?
+  (fn (_ g)
+    (if (items-goal-held? g) #t
+      ((fn (_ goal) (if (< (List length goal) 3) #f (= (game-depth g) (List ref 2 goal))))
+        (game-param g (lit goal) ())))))
 ; What is used as soon as it is held, with no hostile beside: a ring on a
 ; free hand, a worn ring taken off for a better one with no foe in view,
 ; vigour drunk, an upgrade read; each lasts the game, and a turn spent on
 ; it is one given to what is beside: seed 8 read an upgrade at 4 hit
 ; points with the Old Man on it.  A survey read on a level not yet
-; explored.  And in a
+; explored, when %bl-survey-now?.  And in a
 ; fight: clear sight with something unseen beside the player, quickness
 ; when the fight would cost half of what they have.  #f with nothing
 ; used.
@@ -1621,7 +1640,7 @@
           (pair "R" least))
         ((if beside? #f (not (null? (%bl-with-effect g (lit potion) (lit strength))))) (pair "q" (%bl-with-effect g (lit potion) (lit strength))))
         ((if beside? #f (not (null? (%bl-with-effect g (lit scroll) (lit upgrade))))) (pair "r" (%bl-with-effect g (lit scroll) (lit upgrade))))
-        ((if (null? foe) (not (%bl-explored? g s)) #f)
+        ((match ((not (null? foe)) #f) ((%bl-explored? g s) #f) (#t (%bl-survey-now? g)))
           ((fn (_ it) (if (null? it) () (pair "r" it))) (%bl-with-effect g (lit scroll) (lit mapping))))
         ((if unseen? (= 0 (player-condition p (lit seeing))) #f)
           ((fn (_ it) (if (null? it) () (pair "q" it))) (%bl-with-effect g (lit potion) (lit seeing))))
