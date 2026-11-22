@@ -189,8 +189,9 @@
 (def %bl-still (Vector of 0))
 ; The wands found empty: one that sputtered.
 (def %bl-empty (Vector of ()))
-; The turn a mending was last drunk, as it stood once drunk.
-(def %bl-drank (Vector of -1))
+; The turn a mending was last drunk, as it stood once drunk, with the
+; hit points just before it: (TURN . HP).
+(def %bl-drank (Vector of (pair -9 0)))
 
 ; The turn as the bot's turn began.
 (def %bl-now (Vector of 0))
@@ -871,13 +872,18 @@
           (%bl-step-within g s tag (fn (_ r c) (%bl-search-spot? g s pocket? r c)) most))))
     (def lit? (if (str=? (%bl-env "BALANCE_DARK_SEARCH" "") "") (%bl-light-left? g s) #t))
     (def down (map-down m))
-    (def a (match ((< most 1) ()) ((items-goal-held? g) ()) ((Vector ref 33 s) ())
-                  ((match (boxed? #f) ((Vector ref 14 s) #f) ((null? down) #f) (#t (map-seen? m (first down) (rest down)))) ())
+    ; The stairs down seen, the search is left to the stairs' own, boxed
+    ; in, and the lamp to it: seed 4, boxed in on level 6 with the stairs
+    ; seen, had the stairs' search put the lamp out and this one, finding
+    ; nothing to search, light it, turn on turn, for 2,600 turns.
+    (def skip? (match (boxed? #f) ((Vector ref 14 s) #f) ((null? down) #f) (#t (map-seen? m (first down) (rest down)))))
+    (def a (match ((< most 1) ()) ((items-goal-held? g) ()) ((Vector ref 33 s) ()) (skip? ())
                   (#t ((fn (_ a) (if (null? a) (aim (lit wall) #f) a)) (aim (lit pocket) #t)))))
     (def out? (player-doused? p))
-    (when (if %bl-tracing (not lit?) #f)
+    (when (if %bl-tracing (if skip? #f (not lit?)) #f)
       (Vector set! 0 (pair (Str8 append "{dark: " (Str8 str (Vector ref 28 s)) " burnt}") (Vector ref 0 %bl-pressed)) %bl-pressed))
-    (match ((null? a) (if (if out? (< 0 (player-lamp p)) #f) (do (%bl-key! g "x") #t) #f))
+    (match (skip? #f)
+           ((null? a) (if (if out? (< 0 (player-lamp p)) #f) (do (%bl-key! g "x") #t) #f))
            ((if out? lit? #f) (do (%bl-key! g "x") #t))
            ((if lit? #f (if out? #f (< 0 (player-lamp p))))
              (if (%bl-roused? g s ()) #f (do (%bl-key! g "x") #t)))
@@ -1092,15 +1098,19 @@
     (def p (game-player g))
     (def e (item-prop potion (lit effect) (list (lit heal) 1 1)))
     (not (< (- (player-hpmax p) (player-hp p)) (List ref 1 e)))))
-; Whether the blows beside outpace a mending: one was drunk last turn,
-; with a hostile beside still, and the player is still under WHO's quaff
-; mark.  What the potion bought, the blows took back.
+; Whether the blows beside outpace a mending: one was drunk in the last
+; two turns, with a hostile beside still, and the player has no more
+; hit points than just before it.  What the potion bought, the blows
+; took back: seed 7, on level 5, drank against a crayfish and two
+; unseen shades, struck a turn at the mended hit points, and was back
+; where it began, turn on turn, until it was struck from 17 to nothing.
 (def %bl-outpaced?
   (fn (_ g who)
     (def p (game-player g))
-    (match ((not (= (Vector ref 0 %bl-drank) (game-turn g))) #f)
+    (def d (Vector ref 0 %bl-drank))
+    (match ((< 2 (- (game-turn g) (first d))) #f)
            ((null? (%bl-beside g %bl-hostile?)) #f)
-           (#t (%bl-under? p (%bl-at who (lit quaff)))))))
+           (#t (not (< (rest d) (player-hp p)))))))
 ; Whether to drink POTION with FOE beside: the fight lost without it, and
 ; the potion's least mending all of use; and either the next blow at its
 ; hardest ends the player, or the potion's least mending wins the fight.
@@ -1504,7 +1514,10 @@
       (match ((not (items-goal-held? g)) #f) ((null? up) #f)
              ((not (map-seen? (game-map g) (first up) (rest up))) #f)
              (#t (< (* (state-dist (player-r p) (player-c p) (first up) (rest up)) (%bl-rest-hardest g ())) (player-hp p)))))
+    ; Outpaced, the mending is left for this way out, so the way out is
+    ; taken.
     (def scroll (match (climbs? ())
+                       ((%bl-outpaced? g who) (%bl-first-effect g (lit scroll) (list (lit hold) (lit teleport))))
                        (unseen? (%bl-first-effect g (lit scroll) (list (lit hold) (lit teleport))))
                        ((if lost? #f (< (%bl-peril g) (player-hp p))) ())
                        (slips ())
@@ -1549,9 +1562,12 @@
                (#t (if (< (%bl-ring-worth g it) (%bl-ring-worth g best)) it best))))
       () (game-pack g))))
 
-; What is used as soon as it is held: a ring on a free hand, a worn ring
-; taken off for a better one with no foe in view, vigour drunk, an
-; upgrade read, a survey read on a level not yet explored.  And in a
+; What is used as soon as it is held, with no hostile beside: a ring on a
+; free hand, a worn ring taken off for a better one with no foe in view,
+; vigour drunk, an upgrade read; each lasts the game, and a turn spent on
+; it is one given to what is beside: seed 8 read an upgrade at 4 hit
+; points with the Old Man on it.  A survey read on a level not yet
+; explored.  And in a
 ; fight: clear sight with something unseen beside the player, quickness
 ; when the fight would cost half of what they have.  #f with nothing
 ; used.
@@ -1561,14 +1577,15 @@
     (def ring (%bl-ring-pick g #f #t))
     (def least (%bl-ring-pick g #t #f))
     (def unseen? (%bl-told? g "Something unseen"))
+    (def beside? (not (null? (%bl-beside g %bl-hostile?))))
     (def use
       (match
-        ((if (null? ring) #f (< (List length (player-rings p)) 2)) (pair "P" ring))
+        ((match ((null? ring) #f) (beside? #f) (#t (< (List length (player-rings p)) 2))) (pair "P" ring))
         ((match ((null? ring) #f) ((null? least) #f) ((not (null? foe)) #f) ((not (null? (%bl-shown-hostile g))) #f)
                 (#t (< (%bl-ring-worth g least) (%bl-ring-worth g ring))))
           (pair "R" least))
-        ((not (null? (%bl-with-effect g (lit potion) (lit strength)))) (pair "q" (%bl-with-effect g (lit potion) (lit strength))))
-        ((not (null? (%bl-with-effect g (lit scroll) (lit upgrade)))) (pair "r" (%bl-with-effect g (lit scroll) (lit upgrade))))
+        ((if beside? #f (not (null? (%bl-with-effect g (lit potion) (lit strength))))) (pair "q" (%bl-with-effect g (lit potion) (lit strength))))
+        ((if beside? #f (not (null? (%bl-with-effect g (lit scroll) (lit upgrade))))) (pair "r" (%bl-with-effect g (lit scroll) (lit upgrade))))
         ((if (null? foe) (not (%bl-explored? g s)) #f)
           ((fn (_ it) (if (null? it) () (pair "r" it))) (%bl-with-effect g (lit scroll) (lit mapping))))
         ((if unseen? (= 0 (player-condition p (lit seeing))) #f)
@@ -1792,6 +1809,10 @@
               ((not (state-adjacent? (creature-r shown) (creature-c shown) (player-r p) (player-c p))) #f)
               (#t (%bl-away! g shown)))
         ())
+      ; With the goal held, the guardian in view is stepped from, not
+      ; to: seed 8, the Lodestar in hand on level 12 and the Old Man
+      ; between it and the stairs up, walked to him and died beside him.
+      ((match ((null? shown) #f) ((not up?) #f) ((not (same? shown (%bl-guardian g))) #f) (#t (%bl-away! g shown))) ())
       ((if (null? shown) #f (if (%bl-wary? shown) #f (%bl-toward-creature! g s shown))) ())
       ((match ((null? shown) #f) ((not (creature-trait? shown (lit ranged))) #f) (#t (%bl-out-of-line! g shown))) ())
       ((%bl-clear-the-way! g s) ())
@@ -1885,9 +1906,11 @@
       ((if (player-doused? p) (if (< 0 (player-lamp p)) (if struck? #t (%bl-roused? g s foe)) #f) #f)
         (%bl-key! g "x"))
       ((if (null? potion) #f (if stalled #f (%bl-under? p (%bl-at who (lit quaff)))))
-        (do (%bl-use! g "q" potion) (Vector set! 2 (+ 1 (Vector ref 2 s)) s) (Vector set! 0 (game-turn g) %bl-drank)))
+        ((fn (_ before) (%bl-use! g "q" potion) (Vector set! 2 (+ 1 (Vector ref 2 s)) s) (Vector set! 0 (pair (game-turn g) before) %bl-drank))
+          (player-hp p)))
       ((if stalled #f (%bl-drink-now? g foe potion))
-        (do (%bl-use! g "q" potion) (Vector set! 2 (+ 1 (Vector ref 2 s)) s) (Vector set! 0 (game-turn g) %bl-drank)))
+        ((fn (_ before) (%bl-use! g "q" potion) (Vector set! 2 (+ 1 (Vector ref 2 s)) s) (Vector set! 0 (pair (game-turn g) before) %bl-drank))
+          (player-hp p)))
       ((%bl-ready! g s foe) ())
       ((%bl-flee! g s who slips) ())
       ((if (null? foe) (%bl-strike-unseen! g s) #f) ())
@@ -2132,7 +2155,15 @@
                      (#t (state-creature-named g (List ref 2 q)))))
     (def stood (if (null? owed) () (%bl-watched s owed)))
     (def at (if (null? stood) () (rest (rest stood))))
-    (match ((not (null? seen)) (if (%bl-talk? g s seen) (%bl-toward-creature! g s seen) #f))
+    ; One kept walk, under giver, whether the one sought is in view or
+    ; not: two, each kept apart, led seed 1 a step one way to the
+    ; salvager in view and a step back to where he was last seen,
+    ; through a pit, for fifteen thousand turns on level 7.
+    (match ((not (null? seen))
+             (match ((not (%bl-talk? g s seen)) #f)
+                    ((state-adjacent? (creature-r seen) (creature-c seen) (player-r (game-player g)) (player-c (game-player g)))
+                      (%bl-toward-creature! g s seen))
+                    (#t (%bl-walk! g s (lit giver) (fn (_ r c) (if (= r (creature-r seen)) (= c (creature-c seen)) #f))))))
            ((if (null? met) #f
               (%bl-walk! g s (lit giver) (fn (_ r c) (if (= r (List ref 2 met)) (= c (rest (rest (rest met)))) #f))))
              #t)
@@ -2191,9 +2222,11 @@
     ; With the goal held, an item is gone to only as far as GREED, as
     ; every turn on the level is the guardian's: seed 8, the Lodestar
     ; won and its pack full, walked level 12 after items for three
-    ; hundred turns and met the Old Man on the way up.
+    ; hundred turns and met the Old Man on the way up.  None at all with
+    ; the guardian in view: stepping from him, it walked back for what
+    ; lay near him, and he cornered it.
     (def reach (match (wounded? 0)
-                      ((items-goal-held? g) (if close? 0 (%bl-at who (lit greed))))
+                      ((items-goal-held? g) (if (if close? #t (not (null? (%bl-guardian g)))) 0 (%bl-at who (lit greed))))
                       ((null? shown) (if close? 0 9999)) (close? 0)
                       ((if (eq? (creature-state shown) (lit awake)) (not (%bl-worth? g who shown)) #f) 0)
                       ((not (null? (%bl-kept g s (lit item) wanted? 9999))) 9999) (#t (%bl-at who (lit greed)))))
