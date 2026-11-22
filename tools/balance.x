@@ -1495,7 +1495,17 @@
                                                    (#t (< 3 (%bl-wounds cr)))))
                         (%bl-seen g))))
     (def lost? (not (null? (%bl-beside g (fn (_ cr) (if (%bl-hostile? cr) (%bl-losing? g cr) #f))))))
-    (def scroll (match (unseen? (%bl-first-effect g (lit scroll) (list (lit hold) (lit teleport))))
+    ; With the goal held, the stairs up seen and reached before every
+    ; hostile in view, at its hardest each step, ends the player, the
+    ; way out is the stairs, not a scroll that sets the player down
+    ; anywhere on the level.
+    (def up (map-up (game-map g)))
+    (def climbs?
+      (match ((not (items-goal-held? g)) #f) ((null? up) #f)
+             ((not (map-seen? (game-map g) (first up) (rest up))) #f)
+             (#t (< (* (state-dist (player-r p) (player-c p) (first up) (rest up)) (%bl-rest-hardest g ())) (player-hp p)))))
+    (def scroll (match (climbs? ())
+                       (unseen? (%bl-first-effect g (lit scroll) (list (lit hold) (lit teleport))))
                        ((if lost? #f (< (%bl-peril g) (player-hp p))) ())
                        (slips ())
                        (scares? (%bl-first-effect g (lit scroll) (list (lit hold) (lit fear) (lit teleport))))
@@ -1667,6 +1677,22 @@
                  ((not (state-adjacent? (List ref 1 b) (List ref 2 b) (player-r p) (player-c p))) #f)
                  (#t (null? (%bl-seen-at g (List ref 1 b) (List ref 2 b))))))
         ((fn (_ kept) (if (null? kept) () (if (= (first kept) (game-turn g)) (rest kept) ()))) (Vector ref 24 s)))))
+; Whether something unseen has landed a blow in the last three turns: it
+; is still about, and a camp is a turn given it.  Seed 4, at 3 hit
+; points on level 5, camped a turn after a drowned shade's last blow and
+; was struck dead in it.
+(def %bl-unseen-lately?
+  (fn (_ g s)
+    (def p (game-player g))
+    (def unseen?
+      (fn (_ b)
+        (match ((eq? (List ref 5 b) (lit miss)) #f)
+               ((not (= (List ref 3 b) (player-r p))) #f) ((not (= (List ref 4 b) (player-c p))) #f)
+               ((not (state-adjacent? (List ref 1 b) (List ref 2 b) (player-r p) (player-c p))) #f)
+               (#t (null? (%bl-seen-at g (List ref 1 b) (List ref 2 b)))))))
+    ((fn (_ kept)
+       (match ((null? kept) #f) ((< 2 (- (game-turn g) (first kept))) #f) (#t (List any? unseen? (rest kept)))))
+      (Vector ref 24 s))))
 
 ; --- the turn ----------------------------------------------------------------
 
@@ -1738,7 +1764,7 @@
                                 (#t h)))
                (Vector ref 0 %bl-hunted)))
     (match
-      ((match ((%bl-in-sight? g shown) #f) ((%bl-shot-lately? g) #f) ((%bl-told? g "You start up") #f) (#t (%bl-under? p (%bl-mark g s who (lit ready))))) (%bl-rest! g))
+      ((match ((%bl-in-sight? g shown) #f) ((%bl-shot-lately? g) #f) ((%bl-told? g "You start up") #f) ((%bl-unseen-lately? g s) #f) (#t (%bl-under? p (%bl-mark g s who (lit ready))))) (%bl-rest! g))
       ((not (null? guardian)) (%bl-hunt! g s guardian))
       ((match ((null? shown) #f) ((creature-trait? shown (lit ranged)) #f) ((%bl-shot-lately? g) #f)
               ((not (null? (%bl-beside g %bl-hostile?))) #f)
@@ -1933,7 +1959,7 @@
       ((if (null? food) #f (< (player-food p) hungry))
         (do (%bl-use! g "e" food) (Vector set! 3 (+ 1 (Vector ref 3 s)) s)))
       ((match ((%bl-in-sight? g shown) #f) ((%bl-shot-lately? g) #f) ((%bl-told? g "You start up") #f)
-              ((not (null? (%bl-unseen-blow g s))) #f)
+              ((%bl-unseen-lately? g s) #f)
               (#t (%bl-under? p (%bl-mark g s who (lit rest)))))
         ; One that never moves, in sight, breaks a camp before it starts:
         ; a step out of its sight first.
@@ -1972,6 +1998,7 @@
       ((Vector ref 34 s)
         (match ((%bl-in-sight? g shown) (%bl-key! g "s"))
                ((%bl-shot-lately? g) (%bl-onward! g s who shown))
+               ((%bl-unseen-lately? g s) (%bl-onward! g s who shown))
                (#t (%bl-rest! g))))
       (#t (%bl-onward! g s who shown)))))
 
