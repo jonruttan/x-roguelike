@@ -176,6 +176,11 @@
         (pair cr (pair stirred (pair (creature-r cr) (creature-c cr))))))
     (Vector set! 23 (List append (List map note seen) kept) s)))
 (def %bl-watched (fn (_ s cr) (List find (fn (_ e) (same? (first e) cr)) (Vector ref 23 s))))
+; Whether CR is after the player: awake, by the look, and seen to move.
+(def %bl-follows?
+  (fn (_ s cr)
+    (def e (%bl-watched s cr))
+    (match ((null? e) #f) ((not (eq? (creature-state cr) (lit awake))) #f) (#t (List ref 1 e)))))
 ; Whether CR, in view, is after the player or running from them: the
 ; look (v) says each creature in view is asleep, has not noticed, is
 ; awake or is fleeing.
@@ -2053,12 +2058,17 @@
       ; 2.  With the goal held the way out is up, not away.  A slow one is
       ; let be: outpaced, its blows are answered two for one, and seed 5
       ; walked off from a rust golem it would have fought so, to meet it
-      ; blow for blow.
+      ; blow for blow.  One awake that has moved keeps pace: walked
+      ; from, it follows, and the walk ends where the next thing is.  It
+      ; is waited for where the player stands: seed 9, at 28 of 47 on
+      ; level 6, led the undertow two cells behind it for nine steps,
+      ; into a lantern eel and silt crayfish, and died to the three.
       ((match ((null? shown) #f) ((items-goal-held? g) #f) ((%bl-slow? shown) #f)
               ((not (%bl-in-sight? g shown)) #f) ((%bl-shot-lately? g) #f)
               ((not (null? (%bl-beside g %bl-hostile?))) #f)
               ((not (%bl-under? p (%bl-mark g s who (lit rest)))) #f)
               ((%bl-worth? g who shown) #f)
+              ((%bl-follows? s shown) (do (%bl-why! "stand") (%bl-key! g "s") #t))
               (#t (do (%bl-why! "out of sight") (unless (%bl-away! g shown) (%bl-key! g "s")) #t)))
         ())
       ((%bl-pour? g oil lamp)
