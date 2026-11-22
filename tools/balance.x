@@ -1472,8 +1472,10 @@
 ; seed 6, the Lodestar won, met the Old Man between it and the stairs
 ; up with a banishing in the pack, spent on L12 already, two charges on
 ; glow-midges; so else only on one whose fight is likely lost; with none
-; of those, one
-; not yet tried, to learn what it does.  One that sputters is empty,
+; of those, one not yet tried, to learn what it does, but never on the
+; guardian before the goal, as it may be a banishing: seed 3 tried one
+; on the undertow by level 6's shaft, sent it out of sight, and stood at
+; the barred shaft for 10,000 turns.  One that sputters is empty,
 ; and is not zapped again.  What it slowed is remembered for as long as
 ; the wand's (effect slow N) gives.  #f with none zapped.
 (def %bl-zap!
@@ -1488,7 +1490,7 @@
                  (%bl-first-effect g (lit wand)
                    (List append (if slows? (list (lit bolt) (lit drain) (lit slow)) (list (lit bolt) (lit drain)))
                                 (if banish? (list (lit teleport-other)) ())))))
-    (def untried (if (null? way) ()
+    (def untried (if (if (null? way) #t guardian?) ()
                    (%bl-in-pack g (fn (_ it) (match ((not (eq? (item-class it) (lit wand))) #f) ((items-known? g it) #f)
                                                     (#t (not (List any? (fn (_ x) (same? x it)) (Vector ref 0 %bl-empty)))))))))
     (def wand (if (null? tried) untried tried))
