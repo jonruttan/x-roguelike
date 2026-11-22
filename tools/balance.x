@@ -808,12 +808,20 @@
       #f)))
 ; The rows and columns the seen cells span, (TOP BOTTOM LEFT RIGHT): the
 ; level is rooms packed in a block, and unseen ground inside the block
-; is room enough for one, where rock past its edge is only rock.
+; is room enough for one, where rock past its edge is only rock.  Rows
+; are looked through from each edge in to the first seen, then columns.
 (def %bl-seen-box
   (fn (_ m)
-    (def rows (List filter (fn (_ r) (List any? (fn (_ c) (map-seen? m r c)) (List range 0 (map-cols m)))) (List range 0 (map-rows m))))
-    (def cols (List filter (fn (_ c) (List any? (fn (_ r) (map-seen? m r c)) rows)) (List range 0 (map-cols m))))
-    (if (null? rows) (list 0 -1 0 -1) (list (first rows) (first (List reverse rows)) (first cols) (first (List reverse cols))))))
+    (def nr (map-rows m))
+    (def nc (map-cols m))
+    (def row? (fn (_ r) (List any? (fn (_ c) (map-seen? m r c)) (List range 0 nc))))
+    (def edge-row (fn (self r step) (match ((< r 0) ()) ((< (- nr 1) r) ()) ((row? r) r) (#t (self (+ r step) step)))))
+    (def top (edge-row 0 1))
+    (if (null? top) (list 0 -1 0 -1)
+      (do (def bottom (edge-row (- nr 1) -1))
+          (def col? (fn (_ c) (List any? (fn (_ r) (map-seen? m r c)) (List range top (+ bottom 1)))))
+          (def edge-col (fn (self c step) (match ((< c 0) ()) ((< (- nc 1) c) ()) ((col? c) c) (#t (self (+ c step) step)))))
+          (list top bottom (edge-col 0 1) (edge-col (- nc 1) -1))))))
 (def %bl-in-box?
   (fn (_ box r c)
     (if (< r (first box)) #f (if (< (List ref 1 box) r) #f (if (< c (List ref 2 box)) #f (not (< (List ref 3 box) c)))))))
@@ -883,7 +891,6 @@
     (def p (game-player g))
     (def most (%bl-at who (lit search)))
     (when (null? (Vector ref 26 s)) (Vector set! 26 (Vector make (* (map-rows m) (map-cols m)) #f) s))
-    (Vector set! 30 (%bl-seen-box m) s)
     (def aim
       (fn (_ tag pocket?)
         (if (%bl-search-spot? g s pocket? (player-r p) (player-c p)) (lit here)
@@ -896,7 +903,11 @@
     ; nothing to search, light it, turn on turn, for 2,600 turns.
     (def skip? (match (boxed? #f) ((Vector ref 14 s) #f) ((null? down) #f) (#t (map-seen? m (first down) (rest down)))))
     (def a (match ((< most 1) ()) ((items-goal-held? g) ()) ((Vector ref 33 s) ()) (skip? ())
-                  (#t ((fn (_ a) (if (null? a) (aim (lit wall) #f) a)) (aim (lit pocket) #t)))))
+                  ; The seen box, for the search alone: it is the whole
+                  ; map walked, 24 s of seed 3's first 5,200 turns when
+                  ; made at every call.
+                  (#t (do (Vector set! 30 (%bl-seen-box m) s)
+                          ((fn (_ a) (if (null? a) (aim (lit wall) #f) a)) (aim (lit pocket) #t))))))
     (def out? (player-doused? p))
     (when (if %bl-tracing (if skip? #f (not lit?)) #f)
       (Vector set! 0 (pair (Str8 append "{dark: " (Str8 str (Vector ref 28 s)) " burnt}") (Vector ref 0 %bl-pressed)) %bl-pressed))
