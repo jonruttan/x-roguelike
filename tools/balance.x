@@ -90,7 +90,25 @@
 (def %bl-key!
   (fn (_ g key)
     (when %bl-tracing (Vector set! 0 (pair key (Vector ref 0 %bl-pressed)) %bl-pressed))
+    (%bl-moved!)
     (game-key! g key)))
+; The game's moves so far, one a key or a turn run: what the odds give
+; between two is the same, so each is worked out once a creature
+; between them.  The odds were a third of the bot's time: seed 3's
+; first 5,200 turns asked whether a fight was lost 4,434 times, at 16
+; ms each.  In %bl-memo-of: the move it holds, then CREATURE . VALUE
+; lists for %bl-turns and %bl-hurt.
+(def %bl-moves (Vector of 0))
+(def %bl-moved! (fn (_) (Vector set! 0 (+ 1 (Vector ref 0 %bl-moves)) %bl-moves)))
+(def %bl-memo-of (Vector of -1 () ()))
+(def %bl-memo
+  (fn (_ slot cr make)
+    (unless (= (Vector ref 0 %bl-memo-of) (Vector ref 0 %bl-moves))
+      (do (Vector set! 0 (Vector ref 0 %bl-moves) %bl-memo-of) (Vector set! 1 () %bl-memo-of) (Vector set! 2 () %bl-memo-of)))
+    (def hit (List find (fn (_ e) (same? (first e) cr)) (Vector ref slot %bl-memo-of)))
+    (if (null? hit)
+      ((fn (_ v) (Vector set! slot (pair (pair cr v) (Vector ref slot %bl-memo-of)) %bl-memo-of) v) (make))
+      (rest hit))))
 ; The turn the player was last shot at, in %bl-shot: one that shoots
 ; from out of view is still about for a few turns after, and a camp
 ; made then is only shot awake.
@@ -201,7 +219,7 @@
 ; or none lit, or a camp broken before a turn passed, a turn's wait.
 (def %bl-rest!
   (fn (_ g)
-    (def run (fn (self n) (when (if (game-exploring? g) (< n 2000) #f) (do (game-explore! g) (Heap collect) (self (+ n 1))))))
+    (def run (fn (self n) (when (if (game-exploring? g) (< n 2000) #f) (do (%bl-moved!) (game-explore! g) (Heap collect) (self (+ n 1))))))
     (def turn (game-turn g))
     (when (< 0 (player-lamp (game-player g)))
       (do (%bl-key! g "c") (run 0)))
@@ -1011,16 +1029,20 @@
     (* (if (eq? (%bl-speed cr) (lit fast)) 2 1) (if (< 0 (player-condition (game-player g) (lit slowed))) 2 1))))
 (def %bl-turns
   (fn (_ g cr)
-    (def span (creature-prop cr (lit hp) (list 1 6)))
-    (def hp (int/ (+ (* (%bl-wounds cr) (+ (first span) (List ref 1 span) 1)) 15) 16))
-    (def t (odds-swings (odds-hit (combat-player-level g) (creature-prop1 cr (lit defence) 3)) (combat-player-dice g) 0 hp))
-    (def aim (odds-aim (creature-prop1 cr (lit level) 1) (state-defence g) (%bl-speed cr)
-                       (if (creature-trait? cr (lit dazzle)) combat-dazzle 0)))
-    (/ (if (creature-trait? cr (lit regen)) (odds-regen t hp) t) aim)))
+    (%bl-memo 1 cr
+      (fn (_)
+        (def span (creature-prop cr (lit hp) (list 1 6)))
+        (def hp (int/ (+ (* (%bl-wounds cr) (+ (first span) (List ref 1 span) 1)) 15) 16))
+        (def t (odds-swings (odds-hit (combat-player-level g) (creature-prop1 cr (lit defence) 3)) (combat-player-dice g) 0 hp))
+        (def aim (odds-aim (creature-prop1 cr (lit level) 1) (state-defence g) (%bl-speed cr)
+                           (if (creature-trait? cr (lit dazzle)) combat-dazzle 0)))
+        (/ (if (creature-trait? cr (lit regen)) (odds-regen t hp) t) aim)))))
 (def %bl-hurt
   (fn (_ g cr)
-    (odds-hurt (creature-prop1 cr (lit level) 1) (creature-prop cr (lit attack) (list 1 2)) (state-defence g) (%bl-speed cr)
-               (if (creature-trait? cr (lit cold)) combat-chill 0))))
+    (%bl-memo 2 cr
+      (fn (_)
+        (odds-hurt (creature-prop1 cr (lit level) 1) (creature-prop cr (lit attack) (list 1 2)) (state-defence g) (%bl-speed cr)
+                   (if (creature-trait? cr (lit cold)) combat-chill 0))))))
 (def %bl-cost (fn (_ g cr) (* (%bl-turns g cr) (%bl-hurt g cr))))
 ; The hurt a turn from every hostile in view but CR able to reach the
 ; player: one beside at its blow, one that shoots or breathes with the
