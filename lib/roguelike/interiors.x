@@ -1,6 +1,6 @@
 ; # x-roguelike -- a roguelike on x-lang
 ;
-; ## roguelike/interiors.x -- the places behind doors in a world of screens
+; ## lib/roguelike/interiors.x -- the places behind doors in a world of screens
 ;
 ; @author [Jon Ruttan](jonruttan@gmail.com)
 ; @copyright 2026 Jon Ruttan

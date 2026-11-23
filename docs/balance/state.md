@@ -76,7 +76,7 @@ A turn is a second in the Delve.
 
 ## A fight's cost
 
-From `roguelike/odds.x`, which reads the engine's own rolls.
+From `lib/roguelike/odds.x`, which reads the engine's own rolls.
 
 | Term | Rule |
 |---|---|
@@ -223,7 +223,7 @@ turns ahead.
 
 | It does | It does not |
 |---|---|
-| weigh a fight by `roguelike/odds.x` before starting it | evade, or lure a creature to better ground |
+| weigh a fight by `lib/roguelike/odds.x` before starting it | evade, or lure a creature to better ground |
 | drink mending when what is lost fits what the potion gives | choose which of several to strike first |
 | step away from a fight it is losing, when free to | use a wand or a scroll |
 | wield the best weapon and armour it holds | fight a pack from a passage |

@@ -58,9 +58,9 @@
 ; its rung, with regeneration as it is and with none.  The budget
 ; takes a turn for a second, and the gear for found.
 ;
-; lint-known: %lang-root
 
 (import x/sys/posix)
+(import x/sys/bundle)
 (import x/num/float)
 (import roguelike/data data-load data-all data-one data-prop data-prop1 data-trait?)
 (import roguelike/state state-covers?)
@@ -423,7 +423,7 @@
 (def %md-main
   (fn (_)
     (def name (%md-env "MODEL_SET" "delve"))
-    (def set (data-load (Str8 append %lang-root "/data/" name)))
+    (def set (data-load (Str8 append (Bundle root "roguelike") "/data/" name)))
     (def last (List ref 2 (data-one set (lit goal) (list "" "" 1))))
     (def one (%md-env "MODEL_DEPTH" ""))
     (%md-line "The " name " set, by its numbers")

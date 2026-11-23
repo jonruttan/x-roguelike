@@ -1,6 +1,6 @@
 ; # x-roguelike -- a roguelike on x-lang
 ;
-; ## roguelike/chain.x -- an errand made from the set's scenes
+; ## lib/roguelike/chain.x -- an errand made from the set's scenes
 ;
 ; @author [Jon Ruttan](jonruttan@gmail.com)
 ; @copyright 2026 Jon Ruttan

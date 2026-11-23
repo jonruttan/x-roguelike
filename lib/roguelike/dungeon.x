@@ -1,6 +1,6 @@
 ; # x-roguelike -- a roguelike on x-lang
 ;
-; ## roguelike/dungeon.x -- a level made: rooms, the passages between, stairs
+; ## lib/roguelike/dungeon.x -- a level made: rooms, the passages between, stairs
 ;
 ; @author [Jon Ruttan](jonruttan@gmail.com)
 ; @copyright 2026 Jon Ruttan

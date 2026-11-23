@@ -1,6 +1,6 @@
 ; # x-roguelike -- a roguelike on x-lang
 ;
-; ## roguelike/shops.x -- buying and selling at a keeper's counter
+; ## lib/roguelike/shops.x -- buying and selling at a keeper's counter
 ;
 ; @author [Jon Ruttan](jonruttan@gmail.com)
 ; @copyright 2026 Jon Ruttan

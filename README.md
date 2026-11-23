@@ -279,7 +279,7 @@ hedged closes either side of a road, a gate or a gap in every hedged
 side of each; `hills`, gritstone edges, bog and
 gorse; or `rim`, limestone scars, shakeholes and fallen walls.  Each
 style's knobs, and what each defaults to, are in its comment in
-`roguelike/dungeon.x`.  `delve`'s four bands are a pit, a flooded
+`lib/roguelike/dungeon.x`.  `delve`'s four bands are a pit, a flooded
 reach, the works and the well-house; `kettle`'s rings are the town's
 fields, the farms, the hills and the rim, and `town`'s districts are
 each a town.
@@ -446,9 +446,9 @@ in a line.  The header of tools/model.x has the formulas.
 
 ## Installing
 
-It needs x-lang at the release `lang.xon` declares.
+It needs x-lang at the release `bundle.xon` declares.
 
-    make install         into <share>/langs/roguelike, where `x -l` looks
+    make install         into <share>/bundles/roguelike, where `x -l` looks
 
 ## Documentation
 
