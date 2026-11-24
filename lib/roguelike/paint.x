@@ -18,7 +18,7 @@
 (module roguelike/paint)
 
 (import x/type/vector)
-(import x/gfx/canvas)
+(import gfx/canvas)
 (import x/core/doors int+ int- int* int/ int% int< int= str-make str->ptr ptr-ref ptr-set!)
 (import roguelike/data data-load data-all)
 (import roguelike/state game-ask game-blows)
