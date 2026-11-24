@@ -450,6 +450,10 @@ It needs x-lang at the release `bundle.xon` declares.
 
     make install         into <share>/bundles/roguelike, where `x -l` looks
 
+The install is the [bundle tool](https://github.com/jonruttan/x-bundle)'s,
+`x -l bundle -- install .`, which also installs the bundles `bundle.xon`
+requires.  On a tree without the tool, `make install` fetches it first.
+
 ## Documentation
 
 - [The game in a window](docs/graphics.md): the windowed front end and a
