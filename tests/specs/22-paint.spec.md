@@ -13,7 +13,7 @@ each frame that layer, what stands on it, the light and the text.
 ```roguelike
 (import roguelike/paint paint-art paint-font paint-make paint-screen paint-turn! paint-frame! paint-flickers? paint-width paint-height paint-level-y)
 (import roguelike/frame frame-art frame-camera frame-place frame-tile-size frame-level-y)
-(import x/gfx/canvas)
+(import gfx/canvas)
 (def spec-art (paint-art (data-load "data/delve/art")))
 (def spec-pic (fn (_ f) ((fn (_ p) (if (null? p) () (rest p))) (List find (fn (_ p) (if (pair? p) (eq? (first p) 'picture) #f)) (rest (rest f))))))
 (def spec-tiles (List filter (fn (_ f) (if (pair? f) (eq? (first f) 'tile) #f)) spec-art))
