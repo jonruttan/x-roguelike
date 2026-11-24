@@ -13,8 +13,29 @@ DEST  := $(SHARE)/bundles/roguelike
 # modules, the data and the art.  Not the suite, not the tooling, not CI.
 PAYLOAD := bundle.xon lib data art
 
+# A bundle this one requires and the tree does not hold is installed from the
+# release its row in bundle.xon names: "NAME" "VERSION" "OWNER/REPO" is that
+# repository's published bundle.pin.xon, which `x --install-bundle` fetches
+# and verifies.  A row with no repository is jonruttan/x-NAME, as the bundle
+# CI reads it; one with no version is the latest release.  A bundle is there
+# when some bundle.xon under bundles/ declares its name, which is how `x -l`
+# looks; its version is not compared here -- the boot does that.
+.PHONY: requirements
+requirements: ## Install the bundles bundle.xon requires that are missing
+	@test -n "$(SHARE)" || { echo "x-roguelike: cannot find an x tree -- set PREFIX or X" >&2; exit 1; }
+	@test -d "$(SHARE)" || { echo "x-roguelike: no x tree at $(SHARE)" >&2; exit 1; }
+	@awk -F'"' '/^\(requires-bundle /{print $$2, ($$4 ? $$4 : "-"), ($$6 ? $$6 : "jonruttan/x-" $$2)}' bundle.xon | \
+	while read -r name version repo; do \
+		if grep -qsF "(name \"$$name\")" "$(SHARE)"/bundles/*/bundle.xon; then continue; fi; \
+		if [ "$$version" = - ]; then rel=latest/download; else rel="download/$$version"; fi; \
+		url="https://github.com/$$repo/releases/$$rel/bundle.pin.xon"; \
+		echo "x-roguelike: requires $$name, which is not installed -- installing it"; \
+		echo "\"$(X)\" --install-bundle $$url"; \
+		"$(X)" --install-bundle "$$url" || { echo "x-roguelike: could not install $$name" >&2; exit 1; }; \
+	done
+
 .PHONY: install
-install: ## Install into <share>/bundles/roguelike
+install: requirements ## Install into <share>/bundles/roguelike, and what it requires
 	@test -n "$(SHARE)" || { echo "x-roguelike: cannot find an x tree -- set PREFIX or X" >&2; exit 1; }
 	@test -d "$(SHARE)" || { echo "x-roguelike: no x tree at $(SHARE)" >&2; exit 1; }
 	rm -rf "$(DEST)"
@@ -23,7 +44,7 @@ install: ## Install into <share>/bundles/roguelike
 	printf '%s\n' '$(LANG_VERSION)' > "$(DEST)/version"
 	@echo "x-roguelike: installed to $(DEST)"
 	@echo "x-roguelike: writing the boot image"
-	"$(X)" --image -l roguelike || true
+	"$(X)" --image -l roguelike
 	@echo "x-roguelike: try  x -l roguelike"
 
 .PHONY: uninstall
