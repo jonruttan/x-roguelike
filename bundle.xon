@@ -1,6 +1,6 @@
-; lang.xon -- what this bundle is.
+; bundle.xon -- what this bundle is.
 
-(lang "roguelike")
+(name "roguelike")
 
 ; Self-contained: this bundle depends on nothing but the platform.
 ;
@@ -9,6 +9,6 @@
 ; tower.
 (dialect he)
 
-(requires-release "v0.59.0")
+(requires-release "v0.61.0")
 
-(entry "run.x")
+(entry run)

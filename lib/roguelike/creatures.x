@@ -1,6 +1,6 @@
 ; # x-roguelike -- a roguelike on x-lang
 ;
-; ## roguelike/creatures.x -- what lives on a level, and what it does each turn
+; ## lib/roguelike/creatures.x -- what lives on a level, and what it does each turn
 ;
 ; @author [Jon Ruttan](jonruttan@gmail.com)
 ; @copyright 2026 Jon Ruttan

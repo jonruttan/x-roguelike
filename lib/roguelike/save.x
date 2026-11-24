@@ -1,6 +1,6 @@
 ; # x-roguelike -- a roguelike on x-lang
 ;
-; ## roguelike/save.x -- a game kept between sittings, and the scores
+; ## lib/roguelike/save.x -- a game kept between sittings, and the scores
 ;
 ; @author [Jon Ruttan](jonruttan@gmail.com)
 ; @copyright 2026 Jon Ruttan

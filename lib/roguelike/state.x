@@ -1,6 +1,6 @@
 ; # x-roguelike -- a roguelike on x-lang
 ;
-; ## roguelike/state.x -- the game's state, and what every module asks of it
+; ## lib/roguelike/state.x -- the game's state, and what every module asks of it
 ;
 ; @author [Jon Ruttan](jonruttan@gmail.com)
 ; @copyright 2026 Jon Ruttan

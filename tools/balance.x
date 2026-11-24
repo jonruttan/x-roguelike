@@ -50,10 +50,10 @@
 ; are measured against.  An instrument, not a gate: nothing here is a
 ; spec.
 ;
-; lint-known: %lang-root
 
 (import x/type/vector)
 (import x/sys/posix)
+(import x/sys/bundle)
 (import x/sys/gc)
 (import x/num/random)
 (import x/core/doors int/)
@@ -936,7 +936,7 @@
 ; The bots' make, tools/bots/attributes.xon: the attributes and their
 ; ranges, and the archetypes that narrow them.  The ranges a run rolls
 ; in: each attribute's, or the archetype's BALANCE_ARCHETYPE names.
-(def %bl-make (fn (_) (data-load (Str8 append %lang-root "/tools/bots"))))
+(def %bl-make (fn (_) (data-load (Str8 append (Bundle root "roguelike") "/tools/bots"))))
 (def %bl-ranges
   (fn (_ make)
     (def name (%bl-env "BALANCE_ARCHETYPE" ""))
@@ -2705,7 +2705,7 @@
     (def cap (%bl-int (%bl-env "BALANCE_TURNS" "6000")))
     (def name (%bl-env "BALANCE_SET" "delve"))
     (def ranges (%bl-ranges (%bl-make)))
-    (def set (data-load (Str8 append %lang-root "/data/" name)))
+    (def set (data-load (Str8 append (Bundle root "roguelike") "/data/" name)))
     (if (not (str=? (%bl-env "BALANCE_FROM" "") "")) (%bl-fights set ranges from seeds) (%bl-games set ranges from seeds cap))))
 
 (def %bl-games
