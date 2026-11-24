@@ -12,4 +12,7 @@
 ; The window paints its tiles with the graphics library.
 (requires-bundle "gfx" "v0.1.0" "jonruttan/x-lib-gfx")
 
+; What it ships beside lib/: the dungeon's data and the tiles' art.
+(payload "data" "art")
+
 (entry run)
