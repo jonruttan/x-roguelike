@@ -26,7 +26,7 @@
 (creature "lantern eel" "e" (depth 4 7) (level 2) (hp 9 13) (attack 2 5) (defence 4) (exp 10) (traits dazzle) (tale "A lantern eel: a river eel come in with the water, and lit by it."))
 (creature "silt crayfish" "C" (depth 4 7) (level 3) (hp 11 19) (attack 2 6) (defence 7) (exp 9) (pack 1 3) (traits slow) (tale "A silt crayfish: blind and white, up from the stone's pool."))
 (creature "great leech" "L" (depth 4 8) (level 3) (hp 14 22) (attack 2 5) (defence 5) (exp 20) (traits stationary sticky) (tale "A great leech: it lies in the standing water and holds on."))
-(creature "drowned shade" "S" (depth 5 7) (level 3) (hp 9 13) (attack 2 5) (defence 6) (exp 25) (traits invisible cold) (tale "A drowned shade: one of the Flood's dead."))
+(creature "drowned shade" "S" (depth 5 7) (level 3) (hp 9 13) (attack 2 5) (defence 6) (exp 25) (traits invisible cold slow) (tale "A drowned shade: one of the Flood's dead."))
 (creature "undertow" "U" (depth 0 0) (article "the") (level 5) (hp 22 30) (attack 2 6) (defence 6) (exp 90) (traits cold sticky regen) (tale "The undertow: the Flood's current, given a will by the stone's" "water."))
 
 ; The Old Works, 7 to 9: the builders' dead, and their keepers.

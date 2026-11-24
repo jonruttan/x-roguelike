@@ -10,21 +10,28 @@
 ;              0 never steps away
 ;   rest       with nothing hostile in view, rests under this %
 ;   ready      rests to this % before stairs down and before a guardian
+;   lit        while the lamp burns, rests and readies to no more than
+;              this %, a guardian's level aside: resting spends the light
 ;   courage    starts a fight with a foe it sees only when the game's odds
 ;              say it costs no more than this % of the hit points it has
 ;   chase      walks this far, at most, to fight a foe it sees
 ;   greed      walks this far, at most, to an item with a hostile in view
 ;   curiosity  sees this % of a level's open ground before it takes
 ;              stairs it knows, 100 all it can reach
+;   search     with the level seen and light left for it, walks this far,
+;              at most, to a wall with unseen ground behind, and searches
+;              it for a secret door; 0 never searches
 
 (attribute quaff 0 60)
 (attribute retreat 0 60)
 (attribute rest 0 100)
 (attribute ready 0 100)
+(attribute lit 0 100)
 (attribute courage 0 100)
 (attribute chase 0 40)
 (attribute greed 0 30)
 (attribute curiosity 0 100)
+(attribute search 0 40)
 
 ; (archetype NAME TEXT (ATTRIBUTE LO HI) ...): a kind of player, each
 ; attribute it names narrowed to LO..HI, the rest rolled in full.
@@ -36,4 +43,8 @@
 (archetype "magpie" "walks to whatever it sees lying, whatever is about"
   (greed 15 30) (curiosity 90 100))
 (archetype "diver" "takes the stairs as soon as it knows them"
-  (curiosity 0 20) (courage 0 30) (chase 0 4))
+  (curiosity 0 20) (courage 0 30) (chase 0 4) (search 0 0))
+(archetype "master" "plays by every answer it has, rested and ready"
+  (quaff 35 35) (retreat 35 35) (rest 100 100) (ready 100 100) (lit 100 100) (courage 60 60) (chase 40 40) (greed 30 30) (curiosity 100 100) (search 0 0))
+(archetype "seeker" "the master, searching the walls for what is hidden"
+  (quaff 35 35) (retreat 35 35) (rest 100 100) (ready 100 100) (lit 100 100) (courage 60 60) (chase 40 40) (greed 30 30) (curiosity 100 100) (search 40 40))

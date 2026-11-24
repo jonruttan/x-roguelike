@@ -74,21 +74,19 @@
 ; The share of turns the player is under a condition laid by one
 ; striking HALVES half-strikes a turn at chance H, each that lands laying
 ; it for TURNS turns, and striking FASTER times as often while it holds:
-; the settled spread of a chain over the turns left, from none.
+; one minus the settled share of turns with none left.  A turn with C
+; left goes to C - 1 on a miss, M1 a turn, and back to TURNS on a blow,
+; so with L the share at TURNS, the share at C is L M1^(TURNS-C), and
+; the share at none, kept on a miss M0, is L M1^TURNS / (1 - M0).
+; Floats are x-lang's own, so a few of them, not a chain stepped.
 (def %od-held
   (fn (_ h halves turns faster)
-    (def miss (fn (_ c) (%od-miss h (if (< 0 c) (* faster halves) halves))))
-    (def cs (List range 0 (+ turns 1)))
-    (def step
-      (fn (_ dist)
-        (def at (fn (_ c) (if (< turns c) (%od-f 0) (List ref c dist))))
-        (def landed (%od-sum (List map (fn (_ c) (* (at c) (- (%od-f 1) (miss c)))) cs)))
-        (List map (fn (_ c)
-                    (+ (+ (if (= c turns) landed (%od-f 0)) (* (at (+ c 1)) (miss (+ c 1))))
-                       (if (= c 0) (* (at 0) (miss 0)) (%od-f 0))))
-                  cs)))
-    (def settle (fn (self n dist) (if (< n 1) dist (self (- n 1) (step dist)))))
-    (- (%od-f 1) (first (settle 60 (List map (fn (_ c) (%od-f (if (= c 0) 1 0))) cs))))))
+    (def m0 (%od-miss h halves))
+    (def m1 (%od-miss h (* faster halves)))
+    (def held (fn (self k) (if (< k 1) (%od-f 0) (+ (%od-pow m1 (- k 1)) (self (- k 1))))))
+    (if (< m0 (%od-f 1))
+      ((fn (_ none) (- (%od-f 1) (/ none (+ (held turns) none)))) (/ (%od-pow m1 turns) (- (%od-f 1) m0)))
+      (%od-f 0))))
 
 ; The share of turns the player is slowed by a cold blow, CHILL turns
 ; each, slowed, the creature striking twice as often.
