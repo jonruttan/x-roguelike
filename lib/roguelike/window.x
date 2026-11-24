@@ -1,6 +1,6 @@
 ; # x-roguelike -- a roguelike on x-lang
 ;
-; ## roguelike/window.x -- the game played in a window
+; ## lib/roguelike/window.x -- the game played in a window
 ;
 ; The same game as the terminal's, drawn by roguelike/paint into a 640
 ; by 360 screen shown whole in a window, SDL's or a browser tab's (Sdl or

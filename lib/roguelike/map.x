@@ -1,6 +1,6 @@
 ; # x-roguelike -- a roguelike on x-lang
 ;
-; ## roguelike/map.x -- a level's cells: tiles, what has been seen, what is lit
+; ## lib/roguelike/map.x -- a level's cells: tiles, what has been seen, what is lit
 ;
 ; @author [Jon Ruttan](jonruttan@gmail.com)
 ; @copyright 2026 Jon Ruttan

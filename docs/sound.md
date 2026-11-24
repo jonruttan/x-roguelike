@@ -9,7 +9,7 @@ mixed by x-lang's `x/audio/mixer` and played on SDL's audio streams
 host with no audio device or no JIT to compile the mixer's loops; the
 game plays the same either way.
 
-`roguelike/sound.x` does the hearing. Each turn it compares the game
+`lib/roguelike/sound.x` does the hearing. Each turn it compares the game
 before and after and plays what changed. `data/delve/sounds.xon` and
 `data/delve/music.xon` are the delve set's sounds.
 
