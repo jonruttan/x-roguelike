@@ -21,7 +21,7 @@ swept off it.  Nothing here opens an audio device.
 ---
     (("Kettle") ("the inn" "Kettle"))
 
-### every place the Kettle world's music and air are for is default, a band, a region, a screen, a building or an interior of it
+### every place the Kettle world's music and air are for is default, a band, a region, a screen, a building or an interior of it, or one of those by night
 
 ```roguelike
 (def h36-k (spec-set-named "kettle"))
@@ -31,7 +31,7 @@ swept off it.  Nothing here opens an audio device.
     (data-all h36-w 'screen)))
 (def h36-names (List append (list "default") (List map first (data-all h36-w 'band)) (List map first (data-all h36-k 'region))
                  (List map first (data-all h36-w 'screen)) h36-buildings (List map first (data-all h36-w 'interior))))
-(def h36-known? (fn (_ n) (List any? (fn (_ m) (str=? m n)) h36-names)))
+(def h36-known? (fn (_ n) (List any? (fn (_ m) (if (str=? m n) #t (str=? (Str8 append m " by night") n))) h36-names)))
 (def h36-has? (fn (_ head n) (List any? (fn (_ f) (str=? (first f) n)) (data-all h36-w head))))
 (write (list (List all? (fn (_ f) (h36-known? (first f))) (List append (data-all h36-w 'music) (data-all h36-w 'ambience)))
              (List all? (fn (_ b) (h36-has? 'ambience b)) h36-buildings)

@@ -160,7 +160,10 @@ is over the player, the interior stood in, then the band, else the
 region, and `"default"` for the rest. A building or an interior with air
 or a song of its own is heard so inside, and what it lacks is the
 place's around it: the town's inn plays a reel by its fire, its
-churches a hymn, and a valley cellar has no wind in it.
+churches a hymn, and a valley cellar has no wind in it. At night under
+the sky of a world with a `(day ...)`, the band is looked for first as
+`"BAND by night"`, then `"default by night"`: the valley and the town
+play a nocturne after dusk, over owls, crickets and a fox far off.
 `(music-gain PCT)` and `(music-echo MS FEEDBACK WET)` are the music's
 loudness and room; the echoes are those of the set the game began on.
 `(music-effect SPEC)`, from any set of the world, is an effect over all

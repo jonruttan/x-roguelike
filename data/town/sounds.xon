@@ -113,3 +113,13 @@
 (room "the chapel" (reverb 150 80 28))
 (room "the White Church" (reverb 200 85 34))
 (room "the Guild hall" (reverb 120 70 22))
+
+; --- by night ------------------------------------------------------------------
+
+; The square emptied: a dog in a yard, the church clock, the owl from
+; the valley.
+(sound "dog" (vary 150) (gain 18) (echo 300 30 30)
+  (voice (wave reed) (note "D4") (slide "A3") (cut 30) (env (0 0) (8 40) (90 0)))
+  (voice (wave reed) (note "D4") (slide "A3") (cut 30) (at 220) (env (0 0) (8 34) (90 0))))
+
+(ambience "Kettle by night" (bed "night-air") (random "dog" 18000 35) (random "clock" 9000 25) (random "owl" 20000 30))
