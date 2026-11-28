@@ -532,6 +532,9 @@
 ; (bonus light N); 0 with the lamp lit or none worn.  A front end draws
 ; what is in view by it in a light of its own.
 (def game-glow (fn (_ g) (if (%gm-dark? g) (state-ring-bonus g (lit light)) 0)))
+; Whether G's player is in the dark: the set has a lamp and it is out,
+; put out, dry or camped by.  A front end draws no lamp then.
+(def game-dark? (fn (_ g) (%gm-dark? g)))
 ; How far a search reaches: a ring's light with the lamp lit, the cells
 ; beside at the least.  With the two together the player notices what
 ; is hidden beside them at every turn's end, unsearched.
@@ -1150,4 +1153,4 @@
            ((eq? (first q) (lit choose)) (if (< 4 (List length q)) (List ref 4 q) ()))
            (#t ()))))
 
-(provide roguelike/game game-make game-key! game-waiting? game-explore! game-more! game-score game-score-lines game-score-text game-help game-glow game-actions game-answers game-commands)
+(provide roguelike/game game-make game-key! game-waiting? game-explore! game-more! game-score game-score-lines game-score-text game-help game-glow game-dark? game-actions game-answers game-commands)

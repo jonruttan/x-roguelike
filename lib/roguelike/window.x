@@ -59,12 +59,28 @@
 (def %wn-f11 1073741892)
 (def %wn-alt-mod 768)
 
-; The wall clock in milliseconds, for a held gamepad direction.
+; The wall clock in milliseconds, for a held gamepad direction and the
+; frames' times.
 (def %wn-ms (fn (_) ((fn (_ t) (+ (* 1000 (first t)) (/ (rest t) 1000))) (Sys time-of-day))))
-; A wait of what is left of US microseconds since T0 milliseconds.
-(def %wn-rest-of
-  (fn (_ us t0)
-    ((fn (_ left) (when (int< 0 left) (Sys usleep left))) (int- us (int* 1000 (int- (%wn-ms) t0))))))
+; Whether the next frame of the window's cache A is due; when it is, the
+; one after it is made due US microseconds from now, so a frame's time
+; holds its drawing.  Between two frames the loop waits as it does for a
+; key (%wn-idle!), so a key pressed then is taken at once.
+; The clock is past what a 32-bit word holds, so it is reckoned with the
+; generic operators.
+(def %wn-due!
+  (fn (_ a us)
+    ((fn (_ now)
+       (if (< now (Vector ref 10 a)) #f
+         (do (Vector set! 10 (+ now (int/ us 1000)) a) #t)))
+     (%wn-ms))))
+; The wait for an event: %wn-idle-us, or what is left before the next
+; frame is due when that is less; the heap collected when the music asks.
+(def %wn-idle!
+  (fn (_ a snd)
+    ((fn (_ left) (Sys usleep (if (if (< 0 left) (< left %wn-idle-us) #f) left %wn-idle-us)))
+     (* 1000 (- (Vector ref 10 a) (%wn-ms))))
+    (when (sound-collect? snd) (Heap collect))))
 (def %wn-shifted "1!2@3#4$5%6^7&8*9(0)-_=+[{]}\\|;:'\",<.>/?`~")
 
 (def %wn-char
@@ -122,11 +138,13 @@
       (#t ((fn (_ hit) (if (null? hit) () (rest hit))) (List find (fn (_ e) (= (first e) code)) %wn-named))))))
 
 ; The window's cache A: [ARTS KEY ART PAD SOUND OPTIONS PAD? FRONT
-; DRAG ACTIONS], ARTS KEY and ART for %wn-art, the gamepad's state, the
-; game's sound or nil, the options (roguelike/options), whether the last
-; key came from the gamepad, so the prompts show its buttons, the class
-; the window is drawn through, Sdl or Web, the drag under way, and the
-; gamepad's menu of actions, the last one taken chosen.
+; DRAG ACTIONS DUE KEPT], ARTS KEY and ART for %wn-art, the gamepad's
+; state, the game's sound or nil, the options (roguelike/options),
+; whether the last key came from the gamepad, so the prompts show its
+; buttons, the class the window is drawn through, Sdl or Web, the drag
+; under way, the gamepad's menu of actions, the last one taken chosen,
+; the wall clock's millisecond the next frame is due at (%wn-due!), and
+; the events read ahead of their turn (%wn-drain!).
 (def %wn-front (fn (_ a) (Vector ref 7 a)))
 
 ; The next event of window WIN and the key it is, (EVENT . KEY): a
@@ -140,9 +158,8 @@
 ; the key as it is.
 (def %wn-read
   (fn (_ a win bound?)
-    ; Sdl places the mouse in the screen's pixels given the window; Web
-    ; has no mouse.
-    (def ev (if (eq? (%wn-front a) Sdl) (Sdl poll win) ((%wn-front a) poll)))
+    (def kept (Vector ref 11 a))
+    (def ev (if (null? kept) (%wn-poll a win) (do (Vector set! 11 (rest kept) a) (first kept))))
     (def typed? (if (null? ev) #f (eq? (first ev) (lit key-down))))
     (def typed (if typed? (window-key (List ref 1 ev) (List ref 2 ev)) ()))
     (def key (if typed?
@@ -153,6 +170,27 @@
     (unless (null? key) (Vector set! 6 (not typed?) a))
     (%wn-follow! a ev)
     (pair ev key)))
+; The next event of window WIN, or nil: Sdl places the mouse in the
+; screen's pixels given the window; Web has no mouse.
+(def %wn-poll (fn (_ a win) (if (eq? (%wn-front a) Sdl) (Sdl poll win) ((%wn-front a) poll))))
+
+; EVENTS with a held key's repeats dropped, the rest in order.  A
+; key-down, (key-down CODE MODS REPEAT), is a repeat when REPEAT is #t,
+; as Sdl gives it, or 1, as Web does.
+(def %wn-repeat? (fn (_ ev) (if (eq? (first ev) (lit key-down)) ((fn (_ r) (if (eq? r #t) #t (equal? r 1))) (List ref 3 ev)) #f)))
+(def window-unrepeated (fn (_ events) (List reject %wn-repeat? events)))
+
+; The events queued while a turn was taken and shown, read now so a key
+; held down walks at the pace the turns are shown, not the keyboard's,
+; and stops when it is let go: its repeats queued meanwhile are dropped
+; (window-unrepeated), every other event kept in A, in order, for
+; %wn-read.
+(def %wn-drain!
+  (fn (_ a win)
+    (Vector set! 11
+      (List append (Vector ref 11 a)
+        (window-unrepeated ((fn (self) ((fn (_ ev) (if (null? ev) () (pair ev (self)))) (%wn-poll a win))))))
+      a)))
 
 ; SDL's word that window went fullscreen or came back from it, by any
 ; hand: ours, the system's key for it, or the window's own button.
@@ -488,31 +526,28 @@
       ; Exploring steps on without waiting for each step to be shown, a
       ; step at least %wn-explore-us long.
       ((game-exploring? g)
-        (do (def t0 (%wn-ms))
-            (frame-pan! g 0 0)
-            (game-explore! g)
-            (sound-turn! snd g)
-            (%wn-turn-shown! a p g win snd tick)
-            (%wn-rest-of %wn-explore-us t0)
+        (do (if (%wn-due! a %wn-explore-us)
+              (do (frame-pan! g 0 0)
+                  (game-explore! g)
+                  (sound-turn! snd g)
+                  (%wn-turn-shown! a p g win snd tick))
+              (%wn-idle! a snd))
             (self g a p win tick)))
       ; A turn's blows and steps shown a frame at a time, before anything
       ; else moves; a key pressed meanwhile is taken at once.
-      ; Each waits only what drawing the frame left of its time.
       ((paint-animating? p)
-        (do (def t0 (%wn-ms))
-            (paint-step! p)
-            ((%wn-front a) show! win (List ref 2 (paint-frame! p g (+ tick 1))))
-            (%wn-rest-of %wn-step-us t0)
-            (self g a p win (+ tick 1))))
+        (if (%wn-due! a %wn-step-us)
+          (do (paint-step! p)
+              ((%wn-front a) show! win (List ref 2 (paint-frame! p g (+ tick 1))))
+              (self g a p win (+ tick 1)))
+          (do (%wn-idle! a snd) (self g a p win tick))))
       ((paint-flickers? p)
-        (do (def t0 (%wn-ms))
-            ((%wn-front a) show! win (List ref 2 (paint-frame! p g (+ tick 1))))
-            (Heap collect)
-            (%wn-rest-of %wn-frame-us t0)
-            (self g a p win (+ tick 1))))
-      (#t (do (Sys usleep %wn-idle-us)
-              (when (sound-collect? snd) (Heap collect))
-              (self g a p win tick))))))
+        (if (%wn-due! a %wn-frame-us)
+          (do ((%wn-front a) show! win (List ref 2 (paint-frame! p g (+ tick 1))))
+              (Heap collect)
+              (self g a p win (+ tick 1)))
+          (do (%wn-idle! a snd) (self g a p win tick))))
+      (#t (do (%wn-idle! a snd) (self g a p win tick))))))
 
 ; The turn game G has just taken drawn and shown at TICK, the heap
 ; collected after: the music topped up before each of the three, each
@@ -535,7 +570,8 @@
     (%wn-give! a g key)
     (sound-turn! snd g)
     (%wn-turn-shown! a p g win snd tick)
-    (%wn-answer! a p g win snd tick)))
+    (%wn-answer! a p g win snd tick)
+    (%wn-drain! a win)))
 
 ; --- the gamepad's menus -------------------------------------------------------
 
@@ -659,7 +695,7 @@
 (def window-play
   (fn (_ front saved fresh arts font scale zoom title)
     (def o (options-read (options-path)))
-    (def a (Vector of arts "" () (pad-make) () (if (null? zoom) o (options-set o (lit zoom) zoom)) #f front () (menu-make game-actions)))
+    (def a (Vector of arts "" () (pad-make) () (if (null? zoom) o (options-set o (lit zoom) zoom)) #f front () (menu-make game-actions) 0 ()))
     ; Fullscreen on a Mac stays on the desktop's Space: a Space of its
     ; own slides in, and a switch back before the slide ends leaves an
     ; empty screen with the window gone.
@@ -689,4 +725,4 @@
     (front close win)
     (pair (Vector ref 0 played) failed)))
 
-(provide roguelike/window window-key window-play)
+(provide roguelike/window window-key window-unrepeated window-play)

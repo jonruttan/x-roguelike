@@ -109,6 +109,19 @@ options kept between games, and the menu drawn over the dimmed level.
 ---
     (('look -1 0) ('look 0 1) 'left "H")
 
+## a key held
+
+### the repeats of a held key queued while a turn is shown are dropped, Sdl's and Web's alike; every other event keeps its place
+
+```roguelike
+(import roguelike/window window-unrepeated)
+(write (window-unrepeated
+  (list (list 'key-down 104 0 #f) (list 'key-down 104 0 #t) (list 'key-down 104 0 #t) (list 'key-up 104 0 #f)
+        (list 'key-down 106 0 0) (list 'key-down 106 0 1) (list 'mouse-motion 3 4 0) (list 'key-down 107 0 #f))))
+```
+---
+    (('key-down 104 0 #f) ('key-up 104 0 #f) ('key-down 106 0 0) ('mouse-motion 3 4 0) ('key-down 107 0 #f))
+
 ## the bindings
 
 ### a key bound does its command's key, and the command's own key no longer once it is bound elsewhere; bound to its own command it is unbound

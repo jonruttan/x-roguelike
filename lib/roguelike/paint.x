@@ -529,12 +529,14 @@
           (%pt-text! Canvas c (int+ x 1) (int+ ny 1) s %pt-shade-ink font)
           (%pt-text! Canvas c x ny s (match ((eq? how (lit miss)) %pt-miss-ink) (mine %pt-dealt-ink) (#t %pt-hurt-ink)) font)))))
 
-; Whether painter P has a turn's blows, or a step, still to show.
+; Whether painter P has a turn's blows, or a step, still to show: from
+; what paint-turn! found in the turn's scene, as the window asks it each
+; time round its loop.
 (def paint-animating?
   (fn (_ p)
     (match
-      ((int< (Vector ref 9 p) (%pt-blows-end (%pt-blow-ops (%pt-over p)))) #t)
-      ((int< (Vector ref 12 p) %pt-glide-frames) (List any? %pt-stepped? (%pt-over p)))
+      ((int< (Vector ref 9 p) (Vector ref 21 p)) #t)
+      ((int< (Vector ref 12 p) %pt-glide-frames) (Vector ref 22 p))
       (#t #f))))
 ; Whether OP is a walking thing's tile op come from another cell.
 (def %pt-stepped?
@@ -558,11 +560,18 @@
 ; drawn on; STANDING-KEY what the standing was last drawn with; LIGHT
 ; the light map's cache (frame-light-cache); LEVEL the level's
 ; (frame-level-cache); BLOWS the game's blows last drawn (game-blows).
+; Then what the turn's scene holds, found once a turn: FLICKERS whether
+; the frame changes with the tick (paint-flickers?), BLOWS-END the frame
+; after its blows' last (%pt-blows-end), STEPPED whether a walking thing
+; stepped, BLOW-OPS its blow ops, SETTLED its ops as every frame after
+; the blows and steps shows them (%pt-motion), VIEW its view op and
+; LIGHTS its light ops.
 (def paint-make
   (fn (_ font)
     (paint-zoom! (Vector of (Canvas make paint-width paint-height) () font () () () 0 () -1 %pt-blow-frames
                             (pair (Canvas make %pt-strip-w %pt-top-h) (Canvas make %pt-strip-w (int+ %pt-top-h %pt-pitch)))
-                            (Canvas make %pt-strip-w %pt-stand-h) %pt-glide-frames () () () () (frame-light-cache) (frame-level-cache) ())
+                            (Canvas make %pt-strip-w %pt-stand-h) %pt-glide-frames () () () () (frame-light-cache) (frame-level-cache) ()
+                            #f 0 #f () () () ())
                  paint-zoom-first)))
 (def paint-screen (fn (_ p) (Vector ref 0 p)))
 (def %pt-over (fn (_ p) (rest (rest (Vector ref 3 p)))))
@@ -632,7 +641,14 @@
     (Vector set! 7 (%pt-where over) p)
     (Vector set! 8 -1 p)
     (Vector set! 4 (frame-named a (lit panel) 0) p)
-    (Vector set! 9 (if (same? (game-blows g) (Vector ref 19 p)) (%pt-blows-end (%pt-blow-ops (%pt-over p))) 0) p)
+    (Vector set! 20 (%pt-flickers? (%pt-over p)) p)
+    (Vector set! 23 (%pt-blow-ops (%pt-over p)) p)
+    (Vector set! 21 (%pt-blows-end (Vector ref 23 p)) p)
+    (Vector set! 22 (List any? %pt-stepped? (%pt-over p)) p)
+    (Vector set! 24 (%pt-motion (%pt-over p) () %pt-blow-frames %pt-glide-frames #f) p)
+    (Vector set! 25 (List find (fn (_ op) (eq? (first op) (lit view))) (%pt-over p)) p)
+    (Vector set! 26 (List filter (fn (_ op) (eq? (first op) (lit light))) (%pt-over p)) p)
+    (Vector set! 9 (if (same? (game-blows g) (Vector ref 19 p)) (Vector ref 21 p) 0) p)
     (Vector set! 19 (game-blows g) p)
     (Vector set! 12 0 p)
     (Vector set! 13 ((fn (_ op) (if (null? op) () (%pt-chart op))) (List find (fn (_ op) (eq? (first op) (lit chart))) over)) p)
@@ -643,7 +659,7 @@
 (def paint-view!
   (fn (_ p g a)
     (paint-turn! p g a)
-    (Vector set! 9 (%pt-blows-end (%pt-blow-ops (%pt-over p))) p)
+    (Vector set! 9 (Vector ref 21 p) p)
     (Vector set! 12 %pt-glide-frames p)
     p))
 
@@ -789,10 +805,12 @@
     (def s (Vector ref 0 p))
     (def font (Vector ref 2 p))
     (def k (Vector ref 9 p))
-    (def blows ((fn (_ all) (if (int< k (%pt-blows-end all)) all ())) (%pt-blow-ops (%pt-over p))))
-    ; Only a blow in hand lunges.
-    (def over (%pt-motion (%pt-over p) (List filter (fn (_ b) (null? (List ref 8 b))) blows) k (Vector ref 12 p)
-                              (not (null? blows))))
+    (def blows (if (int< k (Vector ref 21 p)) (Vector ref 23 p) ()))
+    ; Only a blow in hand lunges.  Once the blows and steps are shown the
+    ; ops stand as the turn left them.
+    (def over (if (paint-animating? p)
+                (%pt-motion (%pt-over p) (List filter (fn (_ b) (null? (List ref 8 b))) blows) k (Vector ref 12 p) (not (null? blows)))
+                (Vector ref 24 p)))
     (def work (Vector ref 5 p))
     (def lw (first work))
     (def lh (first (rest work)))
@@ -804,8 +822,7 @@
     ; screenful so the tick a tile steps by is never below zero.
     (%pt-ops! work over frame-level-y font (int+ tick (int+ (int* (int+ (rest cam) 128) 7) (int* (int+ (first cam) 128) 13))) (int- tick (Vector ref 8 p)))
     (Canvas light! work 0 0 lw lh
-      (frame-light-map (Vector ref 17 p) (List find (fn (_ op) (eq? (first op) (lit view))) over)
-                       (List filter (fn (_ op) (eq? (first op) (lit light))) over) tick)
+      (frame-light-map (Vector ref 17 p) (Vector ref 25 p) (Vector ref 26 p) tick)
       frame-tile-size)
     (%pt-glints! work over frame-level-y tick)
     (%pt-sleeps! work over frame-level-y tick font)
@@ -1054,13 +1071,15 @@
 
 ; Whether the last turn's scene has a light that flickers, a glint, a
 ; sleeper or a tile that moves: whether the frame changes with the tick.
-(def paint-flickers?
-  (fn (_ p)
+; Found once a turn, by paint-turn!.
+(def paint-flickers? (fn (_ p) (Vector ref 20 p)))
+(def %pt-flickers?
+  (fn (_ over)
     (List any? (fn (_ op) (match ((eq? (first op) (lit light)) (< 0 (List ref 7 op))) ((eq? (first op) (lit glint)) #t) ((eq? (first op) (lit sleep)) #t)
                                  ((eq? (first op) (lit tile))
                                    ((fn (_ props) (not (if (null? (%pt-find props (lit pictures))) (null? (%pt-find props (lit walking))) #f))) (rest (List ref 3 op))))
                                  (#t #f)))
-      (%pt-over p))))
+      over)))
 
 (provide roguelike/paint
   paint-width paint-height paint-art paint-arts paint-font paint-make paint-screen paint-turn! paint-view! paint-frame! paint-flickers?

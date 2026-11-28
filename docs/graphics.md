@@ -59,7 +59,8 @@ screen's pixel, the art's scale: a line holds 52 letters.
   from the cell it left, over its shadow, in about a quarter of a
   second: quick off the mark, slowing, a pixel past and back.  Its
   pictures stay its new cell's.  A key pressed meanwhile is taken at
-  once; exploring does not wait for it.
+  once; exploring does not wait for it.  A key held down takes a turn
+  as each is shown, and stops when it is let go.
 - **Blows**: after a turn with a fight, about half a second of it: the
   striker lunges toward its target and eases back, a blow that lands
   flashes the target (white for the player's, red for a creature's),
