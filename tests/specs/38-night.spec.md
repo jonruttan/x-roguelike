@@ -56,7 +56,7 @@ and every place is heard first as "PLACE by night" (see
 (def n38-w (List append n38-k (List flat-map rest (data-all n38-k 'region))))
 (def n38-named? (fn (_ head n) (List any? (fn (_ f) (str=? (first f) n)) (data-all n38-w head))))
 (def n38-props (fn (_ key) (List flat-map (fn (_ a) (List map (fn (_ p) (List ref 1 p)) (List filter (fn (_ p) (if (pair? p) (eq? (first p) key) #f)) (rest a))))
-                              (List filter (fn (_ a) (Str8 ends-with? (first a) " by night")) (data-all n38-w 'ambience)))))
+                              (List filter (fn (_ a) (not (null? (Str8 index-of " by night" (first a))))) (data-all n38-w 'ambience)))))
 (write (list n38-day (sound-places g)
              (n38-named? 'song (List ref 1 (List find (fn (_ m) (str=? (first m) "default by night")) (data-all n38-w 'music))))
              (List all? (fn (_ b) (n38-named? 'song b)) (n38-props 'bed))
