@@ -240,6 +240,18 @@ takes, a wall in parts by its neighbours, and the camera on the player.
 ---
     ("jade" "garnet" ((255 196 118 5 10) (255 222 170 5 4)) ((255 196 118 5 10) (255 222 170 5 4) (240 10 60 2 14 220)) ((255 196 118 5 10) (255 222 170 5 4) (120 170 255 3 0) (70 150 255 2 14 220) (240 10 60 2 14 220)) ((120 170 255 3 0) (70 150 255 2 14 220) (240 10 60 2 14 220)))
 
+### the lamp out and no ring worn: the player carries no light, the lantern nor the picture's; lit again, both
+
+```roguelike
+(def dark-lamp (player-lamp p))
+(player-lamp! p 0)
+(def dark-out (carried))
+(player-lamp! p dark-lamp)
+(write (list dark-out (carried)))
+```
+---
+    (() ((255 196 118 5 10) (255 222 170 5 4)))
+
 ### a set with no art: what stands on the level is its glyph
 
 ```roguelike
