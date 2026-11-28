@@ -1,6 +1,6 @@
 ; # x-roguelike -- a roguelike on x-lang
 ;
-; ## roguelike/menu.x -- a list of choices, moved through with keys
+; ## lib/roguelike/menu.x -- a list of choices, moved through with keys
 ;
 ; The title screen's, the options' and the pause's: a list of items,
 ; one of them chosen, and the keys the game already takes moving the

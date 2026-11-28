@@ -1,6 +1,6 @@
 ; # x-roguelike -- a roguelike on x-lang
 ;
-; ## roguelike/scale.x -- how much ground a cell is
+; ## lib/roguelike/scale.x -- how much ground a cell is
 ;
 ; @author [Jon Ruttan](jonruttan@gmail.com)
 ; @copyright 2026 Jon Ruttan

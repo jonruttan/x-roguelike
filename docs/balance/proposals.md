@@ -93,7 +93,7 @@ move whose outcomes score best.
 | Looking ahead | the opponent's replies | the creatures' turns, by the engine itself |
 | Chance | none | the dice: many copies played, the mean taken |
 | What is hidden | nothing | the unseen level: guessed from what the set lays at that depth |
-| The score | material and position | hit points, supplies and light left, by `roguelike/odds.x` and the budget |
+| The score | material and position | hit points, supplies and light left, by `lib/roguelike/odds.x` and the budget |
 
 The score is the same arithmetic as the model, so the bot and the
 rule cannot disagree about what a thing is worth.
@@ -101,7 +101,7 @@ rule cannot disagree about what a thing is worth.
 What it needs, by the timings in [state.md](state.md):
 
 - **A copy of a game in memory.**  About thirty lines in
-  `roguelike/state.x`, and 3 ms a copy.  Not the obstacle.
+  `lib/roguelike/state.x`, and 3 ms a copy.  Not the obstacle.
 - **A faster turn.**  This is the obstacle.  A search that tries 6
   moves, 8 times each against the dice, 10 turns deep, plays 480
   turns to choose one move: 14 seconds at 30 ms a turn.  A game is

@@ -1,6 +1,6 @@
 ; # x-roguelike -- a roguelike on x-lang
 ;
-; ## roguelike/frame.x -- the level as pictures: what goes where
+; ## lib/roguelike/frame.x -- the level as pictures: what goes where
 ;
 ; @author [Jon Ruttan](jonruttan@gmail.com)
 ; @copyright 2026 Jon Ruttan

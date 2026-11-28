@@ -1,11 +1,10 @@
 ; # x-roguelike -- a roguelike on x-lang
 ;
-; ## roguelike/cli.x -- the command line, and the terminal
+; ## lib/roguelike/cli.x -- the command line, and the terminal
 ;
 ; @author [Jon Ruttan](jonruttan@gmail.com)
 ; @copyright 2026 Jon Ruttan
 ; @license MIT No Attribution (MIT-0)
-; lint-known: %lang-root
 ;
 ;   x -l roguelike -- [-s NAME] [-c GROUP=NAME]... [-S N] [-d DIR] [play]
 ;                                                       a game
@@ -24,6 +23,7 @@
 
 (import x/type/vector)
 (import x/sys/posix)
+(import x/sys/bundle)
 (import x/sys/file)
 (import x/sys/gc)
 (import x/repl/term)
@@ -69,7 +69,7 @@
 (def %cl-data-dir
   (fn (_ opts)
     (def env (Sys getenv "X_ROGUELIKE_DATA"))
-    (def root (guard (e ()) %lang-root))
+    (def root (guard (e ()) (Bundle root "roguelike")))
     (match ((not (null? (Opts value opts "-d"))) (Opts value opts "-d"))
            ((if (null? env) #f (not (str=? env ""))) env)
            ((str? root) (Str8 append root "/data"))
@@ -191,7 +191,7 @@
 ; art/ here.
 (def %cl-art-dir
   (fn (_)
-    (def root (guard (e ()) %lang-root))
+    (def root (guard (e ()) (Bundle root "roguelike")))
     (if (str? root) (Str8 append root "/art") "art")))
 
 ; The ports --web tries in turn, then any the system gives.

@@ -1,6 +1,6 @@
 ; # x-roguelike -- a roguelike on x-lang
 ;
-; ## roguelike/sound.x -- the game heard in a window
+; ## lib/roguelike/sound.x -- the game heard in a window
 ;
 ; The window's sound: a soundtrack and an ambient bed played by trackers
 ; (x/audio/tracker), a heartbeat, and the sounds of a turn, all made

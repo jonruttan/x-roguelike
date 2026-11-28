@@ -1,0 +1,18 @@
+; bundle.xon -- what this bundle is.
+
+(name "roguelike")
+
+; Helium, plus exactly the libraries this bundle imports and nothing
+; ambient: the terminal, files, the random source and xon, none of the
+; tower.
+(dialect he)
+
+(requires-release "v0.62.0")
+
+; The window paints its tiles with the graphics library.
+(requires-bundle "gfx" "v0.1.0" "jonruttan/x-lib-gfx")
+
+; What it ships beside lib/: the dungeon's data and the tiles' art.
+(payload "data" "art")
+
+(entry run)

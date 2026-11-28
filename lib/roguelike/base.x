@@ -1,6 +1,6 @@
 ; # x-roguelike -- a roguelike on x-lang
 ;
-; ## roguelike/base.x -- what the entry and the specs reach
+; ## lib/roguelike/base.x -- what the entry and the specs reach
 ;
 ; @author [Jon Ruttan](jonruttan@gmail.com)
 ; @copyright 2026 Jon Ruttan

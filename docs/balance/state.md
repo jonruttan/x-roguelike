@@ -76,7 +76,7 @@ A turn is a second in the Delve.
 
 ## A fight's cost
 
-From `roguelike/odds.x`, which reads the engine's own rolls.
+From `lib/roguelike/odds.x`, which reads the engine's own rolls.
 
 | Term | Rule |
 |---|---|
@@ -184,7 +184,7 @@ they were first written.
 | fireman | level 3, hit points 20-28, attack 2-7, cold regen | level 3, 14-18, 1-4, cold | the same |
 | lantern eel | level 3, 8-14, 2-6, dazzle fast | level 2, 6-10, 1-4, dazzle | 9-13, 2-5 |
 | great leech | level 4, 16-26, 3-9 | level 3, 10-16, 1-4 | 14-22, 2-5 |
-| drowned shade | level 5, 10-16, 2-8 | level 3, 6-10, 1-4 | 9-13, 2-5 |
+| drowned shade | level 5, 10-16, 2-8 | level 3, 6-10, 1-4 | 9-13, 2-5, slow |
 | undertow | level 6, 32-44, 4-10 | level 5, 14-20, 1-4 | 22-30, 2-6 |
 
 The four below the fireman were raised with the starting numbers.
@@ -223,7 +223,7 @@ turns ahead.
 
 | It does | It does not |
 |---|---|
-| weigh a fight by `roguelike/odds.x` before starting it | evade, or lure a creature to better ground |
+| weigh a fight by `lib/roguelike/odds.x` before starting it | evade, or lure a creature to better ground |
 | drink mending when what is lost fits what the potion gives | choose which of several to strike first |
 | step away from a fight it is losing, when free to | use a wand or a scroll |
 | wield the best weapon and armour it holds | fight a pack from a passage |

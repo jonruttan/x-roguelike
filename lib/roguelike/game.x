@@ -1,6 +1,6 @@
 ; # x-roguelike -- a roguelike on x-lang
 ;
-; ## roguelike/game.x -- a game played: the keys, the turns, the levels
+; ## lib/roguelike/game.x -- a game played: the keys, the turns, the levels
 ;
 ; @author [Jon Ruttan](jonruttan@gmail.com)
 ; @copyright 2026 Jon Ruttan

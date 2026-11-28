@@ -65,7 +65,7 @@ options kept between games, and the menu drawn over the dimmed level.
 ```roguelike
 (import roguelike/paint paint-font paint-make paint-turn! paint-frame! paint-menu! paint-art paint-width paint-height)
 (import roguelike/frame frame-art)
-(import x/gfx/canvas)
+(import gfx/canvas)
 (def font (paint-font "art"))
 (def fa (frame-art (paint-art (data-load "data/delve/art")) ()))
 (def g (spec-game-on (spec-set-named "delve") 3 ()))

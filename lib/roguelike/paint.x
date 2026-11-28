@@ -1,6 +1,6 @@
 ; # x-roguelike -- a roguelike on x-lang
 ;
-; ## roguelike/paint.x -- the frame drawn: the scene's ops onto a canvas
+; ## lib/roguelike/paint.x -- the frame drawn: the scene's ops onto a canvas
 ;
 ; A set's art turned into pictures once, when it is loaded; then each
 ; turn the level drawn into a layer of its own, and each frame that
@@ -18,7 +18,7 @@
 (module roguelike/paint)
 
 (import x/type/vector)
-(import x/gfx/canvas)
+(import gfx/canvas)
 (import x/core/doors int+ int- int* int/ int% int< int= str-make str->ptr ptr-ref ptr-set!)
 (import roguelike/data data-load data-all)
 (import roguelike/state game-ask game-blows)

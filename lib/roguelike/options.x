@@ -1,6 +1,6 @@
 ; # x-roguelike -- a roguelike on x-lang
 ;
-; ## roguelike/options.x -- the window's options, kept between games
+; ## lib/roguelike/options.x -- the window's options, kept between games
 ;
 ; What a player sets in the window and keeps from one game to the next:
 ; the zoom the level is shown at, fullscreen or not, how loud the music

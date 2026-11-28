@@ -1,6 +1,6 @@
 ; # x-roguelike -- a roguelike on x-lang
 ;
-; ## roguelike/pad.x -- the game played with a gamepad
+; ## lib/roguelike/pad.x -- the game played with a gamepad
 ;
 ; A gamepad's events from (Sdl poll) turned into the keys the game
 ; already takes.  The left stick and the d-pad move in eight
