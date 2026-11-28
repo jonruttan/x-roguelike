@@ -13,7 +13,7 @@ streets and never goes under a roof.
 ### the inn has one counter, beside the innkeeper and under the inn's roof, the floor across it from them free to stand on; the council house, no shop, has none
 
 ```roguelike
-(def g (spec-game-on (spec-set-named "kettle") 4 ()))
+(def g (spec-game-on (spec-fair (spec-set-named "kettle")) 4 ()))
 (def m (game-map g))
 (def host (List find (fn (_ c) (str=? (creature-name c) "innkeeper")) (game-creatures g)))
 (def counters (List flat-map (fn (_ r) (List flat-map (fn (_ c) (if (= (map-tile m r c) tile-counter) (list (pair r c)) ())) (List range 0 80))) (List range 0 22)))
@@ -30,7 +30,7 @@ streets and never goes under a roof.
 ### a step at the counter from across it puts up the innkeeper's goods, as a step at the innkeeper does
 
 ```roguelike
-(def g (spec-game-on (spec-set-named "kettle") 4 ()))
+(def g (spec-game-on (spec-fair (spec-set-named "kettle")) 4 ()))
 (def m (game-map g))
 (def host (List find (fn (_ c) (str=? (creature-name c) "innkeeper")) (game-creatures g)))
 (def at (first (List flat-map (fn (_ r) (List flat-map (fn (_ c) (if (= (map-tile m r c) tile-counter) (list (pair r c)) ())) (List range 0 80))) (List range 0 22))))
@@ -49,7 +49,7 @@ streets and never goes under a roof.
 ### the square has its carrier and its water-carrier, one of each, on open ground under no roof, and each walked into says a line of theirs
 
 ```roguelike
-(def g (spec-game-on (spec-set-named "kettle") 4 ()))
+(def g (spec-game-on (spec-fair (spec-set-named "kettle")) 4 ()))
 (def m (game-map g))
 (def lines '(("carrier" "The pass is open till the snow, and I'll not winter here." "A packhorse wants oats, pit or no pit.")
              ("water-carrier" "The well-head serves the whole square, and the queue is longer each week.")))
@@ -69,7 +69,7 @@ streets and never goes under a roof.
 ### one who strolls moves about over two hundred turns and is never under a roof nor off the floor; one who does not stays put
 
 ```roguelike
-(def g (spec-game-on (spec-set-named "kettle") 4 ()))
+(def g (spec-game-on (spec-fair (spec-set-named "kettle")) 4 ()))
 (def m (game-map g))
 (def named (fn (_ name) (List find (fn (_ c) (str=? (creature-name c) name)) (game-creatures g))))
 (def walker (named "carrier"))

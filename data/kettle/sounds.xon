@@ -82,3 +82,19 @@
 ; Night told with an owl, and dawn with the first bird.
 (said "nightfall" "owl")
 (said "dawn" "bird")
+
+; --- the weather ---------------------------------------------------------------
+
+; Under the sky the weather's (heard "NAME") is heard over the place, in
+; the valley and the town alike (docs/sound.md): rain on the ground, and
+; in a storm the rain heavier, with thunder rolling off the hills.
+(sound "thunder" (vary 150) (gain 40) (echo 600 40 45)
+  (voice (wave noise) (hz 1) (cut 2) (env (0 0) (60 70) (900 45) (4000 0)))
+  (voice (wave noise) (hz 1) (cut 5) (at 200) (pan 35) (env (0 0) (100 40) (2500 0))))
+
+(ambience "rain" (bed "rain") (random "drip" 2500 40) (random "gust" 16000 30))
+(ambience "storm" (bed "storm") (random "thunder" 20000 50) (random "gust" 6000 50))
+
+; Rain begun told with a drip, a storm with thunder.
+(said "rain" "drip")
+(said "storm" "thunder")

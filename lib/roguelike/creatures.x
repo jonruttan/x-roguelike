@@ -32,7 +32,7 @@
 (import x/type/vector)
 (import x/core/doors int/)
 (import roguelike/data data-all data-prop data-prop1 data-trait?)
-(import roguelike/map map-visible? map-roofed? map-tile map-down map-in? map-floor? map-roof-at tile-door)
+(import roguelike/map map-visible? map-roofed? map-tile map-down map-in? map-floor? map-roof-at map-rows map-cols tile-door)
 (import roguelike/dungeon dungeon-spot)
 (import roguelike/state
   game-rng game-set game-depth game-map game-player game-creatures game-creatures! game-turn game-param game-param1
@@ -41,7 +41,7 @@
   creature-carried creature-name creature-prop creature-prop1 creature-trait? creature-condition creature-tick! state-a-kind
   creature-target creature-target!
   state-say! state-tell! state-roll state-chance? state-dirs state-dist state-adjacent? state-in-sight? state-sign state-free?
-  state-ring? state-ring-bonus state-gentle?)
+  state-ring? state-ring-bonus state-gentle? game-weather-prop game-temperature game-top-param)
 (import roguelike/combat combat-creature-attacks! combat-hurt-player!)
 
 ; --- spawning ----------------------------------------------------------------
@@ -317,15 +317,69 @@
     (when (if (creature-trait? cr (lit regen)) (= 0 (% (game-turn g) 3)) #f)
       (when (< (creature-hp cr) (%cr-hp-most cr)) (creature-hp! cr (+ (creature-hp cr) 1))))))
 
+; Whether the weather sends people under a roof: weather that says
+; (shelter), or the temperature under the world's (cold BELOW PCT).
+(def %cr-shelter?
+  (fn (_ g)
+    (def t (game-temperature g))
+    (def cold (game-top-param g (lit cold) ()))
+    (if (eq? (game-weather-prop g (lit shelter) #f) #f) (if (null? t) #f (if (null? cold) #f (< t (first cold)))) #t)))
+; The first step, (DR . DC), of CR's shortest way over floor and doors
+; to the nearest cell GOAL? takes, no more than the set's (shelter-reach
+; N) steps off, none unless given; or nil.  Breadth first, the way round
+; walls, never slanting through a door.
+(def %cr-way
+  (fn (_ g cr goal?)
+    (def m (game-map g))
+    (def cols (map-cols m))
+    (def reach (game-param1 g (lit shelter-reach) 0))
+    (def seen (Vector make (* (map-rows m) cols) #f))
+    (def ok? (fn (_ r c) (if (map-in? m r c) (if (map-floor? m r c) #t (= (map-tile m r c) tile-door)) #f)))
+    (Vector set! (+ (* (creature-r cr) cols) (creature-c cr)) #t seen)
+    ((fn (self ring d)
+       (if (if (null? ring) #t (< reach d)) ()
+         ((fn (_ next)
+            ((fn (_ hit) (if (null? hit) (self next (+ d 1)) (List ref 2 hit)))
+             (List find (fn (_ e) (goal? (first e) (List ref 1 e))) next)))
+          (List flat-map
+            (fn (_ e)
+              (List flat-map
+                (fn (_ s)
+                  (def r (+ (first e) (first s)))
+                  (def c (+ (List ref 1 e) (rest s)))
+                  (if (if (ok? r c) (if (Vector ref (+ (* r cols) c) seen) #f (not (creatures-door-diagonal? m (first e) (List ref 1 e) (first s) (rest s)))) #f)
+                    (do (Vector set! (+ (* r cols) c) #t seen) (list (list r c (if (null? (List ref 2 e)) s (List ref 2 e)))))
+                    ()))
+                (state-dirs)))
+            ring))))
+     (list (list (creature-r cr) (creature-c cr) ())) 1)))
+; A stroller going in from the weather or out after it: where the
+; weather wants them, under a roof in it, they stay, and out of it they
+; stroll; else a step along the way to the nearest floor on the wanted
+; side, through a door.  Whether they stayed or stepped.
+(def %cr-shelter-walk!
+  (fn (_ g cr)
+    (def m (game-map g))
+    (def r (creature-r cr))
+    (def c (creature-c cr))
+    (def want (%cr-shelter? g))
+    (def roofed? (fn (_ rr cc) (not (= 0 (map-roof-at m rr cc)))))
+    (if (if (= (map-tile m r c) tile-door) #f (eq? want (roofed? r c))) (roofed? r c)
+      ((fn (_ d)
+         (if (null? d) #f
+           (do (when (creatures-can-step? g r c (first d) (rest d)) (creature-at! cr (+ r (first d)) (+ c (rest d)))) #t)))
+       (%cr-way g cr (fn (_ rr cc) (if (map-floor? m rr cc) (eq? want (roofed? rr cc)) #f)))))))
+
 ; One of the people who strolls: a step now and then, on open ground
-; only, never under a roof or through a door.  The way and the time
+; only, never under a roof or through a door, unless the weather sends
+; them in or lets them out (%cr-shelter-walk!).  The way and the time
 ; come of the turn and where they stand, not of the dice, so the
 ; streets' walkers leave the game's own draws as they were.
 (def %cr-stroll!
   (fn (_ g cr)
     (def m (game-map g))
     (def k (% (+ (* 7 (game-turn g)) (+ (* 13 (creature-r cr)) (* 31 (creature-c cr)))) 32))
-    (when (< k 8)
+    (when (if (%cr-shelter-walk! g cr) #f (< k 8))
       ((fn (_ d)
          (def r (+ (creature-r cr) (first d)))
          (def c (+ (creature-c cr) (rest d)))

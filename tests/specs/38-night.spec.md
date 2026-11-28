@@ -12,7 +12,7 @@ and every place is heard first as "PLACE by night" (see
 ### the valley's day begins at three in the afternoon; night falls at eight and is gone at six; the Delve alone has no hour
 
 ```roguelike
-(def n38-g (spec-game-on (spec-valley) 4 ()))
+(def n38-g (spec-game-on (spec-fair (spec-valley)) 4 ()))
 (def n38-at (fn (_ s) (game-clock! n38-g s) (list (game-hour n38-g) (game-night? n38-g))))
 (def n38-d (spec-game-on (spec-set-named "delve") 4 ()))
 (write (list (n38-at 0) (n38-at 17999) (n38-at 18000) (n38-at 53999) (n38-at 54000)
@@ -26,7 +26,7 @@ and every place is heard first as "PLACE by night" (see
 ### at dusk night falls and is told, and only the cells near are in view; at dawn it breaks and the screen is seen whole
 
 ```roguelike
-(def g (spec-game-on (spec-valley) 4 ()))
+(def g (spec-game-on (spec-fair (spec-valley)) 4 ()))
 (def m (game-map g))
 (def n38-lit (fn (_) (List fold (fn (_ a r) (+ a (List count-if (fn (_ c) (map-visible? m r c)) (List range 0 (map-cols m))))) 0 (List range 0 (map-rows m)))))
 (game-creatures! g ())
@@ -49,7 +49,7 @@ and every place is heard first as "PLACE by night" (see
 
 ```roguelike
 (import roguelike/sound sound-places)
-(def g (spec-game-on (spec-valley) 4 ()))
+(def g (spec-game-on (spec-fair (spec-valley)) 4 ()))
 (def n38-day (sound-places g))
 (game-clock! g 20000)
 (def n38-k (spec-set-named "kettle"))

@@ -40,7 +40,7 @@
 (import roguelike/state game-set game-player game-depth game-map game-creatures game-pack game-over game-blows game-said game-turn
   game-band band-name game-place game-top-set game-param player-r player-c player-hp player-hpmax player-level player-gold
   player-food player-lamp player-conditions creature-r creature-c creature-state creature-name state-dist
-  band-to band-prop1 state-creature-named game-inside item-count item-prop player-rings game-night? game-sky?)
+  band-to band-prop1 state-creature-named game-inside item-count item-prop player-rings game-night? game-sky? game-weather-prop)
 (import roguelike/map map-tile map-terrain map-roof-at map-place-at)
 (import roguelike/creatures creatures-shown?)
 
@@ -325,18 +325,21 @@
 ; The places G is heard in, the nearest first: the named building whose
 ; roof is over the player, the interior stood in, then the band, else
 ; the region, else default.  A building's own song and air are heard
-; inside it, and what it lacks is the place's around it.  At night under
-; the sky the band is heard as "BAND by night", else "default by night",
-; before it is heard as itself.
+; inside it, and what it lacks is the place's around it.  Under the sky
+; the weather's (heard "NAME") comes first, so rain is heard over the
+; place; at night under it the band is heard as "BAND by night", else
+; "default by night", before it is heard as itself.
 (def sound-places
   (fn (_ g)
     (def p (game-player g))
     (def m (game-map g))
     (def in (game-inside g))
     (def key (%sd-place-key g))
+    (def sky (game-sky? g))
+    (def heard (if sky (game-weather-prop g (lit heard) ()) ()))
     (def at (if (int= 0 (map-roof-at m (player-r p) (player-c p))) () (map-place-at m (player-r p) (player-c p))))
-    (List append (if (null? at) () (list (first at))) (if (str? in) (list in) ())
-      (if (if (game-night? g) (game-sky? g) #f) (list (Str8 append key " by night") "default by night") ())
+    (List append (if (null? at) () (list (first at))) (if (str? in) (list in) ()) heard
+      (if (if (game-night? g) sky #f) (list (Str8 append key " by night") "default by night") ())
       (list key))))
 (def %sd-same-places?
   (fn (self a b)

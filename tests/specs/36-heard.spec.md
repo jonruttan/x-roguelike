@@ -21,7 +21,7 @@ swept off it.  Nothing here opens an audio device.
 ---
     (("Kettle") ("the inn" "Kettle"))
 
-### every place the Kettle world's music and air are for is default, a band, a region, a screen, a building or an interior of it, or one of those by night
+### every place the Kettle world's music and air are for is default, a band, a region, a screen, a building or an interior of it, or one of those by night, or what a weather is heard as
 
 ```roguelike
 (def h36-k (spec-set-named "kettle"))
@@ -30,7 +30,8 @@ swept off it.  Nothing here opens an audio device.
   (List flat-map (fn (_ s) (List map (fn (_ b) (List ref 1 b)) (List filter (fn (_ f) (if (pair? f) (eq? (first f) 'building) #f)) (rest s))))
     (data-all h36-w 'screen)))
 (def h36-names (List append (list "default") (List map first (data-all h36-w 'band)) (List map first (data-all h36-k 'region))
-                 (List map first (data-all h36-w 'screen)) h36-buildings (List map first (data-all h36-w 'interior))))
+                 (List map first (data-all h36-w 'screen)) h36-buildings (List map first (data-all h36-w 'interior))
+                 (List flat-map (fn (_ k) (data-prop k 'heard ())) (rest (first (data-all h36-k 'weather))))))
 (def h36-known? (fn (_ n) (List any? (fn (_ m) (if (str=? m n) #t (str=? (Str8 append m " by night") n))) h36-names)))
 (def h36-has? (fn (_ head n) (List any? (fn (_ f) (str=? (first f) n)) (data-all h36-w head))))
 (write (list (List all? (fn (_ f) (h36-known? (first f))) (List append (data-all h36-w 'music) (data-all h36-w 'ambience)))
