@@ -314,6 +314,23 @@ sky, only `(night-view N)` cells around (3), or as far as a ring of
 light gives; night and dawn are told as they come, and `v` gives the
 hour.  `kettle` begins at three in the afternoon, dusk at eight.
 
+`(weather HOURS (KIND WEIGHT SHIFT . PROPS) ...)` gives the world
+weather on the same clock: a spell of HOURS each, its KIND drawn by
+WEIGHT from the game's seed and the spell, so the same seed has the
+same skies.  Under the sky a kind's `(view N)` is sight at the most,
+`(told "TEXT")` is said as it comes on, `(heard "NAME")` is heard over
+the place (docs/sound.md), and `(shelter)` sends the people who stroll
+the streets under the nearest roof, to come out again when it passes;
+`(said "TEXT")` is its name in `v`.  `(temperature LOW HIGH PEAK)` is
+the degrees, LOW at dawn and HIGH at the hour PEAK, and a kind's
+SHIFT on them.  Under the sky, `(cold BELOW PCT)` and `(heat ABOVE
+PCT)` burn food PCT percent faster under BELOW or over ABOVE degrees,
+the cold sending the people in too, and `(chill BELOW SECONDS)` costs
+a hit point every SECONDS under BELOW.  The world's `(weather-talk
+KIND LINE ...)` gives its people a word on the weather.  `kettle` has
+clear, overcast, rain and storm in spells of three hours, four degrees
+at dawn and twenty-one in the afternoon.
+
 `(lamp FULL LOW)` gives the player a lamp holding FULL seconds of oil,
 lit full at the start, or the first turn in the set when come from one
 without.  It burns on the clock, says when LOW seconds are left and

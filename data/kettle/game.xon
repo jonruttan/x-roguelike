@@ -67,6 +67,28 @@
 (day 6 20 15)
 (night-view 3)
 
+; The world's weather, a spell of three hours each drawn by weight from
+; the game's seed: (KIND WEIGHT SHIFT . PROPS), SHIFT degrees on the
+; hour's temperature.  Under the sky, (view N) is sight at the most,
+; (heard "NAME") what is heard over the place, (said "TEXT") its name
+; in v, and (told "TEXT") said as it comes on.  (shelter) sends the
+; people of the streets under a roof.
+(weather 3
+  (clear 35 3 (said "Clear") (told "The sky clears."))
+  (cloud 35 0 (said "Overcast") (told "Cloud comes over."))
+  (rain 20 -3 (view 5) (shelter) (heard "rain") (said "Rain") (told "It starts to rain."))
+  (storm 10 -5 (view 3) (shelter) (heard "storm") (said "A storm") (told "A storm breaks over the valley.")))
+
+; The temperature, degrees: (temperature LOW HIGH PEAK) LOW at dawn and
+; HIGH at the hour PEAK.  Under the sky, (cold BELOW PCT) burns food
+; PCT percent faster under BELOW degrees and sends the people in, (heat
+; ABOVE PCT) likewise over ABOVE, and (chill BELOW SECONDS) costs a hit
+; point every SECONDS under BELOW.
+(temperature 4 21 15)
+(cold 7 50)
+(heat 22 25)
+(chill 1 20)
+
 ; Open ground: thickets of wall, the outer ring always clear.
 (level-style open)
 (clumps 8 14)

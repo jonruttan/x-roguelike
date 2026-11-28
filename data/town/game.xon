@@ -79,6 +79,16 @@
 ; building is under its roof, drawn as roof from outside and open to
 ; the eye from inside; a cell that is (cell "C" KIND open) is open to
 ; the sky: a yard, its wall and its gate, a mill race.
+; The people's word on the weather in force, (weather-talk KIND LINE
+; ...), said before their own.
+(weather-talk clear "Fine drying weather, for all there's little to dry.")
+(weather-talk cloud "It'll come on to rain before long, see if it doesn't.")
+(weather-talk rain "Wet through, and the pit floods the faster for it.")
+(weather-talk storm "Get in out of it, you fool!")
+
+; How far, in steps, one who strolls goes to shelter or to come out.
+(shelter-reach 40)
+
 (cell "," floor open)
 (cell "%" wall open)
 (cell "=" gate open)

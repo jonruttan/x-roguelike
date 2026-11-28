@@ -32,7 +32,7 @@
 (import roguelike/state
   game-rng game-set game-forms game-turn game-depth game-map game-player game-creatures game-creatures! game-floor game-floor!
   game-pack game-ask! game-quest-state game-quest-state! game-placed? game-placed! game-chain game-screen game-below? game-region game-world-all
-  game-place
+  game-place game-weather
   player-r player-c creature-make creature-name creature-carried creature-carried! creature-r creature-c
   item-make item-name item-class? item-at! item-letter! item-r item-c
   state-tell! state-text state-roll state-free? state-items-at state-remove-pack! state-creature-named state-dist)
@@ -368,8 +368,9 @@
 ; A screen's (folk NAME LINE ...) is one of the people out of doors on
 ; it: a creature that talks, put on open ground when the level is made,
 ; unless the game's chain gives NAME a screen of its own; walked into,
-; they say a LINE, the next each turn.  One with the strolls trait
-; wanders the streets (creatures.x).  They are spread over the open
+; they say a LINE, the next each turn, the weather's talk among them
+; first.  One with the strolls trait wanders the streets, and goes
+; under a roof from the weather (creatures.x).  They are spread over the open
 ; ground in the order it is read, with no draw of the dice.
 (def %qs-folk (fn (_ g) (data-all (game-forms g) (lit folk))))
 (def quests-folk!
@@ -401,7 +402,18 @@
     (def tk (%qs-trader g name))
     (match ((not (null? bk)) (rest (rest bk)))
            ((not (null? tk)) (List filter str? (rest tk)))
-           (#t ((fn (_ f) (if (null? f) () (rest f))) (List find (fn (_ f) (str=? (first f) name)) (%qs-folk g)))))))
+           (#t ((fn (_ f) (if (null? f) () (List append (%qs-weather-talk g) (rest f))))
+                (List find (fn (_ f) (str=? (first f) name)) (%qs-folk g)))))))
+
+; What the people of the streets say of the weather in force, first: the
+; world's (weather-talk KIND LINE ...), or none.
+(def %qs-weather-talk
+  (fn (_ g)
+    (def kind (game-weather g))
+    (if (null? kind) ()
+      ((fn (_ t) (if (null? t) () (rest t)))
+       (List find (fn (_ t) (eq? (first t) kind)) (game-world-all g (lit weather-talk)))))))
+
 ; The forms of the building the keeper NAME keeps a shop in, or the
 ; PROPS of the trader NAME, among the forms in force, or nil.
 (def %qs-shop

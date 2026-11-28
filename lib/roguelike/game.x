@@ -52,7 +52,7 @@
   game-messages game-messages! game-log game-band game-band-from band-to band-prop1 game-forms
   player-r player-c player-at! player-hp player-hp! player-hpmax player-level player-food player-food! player-lamp player-lamp!
   player-doused? player-doused! player-condition player-tick! player-armour player-rings player-gold
-  game-daylight? game-sky? game-night? game-hour state-in-sight? state-say! state-tell! state-text state-clear-messages! state-clear-log! state-roll state-chance? state-dir state-dirs
+  game-daylight? game-sky? game-night? game-hour game-weather game-weather-prop game-temperature state-in-sight? state-say! state-tell! state-text state-clear-messages! state-clear-log! state-roll state-chance? state-dir state-dirs
   state-creature-at state-creature-named state-items-at state-free? state-ring? state-ring-bonus item-class? item-class-in? item-class
   item-name item-letter creature-name creature-r creature-c creature-trait? creature-prop creature-kind state-a-kind
   creature-state creature-hp creature-whole creature-conditions player-conditions state-dist state-adjacent?)
@@ -82,16 +82,18 @@
 ; (bonus light N); nothing, blind.  Under the sky of a set
 ; that says (light day) the whole level is in view, and a step under a
 ; roof is back to sight; at night under it, the set's (night-view N),
-; or as far as the rings give if farther.  What a creature goes by, and
-; what is told or stops a walk, is still what is in sight
-; (state-in-sight?).
+; or as far as the rings give if farther; and under weather with a
+; (view N), N at the most.  What a creature goes by, and what is told
+; or stops a walk, is still what is in sight (state-in-sight?).
 (def %gm-light!
   (fn (_ g)
     (def p (game-player g))
-    (def view (match ((%gm-dark? g) (if (< 1 (game-glow g)) (game-glow g) 1))
-                     ((if (game-night? g) (game-sky? g) #f)
-                       ((fn (_ n r) (if (< n r) r n)) (game-param1 g (lit night-view) 3) (state-ring-bonus g (lit light))))
-                     (#t (game-param1 g (lit view) 0))))
+    (def sky (if (game-sky? g) (game-weather-prop g (lit view) ()) ()))
+    (def view ((fn (_ v) (if (null? sky) v (if (< (first sky) v) (first sky) v)))
+               (match ((%gm-dark? g) (if (< 1 (game-glow g)) (game-glow g) 1))
+                      ((if (game-night? g) (game-sky? g) #f)
+                        ((fn (_ n r) (if (< n r) r n)) (game-param1 g (lit night-view) 3) (state-ring-bonus g (lit light))))
+                      (#t (game-param1 g (lit view) 0)))))
     (match ((< 0 (player-condition p (lit blind))) (map-light! (game-map g) -9 -9))
            ((game-daylight? g) (map-light-all! (game-map g) (player-r p) (player-c p)))
            ((< 0 view) (map-light-radius! (game-map g) (player-r p) (player-c p) view))
@@ -450,12 +452,42 @@
 ; most eaten (2000), and, past nothing with no (starve N), death at
 ; DEATH seconds under (150).  A ring of sustenance halves the cost.
 ; Under (starve N) a hit point goes every N seconds past nothing.
+; S seconds of food as the weather burns it under the sky: the world's
+; (cold BELOW PCT) PCT percent more under BELOW degrees, and (heat ABOVE
+; PCT) PCT percent more over ABOVE.  Under a roof or below, S.
+(def %gm-weather-hunger
+  (fn (_ g s)
+    (def t (if (game-sky? g) (game-temperature g) ()))
+    (def cold (game-top-param g (lit cold) ()))
+    (def heat (game-top-param g (lit heat) ()))
+    (match ((null? t) s)
+           ((if (null? cold) #f (< t (first cold))) (int/ (* s (+ 100 (List ref 1 cold))) 100))
+           ((if (null? heat) #f (< (first heat) t)) (int/ (* s (+ 100 (List ref 1 heat))) 100))
+           (#t s))))
+
+; The weather's turn: a change of it told under the sky, by its (told
+; "TEXT") under the key of its kind; and under the world's (chill BELOW
+; SECONDS), a hit point lost every SECONDS under the sky under BELOW
+; degrees.  KIND-WAS is the weather before the turn.
+(def %gm-weather!
+  (fn (_ g kind-was was now)
+    (def kind (game-weather g))
+    (def chill (game-top-param g (lit chill) ()))
+    (when (if (game-sky? g) (not (eq? kind kind-was)) #f)
+      ((fn (_ told) (unless (null? told) (state-tell! g kind (first told) ()))) (game-weather-prop g (lit told) ())))
+    (when (if (null? chill) #f (if (game-sky? g) ((fn (_ t) (if (null? t) #f (< t (first chill)))) (game-temperature g)) #f))
+      ((fn (_ k)
+         (when (< 0 k)
+           (do (state-tell! g (lit chilled) "You are chilled to the bone." ())
+               (combat-hurt-player! g k (state-text g (lit froze) "died of the cold" ())))))
+       (%gm-every (List ref 1 chill) was now)))))
+
 (def %gm-hunger!
   (fn (_ g was now)
     (def p (game-player g))
     (def spec (game-param g (lit hunger) (list 1300 300 150)))
     (def starve (game-param1 g (lit starve) 0))
-    (def s (- now was))
+    (def s (%gm-weather-hunger g (- now was)))
     (def before (player-food p))
     (unless (< (List ref 0 spec) 1)
       (player-food! p (- before (if (state-ring? g (lit sustenance)) (int/ (+ s (- 1 (% (game-turn g) 2))) 2) s))))
@@ -559,9 +591,11 @@
     (def was (game-clock g))
     (def now (+ was (%gm-seconds g)))
     (def night-was (game-night? g))
+    (def kind-was (game-weather g))
     (game-turn! g (+ (game-turn g) 1))
     (game-clock! g now)
     (%gm-dusk! g night-was)
+    (%gm-weather! g kind-was was now)
     (%gm-hunger! g was now)
     (%gm-regen! g was now)
     (%gm-lamp! g was now)
@@ -846,13 +880,19 @@
       (Str8 str (state-dist (creature-r cr) (creature-c cr) (player-r p) (player-c p))) " "
       (chain-compass (- (creature-c cr) (player-c p)) (- (creature-r cr) (player-r p)))
       (if (null? said) "" (Str8 append ": " (Str8 join ", " said))))))
-; The time of day in a world with one, as a line, or none.
+; The time of day in a world with one, and the weather and the
+; temperature in a world with them, as lines, or none.
 (def %gm-day-lines
   (fn (_ g)
     (def h (game-hour g))
-    (if (< h 0) ()
-      (list (Str8 append "It is " (%gm-two h) ":" (%gm-two (% (int/ (game-clock g) 60) 60))
-                         (if (game-night? g) ", night." ", day."))))))
+    (def said (game-weather-prop g (lit said) ()))
+    (def t (game-temperature g))
+    (List append
+      (if (< h 0) ()
+        (list (Str8 append "It is " (%gm-two h) ":" (%gm-two (% (int/ (game-clock g) 60) 60))
+                           (if (game-night? g) ", night." ", day."))))
+      ((fn (_ parts) (if (null? parts) () (list (Str8 append (Str8 join ", " parts) "."))))
+       (List append (if (null? said) () (list (first said))) (if (null? t) () (list (Str8 append (Str8 str t) " degrees"))))))))
 (def %gm-view-lines
   (fn (_ g)
     (def clock (game-clock g))

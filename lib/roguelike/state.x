@@ -584,7 +584,56 @@
            (#t (= 0 (map-roof-at (game-map g) (player-r p) (player-c p)))))))
 ; Whether the level in hand lies under the sky by day: under the sky,
 ; and not night.  Then the whole of it is in view (see map-light-all!).
-(def game-daylight? (fn (_ g) (if (game-sky? g) (not (game-night? g)) #f)))
+(def game-daylight?
+  (fn (_ g) (if (game-sky? g) (if (game-night? g) #f (null? (game-weather-prop g (lit view) ()))) #f)))
+
+; --- the weather -------------------------------------------------------------
+
+; The world's weather, (weather HOURS (KIND WEIGHT SHIFT . PROPS) ...)
+; of the set the game began on: a spell of HOURS each, its KIND drawn
+; for the spell by WEIGHT from the game's seed and the spell's number,
+; no draw of the dice, so a spell's weather is the same however it is
+; come to.  SHIFT is degrees on the hour's temperature.  The KIND in
+; force, or nil in a world with no weather.
+(def %st-seconds-of-day
+  (fn (_ g) ((fn (_ day) (+ (if (null? day) 0 (* 3600 (List ref 2 day))) (game-clock g))) (game-top-param g (lit day) ()))))
+(def %st-mix
+  (fn (_ a b)
+    (def x (% (+ (* 7919 (% (%st-abs a) 100003)) (* 104729 (% b 100003))) 1000003))
+    (% (+ (* x x) (* 31 b)) 1000003)))
+(def %st-weather-kind
+  (fn (_ g)
+    (def spec (game-top-param g (lit weather) ()))
+    (if (null? spec) ()
+      ((fn (_ kinds)
+         (def total (List fold (fn (_ n k) (+ n (List ref 1 k))) 0 kinds))
+         (def spell (int/ (%st-seconds-of-day g) (* 3600 (first spec))))
+         ((fn (self ks left)
+            (match ((null? (rest ks)) (first ks))
+                   ((< left (List ref 1 (first ks))) (first ks))
+                   (#t (self (rest ks) (- left (List ref 1 (first ks)))))))
+          kinds (% (%st-mix (game-seed g) spell) total)))
+       (rest spec)))))
+(def game-weather (fn (_ g) ((fn (_ k) (if (null? k) () (first k))) (%st-weather-kind g))))
+; The values of the property KEY of the weather in force, or DEFAULT.
+(def game-weather-prop
+  (fn (_ g key default)
+    ((fn (_ k) (if (null? k) default (data-prop k key default))) (%st-weather-kind g))))
+; The temperature, whole degrees: the world's (temperature LOW HIGH
+; PEAK), LOW at dawn rising to HIGH at the hour PEAK and falling back to
+; LOW by the next dawn, and the weather's SHIFT on it; nil in a world
+; with no temperature or no day.
+(def game-temperature
+  (fn (_ g)
+    (def spec (game-top-param g (lit temperature) ()))
+    (def day (game-top-param g (lit day) ()))
+    (if (if (null? spec) #t (null? day)) ()
+      ((fn (_ low high dawn h k)
+         (def rise (% (+ (- (List ref 2 spec) dawn) 24) 24))
+         (def at (% (+ (- h dawn) 24) 24))
+         (+ (if (< at rise) (+ low (int/ (* (- high low) at) rise)) (- high (int/ (* (- high low) (- at rise)) (- 24 rise))))
+            (if (null? k) 0 (List ref 2 k))))
+       (first spec) (List ref 1 spec) (first day) (game-hour g) (%st-weather-kind g)))))
 ; Whether R C is in the player's sight, which is what a creature goes
 ; by: in view, and by daylight, when everything is, within the set's
 ; (view N) by a clear line.
@@ -684,7 +733,7 @@
   item-make item-form item-class item-name item-prop item-prop1 item-count item-count! item-charges
   item-charges! item-enchant item-enchant! item-letter item-letter! item-r item-c item-at! item-class? item-class-in?
   state-say! state-clear-messages! game-blows game-said state-blow! state-clear-log! state-fill state-text state-tell!
-  state-roll state-chance? state-dir state-dirs state-dist state-adjacent? state-in-sight? game-daylight? game-sky? game-night? game-hour state-covers? state-sign
+  state-roll state-chance? state-dir state-dirs state-dist state-adjacent? state-in-sight? game-daylight? game-sky? game-night? game-hour game-weather game-weather-prop game-temperature state-covers? state-sign
   state-creature-at state-creature-named state-items-at state-player-at? state-free?
   state-remove-creature! state-remove-floor! state-remove-pack!
   state-ring-bonus state-ring? state-gentle? state-defence state-strength state-shortfall)

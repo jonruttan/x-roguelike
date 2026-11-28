@@ -164,6 +164,9 @@ churches a hymn, and a valley cellar has no wind in it. At night under
 the sky of a world with a `(day ...)`, the band is looked for first as
 `"BAND by night"`, then `"default by night"`: the valley and the town
 play a nocturne after dusk, over owls, crickets and a fox far off.
+Under the sky the weather's `(heard "NAME")` is looked for after the
+building and the interior and before the night's names: in `kettle`
+the rain has its hiss and drips, and a storm its wind and thunder.
 `(music-gain PCT)` and `(music-echo MS FEEDBACK WET)` are the music's
 loudness and room; the echoes are those of the set the game began on.
 `(music-effect SPEC)`, from any set of the world, is an effect over all
