@@ -29,9 +29,11 @@
 (hunger 43200 14400 3600 86400)
 (starve 600)
 ; The streets lie under the sky by day, seen whole from anywhere in
-; them; under a roof, sight is eight cells.
+; them; under a roof, sight is eight cells.  By night, on the world's
+; clock (kettle's (day ...)), sight is four cells.
 (light day)
 (view 8)
+(night-view 4)
 
 ; Streets and terraces, in metres: rows of brick terraces under slate,
 ; a house four to six metres along, a street between the rows.

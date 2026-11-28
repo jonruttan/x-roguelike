@@ -60,6 +60,13 @@
 (light day)
 (view 8)
 
+; The world's day: dawn at six, dusk at eight in the evening, and the
+; game begun at three in the afternoon (day DAWN DUSK START).  By night
+; under the sky only (night-view N) cells around are seen; the town,
+; the Delve and every door are on the same clock.
+(day 6 20 15)
+(night-view 3)
+
 ; Open ground: thickets of wall, the outer ring always clear.
 (level-style open)
 (clumps 8 14)

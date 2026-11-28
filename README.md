@@ -307,6 +307,13 @@ WEAK MOST DEATH)` gives MOST, what eating fills to (2000), and DEATH,
 the seconds under nothing a set with no `(starve N)` dies at (150);
 `kettle` begins with half a day's food and holds a day's.
 
+`(day DAWN DUSK START)` gives the world a day on the same clock: dawn
+and dusk at those hours, and the game begun at START.  From dusk to
+dawn a set that says `(light day)` is no longer seen whole under the
+sky, only `(night-view N)` cells around (3), or as far as a ring of
+light gives; night and dawn are told as they come, and `v` gives the
+hour.  `kettle` begins at three in the afternoon, dusk at eight.
+
 `(lamp FULL LOW)` gives the player a lamp holding FULL seconds of oil,
 lit full at the start, or the first turn in the set when come from one
 without.  It burns on the clock, says when LOW seconds are left and

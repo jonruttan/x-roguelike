@@ -55,3 +55,30 @@
 ; Underground the air rings: (room PLACE SPEC ...) (docs/sound.md).
 (room "farmhouse cellar" (reverb 50 50 16))
 (room "old city vault" (reverb 130 75 26))
+
+; --- by night ------------------------------------------------------------------
+
+; The birds gone quiet: an owl, crickets in the grass, a fox far off.
+(sound "owl" (vary 120) (gain 20) (echo 360 30 30)
+  (voice (wave hollow) (note "E4") (slide "D4") (cut 18) (env (0 0) (60 30) (300 24) (450 0)))
+  (voice (wave hollow) (note "D4") (slide "C4") (cut 18) (at 700) (env (0 0) (80 26) (600 20) (900 0))))
+
+(sound "crickets" (vary 300) (gain 14)
+  (voice (wave glass) (note "E7") (env (0 0) (5 20) (20 0)) (pan -30))
+  (voice (wave glass) (note "E7") (at 60) (env (0 0) (5 18) (20 0)) (pan -30))
+  (voice (wave glass) (note "F7") (at 120) (env (0 0) (5 16) (20 0)) (pan -30))
+  (voice (wave glass) (note "E7") (at 400) (env (0 0) (5 14) (20 0)) (pan 40))
+  (voice (wave glass) (note "F7") (at 460) (env (0 0) (5 12) (20 0)) (pan 40)))
+
+(sound "fox" (vary 200) (gain 16) (echo 420 30 35)
+  (voice (wave reed) (note "A5") (slide "D5") (cut 35) (env (0 0) (20 30) (250 12) (400 0))))
+
+(ambience "default by night" (bed "night-air") (random "crickets" 3000 40) (random "owl" 16000 40))
+(ambience "Kettle by night" (bed "night-air") (random "crickets" 3000 35) (random "owl" 14000 40))
+(ambience "The Farms by night" (bed "night-air") (random "crickets" 2500 45) (random "owl" 12000 40) (random "fox" 30000 30))
+(ambience "The Hills by night" (bed "night-air") (random "gust" 14000 35) (random "owl" 20000 30) (random "fox" 25000 30))
+(ambience "The Far Valley by night" (bed "night-air") (random "gust" 10000 40) (random "fox" 40000 25))
+
+; Night told with an owl, and dawn with the first bird.
+(said "nightfall" "owl")
+(said "dawn" "bird")

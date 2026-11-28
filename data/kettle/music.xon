@@ -122,3 +122,56 @@
     (wind  "C4 . . . . . . .")
     (dread "C4 . . . . . . ."))
   (order a))
+
+; --- by night: the valley and the town under the sky after dusk ---------------
+
+; "default by night" is heard before a band's own song once night falls
+; under the sky (docs/sound.md), in the valley and the town alike.
+(music "default by night" "nocturne")
+
+; E minor, slow: a low harp and a held flute over a soft drone, the calm
+; layer a choir of two; under tension a slow pulse and a minor second.
+(song "nocturne" (bpm 52) (rows 2) (tension-bpm 40)
+  (instrument drone (wave warm) (cut 8) (env (0 0) (2500 30) (6000 24)) (release 3500) (gain 26)
+    (voice (detune -5) (pan -45)) (voice (detune 5) (pan 45)))
+  (instrument harp (wave glass) (cut 30) (env (0 0) (3 30) (900 0)) (release 500) (gain 18) (pan 25))
+  (instrument flute (wave sine) (cut 30) (env (0 0) (300 26) (1400 20) (2600 0)) (release 900) (gain 20) (pan -20))
+  (instrument choir (layer calm) (wave warm) (cut 12) (env (0 0) (2600 24) (6000 20)) (release 3000) (gain 20)
+    (voice (detune -8) (pan -60)) (voice (detune 8) (pan 60)))
+  (instrument pulse (layer tension) (wave sine) (cut 30) (env (0 0) (8 70) (240 0)) (release 80) (gain 40))
+  (instrument strain (layer tension) (wave thin) (cut 16) (env (0 0) (1000 20) (3000 16)) (release 1500) (gain 16) (pan 20))
+  (pattern na
+    (drone  "E2 .  .  .  .  .  .  .  .  .  .  .  .  .  .  .")
+    (harp   "E3 .  B3 .  G3 .  B3 .  E3 .  B3 .  G3 .  B3 .")
+    (flute  "B4 .  .  .  .  .  .  .  G4 .  .  .  A4 .  .  .")
+    (choir  "G3 .  .  .  .  .  .  .  B3 .  .  .  .  .  .  .")
+    (pulse  "E1 .  .  .  .  .  .  .  E1 .  .  .  .  .  .  .")
+    (strain "B3 .  .  .  .  .  .  .  C4 .  .  .  .  .  .  ."))
+  (pattern nb
+    (drone  "C2 .  .  .  .  .  .  .  D2 .  .  .  .  .  .  .")
+    (harp   "C3 .  G3 .  E3 .  G3 .  D3 .  A3 .  F#3 . A3 .")
+    (flute  "E4 .  .  .  G4 .  .  .  F#4 . .  .  D4 .  .  .")
+    (choir  "E3 .  .  .  .  .  .  .  F#3 . .  .  .  .  .  .")
+    (pulse  "C1 .  .  .  .  .  .  .  D1 .  .  .  .  .  .  .")
+    (strain "G3 .  .  .  .  .  .  .  G#3 . .  .  .  .  .  ."))
+  (pattern nc
+    (drone  "A1 .  .  .  .  .  .  .  B1 .  .  .  .  .  .  .")
+    (harp   "A2 .  E3 .  C3 .  E3 .  B2 .  F#3 . D#3 . F#3 .")
+    (flute  "C5 .  .  .  B4 .  .  .  A4 .  .  .  F#4 . .  .")
+    (choir  "C3 .  .  .  .  .  .  .  D#3 . .  .  .  .  .  .")
+    (pulse  "A1 .  .  .  .  .  .  .  B1 .  .  .  .  .  .  .")
+    (strain "E3 .  .  .  .  .  .  .  F3 .  .  .  .  .  .  ."))
+  (order na nb na nc))
+
+; The night's air: the wind dropped to a breath, and a high, faint hum
+; of the dark.  Under tension the same dread as the day's.
+(song "night-air" (bpm 60) (rows 1)
+  (instrument wind (wave noise) (hz 1) (env (0 0) (5000 18) (9000 14)) (release 4000) (gain 20)
+    (voice (cut 2) (pan -60)) (voice (cut 3) (pan 60) (detune 30)))
+  (instrument hum (wave sine) (note "B6") (env (0 0) (4000 3) (8000 2)) (release 3000) (gain 5))
+  (instrument dread (layer tension) (wave noise) (hz 1) (cut 1) (env (0 0) (2000 60)) (release 3000) (gain 40))
+  (pattern a
+    (wind  "C4 . . . . . . .")
+    (hum   "C4 . . . . . . .")
+    (dread "C4 . . . . . . ."))
+  (order a))

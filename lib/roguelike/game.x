@@ -52,7 +52,7 @@
   game-messages game-messages! game-log game-band game-band-from band-to band-prop1 game-forms
   player-r player-c player-at! player-hp player-hp! player-hpmax player-level player-food player-food! player-lamp player-lamp!
   player-doused? player-doused! player-condition player-tick! player-armour player-rings player-gold
-  game-daylight? state-in-sight? state-say! state-tell! state-text state-clear-messages! state-clear-log! state-roll state-chance? state-dir state-dirs
+  game-daylight? game-sky? game-night? game-hour state-in-sight? state-say! state-tell! state-text state-clear-messages! state-clear-log! state-roll state-chance? state-dir state-dirs
   state-creature-at state-creature-named state-items-at state-free? state-ring? state-ring-bonus item-class? item-class-in? item-class
   item-name item-letter creature-name creature-r creature-c creature-trait? creature-prop creature-kind state-a-kind
   creature-state creature-hp creature-whole creature-conditions player-conditions state-dist state-adjacent?)
@@ -81,12 +81,17 @@
 ; (lamp ...), the cells beside, or as far as the rings worn give by
 ; (bonus light N); nothing, blind.  Under the sky of a set
 ; that says (light day) the whole level is in view, and a step under a
-; roof is back to sight; what a creature goes by, and what is told or
-; stops a walk, is still what is in sight (state-in-sight?).
+; roof is back to sight; at night under it, the set's (night-view N),
+; or as far as the rings give if farther.  What a creature goes by, and
+; what is told or stops a walk, is still what is in sight
+; (state-in-sight?).
 (def %gm-light!
   (fn (_ g)
     (def p (game-player g))
-    (def view (if (%gm-dark? g) (if (< 1 (game-glow g)) (game-glow g) 1) (game-param1 g (lit view) 0)))
+    (def view (match ((%gm-dark? g) (if (< 1 (game-glow g)) (game-glow g) 1))
+                     ((if (game-night? g) (game-sky? g) #f)
+                       ((fn (_ n r) (if (< n r) r n)) (game-param1 g (lit night-view) 3) (state-ring-bonus g (lit light))))
+                     (#t (game-param1 g (lit view) 0))))
     (match ((< 0 (player-condition p (lit blind))) (map-light! (game-map g) -9 -9))
            ((game-daylight? g) (map-light-all! (game-map g) (player-r p) (player-c p)))
            ((< 0 view) (map-light-radius! (game-map g) (player-r p) (player-c p) view))
@@ -541,12 +546,22 @@
            ((< 0 (player-condition p (lit slowed))) (do (creatures-act! g) (creatures-act! g)))
            (#t (creatures-act! g)))))
 
+; Night come or gone with the turn, NIGHT-WAS whether it was night
+; before it: told under the sky, where it is seen.
+(def %gm-dusk!
+  (fn (_ g night-was)
+    (def night (game-night? g))
+    (when (if (game-sky? g) (not (eq? night night-was)) #f)
+      (if night (state-tell! g (lit nightfall) "Night falls." ()) (state-tell! g (lit dawn) "Dawn breaks." ())))))
+
 (def %gm-end-turn!
   (fn (_ g)
     (def was (game-clock g))
     (def now (+ was (%gm-seconds g)))
+    (def night-was (game-night? g))
     (game-turn! g (+ (game-turn g) 1))
     (game-clock! g now)
+    (%gm-dusk! g night-was)
     (%gm-hunger! g was now)
     (%gm-regen! g was now)
     (%gm-lamp! g was now)
@@ -831,6 +846,13 @@
       (Str8 str (state-dist (creature-r cr) (creature-c cr) (player-r p) (player-c p))) " "
       (chain-compass (- (creature-c cr) (player-c p)) (- (creature-r cr) (player-r p)))
       (if (null? said) "" (Str8 append ": " (Str8 join ", " said))))))
+; The time of day in a world with one, as a line, or none.
+(def %gm-day-lines
+  (fn (_ g)
+    (def h (game-hour g))
+    (if (< h 0) ()
+      (list (Str8 append "It is " (%gm-two h) ":" (%gm-two (% (int/ (game-clock g) 60) 60))
+                         (if (game-night? g) ", night." ", day."))))))
 (def %gm-view-lines
   (fn (_ g)
     (def clock (game-clock g))
@@ -838,6 +860,7 @@
     (List append
       (list (Str8 append "Turn " (Str8 str (game-turn g)) ", " (Str8 str (int/ clock 3600)) ":" (%gm-two (% (int/ clock 60) 60)) ":"
                          (%gm-two (% clock 60)) " on the clock."))
+      (%gm-day-lines g)
       (List map (fn (_ s) (Str8 append "You are " s ".")) (%gm-conditions (player-conditions (game-player g))))
       (if (null? seen) (list "Nothing that moves is in view.") (List map (fn (_ cr) (%gm-view-creature g cr)) seen)))))
 

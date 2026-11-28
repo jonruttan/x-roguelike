@@ -559,15 +559,32 @@
 (def %st-max (fn (_ a b) (if (< a b) b a)))
 ; The moves from R1 C1 to R2 C2, a diagonal step counting one.
 (def state-dist (fn (_ r1 c1 r2 c2) (%st-max (%st-abs (- r1 r2)) (%st-abs (- c1 c2)))))
-; Whether the level in hand lies under the sky by day: the set in force
-; says (light day), and the player is neither inside nor under a roof.
-; Then the whole of it is in view (see map-light-all!).
-(def game-daylight?
+; The world's day, (day DAWN DUSK START) of the set the game began on:
+; the hours dawn and dusk come at, and the hour the game begins at, the
+; clock's seconds counted on from it.  The hour of the day, 0 to 23, is
+; -1 in a world with no day.
+(def game-hour
+  (fn (_ g)
+    (def day (game-top-param g (lit day) ()))
+    (if (null? day) -1 (% (int/ (+ (* 3600 (List ref 2 day)) (game-clock g)) 3600) 24))))
+; Whether it is night in a world with a day: the hour before dawn or
+; from dusk.
+(def game-night?
+  (fn (_ g)
+    (def day (game-top-param g (lit day) ()))
+    (def h (game-hour g))
+    (if (null? day) #f (if (< h (List ref 0 day)) #t (not (< h (List ref 1 day)))))))
+; Whether the player stands under the sky of a set in force that says
+; (light day): neither inside nor under a roof.
+(def game-sky?
   (fn (_ g)
     (def p (game-player g))
     (match ((not (eq? (game-param1 g (lit light) (lit dark)) (lit day))) #f)
            ((not (null? (game-inside g))) #f)
            (#t (= 0 (map-roof-at (game-map g) (player-r p) (player-c p)))))))
+; Whether the level in hand lies under the sky by day: under the sky,
+; and not night.  Then the whole of it is in view (see map-light-all!).
+(def game-daylight? (fn (_ g) (if (game-sky? g) (not (game-night? g)) #f)))
 ; Whether R C is in the player's sight, which is what a creature goes
 ; by: in view, and by daylight, when everything is, within the set's
 ; (view N) by a clear line.
@@ -667,7 +684,7 @@
   item-make item-form item-class item-name item-prop item-prop1 item-count item-count! item-charges
   item-charges! item-enchant item-enchant! item-letter item-letter! item-r item-c item-at! item-class? item-class-in?
   state-say! state-clear-messages! game-blows game-said state-blow! state-clear-log! state-fill state-text state-tell!
-  state-roll state-chance? state-dir state-dirs state-dist state-adjacent? state-in-sight? game-daylight? state-covers? state-sign
+  state-roll state-chance? state-dir state-dirs state-dist state-adjacent? state-in-sight? game-daylight? game-sky? game-night? game-hour state-covers? state-sign
   state-creature-at state-creature-named state-items-at state-player-at? state-free?
   state-remove-creature! state-remove-floor! state-remove-pack!
   state-ring-bonus state-ring? state-gentle? state-defence state-strength state-shortfall)
