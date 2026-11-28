@@ -29,7 +29,7 @@
   player-r player-c player-conditions item-r item-c item-class creature-r creature-c creature-name creature-glyph
   creature-state creature-condition game-set game-blows game-over player-rings state-ring-bonus)
 (import roguelike/draw draw-hunger)
-(import roguelike/game game-glow)
+(import roguelike/game game-glow game-dark?)
 (import roguelike/creatures creatures-shown?)
 (import roguelike/traps trap-r trap-c trap-found?)
 
@@ -596,67 +596,74 @@
                                     100))
                       100)))))
 
-; The light map is worked in a region of four words a cell: the dark
-; left and each channel's tint, out of 256.  Each light touches only
-; the cells within its reach.
-(def %fr-get (fn (_ w i k) (ptr-ref w (int+ (int* i 16) (int* k 4)) 4)))
-(def %fr-put! (fn (_ w i k v) (ptr-set! w (int+ (int* i 16) (int* k 4)) (if (int< v 0) 0 v) 4)))
+; The light map is worked in a region W of four words a cell, at byte
+; 16 times the cell: the dark left and each channel's tint, out of 256.
+; Each light touches only the cells within its reach, a row and a cell
+; at a time.
+(def %fr-floor (fn (_ v) (if (int< v 0) 0 v)))
 
-; Cell I of the map, COLS wide, lit by a light at LX LY reaching RAD
-; pixels, its colour R G B at tint weight W0: the dark lifted by the
-; square of the distance, the tint taken toward its colour.
-(def %fr-light-cell!
-  (fn (_ w i cols ox oy lx ly r2 r g b w0)
-    (def dx (int- (int+ ox (int+ (int* (int% i cols) 16) 8)) lx))
-    (def dy (int- (int+ oy (int+ (int* (int/ i cols) 16) 8)) ly))
-    (def d2 (int+ (int* dx dx) (int* dy dy)))
-    (when (int< d2 r2)
-      (do (def c (int- 256 (int/ (int* d2 256) r2)))
-          (def wt (int/ (int* w0 c) 256))
-          (%fr-put! w i 0 (int/ (int* (%fr-get w i 0) (int- 256 c)) 256))
-          (%fr-put! w i 1 (int- (%fr-get w i 1) (int/ (int* wt (int- 255 r)) 255)))
-          (%fr-put! w i 2 (int- (%fr-get w i 2) (int/ (int* wt (int- 255 g)) 255)))
-          (%fr-put! w i 3 (int- (%fr-get w i 3) (int/ (int* wt (int- 255 b)) 255)))))))
+; Row ROW to RH of a map COLS wide, from column CL to CH, lit by a light
+; at LX LY whose reach squared is R2 pixels, its colour R G B at tint
+; weight W0, the map's first cell at OX OY: in each cell within reach
+; the dark lifted by the square of the distance and the tint taken
+; toward the light's colour.
+(def %fr-light-rows!
+  (fn (self w cols ox oy lx ly r2 r g b w0 row rh cl ch)
+    (unless (int< rh row)
+      (do (%fr-light-cells! w (int* row cols) (int- (int+ oy (int+ (int* row 16) 8)) ly) ox lx r2 r g b w0 cl ch)
+          (self w cols ox oy lx ly r2 r g b w0 (int+ row 1) rh cl ch)))))
+(def %fr-light-cells!
+  (fn (self w base dy ox lx r2 r g b w0 col ch)
+    (unless (int< ch col)
+      (do (def dx (int- (int+ ox (int+ (int* col 16) 8)) lx))
+          (def d2 (int+ (int* dx dx) (int* dy dy)))
+          (when (int< d2 r2)
+            (do (def o (int* (int+ base col) 16))
+                (def c (int- 256 (int/ (int* d2 256) r2)))
+                (def wt (int/ (int* w0 c) 256))
+                (ptr-set! w o (int/ (int* (ptr-ref w o 4) (int- 256 c)) 256) 4)
+                (ptr-set! w (int+ o 4) (%fr-floor (int- (ptr-ref w (int+ o 4) 4) (int/ (int* wt (int- 255 r)) 255))) 4)
+                (ptr-set! w (int+ o 8) (%fr-floor (int- (ptr-ref w (int+ o 8) 4) (int/ (int* wt (int- 255 g)) 255))) 4)
+                (ptr-set! w (int+ o 12) (%fr-floor (int- (ptr-ref w (int+ o 12) 4) (int/ (int* wt (int- 255 b)) 255))) 4)))
+          (self w base dy ox lx r2 r g b w0 (int+ col 1) ch)))))
 
-; The reach of light L at strength K in a map COLS by ROWS whose first
-; cell is at OX OY: (RL RH CL CH K), its rows and columns held to the
-; map, and K.
-(def %fr-reach
-  (fn (_ cols rows ox oy l k)
-    (def lx (List ref 1 l))
-    (def ly (List ref 2 l))
-    (def rad (int/ (int* (int* (List ref 6 l) 16) k) 100))
-    (def lo (fn (_ v) (if (int< v 0) 0 v)))
-    (def hi (fn (_ v n) (if (int< v n) v (int- n 1))))
-    (list (lo (int/ (int- (int- ly oy) rad) 16)) (hi (int/ (int+ (int- ly oy) rad) 16) rows)
-          (lo (int/ (int- (int- lx ox) rad) 16)) (hi (int/ (int+ (int- lx ox) rad) 16) cols)
-          k)))
+; Each of LIGHTS, (light X Y R G B REACH FLICKER [TINT]), at TICK over
+; the cells of its reach in a map COLS by ROWS whose first cell is at OX
+; OY, its reach held to the map: (RL RH CL CH), the rows and columns of
+; the box round every reach, from the box RL RH CL CH so far.
+(def %fr-lit!
+  (fn (self w cols rows ox oy lights tick rl rh cl ch)
+    (if (null? lights) (list rl rh cl ch)
+      ((fn (_ l)
+         (def lx (List ref 1 l))
+         (def ly (List ref 2 l))
+         (def k (frame-flicker l tick))
+         (def rad (int/ (int* (int* (List ref 6 l) 16) k) 100))
+         (def lo-r (%fr-floor (int/ (int- (int- ly oy) rad) 16)))
+         (def hi-r (%fr-held-hi (int/ (int+ (int- ly oy) rad) 16) rows))
+         (def lo-c (%fr-floor (int/ (int- (int- lx ox) rad) 16)))
+         (def hi-c (%fr-held-hi (int/ (int+ (int- lx ox) rad) 16) cols))
+         (%fr-light-rows! w cols ox oy lx ly (int* rad rad) (List ref 3 l) (List ref 4 l) (List ref 5 l)
+                          (int/ (int* (int/ (int* 56 k) 100) (if (int< 8 (List length l)) (List ref 8 l) 100)) 100)
+                          lo-r hi-r lo-c hi-c)
+         (self w cols rows ox oy (rest lights) tick
+               (if (int< lo-r rl) lo-r rl) (if (int< rh hi-r) hi-r rh) (if (int< lo-c cl) lo-c cl) (if (int< ch hi-c) hi-c ch)))
+       (first lights)))))
+(def %fr-held-hi (fn (_ v n) (if (int< v n) v (int- n 1))))
 
-; F called with each cell of REACH in a map COLS wide.
-(def %fr-each-cell
-  (fn (_ reach cols f)
-    (def rh (List ref 1 reach))
-    (def cl (List ref 2 reach))
-    (def ch (List ref 3 reach))
-    ((fn (self y x)
-       (if (int< rh y) #t
-         (if (int< ch x) (self (int+ y 1) cl)
-           (do (f (int+ (int* y cols) x)) (self y (int+ x 1))))))
-     (first reach) cl)))
-
-; Light L over the cells of REACH, its strength there.
-(def %fr-light!
-  (fn (_ w cols ox oy l reach)
-    (def k (List ref 4 reach))
-    (def lx (List ref 1 l))
-    (def ly (List ref 2 l))
-    (def rad (int/ (int* (int* (List ref 6 l) 16) k) 100))
-    (def r2 (int* rad rad))
-    (def w0 (int/ (int* (int/ (int* 56 k) 100) (if (int< 8 (List length l)) (List ref 8 l) 100)) 100))
-    (def r (List ref 3 l))
-    (def g (List ref 4 l))
-    (def b (List ref 5 l))
-    (%fr-each-cell reach cols (fn (_ i) (%fr-light-cell! w i cols ox oy lx ly r2 r g b w0)))))
+; Rows ROW to RH, columns CL to CH, of a map COLS wide: each cell's
+; colour written at RP from its light in W (%fr-shade!), SP its byte of
+; the view, and W's cell put back to no light.
+(def %fr-settle-rows!
+  (fn (self rp w sp cols row rh cl ch)
+    (unless (int< rh row)
+      (do (%fr-settle-cells! rp w sp (int* row cols) cl ch)
+          (self rp w sp cols (int+ row 1) rh cl ch)))))
+(def %fr-settle-cells!
+  (fn (self rp w sp base col ch)
+    (unless (int< ch col)
+      (do ((fn (_ i) (%fr-shade! rp (int* i 4) (ptr-ref sp i 1) w i) (%fr-clear! w i)) (int+ base col))
+          (self rp w sp base (int+ col 1) ch)))))
 
 ; How much of a cell in view the dark takes where no light reaches, and
 ; how much of that a cell seen before and out of view keeps, out of 256.
@@ -678,29 +685,34 @@
 ; A cell no light reaches has a colour that only its being in view, seen
 ; before or never seen decides, so the map with no light on it is made
 ; once a view and copied each frame; only the cells within a light's
-; reach are worked, in a region kept at no light between frames.
+; reach are worked, in a region kept at no light between frames.  Every
+; light is laid on first; then each cell of the box round them all is
+; shaded once and put back to no light, a cell of the box no light
+; reached shading as the copy already has it.
 (def frame-light-map
   (fn (_ cache view lights tick)
+    (def ox (List ref 1 view))
+    (def oy (List ref 2 view))
     (def cols (List ref 3 view))
     (def rows (List ref 4 view))
     (def n (int* cols rows))
     (unless (same? view (Vector ref 0 cache)) (%fr-unlit! cache view n))
     (def w (str->ptr (Vector ref 2 cache)))
-    (def seen (List ref 5 view))
     (def region (str-make (int* n 4)))
     (def rp (str->ptr region))
     (mem-copy rp (str->ptr (Vector ref 1 cache)) (int* n 4))
-    (def reaches (List map (fn (_ l) (pair l (%fr-reach cols rows (List ref 1 view) (List ref 2 view) l (frame-flicker l tick)))) lights))
-    (List for-each (fn (_ lr) (%fr-light! w cols (List ref 1 view) (List ref 2 view) (first lr) (rest lr))) reaches)
-    (List for-each (fn (_ lr) (%fr-each-cell (rest lr) cols (fn (_ i) (%fr-shade! rp (int* i 4) (char->int (str-byte-ref seen i)) w i)))) reaches)
-    (List for-each (fn (_ lr) (%fr-each-cell (rest lr) cols (fn (_ i) (%fr-clear! w i)))) reaches)
+    (def box (%fr-lit! w cols rows ox oy lights tick rows -1 cols -1))
+    (%fr-settle-rows! rp w (str->ptr (List ref 5 view)) cols (List ref 0 box) (List ref 1 box) (List ref 2 box) (List ref 3 box))
     (list cols rows region)))
 
 ; A light map's cache, [VIEW UNLIT WORK N]: the view the map with no
 ; light was last made for, UNLIT that map, WORK a region of N cells at
 ; no light.  The painter keeps one.
 (def frame-light-cache (fn (_) (Vector of () () () 0)))
-(def %fr-clear! (fn (_ w i) (%fr-put! w i 0 256) (%fr-put! w i 1 256) (%fr-put! w i 2 256) (%fr-put! w i 3 256)))
+(def %fr-clear!
+  (fn (_ w i)
+    ((fn (_ o) (ptr-set! w o 256 4) (ptr-set! w (int+ o 4) 256 4) (ptr-set! w (int+ o 8) 256 4) (ptr-set! w (int+ o 12) 256 4))
+     (int* i 16))))
 (def %fr-unlit!
   (fn (_ cache view n)
     (unless (int= n (Vector ref 3 cache))
@@ -719,13 +731,14 @@
 ; the region W, V whether it is in view (2), seen before (1) or not (0).
 (def %fr-shade!
   (fn (_ rp o v w i)
-    (def m (int- 256 (int/ (int* %fr-dark (%fr-get w i 0)) 256)))
+    (def wi (int* i 16))
+    (def m (int- 256 (int/ (int* %fr-dark (ptr-ref w wi 4)) 256)))
     (def m2 (if (int= v 2) m (if (int= v 1) (int/ (int* m %fr-seen) 256) 0)))
-    (def r (int/ (int* m2 (%fr-get w i 1)) 256))
-    (def g (int/ (int* m2 (%fr-get w i 2)) 256))
+    (def r (int/ (int* m2 (ptr-ref w (int+ wi 4) 4)) 256))
+    (def g (int/ (int* m2 (ptr-ref w (int+ wi 8) 4)) 256))
     (ptr-set! rp o (%fr-byte (if (int= v 1) (int/ (int* r %fr-cool-r) 256) r)) 1)
     (ptr-set! rp (int+ o 1) (%fr-byte (if (int= v 1) (int/ (int* g %fr-cool-g) 256) g)) 1)
-    (ptr-set! rp (int+ o 2) (%fr-byte (int/ (int* m2 (%fr-get w i 3)) 256)) 1)
+    (ptr-set! rp (int+ o 2) (%fr-byte (int/ (int* m2 (ptr-ref w (int+ wi 12) 4)) 256)) 1)
     (ptr-set! rp (int+ o 3) 255 1)))
 (def %fr-byte (fn (_ x) (if (int< 255 x) 255 (if (int< x 0) 0 x))))
 
@@ -742,14 +755,14 @@
     (def p (game-player g))
     (def cam (frame-camera (map-rows m) (map-cols m) (player-r p) (player-c p)))
     (def level (frame-level cache a m cam))
-    (def moving (%fr-moving-cells level))
-    (def in? (fn (_ op) (%fr-at? moving (first (rest op)) (first (rest (rest op))))))
+    ; A level with no cell that moves is all still.
+    (def parted (if (List any? %fr-moves? level) (%fr-parted level) (pair level ())))
     (def things (frame-things g a cam))
     (def at (frame-place cam (player-r p) (player-c p)))
-    (pair cam (pair (if (null? moving) level (List filter (fn (_ op) (not (in? op))) level))
-      (List append (if (null? moving) () (List filter in? level))
+    (pair cam (pair (first parted)
+      (List append (rest parted)
         things (list (frame-view m cam))
-        (frame-lights m cam ((fn (_ ops) (if (int< 0 (game-glow g)) (List reject %fr-player-op? ops) ops)) (List append level things)))
+        (frame-lights m cam ((fn (_ ops) (if (game-dark? g) (List reject %fr-player-op? ops) ops)) (List append level things)))
         (if (null? at) () (List map (fn (_ l) (List append (list (lit light) (int+ (first at) 8) (int+ (rest at) 8)) l)) (%fr-carried g a)))
         (frame-glints g cam) (frame-blows g cam) (list (frame-chart g)))))))
 
@@ -781,26 +794,38 @@
       #f)))
 
 
-; The places, (X . Y), of the cells of OPS with a tile that moves.
-(def %fr-moving-cells
+; The level's ops LEVEL parted, (STILL . MOVING): the ops of each cell
+; with a tile that moves, (frames ...), in MOVING, every other cell's
+; in STILL, each in the order it came, so a moving cell's ground, rims
+; and shade are drawn again together every frame.  A cell's ops come
+; together (frame-level), so one walk parts them, a cell at a time.
+(def %fr-moves? (fn (_ op) (if (eq? (first op) (lit tile)) (not (null? (%fr-prop (first (rest (rest (rest op)))) (lit frames)))) #f)))
+(def %fr-parted
   (fn (self ops)
-    (match ((null? ops) ())
-           ((if (eq? (first (first ops)) (lit tile)) (not (null? (%fr-prop (first (rest (rest (rest (first ops))))) (lit frames)))) #f)
-             (pair (pair (first (rest (first ops))) (first (rest (rest (first ops))))) (self (rest ops))))
-           (#t (self (rest ops))))))
-; Whether X Y is one of PLACES.
-(def %fr-at?
-  (fn (self places x y)
-    (match ((null? places) #f) ((if (int= (first (first places)) x) (int= (rest (first places)) y) #f) #t)
-           (#t (self (rest places) x y)))))
+    (if (null? ops) (pair () ())
+      ((fn (_ x y)
+         ; The cell's own ops, (RUN MOVES? . AFTER).
+         ((fn (_ cell)
+            ((fn (_ rest-parted)
+               (if (first (rest cell))
+                 (pair (first rest-parted) (%fr-onto (first cell) (rest rest-parted)))
+                 (pair (%fr-onto (first cell) (first rest-parted)) (rest rest-parted))))
+             (self (rest (rest cell)))))
+          ((fn (run l moves?)
+             (if (if (null? l) #f (if (int= (first (rest (first l))) x) (int= (first (rest (rest (first l)))) y) #f))
+               ((fn (_ r) (pair (pair (first l) (first r)) (rest r))) (run (rest l) (if moves? #t (%fr-moves? (first l)))))
+               (pair () (pair moves? l))))
+           ops #f)))
+       (first (rest (first ops))) (first (rest (rest (first ops))))))))
 
 ; The hero's lantern, as a light's (R G B REACH FLICKER): warm, and
 ; wavering a little.
 (def %fr-lantern (list 255 222 170 5 4))
 ; The lights the player carries, each (R G B REACH FLICKER): with the
-; lamp out and a ring's light (game-glow), a cold blue out as far
-; as it reaches, steady, and the player's own picture's light left out;
-; else the lantern, and a ring's light laid over it.  Then each ring
+; lamp out (game-dark?), no lantern and the player's own picture's light
+; left out, and with a ring's light (game-glow) a cold blue out as far
+; as it reaches, steady; with the lamp lit the lantern, and a ring's
+; light laid over it.  Then each ring
 ; worn casts a little light of its own just round the player, in the
 ; colour the art gives its guise (frame-art), so a ring not yet known
 ; shows only what it looks like; it tints hard, an odd light the
@@ -820,8 +845,9 @@
     (def light (state-ring-bonus g (lit light)))
     (def glows (if (int< 3 (List length a)) (List ref 3 a) ()))
     (List append
-      (if (int< 0 glow) (list (%fr-eerie glow))
-        (pair %fr-lantern (if (int< 0 light) (list (%fr-eerie light)) ())))
+      (match ((int< 0 glow) (list (%fr-eerie glow)))
+             ((game-dark? g) ())
+             (#t (pair %fr-lantern (if (int< 0 light) (list (%fr-eerie light)) ()))))
       (List map
         (fn (_ ring)
           ((fn (_ gl) (List append (if (null? gl) %fr-ring-light (rest gl)) (list %fr-ring-reach %fr-ring-flicker %fr-ring-tint)))
